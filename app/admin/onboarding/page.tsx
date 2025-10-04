@@ -283,7 +283,7 @@ export default function AdminOnboarding() {
             Welcome to CircleIn
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-lg">
-            Let's set up your community in just a few steps
+            Let&apos;s set up your community in just a few steps
           </p>
         </motion.div>
 
@@ -346,7 +346,7 @@ export default function AdminOnboarding() {
                     Community Details
                   </CardTitle>
                   <CardDescription>
-                    Let's start by setting up your community information
+                    Let&apos;s start by setting up your community information
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -396,7 +396,7 @@ export default function AdminOnboarding() {
                     Add Amenities
                   </CardTitle>
                   <CardDescription>
-                    Add the facilities available in your community. Don't worry about images - we'll add beautiful ones automatically!
+                    Add the facilities available in your community. Don&apos;t worry about images - we&apos;ll add beautiful ones automatically!
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

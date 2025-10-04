@@ -1,3 +1,10 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": "next/core-web-vitals",
+  "ignorePatterns": [
+    "**/*-broken.*",
+    "**/*-backup*.*",
+    "**/page-backup-animation.tsx",
+    "**/page-with-beautiful-enhancements.tsx",
+    "**/NotificationSystem_broken.tsx"
+  ]
 }

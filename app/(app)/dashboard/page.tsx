@@ -281,7 +281,7 @@ export default function Dashboard() {
         {amenities.length > 0 && filteredAmenities.length === 0 && searchQuery.trim() && !loading && (
           <div className="text-center py-8">
             <p className="text-slate-700 dark:text-slate-400 mb-4">
-              No amenities found matching "{searchQuery}". Try a different search term.
+              No amenities found matching &quot;{searchQuery}&quot;. Try a different search term.
             </p>
             <Button
               onClick={() => {

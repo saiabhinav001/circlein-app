@@ -11,6 +11,8 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children, session }: AuthProviderProps) {
   return (
-    <SessionProvider session={session} children={children} />
+    <SessionProvider session={session}>
+      {children}
+    </SessionProvider>
   );
 }

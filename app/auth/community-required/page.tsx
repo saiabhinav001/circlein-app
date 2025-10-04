@@ -33,9 +33,9 @@ export default function CommunityRequired() {
           
           <CardContent className="space-y-6">
             <div className="bg-white dark:bg-slate-900 rounded-lg p-4 border">
-              <h3 className="font-semibold mb-2">What's happening?</h3>
+              <h3 className="font-semibold mb-2">What&apos;s happening?</h3>
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                Your account ({session?.user?.email}) exists but hasn't been assigned to a 
+                Your account ({session?.user?.email}) exists but hasn&apos;t been assigned to a 
                 specific housing community yet. This is required for data security and access control.
               </p>
             </div>
@@ -56,7 +56,7 @@ export default function CommunityRequired() {
                 Need Help?
               </h3>
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                If you're unsure who to contact, please reach out to your building management 
+                If you&apos;re unsure who to contact, please reach out to your building management 
                 or the person who provided you with the access code.
               </p>
             </div>

@@ -107,7 +107,7 @@ export function IndexSetupGuide({ show = true, communityId, userEmail, onDismiss
               onClick={handleDismiss}
               variant="outline"
             >
-              I'll Set This Up Later
+              I&apos;ll Set This Up Later
             </Button>
           </div>
         </div>
@@ -146,10 +146,10 @@ export function IndexSetupGuide({ show = true, communityId, userEmail, onDismiss
         <div className="bg-blue-50 p-4 rounded border border-blue-200">
           <h4 className="font-medium text-blue-900 mb-2">Quick Steps:</h4>
           <ol className="text-sm text-blue-800 space-y-1">
-            <li>1. Click "Open Firebase Console" above</li>
+            <li>1. Click &quot;Open Firebase Console&quot; above</li>
             <li>2. Select your project → <strong>Firestore Database</strong> → <strong>Indexes</strong></li>
-            <li>3. Click <strong>"Create Index"</strong> for each index above</li>
-            <li>4. Wait for both indexes to show "Enabled" status</li>
+            <li>3. Click <strong>&quot;Create Index&quot;</strong> for each index above</li>
+            <li>4. Wait for both indexes to show &quot;Enabled&quot; status</li>
             <li>5. Refresh this page</li>
           </ol>
         </div>

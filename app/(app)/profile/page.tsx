@@ -246,7 +246,7 @@ export default function ProfilePage() {
               </label>
               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  No bio provided yet. Click "Edit Profile" to add information about yourself.
+                  No bio provided yet. Click &quot;Edit Profile&quot; to add information about yourself.
                 </p>
               </div>
             </div>
@@ -293,7 +293,7 @@ export default function ProfilePage() {
                     </summary>
                     <div className="text-xs text-gray-400 mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded border space-y-1">
                       <p>• Check your internet connection</p>
-                      <p>• Ensure you're properly signed in</p>
+                      <p>• Ensure you&apos;re properly signed in</p>
                       <p>• Contact support if the issue persists</p>
                       <p className="font-mono">Error: {bookingStats.error}</p>
                     </div>
