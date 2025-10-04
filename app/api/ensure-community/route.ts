@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     // Check if sunny-meadows community exists
@@ -29,7 +33,10 @@ export async function GET(request: NextRequest) {
     }, { status: 200 });
     
   } catch (error: any) {
-    console.error('Error checking/creating community:', error);
+    // Suppress console.error during build
+    if (process.env.NODE_ENV !== 'production' || typeof window !== 'undefined') {
+      console.error('Error checking/creating community:', error);
+    }
     return NextResponse.json({ 
       error: error.message 
     }, { status: 500 });

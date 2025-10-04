@@ -4,6 +4,10 @@ import { authOptions } from '@/lib/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

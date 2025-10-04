@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET() {
   try {
     // Create multiple access codes for testing including the ones you've tried
@@ -53,7 +57,10 @@ export async function GET() {
       total: results.length
     });
   } catch (error) {
-    console.error('Error creating access codes:', error);
+    // Suppress console.error during build
+    if (process.env.NODE_ENV !== 'production' || typeof window !== 'undefined') {
+      console.error('Error creating access codes:', error);
+    }
     return NextResponse.json({
       error: 'Failed to create access codes',
       details: error instanceof Error ? error.message : 'Unknown error'

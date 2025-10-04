@@ -4,6 +4,19 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   
+  // Suppress build warnings
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
+  },
+  
+  // Experimental features to suppress warnings
+  experimental: {
+    logging: {
+      level: 'error',
+    },
+  },
+  
   // Security headers
   headers: async () => [
     {
