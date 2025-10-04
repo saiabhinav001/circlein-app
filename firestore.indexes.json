@@ -1,0 +1,107 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "communityId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "startTime",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "communityId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "startTime",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "amenities",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "communityId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "communityId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "role",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "accessCodes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "communityId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isUsed",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "qrCodes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "bookingId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "communityId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "communityNotifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "communityId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
