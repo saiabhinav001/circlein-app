@@ -10,41 +10,50 @@ service cloud.firestore {
     // Helper function to check if user is admin
     function isAdmin() {
       return isAuthenticated() && 
-             request.auth.token != null && 
-             request.auth.token.role == 'admin';
+             get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
     }
     
     // Helper function to check if user belongs to the community
     function belongsToCommunity(communityId) {
       return isAuthenticated() && 
-             request.auth.token != null && 
-             request.auth.token.communityId == communityId;
+             get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == communityId;
     }
     
     // Helper function to check if user is admin of the community
     function isAdminOfCommunity(communityId) {
-      return isAdmin() && belongsToCommunity(communityId);
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' &&
+             get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == communityId;
     }
     
     // Communities collection - community setup and management
     match /communities/{communityId} {
       // Anyone authenticated can read their own community
-      allow read: if belongsToCommunity(communityId);
+      allow read: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == communityId;
       
       // Admins can create their own community document
-      allow create: if isAdmin() && belongsToCommunity(communityId);
+      allow create: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' &&
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == communityId;
       
       // Admins can update their own community
-      allow update: if isAdminOfCommunity(communityId);
+      allow update: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' &&
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == communityId;
       
       // Admins can delete their own community (use with caution)
-      allow delete: if isAdminOfCommunity(communityId);
+      allow delete: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' &&
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == communityId;
     }
     
     // Invites collection - admin-only access
     match /invites/{inviteId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
+      allow read: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
+      allow write: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
     }
     
     // Users collection - secure user data access
@@ -56,27 +65,30 @@ service cloud.firestore {
       allow read: if request.auth == null || 
         (isAuthenticated() && 
           (request.auth.uid == userId || 
-           request.auth.email == userId ||
-           (request.auth.token.communityId != null && 
-            resource.data.communityId == request.auth.token.communityId)));
+           request.auth.token.email == userId ||
+           (get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId != null && 
+            resource.data.communityId == get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId)));
       
       // Users can create their own document during signup
       // Allow creation even without communityId for Google OAuth users
       allow create: if isAuthenticated() && 
         (request.auth.uid == userId || 
-         request.auth.email == userId);
+         request.auth.token.email == userId);
       
       // Users can update their own data OR admins can update community members
       allow update: if request.auth == null ||
         (isAuthenticated() && 
           (request.auth.uid == userId || 
-           request.auth.email == userId ||
-           (isAdmin() && resource.data.communityId != null && request.auth.token.communityId == resource.data.communityId)));
+           request.auth.token.email == userId ||
+           (get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' && 
+            resource.data.communityId != null && 
+            get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == resource.data.communityId)));
       
-      // Only admins can delete users
-      allow delete: if isAdmin() && 
+      // Admins can delete users in their community
+      allow delete: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' &&
         resource.data.communityId != null &&
-        request.auth.token.communityId == resource.data.communityId;
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == resource.data.communityId;
     }
     
     // Amenities collection - community amenity management
@@ -85,16 +97,17 @@ service cloud.firestore {
       // Allow reads even without communityId for initial page load
       allow read: if isAuthenticated() || request.auth == null;
       
-      // Only admins can create amenities for their community
-      allow create: if isAdmin() || 
-        (isAuthenticated() && request.resource.data.communityId != null);
+      // Admins can create amenities for their community
+      allow create: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
       
-      // Only admins can update amenities in their community
-      allow update: if isAdmin() || 
-        (isAuthenticated() && resource.data.communityId != null);
+      // Admins can update amenities in their community
+      allow update: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
       
-      // Only admins can delete amenities in their community
-      allow delete: if isAdmin();
+      // Admins can delete amenities in their community
+      allow delete: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
     }
     
     // Bookings collection - booking management with multi-tenant security
@@ -106,19 +119,19 @@ service cloud.firestore {
       // Users can create bookings for themselves in their community
       allow create: if isAuthenticated() && 
         (request.auth.uid == request.resource.data.userId ||
-         request.auth.email == request.resource.data.userId);
+         request.auth.token.email == request.resource.data.userId);
       
       // Users can update their own bookings OR admins can update any booking
       allow update: if isAuthenticated() && 
         (request.auth.uid == resource.data.userId || 
-         request.auth.email == resource.data.userId ||
-         isAdmin());
+         request.auth.token.email == resource.data.userId ||
+         get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin');
       
       // Users can delete their own bookings OR admins can delete any booking
       allow delete: if isAuthenticated() && 
         (request.auth.uid == resource.data.userId || 
-         request.auth.email == resource.data.userId ||
-         isAdmin());
+         request.auth.token.email == resource.data.userId ||
+         get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin');
     }
     
     // Access codes collection - secure access code management
@@ -127,20 +140,18 @@ service cloud.firestore {
       // But in production, you might want to restrict this further
       allow read: if true;
       
-      // Only admins can create access codes for their community
-      allow create: if isAdmin() && 
-        (request.resource.data.communityId == null || 
-         belongsToCommunity(request.resource.data.communityId));
+      // Admins can create access codes for their community
+      allow create: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
       
-      // Only admins can update access codes in their community
-      allow update: if isAdmin() && 
-        (resource.data.communityId == null || 
-         belongsToCommunity(resource.data.communityId));
+      // Admins can update access codes in their community
+      allow update: if isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' ||
+         request.auth == null);
       
-      // Only admins can delete access codes in their community
-      allow delete: if isAdmin() && 
-        (resource.data.communityId == null || 
-         belongsToCommunity(resource.data.communityId));
+      // Admins can delete access codes in their community
+      allow delete: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
     }
     
     // Settings collection - application configuration
@@ -149,7 +160,8 @@ service cloud.firestore {
       allow read: if isAuthenticated() || request.auth == null;
       
       // Only admins can modify settings
-      allow write: if isAdmin();
+      allow write: if isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
     }
 
     // QR Codes collection - booking access management
@@ -160,19 +172,19 @@ service cloud.firestore {
       // Users can create QR codes for their own bookings
       allow create: if isAuthenticated() && 
         (request.auth.uid == request.resource.data.userId ||
-         request.auth.email == request.resource.data.userId);
+         request.auth.token.email == request.resource.data.userId);
       
       // Users can update their own QR codes OR admins can update any
       allow update: if isAuthenticated() && 
         (request.auth.uid == resource.data.userId || 
-         request.auth.email == resource.data.userId ||
-         isAdmin());
+         request.auth.token.email == resource.data.userId ||
+         get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin');
       
       // Users can delete their own QR codes OR admins can delete any
       allow delete: if isAuthenticated() && 
         (request.auth.uid == resource.data.userId || 
-         request.auth.email == resource.data.userId ||
-         isAdmin());
+         request.auth.token.email == resource.data.userId ||
+         get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin');
     }
 
     // Community Notifications collection - notification system
@@ -186,8 +198,8 @@ service cloud.firestore {
       // Users can update/delete their own notifications OR admins can manage all
       allow update, delete: if isAuthenticated() && 
         (resource.data.targetUser == request.auth.uid || 
-         resource.data.targetUser == request.auth.email ||
-         isAdmin());
+         resource.data.targetUser == request.auth.token.email ||
+         get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin');
     }
     
     // Default deny all other collections

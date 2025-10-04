@@ -46,11 +46,28 @@ export const authOptions: NextAuthOptions = {
                 throw new Error('Password is required');
               }
               
-              // Validate password using bcrypt
-              const isPasswordValid = await bcrypt.compare(
-                credentials.password,
-                userData.password
-              );
+              // Check if password is bcrypt hashed (starts with $2a$ or $2b$)
+              let isPasswordValid = false;
+              
+              if (userData.password.startsWith('$2a$') || userData.password.startsWith('$2b$')) {
+                // Password is hashed, use bcrypt compare
+                isPasswordValid = await bcrypt.compare(
+                  credentials.password,
+                  userData.password
+                );
+              } else {
+                // Password is plain text (legacy), compare directly AND hash it for future
+                isPasswordValid = userData.password === credentials.password;
+                
+                if (isPasswordValid) {
+                  // Migrate to bcrypt hash
+                  console.log('🔄 Migrating plain text password to bcrypt hash');
+                  const hashedPassword = await bcrypt.hash(credentials.password, 12);
+                  await setDoc(doc(db, 'users', credentials.email || ''), {
+                    password: hashedPassword
+                  }, { merge: true });
+                }
+              }
               
               if (!isPasswordValid) {
                 console.log('❌ Invalid password - Password mismatch');
