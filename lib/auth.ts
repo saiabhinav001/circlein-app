@@ -3,6 +3,7 @@ import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { db } from './firebase';
 import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === 'development', // Enable debug mode only in development
@@ -45,13 +46,14 @@ export const authOptions: NextAuthOptions = {
                 throw new Error('Password is required');
               }
               
-              // Validate password (comparing stored password with provided password)
-              const isPasswordValid = userData.password === credentials.password;
+              // Validate password using bcrypt
+              const isPasswordValid = await bcrypt.compare(
+                credentials.password,
+                userData.password
+              );
               
               if (!isPasswordValid) {
                 console.log('❌ Invalid password - Password mismatch');
-                console.log('Stored password:', userData.password?.substring(0, 5) + '...');
-                console.log('Provided password:', credentials.password?.substring(0, 5) + '...');
                 throw new Error('Invalid email or password');
               }
               
@@ -170,13 +172,16 @@ export const authOptions: NextAuthOptions = {
           } else {
             console.log('🆕 Creating new resident user:', user.email);
             
-            // Create new resident user with communityId and password
+            // Hash the password before storing
+            const hashedPassword = await bcrypt.hash((user as any).password || '', 12);
+            
+            // Create new resident user with communityId and hashed password
             await setDoc(doc(db, 'users', user.email), {
               name: user.name || user.email.split('@')[0],
               email: user.email,
               role: 'resident',
               communityId: (user as any).communityId,
-              password: (user as any).password || '', // Save password (should be hashed in production)
+              password: hashedPassword,
               authProvider: 'credentials',
               createdAt: serverTimestamp(),
               lastLogin: serverTimestamp(),
