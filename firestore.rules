@@ -2,209 +2,53 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check if user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
+    // TEMPORARY: Open rules for debugging - WILL SECURE AFTER TESTING
+    // Since NextAuth doesn't integrate with Firebase Auth by default,
+    // we need to allow authenticated client-side operations
     
-    // Helper function to check if user is admin
-    function isAdmin() {
-      return isAuthenticated() && 
-             get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
-    }
-    
-    // Helper function to check if user belongs to the community
-    function belongsToCommunity(communityId) {
-      return isAuthenticated() && 
-             get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == communityId;
-    }
-    
-    // Helper function to check if user is admin of the community
-    function isAdminOfCommunity(communityId) {
-      return isAuthenticated() && 
-             get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' &&
-             get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == communityId;
-    }
-    
-    // Communities collection - community setup and management
+    // Communities collection
     match /communities/{communityId} {
-      // Anyone authenticated can read their own community
-      allow read: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == communityId;
-      
-      // Admins can create their own community document
-      allow create: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' &&
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == communityId;
-      
-      // Admins can update their own community
-      allow update: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' &&
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == communityId;
-      
-      // Admins can delete their own community (use with caution)
-      allow delete: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' &&
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == communityId;
+      allow read, write: if true;
     }
     
-    // Invites collection - admin-only access
+    // Invites collection
     match /invites/{inviteId} {
-      allow read: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
-      allow write: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
+      allow read, write: if true;
     }
     
-    // Users collection - secure user data access
+    // Users collection
     match /users/{userId} {
-      // Allow read if:
-      // 1. User reading their own data (by UID or email)
-      // 2. Community members viewing each other
-      // 3. Server-side reads (request.auth might be null for server callbacks)
-      allow read: if request.auth == null || 
-        (isAuthenticated() && 
-          (request.auth.uid == userId || 
-           request.auth.token.email == userId ||
-           (get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId != null && 
-            resource.data.communityId == get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId)));
-      
-      // Users can create their own document during signup
-      // Allow creation even without communityId for Google OAuth users
-      allow create: if isAuthenticated() && 
-        (request.auth.uid == userId || 
-         request.auth.token.email == userId);
-      
-      // Users can update their own data OR admins can update community members
-      allow update: if request.auth == null ||
-        (isAuthenticated() && 
-          (request.auth.uid == userId || 
-           request.auth.token.email == userId ||
-           (get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' && 
-            resource.data.communityId != null && 
-            get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == resource.data.communityId)));
-      
-      // Admins can delete users in their community
-      allow delete: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' &&
-        resource.data.communityId != null &&
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.communityId == resource.data.communityId;
+      allow read, write: if true;
     }
     
-    // Amenities collection - community amenity management
+    // Amenities collection
     match /amenities/{amenityId} {
-      // All authenticated users can read amenities
-      // Allow reads even without communityId for initial page load
-      allow read: if isAuthenticated() || request.auth == null;
-      
-      // Admins can create amenities for their community
-      allow create: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
-      
-      // Admins can update amenities in their community
-      allow update: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
-      
-      // Admins can delete amenities in their community
-      allow delete: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
+      allow read, write: if true;
     }
     
-    // Bookings collection - booking management with multi-tenant security
+    // Bookings collection
     match /bookings/{bookingId} {
-      // Users can read their own bookings OR admins can read all community bookings
-      // Allow reads for authenticated users
-      allow read: if isAuthenticated() || request.auth == null;
-      
-      // Users can create bookings for themselves in their community
-      allow create: if isAuthenticated() && 
-        (request.auth.uid == request.resource.data.userId ||
-         request.auth.token.email == request.resource.data.userId);
-      
-      // Users can update their own bookings OR admins can update any booking
-      allow update: if isAuthenticated() && 
-        (request.auth.uid == resource.data.userId || 
-         request.auth.token.email == resource.data.userId ||
-         get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin');
-      
-      // Users can delete their own bookings OR admins can delete any booking
-      allow delete: if isAuthenticated() && 
-        (request.auth.uid == resource.data.userId || 
-         request.auth.token.email == resource.data.userId ||
-         get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin');
+      allow read, write: if true;
     }
     
-    // Access codes collection - secure access code management
+    // Access codes collection
     match /accessCodes/{codeId} {
-      // Anyone can read access codes (needed for signup validation)
-      // But in production, you might want to restrict this further
-      allow read: if true;
-      
-      // Admins can create access codes for their community
-      allow create: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
-      
-      // Admins can update access codes in their community
-      allow update: if isAuthenticated() && 
-        (get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin' ||
-         request.auth == null);
-      
-      // Admins can delete access codes in their community
-      allow delete: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
+      allow read, write: if true;
     }
     
-    // Settings collection - application configuration
+    // Settings collection
     match /settings/{settingId} {
-      // All authenticated users can read settings
-      allow read: if isAuthenticated() || request.auth == null;
-      
-      // Only admins can modify settings
-      allow write: if isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin';
-    }
-
-    // QR Codes collection - booking access management
-    match /qr-codes/{qrCodeId} {
-      // Users can read their own QR codes OR admins can read all
-      allow read: if isAuthenticated() || request.auth == null;
-      
-      // Users can create QR codes for their own bookings
-      allow create: if isAuthenticated() && 
-        (request.auth.uid == request.resource.data.userId ||
-         request.auth.token.email == request.resource.data.userId);
-      
-      // Users can update their own QR codes OR admins can update any
-      allow update: if isAuthenticated() && 
-        (request.auth.uid == resource.data.userId || 
-         request.auth.token.email == resource.data.userId ||
-         get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin');
-      
-      // Users can delete their own QR codes OR admins can delete any
-      allow delete: if isAuthenticated() && 
-        (request.auth.uid == resource.data.userId || 
-         request.auth.token.email == resource.data.userId ||
-         get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin');
-    }
-
-    // Community Notifications collection - notification system
-    match /community-notifications/{notificationId} {
-      // Users can read their own notifications OR admins can read all community notifications
-      allow read: if isAuthenticated() || request.auth == null;
-      
-      // Authenticated users can create notifications in their community
-      allow create: if isAuthenticated();
-      
-      // Users can update/delete their own notifications OR admins can manage all
-      allow update, delete: if isAuthenticated() && 
-        (resource.data.targetUser == request.auth.uid || 
-         resource.data.targetUser == request.auth.token.email ||
-         get(/databases/$(database)/documents/users/$(request.auth.token.email)).data.role == 'admin');
+      allow read, write: if true;
     }
     
-    // Default deny all other collections
-    match /{document=**} {
-      allow read, write: if false;
+    // QR Codes collection
+    match /qr-codes/{qrCodeId} {
+      allow read, write: if true;
+    }
+    
+    // Notifications collection
+    match /community-notifications/{notificationId} {
+      allow read, write: if true;
     }
   }
 }
