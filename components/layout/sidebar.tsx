@@ -133,69 +133,85 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
         {/* Decorative top gradient */}
         <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent pointer-events-none" />
         
-        {/* Header - ALWAYS show full logo */}
+        {/* Header */}
         <div className="relative p-4 border-b border-slate-200/50 dark:border-slate-800/50 shrink-0">
-          {/* Always show logo - no collapse on mobile */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-                  <Home className="w-5 h-5 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full animate-pulse" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  CircleIn
-                </span>
-                <span className="text-xs text-slate-600 dark:text-slate-400 -mt-1">
-                  Community Hub
-                </span>
-              </div>
-            </div>
-            {!onClose && (
+          {isCollapsed ? (
+            // Collapsed state - only on desktop
+            <div className="flex justify-center">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="hidden lg:flex p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 items-center justify-center"
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-10 h-10 flex items-center justify-center"
               >
-                <motion.div
-                  animate={{ rotate: isCollapsed ? 0 : 180 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                >
-                  <ChevronRight className="w-4 h-4 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
-                </motion.div>
+                <Menu className="w-5 h-5 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
               </Button>
-            )}
-          </div>
-
-          {/* User Info */}
-          <AnimatePresence>
-            {session?.user && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800/50 dark:to-slate-700/50 rounded-xl border border-blue-100 dark:border-slate-700"
-              >
+            </div>
+          ) : (
+            // Expanded state - show logo and toggle button
+            <>
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-sm font-medium">
-                    {session.user.name?.charAt(0).toUpperCase()}
+                  <div className="relative">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+                      <Home className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full animate-pulse" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-black dark:text-slate-100 truncate">
-                      {session.user.name}
-                    </p>
-                    <p className="text-xs text-black dark:text-slate-400 truncate font-medium">
-                      {session.user.email}
-                    </p>
+                  <div className="flex flex-col">
+                    <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      CircleIn
+                    </span>
+                    <span className="text-xs text-slate-600 dark:text-slate-400 -mt-1">
+                      Community Hub
+                    </span>
                   </div>
-                  <Sparkles className="w-4 h-4 text-blue-500 animate-pulse" />
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                {!onClose && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center"
+                  >
+                    <motion.div
+                      animate={{ rotate: 180 }}
+                      transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                    >
+                      <ChevronRight className="w-4 h-4 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
+                    </motion.div>
+                  </Button>
+                )}
+              </div>
+
+              {/* User Info */}
+              <AnimatePresence>
+                {session?.user && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800/50 dark:to-slate-700/50 rounded-xl border border-blue-100 dark:border-slate-700"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-sm font-medium">
+                        {session.user.name?.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-black dark:text-slate-100 truncate">
+                          {session.user.name}
+                        </p>
+                        <p className="text-xs text-black dark:text-slate-400 truncate font-medium">
+                          {session.user.email}
+                        </p>
+                      </div>
+                      <Sparkles className="w-4 h-4 text-blue-500 animate-pulse" />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
         </div>
 
         {/* Navigation */}
