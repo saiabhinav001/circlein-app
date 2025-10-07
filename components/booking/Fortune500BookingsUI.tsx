@@ -33,8 +33,7 @@ import {
   AlertTriangle,
   Copy,
   Eye,
-  EyeOff,
-  RefreshCw
+  EyeOff
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -499,10 +498,10 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                 <Calendar className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                   {isAdmin && session?.user?.role === 'admin' ? 'All Community Bookings' : 'My Reservations'}
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
                   {isAdmin && session?.user?.role === 'admin' ? 'Manage all community reservations' : 'Your personal booking dashboard'}
                 </p>
               </div>
@@ -513,32 +512,32 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
-              className="flex flex-wrap gap-4"
+              className="flex flex-wrap gap-3 sm:gap-4"
             >
-              <div className="bg-gradient-to-r from-emerald-500 to-green-500 rounded-2xl p-4 text-white min-w-[120px] shadow-lg">
+              <div className="bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-white min-w-[100px] sm:min-w-[120px] shadow-lg flex-1 sm:flex-none">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5" />
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
                   <div>
-                    <div className="text-2xl font-bold">{stats.active}</div>
-                    <div className="text-emerald-100 text-sm">Active</div>
+                    <div className="text-xl sm:text-2xl font-bold">{stats.active}</div>
+                    <div className="text-emerald-100 text-xs sm:text-sm">Active</div>
                   </div>
                 </div>
               </div>
-              <div className="bg-gradient-to-r from-purple-500 to-violet-500 rounded-2xl p-4 text-white min-w-[120px] shadow-lg">
+              <div className="bg-gradient-to-r from-purple-500 to-violet-500 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-white min-w-[100px] sm:min-w-[120px] shadow-lg flex-1 sm:flex-none">
                 <div className="flex items-center gap-2">
-                  <Award className="w-5 h-5" />
+                  <Award className="w-4 h-4 sm:w-5 sm:h-5" />
                   <div>
-                    <div className="text-2xl font-bold">{stats.completed}</div>
-                    <div className="text-purple-100 text-sm">Completed</div>
+                    <div className="text-xl sm:text-2xl font-bold">{stats.completed}</div>
+                    <div className="text-purple-100 text-xs sm:text-sm">Completed</div>
                   </div>
                 </div>
               </div>
-              <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl p-4 text-white min-w-[120px] shadow-lg">
+              <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-white min-w-[100px] sm:min-w-[120px] shadow-lg flex-1 sm:flex-none">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
                   <div>
-                    <div className="text-2xl font-bold">{stats.total}</div>
-                    <div className="text-blue-100 text-sm">Total</div>
+                    <div className="text-xl sm:text-2xl font-bold">{stats.total}</div>
+                    <div className="text-blue-100 text-xs sm:text-sm">Total</div>
                   </div>
                 </div>
               </div>
@@ -548,90 +547,57 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
       </motion.div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
         {/* Enhanced Controls */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
           <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl">
-            <CardContent className="p-6">
-              <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col gap-4 sm:gap-6">
                 {/* Enhanced Search */}
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
                   <Input
                     placeholder="Search reservations..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 h-12 bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-blue-500 rounded-2xl text-base"
+                    className="pl-10 sm:pl-12 h-10 sm:h-12 bg-gray-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600 focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-blue-500 rounded-xl sm:rounded-2xl text-sm sm:text-base"
                   />
                   {searchTerm && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setSearchTerm('')}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-xl"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7 sm:h-8 sm:w-8 rounded-xl"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </Button>
                   )}
                 </div>
 
-                {/* Refresh Button & Filter Tabs */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() => {
-                        if (!loading) {
-                          handleManualRefresh();
-                          toast.success('Refreshing bookings... 🔄');
-                        }
-                      }}
-                      variant="outline"
-                      size="sm"
-                      disabled={loading}
-                      className="h-12 px-4 rounded-2xl bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300 disabled:opacity-50"
-                    >
-                      <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                      {loading ? 'Refreshing...' : 'Refresh'}
-                    </Button>
-                    
-                    <Button
-                      onClick={() => {
-                        if (!loading) {
-                          handleForceRefresh();
-                        }
-                      }}
-                      variant="outline"
-                      size="sm"
-                      disabled={loading}
-                      className="h-12 px-3 rounded-2xl bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100 dark:bg-purple-950 dark:border-purple-800 dark:text-purple-300 disabled:opacity-50"
-                      title="Force refresh with cache clear"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  {/* Premium Filter Tabs */}
-                  <Tabs value={filter} onValueChange={(value) => setFilter(value as any)}>
-                    <TabsList className="bg-gray-100 dark:bg-slate-700 rounded-2xl p-1">
-                    <TabsTrigger value="current" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-600">
-                      <Zap className="w-4 h-4 mr-2" />
-                      Current
-                    </TabsTrigger>
-                    <TabsTrigger value="all" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-600">
-                      <Activity className="w-4 h-4 mr-2" />
-                      All
-                    </TabsTrigger>
-                    <TabsTrigger value="past" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-600">
-                      <Clock className="w-4 h-4 mr-2" />
-                      Past
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                {/* Premium Filter Tabs */}
+                <div className="flex items-center justify-center sm:justify-start">
+                  <Tabs value={filter} onValueChange={(value) => setFilter(value as any)} className="w-full sm:w-auto">
+                    <TabsList className="bg-gray-100 dark:bg-slate-700 rounded-xl sm:rounded-2xl p-1 w-full sm:w-auto grid grid-cols-3 sm:flex">
+                      <TabsTrigger value="current" className="rounded-lg sm:rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-600 text-xs sm:text-sm">
+                        <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Current</span>
+                        <span className="sm:hidden">Now</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="all" className="rounded-lg sm:rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-600 text-xs sm:text-sm">
+                        <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        All
+                      </TabsTrigger>
+                      <TabsTrigger value="past" className="rounded-lg sm:rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-600 text-xs sm:text-sm">
+                        <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        Past
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                 </div>
               </div>
             </CardContent>
@@ -646,7 +612,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+              className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6"
             >
               {/* Loading Skeletons */}
               {[...Array(6)].map((_, index) => (
@@ -725,7 +691,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
               )}
             </motion.div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
               {filteredBookings.map((booking, index) => (
                 <motion.div
                   key={booking.id}

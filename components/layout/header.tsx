@@ -80,30 +80,30 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DropdownMenuContent className="w-48 sm:w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{session?.user?.name}</p>
-                <p className="text-xs leading-none text-muted-foreground truncate">
+                <p className="text-xs sm:text-sm font-medium leading-none truncate">{session?.user?.name}</p>
+                <p className="text-[10px] sm:text-xs leading-none text-muted-foreground truncate">
                   {session?.user?.email}
                 </p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
-                <UserCircle className="h-4 w-4" />
+              <Link href="/profile" className="flex items-center gap-2 cursor-pointer text-xs sm:text-sm">
+                <UserCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Profile
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href={isAdminUser ? "/admin/settings" : "/settings"} className="flex items-center gap-2 cursor-pointer">
-                <Settings className="h-4 w-4" />
+              <Link href={isAdminUser ? "/admin/settings" : "/settings"} className="flex items-center gap-2 cursor-pointer text-xs sm:text-sm">
+                <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {isAdminUser ? 'Admin Settings' : 'Settings'}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()}>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => signOut()} className="text-xs sm:text-sm">Logout</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
