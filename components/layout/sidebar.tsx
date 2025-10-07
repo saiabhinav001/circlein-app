@@ -12,10 +12,6 @@ import { signOut } from 'next-auth/react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-interface SidebarProps {
-  onClose?: () => void;
-}
-
 const sidebarVariants = {
   open: { 
     width: '280px', 
@@ -62,7 +58,11 @@ const textVariants = {
   visible: { opacity: 1, x: 0, transition: { delay: 0.1 } },
 };
 
-export function Sidebar({ onClose }: SidebarProps) {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+export function Sidebar({ onClose }: SidebarProps = {}) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { data: session } = useSession();
@@ -173,33 +173,19 @@ export function Sidebar({ onClose }: SidebarProps) {
                   </span>
                 </motion.div>
               </motion.div>
-              <div className="flex items-center gap-2">
-                {/* Close button for mobile */}
-                {onClose && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onClose}
-                    className="lg:hidden p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center"
-                  >
-                    <X className="w-4 h-4 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
-                  </Button>
-                )}
-                {/* Collapse button for desktop */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsCollapsed(!isCollapsed)}
-                  className="hidden lg:flex p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 items-center justify-center"
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center"
+              >
+                <motion.div
+                  animate={{ rotate: 180 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
                 >
-                  <motion.div
-                    animate={{ rotate: 180 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                  >
-                    <ChevronRight className="w-4 h-4 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
-                  </motion.div>
-                </Button>
-              </div>
+                  <ChevronRight className="w-4 h-4 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
+                </motion.div>
+              </Button>
             </div>
           )}
 
@@ -262,6 +248,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                   <TooltipTrigger asChild>
                     <Link
                       href={item.href}
+                      onClick={() => onClose?.()}
                       className={cn(
                         'group relative flex items-center justify-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
                         pathname === item.href
@@ -290,7 +277,7 @@ export function Sidebar({ onClose }: SidebarProps) {
               ) : (
                 <Link
                   href={item.href}
-                  onClick={onClose}
+                  onClick={() => onClose?.()}
                   className={cn(
                     'group relative flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
                     pathname === item.href
@@ -401,6 +388,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                       <TooltipTrigger asChild>
                         <Link
                           href={item.href}
+                          onClick={() => onClose?.()}
                           className={cn(
                             'group relative flex items-center justify-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
                             pathname === item.href
@@ -429,7 +417,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                   ) : (
                     <Link
                       href={item.href}
-                      onClick={onClose}
+                      onClick={() => onClose?.()}
                       className={cn(
                         'group relative flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
                         pathname === item.href
