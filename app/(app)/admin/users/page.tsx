@@ -202,20 +202,20 @@ export default function ManageUsers() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 sm:p-4 md:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent mb-2">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent mb-1 sm:mb-2">
                 Manage Users
               </h1>
-              <p className="text-slate-800 dark:text-slate-400 text-lg">
+              <p className="text-slate-800 dark:text-slate-400 text-sm sm:text-base md:text-lg">
                 Handle access codes and community member registration
               </p>
             </div>
@@ -227,39 +227,39 @@ export default function ManageUsers() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 mb-6 sm:mb-8"
         >
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-5 md:p-6">
               <div className="flex items-center">
-                <Key className="w-8 h-8 text-blue-500 mr-3" />
+                <Key className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-blue-500 mr-2 sm:mr-3" />
                 <div>
-                  <p className="text-sm font-medium text-slate-800 dark:text-slate-400">Total Access Codes</p>
-                  <p className="text-2xl font-bold">{accessCodes.length}</p>
+                  <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-400">Total Access Codes</p>
+                  <p className="text-xl sm:text-2xl font-bold">{accessCodes.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-5 md:p-6">
               <div className="flex items-center">
-                <CheckCircle className="w-8 h-8 text-green-500 mr-3" />
+                <CheckCircle className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-green-500 mr-2 sm:mr-3" />
                 <div>
-                  <p className="text-sm font-medium text-slate-800 dark:text-slate-400">Used Codes</p>
-                  <p className="text-2xl font-bold">{accessCodes.filter(code => code.isUsed).length}</p>
+                  <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-400">Used Codes</p>
+                  <p className="text-xl sm:text-2xl font-bold">{accessCodes.filter(code => code.isUsed).length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-5 md:p-6">
               <div className="flex items-center">
-                <Users className="w-8 h-8 text-purple-500 mr-3" />
+                <Users className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-500 mr-2 sm:mr-3" />
                 <div>
-                  <p className="text-sm font-medium text-slate-800 dark:text-slate-400">Total Users</p>
-                  <p className="text-2xl font-bold">{users.length}</p>
+                  <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-400">Total Users</p>
+                  <p className="text-xl sm:text-2xl font-bold">{users.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -271,20 +271,20 @@ export default function ManageUsers() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <UserPlus className="w-5 h-5 mr-2" />
+            <CardHeader className="px-4 sm:px-6">
+              <CardTitle className="flex items-center text-base sm:text-lg md:text-xl">
+                <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 Generate Access Code
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Create a new access code for residents to join the community
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button onClick={generateAccessCode} className="bg-gradient-to-r from-indigo-500 to-purple-600">
+            <CardContent className="px-4 sm:px-6">
+              <Button onClick={generateAccessCode} className="w-full sm:w-auto bg-gradient-to-r from-indigo-500 to-purple-600 text-sm sm:text-base">
                 <Plus className="w-4 h-4 mr-2" />
                 Generate New Code
               </Button>
@@ -297,44 +297,44 @@ export default function ManageUsers() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
           <Card>
-            <CardHeader>
-              <CardTitle>Access Codes</CardTitle>
-              <CardDescription>
+            <CardHeader className="px-4 sm:px-6">
+              <CardTitle className="text-base sm:text-lg md:text-xl">Access Codes</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
                 Manage access codes for community registration
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
+            <CardContent className="px-4 sm:px-6">
+              <div className="space-y-2 sm:space-y-3">
                 {accessCodes.map((code) => (
                   <div
                     key={code.id}
-                    className={`p-4 rounded-lg border-2 transition-all ${
+                    className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
                       code.isUsed
                         ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
                         : 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-2 rounded-lg ${code.isUsed ? 'bg-green-100 dark:bg-green-800' : 'bg-blue-100 dark:bg-blue-800'}`}>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-center space-x-2 sm:space-x-3">
+                        <div className={`p-1.5 sm:p-2 rounded-lg ${code.isUsed ? 'bg-green-100 dark:bg-green-800' : 'bg-blue-100 dark:bg-blue-800'}`}>
                           {code.isUsed ? (
-                            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
                           ) : (
-                            <Key className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            <Key className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                           )}
                         </div>
-                        <div>
-                          <p className="font-mono text-lg font-bold">{code.id}</p>
-                          <p className="text-sm text-slate-800 dark:text-slate-400">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-mono text-base sm:text-lg font-bold truncate">{code.id}</p>
+                          <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-400 truncate">
                             {code.isUsed ? `Used by: ${code.usedBy}` : 'Available for use'}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={code.isUsed ? "default" : "secondary"}>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={code.isUsed ? "default" : "secondary"} className="text-xs">
                           {code.isUsed ? 'Used' : 'Available'}
                         </Badge>
                         {!code.isUsed && (
@@ -342,8 +342,9 @@ export default function ManageUsers() {
                             size="sm"
                             variant="outline"
                             onClick={() => copyToClipboard(code.id)}
+                            className="text-xs sm:text-sm"
                           >
-                            <Copy className="w-4 h-4" />
+                            <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
                         )}
                         {code.isUsed ? (
@@ -351,9 +352,9 @@ export default function ManageUsers() {
                             size="sm"
                             variant="outline"
                             onClick={() => autoReplaceUsedCode(code.id)}
-                            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 text-xs sm:text-sm"
                           >
-                            <Plus className="w-4 h-4 mr-1" />
+                            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                             Replace
                           </Button>
                         ) : null}
@@ -362,26 +363,26 @@ export default function ManageUsers() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs sm:text-sm"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Access Code</AlertDialogTitle>
-                              <AlertDialogDescription>
+                              <AlertDialogTitle className="text-base sm:text-lg">Delete Access Code</AlertDialogTitle>
+                              <AlertDialogDescription className="text-xs sm:text-sm">
                                 Are you sure you want to delete access code <strong>{code.id}</strong>? 
                                 {code.isUsed ? ' This code has already been used.' : ' This code is still available for use.'}
                                 <br />
                                 <span className="text-red-600">This action cannot be undone.</span>
                               </AlertDialogDescription>
                             </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                              <AlertDialogCancel className="w-full sm:w-auto text-xs sm:text-sm">Cancel</AlertDialogCancel>
                               <AlertDialogAction 
                                 onClick={() => deleteAccessCode(code.id)}
-                                className="bg-red-600 hover:bg-red-700"
+                                className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-xs sm:text-sm"
                               >
                                 Delete Code
                               </AlertDialogAction>
@@ -394,10 +395,10 @@ export default function ManageUsers() {
                 ))}
                 
                 {accessCodes.length === 0 && (
-                  <div className="text-center py-8">
-                    <Key className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No Access Codes</h3>
-                    <p className="text-slate-800 dark:text-slate-400 mb-4">
+                  <div className="text-center py-6 sm:py-8">
+                    <Key className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400 mx-auto mb-3 sm:mb-4" />
+                    <h3 className="text-lg sm:text-xl font-semibold mb-2">No Access Codes</h3>
+                    <p className="text-slate-800 dark:text-slate-400 text-sm sm:text-base mb-3 sm:mb-4">
                       Generate your first access code to allow residents to join.
                     </p>
                   </div>
@@ -414,36 +415,36 @@ export default function ManageUsers() {
           transition={{ delay: 0.4 }}
         >
           <Card>
-            <CardHeader>
-              <CardTitle>Community Users</CardTitle>
-              <CardDescription>
+            <CardHeader className="px-4 sm:px-6">
+              <CardTitle className="text-base sm:text-lg md:text-xl">Community Users</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
                 All registered users in your community
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
+            <CardContent className="px-4 sm:px-6">
+              <div className="space-y-2 sm:space-y-3">
                 {users.map((user) => (
                   <div
                     key={user.id}
-                    className="p-4 rounded-lg border bg-white dark:bg-slate-800 hover:shadow-md transition-all"
+                    className="p-3 sm:p-4 rounded-lg border bg-white dark:bg-slate-800 hover:shadow-md transition-all"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
-                          <span className="text-white font-bold">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-white font-bold text-sm sm:text-base">
                             {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <div>
-                          <p className="font-semibold">{user.name || 'No name set'}</p>
-                          <p className="text-sm text-slate-800 dark:text-slate-400">{user.email}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-sm sm:text-base truncate">{user.name || 'No name set'}</p>
+                          <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-400 truncate">{user.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
                           {user.role}
                         </Badge>
-                        <p className="text-sm text-slate-700">
+                        <p className="text-xs sm:text-sm text-slate-700 whitespace-nowrap">
                           Joined {user.createdAt?.toDate?.()?.toLocaleDateString() || 'Unknown'}
                         </p>
                         {user.role !== 'admin' && (
@@ -452,15 +453,15 @@ export default function ManageUsers() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs sm:text-sm"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                               </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent>
+                            <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Delete User</AlertDialogTitle>
-                                <AlertDialogDescription>
+                                <AlertDialogTitle className="text-base sm:text-lg">Delete User</AlertDialogTitle>
+                                <AlertDialogDescription className="text-xs sm:text-sm">
                                   Are you sure you want to delete user <strong>{user.name || user.email}</strong>? 
                                   <br />
                                   Email: <strong>{user.email}</strong>
@@ -468,11 +469,11 @@ export default function ManageUsers() {
                                   <span className="text-red-600">This will permanently remove all user data and cannot be undone.</span>
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                                <AlertDialogCancel className="w-full sm:w-auto text-xs sm:text-sm">Cancel</AlertDialogCancel>
                                 <AlertDialogAction 
                                   onClick={() => deleteUser(user.id, user.email)}
-                                  className="bg-red-600 hover:bg-red-700"
+                                  className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-xs sm:text-sm"
                                 >
                                   Delete User
                                 </AlertDialogAction>
@@ -486,10 +487,10 @@ export default function ManageUsers() {
                 ))}
                 
                 {users.length === 0 && (
-                  <div className="text-center py-8">
-                    <Users className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No Users Yet</h3>
-                    <p className="text-slate-800 dark:text-slate-400">
+                  <div className="text-center py-6 sm:py-8">
+                    <Users className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400 mx-auto mb-3 sm:mb-4" />
+                    <h3 className="text-lg sm:text-xl font-semibold mb-2">No Users Yet</h3>
+                    <p className="text-slate-800 dark:text-slate-400 text-sm sm:text-base">
                       Users will appear here once they register with access codes.
                     </p>
                   </div>

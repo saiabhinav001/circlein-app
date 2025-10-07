@@ -438,34 +438,34 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 dark:from-slate-950 dark:to-purple-950/20 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 dark:from-slate-950 dark:to-purple-950/20 p-3 sm:p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Enhanced Header with floating elements */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
-          className="mb-12 relative"
+          className="mb-6 sm:mb-8 md:mb-10 lg:mb-12 relative"
         >
           {/* Floating decorative elements */}
           <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-xl"></div>
           <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-xl"></div>
           
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6 p-8 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-slate-700/20 relative overflow-hidden">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 sm:gap-5 md:gap-6 p-4 sm:p-5 md:p-6 lg:p-8 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 dark:border-slate-700/20 relative overflow-hidden">
             {/* Animated background pattern */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-600/5 dark:from-blue-500/10 dark:to-purple-600/10"></div>
             
-            <div className="flex items-center gap-6 relative z-10">
+            <div className="flex items-center gap-3 sm:gap-4 md:gap-6 relative z-10">
               <motion.div
-                className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl"
+                className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl"
                 whileHover={{ rotate: 360, scale: 1.1 }}
                 transition={{ duration: 0.6 }}
               >
-                <Settings className="w-8 h-8 text-white" />
+                <Settings className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
               </motion.div>
               <div>
                 <motion.h1 
-                  className="text-4xl font-bold bg-gradient-to-r from-slate-800 to-purple-600 dark:from-white dark:to-purple-400 bg-clip-text text-transparent mb-2"
+                  className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-800 to-purple-600 dark:from-white dark:to-purple-400 bg-clip-text text-transparent mb-1 sm:mb-2"
                   initial={{ x: -20 }}
                   animate={{ x: 0 }}
                   transition={{ delay: 0.3 }}
@@ -473,7 +473,7 @@ export default function AdminPanel() {
                   Admin Panel
                 </motion.h1>
                 <motion.p 
-                  className="text-slate-600 dark:text-slate-400 text-lg"
+                  className="text-slate-600 dark:text-slate-400 text-sm sm:text-base md:text-lg"
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.4 }}
@@ -484,7 +484,7 @@ export default function AdminPanel() {
             </div>
             
             <motion.div
-              className="relative z-10"
+              className="relative z-10 w-full lg:w-auto"
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.5 }}
@@ -493,10 +493,10 @@ export default function AdminPanel() {
             >
               <Button
                 onClick={() => setShowAddForm(true)}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-full lg:w-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
                 size="lg"
               >
-                <Plus className="w-5 h-5 mr-2" />
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 Add Amenity
               </Button>
             </motion.div>
@@ -510,73 +510,73 @@ export default function AdminPanel() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -30, scale: 0.95 }}
             transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            className="mb-8"
+            className="mb-4 sm:mb-6 md:mb-8"
           >
             <Card className="border-0 shadow-2xl bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950/20 overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600"></div>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center justify-between text-xl">
+              <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
+                <CardTitle className="flex items-center justify-between text-base sm:text-lg md:text-xl">
                   Add New Amenity
                   <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>
                     <X className="w-4 h-4" />
                   </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={addForm.handleSubmit(addAmenity)} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CardContent className="px-4 sm:px-6">
+                <form onSubmit={addForm.handleSubmit(addAmenity)} className="space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <Label>Name</Label>
-                      <Input {...addForm.register('name')} placeholder="e.g., Swimming Pool" />
+                      <Label className="text-xs sm:text-sm">Name</Label>
+                      <Input {...addForm.register('name')} placeholder="e.g., Swimming Pool" className="text-sm sm:text-base" />
                       {addForm.formState.errors.name && (
-                        <p className="text-red-500 text-sm mt-1">{addForm.formState.errors.name.message}</p>
+                        <p className="text-red-500 text-xs sm:text-sm mt-1">{addForm.formState.errors.name.message}</p>
                       )}
                     </div>
                     <div>
-                      <Label>Image URL (optional)</Label>
-                      <Input {...addForm.register('imageUrl')} placeholder="Leave empty for auto-selection" />
+                      <Label className="text-xs sm:text-sm">Image URL (optional)</Label>
+                      <Input {...addForm.register('imageUrl')} placeholder="Leave empty for auto-selection" className="text-sm sm:text-base" />
                     </div>
                   </div>
 
                   <div>
-                    <Label>Description</Label>
-                    <Textarea {...addForm.register('description')} placeholder="Describe this amenity..." rows={3} />
+                    <Label className="text-xs sm:text-sm">Description</Label>
+                    <Textarea {...addForm.register('description')} placeholder="Describe this amenity..." rows={3} className="text-sm sm:text-base" />
                     {addForm.formState.errors.description && (
-                      <p className="text-red-500 text-sm mt-1">{addForm.formState.errors.description.message}</p>
+                      <p className="text-red-500 text-xs sm:text-sm mt-1">{addForm.formState.errors.description.message}</p>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <Label>Max People</Label>
-                      <Input type="number" min="1" max="100" {...addForm.register('maxPeople', { valueAsNumber: true })} />
+                      <Label className="text-xs sm:text-sm">Max People</Label>
+                      <Input type="number" min="1" max="100" {...addForm.register('maxPeople', { valueAsNumber: true })} className="text-sm sm:text-base" />
                     </div>
                     <div>
-                      <Label>Slot Duration (hours)</Label>
-                      <Input type="number" min="0.5" max="8" step="0.5" {...addForm.register('slotDuration', { valueAsNumber: true })} />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Weekday Hours</Label>
-                      <div className="flex gap-2">
-                        <Input type="time" {...addForm.register('weekdayStartTime')} />
-                        <Input type="time" {...addForm.register('weekdayEndTime')} />
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Weekend Hours</Label>
-                      <div className="flex gap-2">
-                        <Input type="time" {...addForm.register('weekendStartTime')} />
-                        <Input type="time" {...addForm.register('weekendEndTime')} />
-                      </div>
+                      <Label className="text-xs sm:text-sm">Slot Duration (hours)</Label>
+                      <Input type="number" min="0.5" max="8" step="0.5" {...addForm.register('slotDuration', { valueAsNumber: true })} className="text-sm sm:text-base" />
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button type="submit">Add Amenity</Button>
-                    <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <Label className="text-xs sm:text-sm">Weekday Hours</Label>
+                      <div className="flex gap-2">
+                        <Input type="time" {...addForm.register('weekdayStartTime')} className="text-sm sm:text-base" />
+                        <Input type="time" {...addForm.register('weekdayEndTime')} className="text-sm sm:text-base" />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs sm:text-sm">Weekend Hours</Label>
+                      <div className="flex gap-2">
+                        <Input type="time" {...addForm.register('weekendStartTime')} className="text-sm sm:text-base" />
+                        <Input type="time" {...addForm.register('weekendEndTime')} className="text-sm sm:text-base" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button type="submit" className="w-full sm:w-auto text-sm sm:text-base">Add Amenity</Button>
+                    <Button type="button" variant="outline" onClick={() => setShowAddForm(false)} className="w-full sm:w-auto text-sm sm:text-base">Cancel</Button>
                   </div>
                 </form>
               </CardContent>
@@ -585,7 +585,7 @@ export default function AdminPanel() {
         )}
 
         {/* Amenities List */}
-        <div className="grid gap-8">
+        <div className="grid gap-4 sm:gap-5 md:gap-6 lg:gap-8">
           {amenities.map((amenity, index) => (
             <motion.div
               key={amenity.id}
@@ -613,66 +613,66 @@ export default function AdminPanel() {
                 <div className="absolute top-4 right-4 w-2 h-2 bg-blue-400 rounded-full opacity-0 group-hover:opacity-100 animate-ping"></div>
                 <div className="absolute top-8 right-8 w-1 h-1 bg-purple-400 rounded-full opacity-0 group-hover:opacity-100 animate-pulse delay-100"></div>
                 
-                <CardContent className="p-8 relative z-10">
+                <CardContent className="p-4 sm:p-6 md:p-8 relative z-10">
                   {editingId === amenity.id ? (
                     // Edit Form
-                    <form onSubmit={editForm.handleSubmit(saveEdit)} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form onSubmit={editForm.handleSubmit(saveEdit)} className="space-y-3 sm:space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                         <div>
-                          <Label>Name</Label>
-                          <Input {...editForm.register('name')} />
+                          <Label className="text-xs sm:text-sm">Name</Label>
+                          <Input {...editForm.register('name')} className="text-sm sm:text-base" />
                           {editForm.formState.errors.name && (
-                            <p className="text-red-500 text-sm mt-1">{editForm.formState.errors.name.message}</p>
+                            <p className="text-red-500 text-xs sm:text-sm mt-1">{editForm.formState.errors.name.message}</p>
                           )}
                         </div>
                         <div>
-                          <Label>Image URL</Label>
-                          <Input {...editForm.register('imageUrl')} />
+                          <Label className="text-xs sm:text-sm">Image URL</Label>
+                          <Input {...editForm.register('imageUrl')} className="text-sm sm:text-base" />
                         </div>
                       </div>
 
                       <div>
-                        <Label>Description</Label>
-                        <Textarea {...editForm.register('description')} rows={3} />
+                        <Label className="text-xs sm:text-sm">Description</Label>
+                        <Textarea {...editForm.register('description')} rows={3} className="text-sm sm:text-base" />
                         {editForm.formState.errors.description && (
-                          <p className="text-red-500 text-sm mt-1">{editForm.formState.errors.description.message}</p>
+                          <p className="text-red-500 text-xs sm:text-sm mt-1">{editForm.formState.errors.description.message}</p>
                         )}
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
-                          <Label>Max People</Label>
-                          <Input type="number" min="1" max="100" {...editForm.register('maxPeople', { valueAsNumber: true })} />
+                          <Label className="text-xs sm:text-sm">Max People</Label>
+                          <Input type="number" min="1" max="100" {...editForm.register('maxPeople', { valueAsNumber: true })} className="text-sm sm:text-base" />
                         </div>
                         <div>
-                          <Label>Slot Duration (hours)</Label>
-                          <Input type="number" min="0.5" max="8" step="0.5" {...editForm.register('slotDuration', { valueAsNumber: true })} />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>Weekday Hours</Label>
-                          <div className="flex gap-2">
-                            <Input type="time" {...editForm.register('weekdayStartTime')} />
-                            <Input type="time" {...editForm.register('weekdayEndTime')} />
-                          </div>
-                        </div>
-                        <div>
-                          <Label>Weekend Hours</Label>
-                          <div className="flex gap-2">
-                            <Input type="time" {...editForm.register('weekendStartTime')} />
-                            <Input type="time" {...editForm.register('weekendEndTime')} />
-                          </div>
+                          <Label className="text-xs sm:text-sm">Slot Duration (hours)</Label>
+                          <Input type="number" min="0.5" max="8" step="0.5" {...editForm.register('slotDuration', { valueAsNumber: true })} className="text-sm sm:text-base" />
                         </div>
                       </div>
 
-                      <div className="flex gap-2">
-                        <Button type="submit">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div>
+                          <Label className="text-xs sm:text-sm">Weekday Hours</Label>
+                          <div className="flex gap-2">
+                            <Input type="time" {...editForm.register('weekdayStartTime')} className="text-sm sm:text-base" />
+                            <Input type="time" {...editForm.register('weekdayEndTime')} className="text-sm sm:text-base" />
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-xs sm:text-sm">Weekend Hours</Label>
+                          <div className="flex gap-2">
+                            <Input type="time" {...editForm.register('weekendStartTime')} className="text-sm sm:text-base" />
+                            <Input type="time" {...editForm.register('weekendEndTime')} className="text-sm sm:text-base" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button type="submit" className="w-full sm:w-auto text-sm sm:text-base">
                           <Save className="w-4 h-4 mr-2" />
                           Save
                         </Button>
-                        <Button type="button" variant="outline" onClick={cancelEdit}>
+                        <Button type="button" variant="outline" onClick={cancelEdit} className="w-full sm:w-auto text-sm sm:text-base">
                           <X className="w-4 h-4 mr-2" />
                           Cancel
                         </Button>
@@ -684,7 +684,7 @@ export default function AdminPanel() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.5 }}
-                      className="flex flex-col lg:flex-row gap-6"
+                      className="flex flex-col lg:flex-row gap-4 sm:gap-5 md:gap-6"
                     >
                       {/* Amenity Image with hover effects */}
                       <motion.div 
@@ -696,7 +696,7 @@ export default function AdminPanel() {
                           <img
                             src={amenity.imageUrl}
                             alt={amenity.name}
-                            className="w-full lg:w-40 lg:h-40 h-48 object-cover transition-transform duration-500 group-hover/image:scale-110"
+                            className="w-full lg:w-32 xl:w-40 h-40 sm:h-48 lg:h-32 xl:lg:h-40 object-cover transition-transform duration-500 group-hover/image:scale-110"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300"></div>
                           
@@ -705,9 +705,9 @@ export default function AdminPanel() {
                             <motion.div
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
-                              className="absolute top-3 left-3"
+                              className="absolute top-2 sm:top-3 left-2 sm:left-3"
                             >
-                              <Badge variant="destructive" className="flex items-center gap-1 shadow-lg">
+                              <Badge variant="destructive" className="flex items-center gap-1 shadow-lg text-xs sm:text-sm">
                                 <Ban className="w-3 h-3" />
                                 Blocked
                               </Badge>
@@ -717,28 +717,28 @@ export default function AdminPanel() {
                       </motion.div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-6">
+                        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-4 sm:mb-5 md:mb-6">
                           <motion.div 
-                            className="mb-4 lg:mb-0"
+                            className="mb-3 sm:mb-4 lg:mb-0"
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.2 }}
                           >
                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                              <h3 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                              <h3 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
                                 {amenity.name}
                               </h3>
                             </div>
-                            <p className="text-slate-600 dark:text-slate-400 text-base leading-relaxed">
+                            <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
                               {amenity.description}
                             </p>
                             {amenity.isBlocked && amenity.blockReason && (
                               <motion.p 
                                 initial={{ y: 10, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
-                                className="text-red-600 dark:text-red-400 text-sm mt-2 font-medium flex items-center gap-2"
+                                className="text-red-600 dark:text-red-400 text-xs sm:text-sm mt-2 font-medium flex items-center gap-2"
                               >
-                                <AlertTriangle className="w-4 h-4" />
+                                <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
                                 Reason: {amenity.blockReason}
                               </motion.p>
                             )}
@@ -754,16 +754,16 @@ export default function AdminPanel() {
                               variant={amenity.isBlocked ? "default" : "destructive"} 
                               size="sm" 
                               onClick={() => toggleAmenityBlock(amenity.id, amenity.name, amenity.isBlocked || false)}
-                              className={amenity.isBlocked ? "bg-green-600 hover:bg-green-700" : ""}
+                              className={`text-xs sm:text-sm ${amenity.isBlocked ? "bg-green-600 hover:bg-green-700" : ""}`}
                             >
                               {amenity.isBlocked ? (
                                 <>
-                                  <CheckCircle className="w-4 h-4 mr-1" />
+                                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                                   Unblock
                                 </>
                               ) : (
                                 <>
-                                  <Ban className="w-4 h-4 mr-1" />
+                                  <Ban className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                                   Block
                                 </>
                               )}
@@ -772,61 +772,61 @@ export default function AdminPanel() {
                               variant="outline" 
                               size="sm" 
                               onClick={() => handleDateBlocking(amenity)}
-                              className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-none hover:from-orange-600 hover:to-red-600"
+                              className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-none hover:from-orange-600 hover:to-red-600 text-xs sm:text-sm"
                             >
-                              <CalendarDays className="w-4 h-4 mr-1" />
+                              <CalendarDays className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                               Festive Block
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => startEdit(amenity)}>
-                              <Edit2 className="w-4 h-4" />
+                            <Button variant="outline" size="sm" onClick={() => startEdit(amenity)} className="text-xs sm:text-sm">
+                              <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
-                            <Button variant="destructive" size="sm" onClick={() => deleteAmenity(amenity.id, amenity.name)}>
-                              <Trash2 className="w-4 h-4" />
+                            <Button variant="destructive" size="sm" onClick={() => deleteAmenity(amenity.id, amenity.name)} className="text-xs sm:text-sm">
+                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                           </motion.div>
                         </div>
 
                         {/* Enhanced stats section with animations */}
                         <motion.div 
-                          className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"
+                          className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 text-xs sm:text-sm"
                           initial={{ y: 20, opacity: 0 }}
                           animate={{ y: 0, opacity: 1 }}
                           transition={{ delay: 0.4 }}
                         >
                           <motion.div 
-                            className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg"
+                            className="flex items-center gap-2 p-2 sm:p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg"
                             whileHover={{ scale: 1.05 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <Users className="w-4 h-4 text-blue-500" />
+                            <Users className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
                             <span className="font-medium">Max {amenity.booking?.maxPeople || 6}</span>
                           </motion.div>
                           <motion.div 
-                            className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg"
+                            className="flex items-center gap-2 p-2 sm:p-3 bg-green-50 dark:bg-green-950/20 rounded-lg"
                             whileHover={{ scale: 1.05 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <Clock className="w-4 h-4 text-green-500" />
+                            <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
                             <span className="font-medium">{amenity.booking?.slotDuration || 2}h slots</span>
                           </motion.div>
                           <motion.div 
-                            className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg"
+                            className="flex items-center gap-1 sm:gap-2 p-2 sm:p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg"
                             whileHover={{ scale: 1.05 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <CalendarIcon className="w-4 h-4 text-purple-500" />
-                            <span className="font-medium text-xs">
-                              Weekdays: {amenity.booking?.weekdayHours?.startTime || '09:00'} - {amenity.booking?.weekdayHours?.endTime || '21:00'}
+                            <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500 flex-shrink-0" />
+                            <span className="font-medium text-[10px] sm:text-xs truncate">
+                              WD: {amenity.booking?.weekdayHours?.startTime || '09:00'}-{amenity.booking?.weekdayHours?.endTime || '21:00'}
                             </span>
                           </motion.div>
                           <motion.div 
-                            className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg"
+                            className="flex items-center gap-1 sm:gap-2 p-2 sm:p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg"
                             whileHover={{ scale: 1.05 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <CalendarIcon className="w-4 h-4 text-orange-500" />
-                            <span className="font-medium text-xs">
-                              Weekends: {amenity.booking?.weekendHours?.startTime || '08:00'} - {amenity.booking?.weekendHours?.endTime || '22:00'}
+                            <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 text-orange-500 flex-shrink-0" />
+                            <span className="font-medium text-[10px] sm:text-xs truncate">
+                              WE: {amenity.booking?.weekendHours?.startTime || '08:00'}-{amenity.booking?.weekendHours?.endTime || '22:00'}
                             </span>
                           </motion.div>
                         </motion.div>
@@ -834,17 +834,17 @@ export default function AdminPanel() {
                         {/* Enhanced blackout dates display */}
                         {amenity.rules?.blackoutDates && amenity.rules.blackoutDates.length > 0 && (
                           <motion.div 
-                            className="mt-6 p-4 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 rounded-xl border border-red-200 dark:border-red-800"
+                            className="mt-4 sm:mt-5 md:mt-6 p-3 sm:p-4 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 rounded-xl border border-red-200 dark:border-red-800"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 }}
                           >
                             <motion.h4 
-                              className="font-semibold text-red-800 dark:text-red-200 mb-3 flex items-center gap-2"
+                              className="font-semibold text-red-800 dark:text-red-200 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base"
                               initial={{ x: -10 }}
                               animate={{ x: 0 }}
                             >
-                              <Star className="w-4 h-4 animate-pulse" />
+                              <Star className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
                               Festive Blocked Dates ({amenity.rules.blackoutDates.length})
                             </motion.h4>
                             <div className="flex flex-wrap gap-2">
@@ -889,7 +889,7 @@ export default function AdminPanel() {
                                 return (
                                   <motion.div
                                     key={index}
-                                    className="group relative inline-flex items-center gap-1 px-3 py-2 bg-gradient-to-r from-red-100 to-orange-100 dark:from-red-900/30 dark:to-orange-900/30 text-red-800 dark:text-red-200 text-xs rounded-full border border-red-200 dark:border-red-700 shadow-sm"
+                                    className="group relative inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 bg-gradient-to-r from-red-100 to-orange-100 dark:from-red-900/30 dark:to-orange-900/30 text-red-800 dark:text-red-200 text-[10px] sm:text-xs rounded-full border border-red-200 dark:border-red-700 shadow-sm"
                                     initial={{ scale: 0, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
                                     transition={{ delay: index * 0.1 }}
@@ -898,16 +898,16 @@ export default function AdminPanel() {
                                     <span className="font-medium">{displayDate}</span>
                                     <button
                                       onClick={() => removeBlackoutDate(amenity.id, blackoutItem)}
-                                      className="opacity-0 group-hover:opacity-100 transition-all duration-200 ml-1 text-red-600 hover:text-red-800 hover:bg-red-200 dark:hover:bg-red-800 rounded-full p-1"
+                                      className="opacity-0 group-hover:opacity-100 transition-all duration-200 ml-1 text-red-600 hover:text-red-800 hover:bg-red-200 dark:hover:bg-red-800 rounded-full p-0.5 sm:p-1"
                                       title={`Remove ${displayDate} (${reason})`}
                                     >
-                                      <X className="w-3 h-3" />
+                                      <X className="w-2 h-2 sm:w-3 sm:h-3" />
                                     </button>
                                   </motion.div>
                                 );
                               })}
                               {amenity.rules.blackoutDates.length > 8 && (
-                                <span className="text-xs text-red-600 dark:text-red-400 px-2 py-1">
+                                <span className="text-[10px] sm:text-xs text-red-600 dark:text-red-400 px-2 py-1">
                                   +{amenity.rules.blackoutDates.length - 8} more
                                 </span>
                               )}
@@ -934,19 +934,19 @@ export default function AdminPanel() {
               <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-400/10 to-purple-600/10 rounded-full blur-3xl"></div>
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-br from-purple-400/10 to-pink-600/10 rounded-full blur-2xl"></div>
               
-              <CardContent className="text-center py-16 relative z-10">
+              <CardContent className="text-center py-12 sm:py-14 md:py-16 px-4 sm:px-6 relative z-10">
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-                    <Settings className="w-10 h-10 text-white" />
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-xl">
+                    <Settings className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                   </div>
                 </motion.div>
                 
                 <motion.h3 
-                  className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-purple-600 dark:from-white dark:to-purple-400 bg-clip-text text-transparent mb-3"
+                  className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-slate-800 to-purple-600 dark:from-white dark:to-purple-400 bg-clip-text text-transparent mb-2 sm:mb-3"
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.3 }}
@@ -955,7 +955,7 @@ export default function AdminPanel() {
                 </motion.h3>
                 
                 <motion.p 
-                  className="text-slate-600 dark:text-slate-400 mb-6 text-lg max-w-md mx-auto"
+                  className="text-slate-600 dark:text-slate-400 mb-4 sm:mb-6 text-base sm:text-lg max-w-md mx-auto"
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.4 }}
@@ -972,10 +972,10 @@ export default function AdminPanel() {
                 >
                   <Button 
                     onClick={() => setShowAddForm(true)}
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
                     size="lg"
                   >
-                    <Plus className="w-5 h-5 mr-2" />
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                     Add Your First Amenity
                   </Button>
                 </motion.div>

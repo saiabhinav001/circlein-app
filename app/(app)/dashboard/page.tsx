@@ -218,7 +218,7 @@ export default function Dashboard() {
       <motion.div variants={itemVariants} className="mb-6 sm:mb-8">
         <div className="flex flex-col gap-3 mb-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-1 sm:mb-2">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-1 sm:mb-2">
               Welcome to CircleIn
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base md:text-lg">
