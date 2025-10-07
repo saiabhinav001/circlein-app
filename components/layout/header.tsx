@@ -3,7 +3,7 @@
 import { NotificationBell, NotificationPanel } from '@/components/notifications/NotificationSystem';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
-import { Bell, Search, User, Settings, UserCircle } from 'lucide-react';
+import { Bell, Search, User, Settings, UserCircle, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,7 +19,11 @@ import { useSearch } from '@/components/providers/search-provider';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
 import Link from 'next/link';
 
-export function Header() {
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+export function Header({ onMenuClick }: HeaderProps) {
   const { data: session } = useSession();
   const { searchQuery, setSearchQuery } = useSearch();
   const pathname = usePathname();
@@ -36,35 +40,48 @@ export function Header() {
     <motion.header
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl flex items-center justify-between px-6 relative z-[99998]"
+      className="h-14 sm:h-16 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl flex items-center justify-between px-3 sm:px-4 md:px-6 relative z-[99998]"
     >
-      <div className="flex items-center space-x-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0">
+        {/* Hamburger Menu - Only visible on mobile */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onMenuClick}
+          className="lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors shrink-0"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+        </Button>
+
+        {/* Search Bar - Responsive width */}
+        <div className="relative flex-1 max-w-xs sm:max-w-sm md:max-w-md">
+          <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search amenities..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={handleSearchChange}
-            className="pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-0 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-64 transition-all duration-200"
+            className="pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 bg-slate-100 dark:bg-slate-800 border-0 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full transition-all duration-200"
           />
         </div>
       </div>
 
-      <div className="flex items-center space-x-4">
-        {/* Original Beautiful Notification System */}
-        <div className="relative z-[99999]" style={{ zIndex: 99999, position: 'relative' }}>
+      <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
+        {/* Notification Bell - Hidden on very small screens */}
+        <div className="relative z-[99999] hidden xs:block" style={{ zIndex: 99999, position: 'relative' }}>
           <NotificationBell />
           <NotificationPanel />
         </div>
 
+        {/* User Avatar Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={session?.user?.image || ''} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                  {session?.user?.name?.[0] || <User className="w-4 h-4" />}
+            <Button variant="ghost" className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-full p-0">
+              <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
+                <AvatarImage src={session?.user?.image || ''} alt={session?.user?.name || 'User'} />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs sm:text-sm">
+                  {session?.user?.name?.[0] || <User className="w-3 h-3 sm:w-4 sm:h-4" />}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -73,7 +90,7 @@ export function Header() {
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">{session?.user?.name}</p>
-                <p className="text-xs leading-none text-muted-foreground">
+                <p className="text-xs leading-none text-muted-foreground truncate">
                   {session?.user?.email}
                 </p>
               </div>
@@ -92,7 +109,9 @@ export function Header() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()}>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => signOut()} className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400">
+              Logout
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
