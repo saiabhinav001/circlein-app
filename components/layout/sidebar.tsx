@@ -127,14 +127,15 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
       <motion.div
         variants={sidebarVariants}
         animate={isCollapsed ? 'closed' : 'open'}
-        className="h-screen bg-gradient-to-b from-white via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col relative z-50 shadow-xl w-[280px] lg:w-auto"
+        className="h-screen bg-gradient-to-b from-white via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col relative shadow-xl w-[280px] lg:w-auto"
+        style={{ zIndex: 50 }}
       >
         {/* Decorative top gradient */}
         <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent pointer-events-none" />
         
-        {/* Header */}
-        <div className="relative p-6 border-b border-slate-200/50 dark:border-slate-800/50">
-          {isCollapsed ? (
+        {/* Header - Always show full logo on mobile */}
+        <div className="relative p-4 sm:p-6 border-b border-slate-200/50 dark:border-slate-800/50">
+          {isCollapsed && !onClose ? (
             // Collapsed state - center the menu button
             <div className="flex justify-center">
               <Button
@@ -173,19 +174,21 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                   </span>
                 </motion.div>
               </motion.div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center"
-              >
-                <motion.div
-                  animate={{ rotate: 180 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
+              {!onClose && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center"
                 >
-                  <ChevronRight className="w-4 h-4 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
-                </motion.div>
-              </Button>
+                  <motion.div
+                    animate={{ rotate: 180 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                  >
+                    <ChevronRight className="w-4 h-4 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
+                  </motion.div>
+                </Button>
+              )}
             </div>
           )}
 
