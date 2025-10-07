@@ -5,9 +5,10 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, ChevronRight, Sparkles, Bell } from 'lucide-react';
+import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, ChevronRight, Sparkles, Bell, LogOut } from 'lucide-react';
 import { useTheme } from '../providers/theme-provider';
 import { Button } from '@/components/ui/button';
+import { signOut } from 'next-auth/react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -487,7 +488,8 @@ export function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-b from-transparent to-slate-50/50 dark:to-slate-900/50">
+        <div className="p-4 border-t border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-b from-transparent to-slate-50/50 dark:to-slate-900/50 space-y-2">
+          {/* Theme Toggle */}
           <motion.div
             variants={linkVariants}
             initial="initial"
@@ -529,6 +531,55 @@ export function Sidebar() {
                 )}
               </AnimatePresence>
             </Button>
+          </motion.div>
+
+          {/* Logout Button */}
+          <motion.div
+            variants={linkVariants}
+            initial="initial"
+            whileHover="hover"
+            whileTap="tap"
+          >
+            {isCollapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                    className="w-full justify-center px-3 py-3 rounded-xl hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 transition-all duration-300 group"
+                  >
+                    <LogOut className="w-5 h-5 text-red-500 group-hover:text-red-600 transition-colors" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p className="font-medium">Logout</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                className="w-full justify-start px-3 py-3 rounded-xl hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 transition-all duration-300 group"
+              >
+                <LogOut className="w-5 h-5 text-red-500 group-hover:text-red-600 transition-colors" />
+                
+                <AnimatePresence mode="wait">
+                  {!isCollapsed && (
+                    <motion.span
+                      variants={textVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="hidden"
+                      className="ml-3 text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300 transition-colors font-medium"
+                    >
+                      Logout
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </Button>
+            )}
           </motion.div>
 
           {/* Version info */}
