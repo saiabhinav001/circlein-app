@@ -105,26 +105,15 @@ const FloatingCounter = ({ count, label }: { count: number; label: string }) => 
     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl sm:rounded-2xl blur-xl opacity-20 animate-pulse"></div>
     <div className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border border-white/30 dark:border-gray-600/30 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 text-center min-w-[90px] sm:min-w-[110px] md:min-w-[120px] shadow-xl">
       <motion.div 
-        className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm"
+        className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent drop-shadow-[0_8px_24px_rgba(59,130,246,0.12)]"
         key={count}
         initial={{ scale: 1.5 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 300 }}
-        style={{
-          WebkitTextStroke: '0.5px rgba(59, 130, 246, 0.3)',
-          filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))'
-        }}
       >
         {count}
       </motion.div>
-      <div 
-        className="text-xs sm:text-sm font-semibold mt-1"
-        style={{
-          color: '#ffffff',
-          textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-          filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
-        }}
-      >
+      <div className="text-xs sm:text-sm font-semibold mt-1 text-gray-900 dark:text-white">
         {label}
       </div>
     </div>
@@ -411,11 +400,7 @@ export default function NotificationsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4 drop-shadow-sm"
-            style={{
-              textShadow: '0 0 20px rgba(59, 130, 246, 0.3)',
-              WebkitTextStroke: '0.5px rgba(59, 130, 246, 0.1)'
-            }}
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4"
           >
             Notification Center
           </motion.h1>
@@ -424,16 +409,10 @@ export default function NotificationsPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.9 }}
-            className="text-sm sm:text-base md:text-lg lg:text-xl font-medium mb-6 sm:mb-8 max-w-2xl mx-auto px-3 sm:px-0"
-            style={{
-              color: '#ffffff',
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
-            }}
+            className="text-sm sm:text-base md:text-lg lg:text-xl font-medium mb-6 sm:mb-8 max-w-2xl mx-auto px-3 sm:px-0 text-gray-900 dark:text-white"
           >
-            <span className="text-white" style={{ textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)' }}>
-              Stay connected with real-time updates, important announcements, and community activities 
-              tailored for your residential community management needs.
-            </span>
+            Stay connected with real-time updates, important announcements, and community activities 
+            tailored for your residential community management needs.
           </motion.p>
 
           {/* Floating counters - Fully Responsive */}
@@ -505,10 +484,7 @@ export default function NotificationsPage() {
               <CardHeader className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-b border-gray-200/20 p-3 sm:p-4 md:p-5 lg:p-6">
                 <CardTitle className="text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
                   <Filter className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-500" />
-                  <span className="text-white dark:text-white" style={{ 
-                    filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))',
-                    textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
-                  }}>
+                  <span className="text-gray-900 dark:text-white font-bold">
                     Categories
                   </span>
                 </CardTitle>
@@ -527,21 +503,17 @@ export default function NotificationsPage() {
                         variant={selectedCategory === key ? "default" : "ghost"}
                         onClick={() => setSelectedCategory(key)}
                         className={cn(
-                          "w-full justify-start h-10 sm:h-11 md:h-12 lg:h-14 rounded-xl transition-all duration-300",
+                          "w-full justify-start h-10 sm:h-11 md:h-12 lg:h-14 rounded-xl transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 dark:focus-visible:ring-blue-800",
                           selectedCategory === key 
                             ? `bg-gradient-to-r ${color} text-white shadow-lg` 
-                            : `hover:bg-gradient-to-r hover:${bgColor} dark:hover:from-gray-700 dark:hover:to-gray-600`
+                            : `hover:bg-gradient-to-r hover:${bgColor} dark:hover:from-gray-700 dark:hover:to-gray-600 text-gray-900 dark:text-gray-100`
                         )}
                       >
-                        <Icon className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 mr-2 sm:mr-2 lg:mr-3 flex-shrink-0" />
-                        <span 
-                          className="font-semibold text-xs sm:text-sm lg:text-base truncate"
-                          style={{
-                            color: selectedCategory === key ? '#ffffff' : '#ffffff',
-                            textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-                            filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
-                          }}
-                        >
+                        <Icon className="h-4 w-4 sm:h-4 sm:w-4 lg:h-5 lg:w-5 mr-2 sm:mr-2 lg:mr-3 flex-shrink-0 text-gray-700 dark:text-gray-100" />
+                        <span className={cn(
+                          "font-semibold text-xs sm:text-sm lg:text-base truncate",
+                          selectedCategory === key ? "text-white" : "text-gray-900 dark:text-gray-100"
+                        )}>
                           {label}
                         </span>
                         {key !== 'all' && (
@@ -550,7 +522,7 @@ export default function NotificationsPage() {
                             animate={{ scale: 1 }}
                             className="ml-auto"
                           >
-                            <Badge variant="secondary" className="bg-white/20 text-inherit border-0 text-[10px] sm:text-xs ml-1 sm:ml-2 flex-shrink-0">
+                            <Badge variant="secondary" className="bg-white/20 text-inherit border-0 text-[10px] sm:text-xs ml-1 sm:ml-2 flex-shrink-0 text-gray-900 dark:text-gray-100">
                               {notifications.filter(n => n.category === key).length}
                             </Badge>
                           </motion.div>
@@ -570,29 +542,29 @@ export default function NotificationsPage() {
               <CardContent className="p-3 sm:p-4 md:p-5 lg:p-6">
                 <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-3 sm:mb-4">{/* Beautiful Search */}
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                    <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 dark:text-gray-400" />
                     <Input
                       placeholder="Search notifications..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 sm:pl-12 h-10 sm:h-11 md:h-12 rounded-xl border-2 border-gray-200/50 focus:border-blue-500 bg-white/50 backdrop-blur-sm text-xs sm:text-sm"
+                      className="pl-10 sm:pl-12 h-10 sm:h-11 md:h-12 rounded-xl border-2 border-gray-200/50 dark:border-gray-700/50 focus:border-blue-500 focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-800 bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm text-xs sm:text-sm text-gray-800 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-shadow duration-200"
                     />
                   </div>
 
                   {/* View Mode Tabs */}
                   <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)} className="shrink-0">
-                    <TabsList className="bg-white/50 backdrop-blur-sm rounded-xl border border-gray-200/50 h-10 sm:h-11 md:h-12">
-                      <TabsTrigger value="all" className="rounded-lg px-3 sm:px-4 md:px-6 text-xs sm:text-sm">All</TabsTrigger>
-                      <TabsTrigger value="unread" className="rounded-lg px-3 sm:px-4 md:px-6 text-xs sm:text-sm">Unread</TabsTrigger>
-                      <TabsTrigger value="read" className="rounded-lg px-3 sm:px-4 md:px-6 text-xs sm:text-sm">Read</TabsTrigger>
+                    <TabsList className="bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-600/50 h-10 sm:h-11 md:h-12 shadow-sm">
+                      <TabsTrigger value="all" className="rounded-lg px-3 sm:px-4 md:px-6 text-xs sm:text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600">All</TabsTrigger>
+                      <TabsTrigger value="unread" className="rounded-lg px-3 sm:px-4 md:px-6 text-xs sm:text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600">Unread</TabsTrigger>
+                      <TabsTrigger value="read" className="rounded-lg px-3 sm:px-4 md:px-6 text-xs sm:text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600">Read</TabsTrigger>
                     </TabsList>
                   </Tabs>
 
                   {/* Sort Dropdown - Enhanced with Icons and Descriptions */}
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full sm:w-44 h-10 sm:h-11 md:h-12 rounded-xl border-2 border-gray-200/50 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm hover:bg-white/70 dark:hover:bg-gray-600/70 transition-all">
+                    <SelectTrigger className="w-full sm:w-44 h-10 sm:h-11 md:h-12 rounded-xl border-2 border-gray-200/50 dark:border-gray-700/50 bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm hover:bg-white/70 dark:hover:bg-gray-600/70 transition-all focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-800">
                       <div className="flex items-center gap-2 w-full">
-                        <SortDesc className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                        <SortDesc className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-300 flex-shrink-0" />
                         <SelectValue placeholder="Sort by" />
                       </div>
                     </SelectTrigger>
@@ -643,7 +615,7 @@ export default function NotificationsPage() {
                       exit={{ opacity: 0, height: 0 }}
                       className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl border border-blue-200/50"
                     >
-                      <span className="text-xs sm:text-sm font-medium" style={{ color: '#ffffff', textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)' }}>
+                      <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
                         {selectedNotifications.length} notification(s) selected
                       </span>
                       <div className="flex flex-wrap items-center gap-2">
@@ -682,24 +654,12 @@ export default function NotificationsPage() {
                         >
                           <Bell className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 text-gray-300 mx-auto mb-4 sm:mb-6" />
                         </motion.div>
-                        <h3 
-                          className="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3 drop-shadow-lg"
-                          style={{
-                            textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-                            color: '#ffffff'
-                          }}
-                        >
+                        <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3 text-gray-900 dark:text-white">
                           {searchQuery || selectedCategory !== 'all' || viewMode !== 'all' 
                             ? 'No matching notifications' 
                             : 'All caught up!'}
                         </h3>
-                        <p 
-                          className="text-sm sm:text-base md:text-lg font-medium"
-                          style={{
-                            textShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                            color: '#e5e7eb'
-                          }}
-                        >
+                        <p className="text-sm sm:text-base md:text-lg font-medium text-gray-700 dark:text-gray-300">
                           {searchQuery || selectedCategory !== 'all' || viewMode !== 'all'
                             ? 'Try adjusting your filters or search terms'
                             : 'You\'re all up to date with your notifications'}
@@ -764,14 +724,7 @@ export default function NotificationsPage() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
                                 <div className="flex-1 min-w-0">
-                                  <h3 
-                                    className="font-bold text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl leading-tight mb-1 sm:mb-2 flex items-center gap-1.5 sm:gap-2"
-                                    style={{
-                                      color: '#ffffff',
-                                      textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-                                      filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
-                                    }}
-                                  >
+                                  <h3 className="font-bold text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl leading-tight mb-1 sm:mb-2 flex items-center gap-1.5 sm:gap-2 text-gray-900 dark:text-white">
                                     <span className="truncate">{notification.title}</span>
                                     {!notification.read && (
                                       <motion.span 
@@ -781,14 +734,7 @@ export default function NotificationsPage() {
                                       ></motion.span>
                                     )}
                                   </h3>
-                                  <p 
-                                    className="text-xs sm:text-sm md:text-base leading-relaxed font-medium line-clamp-2"
-                                    style={{
-                                      color: '#e5e7eb',
-                                      textShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-                                      filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2))'
-                                    }}
-                                  >
+                                  <p className="text-xs sm:text-sm md:text-base leading-relaxed font-medium line-clamp-2 text-gray-700 dark:text-gray-300">
                                     {notification.message}
                                   </p>
                                 </div>
@@ -825,14 +771,7 @@ export default function NotificationsPage() {
                               {/* Metadata */}
                               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
                                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:gap-3 text-xs sm:text-sm font-medium">
-                                  <span 
-                                    className="flex items-center gap-1 sm:gap-1.5 md:gap-2 bg-gray-100 dark:bg-gray-700 px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 rounded-full shadow-sm"
-                                    style={{
-                                      color: '#ffffff',
-                                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
-                                      filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2))'
-                                    }}
-                                  >
+                                  <span className="flex items-center gap-1 sm:gap-1.5 md:gap-2 bg-gray-100 dark:bg-gray-700 px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 rounded-full shadow-sm text-gray-900 dark:text-gray-100">
                                     <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 flex-shrink-0" />
                                     <span className="text-[10px] sm:text-xs md:text-sm font-semibold">
                                       {new Date(notification.timestamp).toLocaleDateString('en-US', {
@@ -845,12 +784,7 @@ export default function NotificationsPage() {
                                   </span>
                                   <Badge 
                                     variant="outline" 
-                                    className="border-gray-300 dark:border-gray-600 rounded-full font-semibold bg-white/80 dark:bg-gray-800/80 text-[10px] sm:text-xs px-2 py-0.5"
-                                    style={{
-                                      color: '#ffffff',
-                                      textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
-                                      filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2))'
-                                    }}
+                                    className="border-gray-300 dark:border-gray-600 rounded-full font-semibold bg-white/80 dark:bg-gray-800/80 text-[10px] sm:text-xs px-2 py-0.5 text-gray-900 dark:text-gray-100"
                                   >
                                     {notification.category}
                                   </Badge>
