@@ -388,52 +388,52 @@ export default function CalendarPage() {
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ scale: 1.02 }}
         className={cn(
-          "p-4 rounded-lg border bg-white dark:bg-slate-800/50 shadow-sm hover:shadow-md transition-all duration-200",
-          isCompact ? "p-3" : "p-4"
+          "p-3 sm:p-4 rounded-lg border bg-white dark:bg-slate-800/50 shadow-sm hover:shadow-md transition-all duration-200",
+          isCompact ? "p-2 sm:p-3" : "p-3 sm:p-4"
         )}
       >
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
               <h3 className={cn(
                 "font-semibold text-gray-900 dark:text-white truncate",
-                isCompact ? "text-sm" : "text-base"
+                isCompact ? "text-xs sm:text-sm" : "text-sm sm:text-base"
               )}>
                 {booking.amenityName}
               </h3>
-              <Badge variant="outline" className={cn("text-xs", statusColors[booking.status as keyof typeof statusColors] || statusColors.confirmed)}>
-                <StatusIcon className="w-3 h-3 mr-1" />
+              <Badge variant="outline" className={cn("text-[10px] sm:text-xs", statusColors[booking.status as keyof typeof statusColors] || statusColors.confirmed)}>
+                <StatusIcon className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />
                 {booking.status || 'confirmed'}
               </Badge>
               {/* Admin badge for bookings they can manage */}
               {isAdmin && booking.userId !== session?.user?.email && (
-                <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                <Badge variant="outline" className="text-[10px] sm:text-xs bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
                   Admin Access
                 </Badge>
               )}
               {/* Own booking indicator */}
               {booking.userId === session?.user?.email && (
-                <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
+                <Badge variant="outline" className="text-[10px] sm:text-xs bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
                   Your Booking
                 </Badge>
               )}
             </div>
             
-            <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 flex-shrink-0" />
+            <div className="space-y-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span className="truncate">{booking.amenityName}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 flex-shrink-0" />
-                <span>{formatDateRange(booking.startTime, booking.endTime)}</span>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="truncate">{formatDateRange(booking.startTime, booking.endTime)}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 flex-shrink-0" />
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Users className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span>{booking.attendees?.length || 1} attendees</span>
               </div>
               {!isCompact && (
-                <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-500 mt-2 truncate">
                   Booked by {booking.userId}
                 </div>
               )}
@@ -442,28 +442,28 @@ export default function CalendarPage() {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreHorizontal className="w-4 h-4" />
+              <Button variant="ghost" size="sm" className="h-7 w-7 sm:h-8 sm:w-8 p-0 flex-shrink-0">
+                <MoreHorizontal className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleBookingAction('view', booking)}>
-                <Eye className="w-4 h-4 mr-2" />
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => handleBookingAction('view', booking)} className="text-xs sm:text-sm">
+                <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 View Details
               </DropdownMenuItem>
               
               {/* Edit only for own bookings or if admin */}
               {(isAdmin || booking.userId === session?.user?.email) && (
-                <DropdownMenuItem onClick={() => handleBookingAction('edit', booking)}>
-                  <Edit className="w-4 h-4 mr-2" />
+                <DropdownMenuItem onClick={() => handleBookingAction('edit', booking)} className="text-xs sm:text-sm">
+                  <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   Edit Booking
                 </DropdownMenuItem>
               )}
               
               {/* Approve only for admin and pending bookings */}
               {isAdmin && booking.status === 'pending' && (
-                <DropdownMenuItem onClick={() => handleBookingAction('approve', booking)}>
-                  <CheckCircle className="w-4 h-4 mr-2" />
+                <DropdownMenuItem onClick={() => handleBookingAction('approve', booking)} className="text-xs sm:text-sm">
+                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   Approve
                 </DropdownMenuItem>
               )}
@@ -472,17 +472,17 @@ export default function CalendarPage() {
               {(isAdmin || booking.userId === session?.user?.email) && booking.status !== 'cancelled' && (
                 <DropdownMenuItem 
                   onClick={() => handleBookingAction('cancel', booking)}
-                  className="text-red-600 focus:text-red-600"
+                  className="text-red-600 focus:text-red-600 text-xs sm:text-sm"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
+                  <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   {isAdmin && booking.userId !== session?.user?.email ? 'Cancel (Admin)' : 'Cancel'}
                 </DropdownMenuItem>
               )}
               
               {/* Show read-only indicator for other users' bookings when not admin */}
               {!isAdmin && booking.userId !== session?.user?.email && (
-                <DropdownMenuItem disabled className="text-gray-400">
-                  <Eye className="w-4 h-4 mr-2" />
+                <DropdownMenuItem disabled className="text-gray-400 text-xs sm:text-sm">
+                  <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   View Only
                 </DropdownMenuItem>
               )}
@@ -497,20 +497,20 @@ export default function CalendarPage() {
   if (!isHydrated) {
     return (
       <CalendarErrorBoundary>
-        <div className="container mx-auto p-6 max-w-7xl">
+        <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <CalendarIcon className="h-8 w-8 text-blue-600" />
+            <CardHeader className="px-4 sm:px-6">
+              <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg md:text-xl">
+                <CalendarIcon className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-blue-600" />
                 Loading Calendar...
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Preparing your calendar interface
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <CardContent className="px-4 sm:px-6">
+              <div className="flex items-center justify-center py-8 sm:py-10 md:py-12">
+                <div className="animate-spin rounded-full h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 border-b-2 border-blue-600"></div>
               </div>
             </CardContent>
           </Card>
@@ -521,26 +521,26 @@ export default function CalendarPage() {
 
   return (
     <CalendarErrorBoundary>
-      <div className="container mx-auto p-6 max-w-7xl">
+      <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="space-y-6"
+          className="space-y-4 sm:space-y-5 md:space-y-6"
         >
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-              <CalendarIcon className="h-8 w-8 text-blue-600" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3">
+              <CalendarIcon className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-blue-600" />
               Calendar
               {isAdmin && (
-                <Badge className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800">
+                <Badge className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800 text-xs sm:text-sm">
                   Admin
                 </Badge>
               )}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="text-gray-600 dark:text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
               {isAdmin 
                 ? "Manage all community bookings and view events" 
                 : "Manage your bookings and view community events"
@@ -548,20 +548,22 @@ export default function CalendarPage() {
             </p>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button 
               variant="outline" 
               onClick={handleRefresh} 
               disabled={refreshing}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-xs sm:text-sm"
+              size="sm"
             >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3 h-3 sm:h-4 sm:w-4 ${refreshing ? 'animate-spin' : ''}`} />
               {refreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
             <Link href="/dashboard">
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                New Booking
+              <Button className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
+                <Plus className="h-3 h-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">New Booking</span>
+                <span className="xs:hidden">New</span>
               </Button>
             </Link>
           </div>
@@ -575,14 +577,14 @@ export default function CalendarPage() {
             transition={{ delay: 0.2 }}
           >
             <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-full">
-                    <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <CardContent className="pt-4 sm:pt-5 md:pt-6 px-4 sm:px-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900 rounded-full">
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-100">Admin Privileges Active</h3>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <h3 className="font-semibold text-blue-900 dark:text-blue-100 text-sm sm:text-base">Admin Privileges Active</h3>
+                    <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-300">
                       You can view, edit, and cancel all community bookings. Residents will be notified of admin actions.
                     </p>
                   </div>
@@ -594,25 +596,25 @@ export default function CalendarPage() {
 
         {/* Filters */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <CardContent className="pt-4 sm:pt-5 md:pt-6 px-4 sm:px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
                 <Input
                   placeholder="Search bookings..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-8 sm:pl-10 text-sm sm:text-base h-9 sm:h-10"
                 />
               </div>
               
               <Select value={selectedAmenity} onValueChange={setSelectedAmenity}>
-                <SelectTrigger>
+                <SelectTrigger className="text-sm sm:text-base h-9 sm:h-10">
                   <SelectValue placeholder="Filter by amenity" />
                 </SelectTrigger>
                 <SelectContent>
                   {amenityTypes.map((amenity) => (
-                    <SelectItem key={amenity} value={amenity}>
+                    <SelectItem key={amenity} value={amenity} className="text-sm sm:text-base">
                       {amenity}
                     </SelectItem>
                   ))}
@@ -620,25 +622,25 @@ export default function CalendarPage() {
               </Select>
               
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger>
+                <SelectTrigger className="text-sm sm:text-base h-9 sm:h-10">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="all" className="text-sm sm:text-base">All Status</SelectItem>
+                  <SelectItem value="confirmed" className="text-sm sm:text-base">Confirmed</SelectItem>
+                  <SelectItem value="pending" className="text-sm sm:text-base">Pending</SelectItem>
+                  <SelectItem value="cancelled" className="text-sm sm:text-base">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
               
               <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="text-sm sm:text-base h-9 sm:h-10">
                   <SelectValue placeholder="View mode" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="month">Month View</SelectItem>
-                  <SelectItem value="week">Week View</SelectItem>
-                  <SelectItem value="day">Day View</SelectItem>
+                  <SelectItem value="month" className="text-sm sm:text-base">Month View</SelectItem>
+                  <SelectItem value="week" className="text-sm sm:text-base">Week View</SelectItem>
+                  <SelectItem value="day" className="text-sm sm:text-base">Day View</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -646,13 +648,13 @@ export default function CalendarPage() {
         </Card>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
           {/* Calendar */}
           <div className="lg:col-span-1">
             <Card>
-              <CardHeader className="pb-4">
+              <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
+                  <CardTitle className="text-base sm:text-lg">
                     {currentMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
                   </CardTitle>
                   <div className="flex items-center gap-1">
@@ -660,22 +662,22 @@ export default function CalendarPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => navigateMonth('prev')}
-                      className="h-8 w-8 p-0"
+                      className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                     >
-                      <ChevronLeft className="h-4 w-4" />
+                      <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => navigateMonth('next')}
-                      className="h-8 w-8 p-0"
+                      className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                     >
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-4 sm:px-6">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
@@ -692,39 +694,39 @@ export default function CalendarPage() {
                       fontWeight: 'bold'
                     }
                   }}
-                  className="rounded-md"
+                  className="rounded-md text-sm sm:text-base"
                 />
               </CardContent>
             </Card>
 
             {/* Quick Stats */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="text-lg">Quick Stats</CardTitle>
+            <Card className="mt-4 sm:mt-5 md:mt-6">
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-base sm:text-lg">Quick Stats</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div className="text-center space-y-1">
-                    <div className="text-2xl font-bold text-blue-600">{filteredBookings.length}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Total Bookings</div>
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600">{filteredBookings.length}</div>
+                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Bookings</div>
                   </div>
                   <div className="text-center space-y-1">
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-xl sm:text-2xl font-bold text-green-600">
                       {filteredBookings.filter(b => b.status === 'confirmed').length}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Confirmed</div>
+                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Confirmed</div>
                   </div>
                   <div className="text-center space-y-1">
-                    <div className="text-2xl font-bold text-yellow-600">
+                    <div className="text-xl sm:text-2xl font-bold text-yellow-600">
                       {filteredBookings.filter(b => b.status === 'pending').length}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Pending</div>
+                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Pending</div>
                   </div>
                   <div className="text-center space-y-1">
-                    <div className="text-2xl font-bold text-red-600">
+                    <div className="text-xl sm:text-2xl font-bold text-red-600">
                       {filteredBookings.filter(b => b.status === 'cancelled').length}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Cancelled</div>
+                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Cancelled</div>
                   </div>
                 </div>
               </CardContent>
@@ -733,55 +735,59 @@ export default function CalendarPage() {
 
           {/* Bookings List */}
           <div className="lg:col-span-2">
-            <Tabs defaultValue="selected-date" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="selected-date">
-                  Selected Date ({selectedDate ? formatDateConsistently(selectedDate) : ''})
+            <Tabs defaultValue="selected-date" className="space-y-4 sm:space-y-5 md:space-y-6">
+              <TabsList className="grid w-full grid-cols-2 h-auto">
+                <TabsTrigger value="selected-date" className="text-xs sm:text-sm px-2 py-2 sm:px-4">
+                  <span className="hidden sm:inline">Selected Date ({selectedDate ? formatDateConsistently(selectedDate) : ''})</span>
+                  <span className="sm:hidden">Selected</span>
                 </TabsTrigger>
-                <TabsTrigger value="all-bookings">
-                  All Bookings ({filteredBookings.length})
+                <TabsTrigger value="all-bookings" className="text-xs sm:text-sm px-2 py-2 sm:px-4">
+                  <span className="hidden sm:inline">All Bookings ({filteredBookings.length})</span>
+                  <span className="sm:hidden">All ({filteredBookings.length})</span>
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="selected-date" className="space-y-4">
+              <TabsContent value="selected-date" className="space-y-3 sm:space-y-4">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <CalendarIcon className="h-5 w-5" />
-                      {selectedDate?.toLocaleDateString('en-GB', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
+                  <CardHeader className="px-4 sm:px-6">
+                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                      <CalendarIcon className="h-4 h-4 sm:h-5 sm:w-5" />
+                      <span className="truncate text-sm sm:text-base">
+                        {selectedDate?.toLocaleDateString('en-GB', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </span>
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-xs sm:text-sm">
                       {selectedDateBookings.length} booking{selectedDateBookings.length !== 1 ? 's' : ''} scheduled
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
                     <AnimatePresence>
                       {loading ? (
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          className="text-center py-8 text-gray-500 dark:text-gray-400"
+                          className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400"
                         >
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                          <p>Loading bookings...</p>
+                          <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto mb-3 sm:mb-4"></div>
+                          <p className="text-sm sm:text-base">Loading bookings...</p>
                         </motion.div>
                       ) : selectedDateBookings.length === 0 ? (
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          className="text-center py-8 text-gray-500 dark:text-gray-400"
+                          className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400"
                         >
-                          <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p>No bookings scheduled for this date</p>
-                          <p className="text-sm mt-2">Book an amenity to see it appear here</p>
+                          <CalendarIcon className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                          <p className="text-sm sm:text-base">No bookings scheduled for this date</p>
+                          <p className="text-xs sm:text-sm mt-2">Book an amenity to see it appear here</p>
                           <Link href="/dashboard">
-                            <Button variant="outline" className="mt-4">
-                              <Plus className="h-4 w-4 mr-2" />
+                            <Button variant="outline" className="mt-3 sm:mt-4 text-xs sm:text-sm" size="sm">
+                              <Plus className="h-3 h-3 sm:h-4 sm:w-4 mr-2" />
                               Create Booking
                             </Button>
                           </Link>
@@ -796,39 +802,39 @@ export default function CalendarPage() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="all-bookings" className="space-y-4">
+              <TabsContent value="all-bookings" className="space-y-3 sm:space-y-4">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Filter className="h-5 w-5" />
+                  <CardHeader className="px-4 sm:px-6">
+                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                      <Filter className="h-4 h-4 sm:h-5 sm:w-5" />
                       All Bookings
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-xs sm:text-sm">
                       {filteredBookings.length} booking{filteredBookings.length !== 1 ? 's' : ''} found
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
                     <AnimatePresence>
                       {loading ? (
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          className="text-center py-8 text-gray-500 dark:text-gray-400"
+                          className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400"
                         >
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                          <p>Loading bookings...</p>
+                          <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto mb-3 sm:mb-4"></div>
+                          <p className="text-sm sm:text-base">Loading bookings...</p>
                         </motion.div>
                       ) : filteredBookings.length === 0 ? (
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          className="text-center py-8 text-gray-500 dark:text-gray-400"
+                          className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400"
                         >
                           {searchQuery || selectedAmenity !== 'All Amenities' || selectedStatus !== 'all' ? (
                             <>
-                              <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                              <p>No bookings match your current filters</p>
-                              <Button variant="outline" className="mt-4" onClick={() => {
+                              <Search className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                              <p className="text-sm sm:text-base">No bookings match your current filters</p>
+                              <Button variant="outline" className="mt-3 sm:mt-4 text-xs sm:text-sm" size="sm" onClick={() => {
                                 setSearchQuery('');
                                 setSelectedAmenity('All Amenities');
                                 setSelectedStatus('all');
@@ -838,12 +844,12 @@ export default function CalendarPage() {
                             </>
                           ) : (
                             <>
-                              <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                              <p>No bookings yet</p>
-                              <p className="text-sm mt-2">Start by booking your first amenity to see it here</p>
+                              <CalendarIcon className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                              <p className="text-sm sm:text-base">No bookings yet</p>
+                              <p className="text-xs sm:text-sm mt-2">Start by booking your first amenity to see it here</p>
                               <Link href="/dashboard">
-                                <Button variant="outline" className="mt-4">
-                                  <Plus className="h-4 w-4 mr-2" />
+                                <Button variant="outline" className="mt-3 sm:mt-4 text-xs sm:text-sm" size="sm">
+                                  <Plus className="h-3 h-3 sm:h-4 sm:w-4 mr-2" />
                                   Make Your First Booking
                                 </Button>
                               </Link>
@@ -865,45 +871,45 @@ export default function CalendarPage() {
 
         {/* Booking Details Dialog */}
         <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5" />
+          <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="px-4 sm:px-6">
+              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <CalendarIcon className="h-4 h-4 sm:h-5 sm:w-5" />
                 Booking Details
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-xs sm:text-sm">
                 Complete information about this booking
               </DialogDescription>
             </DialogHeader>
             
             {selectedBooking && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
+              <div className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="space-y-3 sm:space-y-4">
                     <div>
-                      <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
+                      <h3 className="font-semibold text-base sm:text-lg text-gray-900 dark:text-white">
                         {selectedBooking.amenityName}
                       </h3>
-                      <p className="text-gray-600 dark:text-gray-400 mt-1">
+                      <p className="text-gray-600 dark:text-gray-400 mt-1 text-xs sm:text-sm">
                         Community amenity booking
                       </p>
                     </div>
                     
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <MapPin className="w-5 h-5 text-gray-500" />
-                        <div>
-                          <div className="font-medium">{selectedBooking.amenityName}</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm sm:text-base truncate">{selectedBooking.amenityName}</div>
+                          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                             Community Facility
                           </div>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-3">
-                        <CalendarIcon className="w-5 h-5 text-gray-500" />
-                        <div>
-                          <div className="font-medium">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm sm:text-base">
                             {selectedBooking.startTime.toLocaleDateString('en-GB', { 
                               weekday: 'long', 
                               year: 'numeric', 
@@ -911,17 +917,17 @@ export default function CalendarPage() {
                               day: 'numeric' 
                             })}
                           </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                             {formatTimeConsistently(selectedBooking.startTime)} - {formatTimeConsistently(selectedBooking.endTime)}
                           </div>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-3">
-                        <Users className="w-5 h-5 text-gray-500" />
-                        <div>
-                          <div className="font-medium">{selectedBooking.attendees?.length || 1} Attendees</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm sm:text-base">{selectedBooking.attendees?.length || 1} Attendees</div>
+                          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
                             Booked by {selectedBooking.userId}
                           </div>
                         </div>
@@ -929,30 +935,30 @@ export default function CalendarPage() {
                     </div>
                   </div>
                   
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     <div>
-                      <h4 className="font-medium mb-2">Status</h4>
-                      <Badge className={cn("text-sm", statusColors[selectedBooking.status as keyof typeof statusColors] || statusColors.confirmed)}>
-                        {React.createElement(statusIcons[selectedBooking.status as keyof typeof statusIcons] || statusIcons.confirmed, { className: "w-4 h-4 mr-2" })}
+                      <h4 className="font-medium mb-2 text-sm sm:text-base">Status</h4>
+                      <Badge className={cn("text-xs sm:text-sm", statusColors[selectedBooking.status as keyof typeof statusColors] || statusColors.confirmed)}>
+                        {React.createElement(statusIcons[selectedBooking.status as keyof typeof statusIcons] || statusIcons.confirmed, { className: "w-3 h-3 sm:w-4 sm:h-4 mr-2" })}
                         {(selectedBooking.status || 'confirmed').charAt(0).toUpperCase() + (selectedBooking.status || 'confirmed').slice(1)}
                       </Badge>
                     </div>
                     
                     <div className="space-y-2">
-                      <h4 className="font-medium">Actions</h4>
+                      <h4 className="font-medium text-sm sm:text-base">Actions</h4>
                       <div className="flex flex-col gap-2">
                         {/* Edit only for own bookings or if admin */}
                         {(isAdmin || selectedBooking.userId === session?.user?.email) && (
-                          <Button variant="outline" size="sm" onClick={() => handleBookingAction('edit', selectedBooking)}>
-                            <Edit className="w-4 h-4 mr-2" />
+                          <Button variant="outline" size="sm" onClick={() => handleBookingAction('edit', selectedBooking)} className="w-full justify-start text-xs sm:text-sm">
+                            <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                             Edit Booking
                           </Button>
                         )}
                         
                         {/* Approve only for admin and pending bookings */}
                         {isAdmin && selectedBooking.status === 'pending' && (
-                          <Button variant="outline" size="sm" onClick={() => handleBookingAction('approve', selectedBooking)}>
-                            <CheckCircle className="w-4 h-4 mr-2" />
+                          <Button variant="outline" size="sm" onClick={() => handleBookingAction('approve', selectedBooking)} className="w-full justify-start text-xs sm:text-sm">
+                            <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                             Approve Booking
                           </Button>
                         )}
@@ -963,23 +969,23 @@ export default function CalendarPage() {
                             variant="outline" 
                             size="sm" 
                             onClick={() => handleBookingAction('cancel', selectedBooking)}
-                            className="text-red-600 hover:text-red-700"
+                            className="w-full justify-start text-red-600 hover:text-red-700 text-xs sm:text-sm"
                           >
-                            <Trash2 className="w-4 h-4 mr-2" />
+                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                             {isAdmin && selectedBooking.userId !== session?.user?.email ? 'Cancel Booking (Admin)' : 'Cancel Booking'}
                           </Button>
                         )}
                         
                         {/* Show permission info for residents viewing others' bookings */}
                         {!isAdmin && selectedBooking.userId !== session?.user?.email && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                          <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-800 rounded">
                             ℹ️ You can only modify your own bookings
                           </div>
                         )}
                         
                         {/* Show admin privileges info */}
                         {isAdmin && selectedBooking.userId !== session?.user?.email && (
-                          <div className="text-sm text-blue-600 dark:text-blue-400 p-2 bg-blue-50 dark:bg-blue-950 rounded">
+                          <div className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 p-2 bg-blue-50 dark:bg-blue-950 rounded">
                             🛡️ Admin: You can manage all community bookings
                           </div>
                         )}
