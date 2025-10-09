@@ -906,7 +906,7 @@ export function NotificationPanel() {
               className="relative w-full"
             >
               <div className="relative w-full">
-                <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 pointer-events-none z-10 text-white/90" />
+                <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 pointer-events-none z-10 text-gray-400 dark:text-white" />
                 <input
                   ref={searchRef}
                   type="text"
@@ -1116,8 +1116,8 @@ export function NotificationPanel() {
               <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
                 <SelectTrigger className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                   <div className="flex items-center gap-2 w-full min-w-0">
-                    <SortDesc className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#ffffff' }} />
-                    <div className="flex-1 text-left text-sm font-medium truncate" style={{ color: '#ffffff', textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)' }}>
+                    <SortDesc className="h-3.5 w-3.5 flex-shrink-0 text-gray-700 dark:text-gray-100" />
+                    <div className="flex-1 text-left text-sm font-medium truncate text-gray-900 dark:text-white">
                       <SelectValue placeholder="Newest" />
                     </div>
                   </div>
@@ -1190,8 +1190,8 @@ export function NotificationPanel() {
                   style={{ transform: "skewX(-20deg)" }}
                 />
               </motion.div>
-              <h4 className="font-bold text-lg mb-2" style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)' }}>All caught up!</h4>
-              <p className="text-sm font-medium" style={{ color: '#ffffff', textShadow: '0 1px 3px rgba(0, 0, 0, 0.2)' }}>
+              <h4 className="font-bold text-lg mb-2 text-gray-900 dark:text-white">All caught up!</h4>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {searchQuery ? 'No matching notifications found for your search' :
                  filter === 'unread' ? 'You have no unread notifications' : 
                  'No notifications to display at this time'}
@@ -1285,7 +1285,7 @@ export function NotificationPanel() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm sm:text-base leading-tight line-clamp-2" style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)' }}>
+                          <h4 className="font-semibold text-sm sm:text-base leading-tight line-clamp-2 text-gray-900 dark:text-white">
                             {notification.title}
                             {!notification.read && (
                               <motion.span
@@ -1328,8 +1328,8 @@ export function NotificationPanel() {
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium whitespace-nowrap" style={{ color: '#ffffff', textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)' }}>
+                          <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium whitespace-nowrap text-gray-500 dark:text-gray-300">
                             {formatTimeAgo(new Date(notification.timestamp))}
                           </span>
                           <motion.button
@@ -1355,7 +1355,7 @@ export function NotificationPanel() {
                         </div>
                       </div>
                       
-                      <p className="text-sm line-clamp-2 leading-relaxed mb-3" style={{ color: '#e5e7eb', textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)' }}>
+                      <p className="text-sm line-clamp-2 leading-relaxed mb-3 text-gray-700 dark:text-gray-300">
                         {notification.message}
                       </p>
 
@@ -1408,8 +1408,7 @@ export function NotificationPanel() {
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex justify-center gap-4 mt-3 text-xs font-medium"
-              style={{ color: '#ffffff', textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)' }}
+              className="flex justify-center gap-4 mt-3 text-xs font-medium text-gray-700 dark:text-white"
             >
               <span className="flex items-center gap-1">
                 <motion.div 
@@ -1456,10 +1455,7 @@ export function NotificationPanel() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(156, 163, 175, 0.8);
         }
-        input::placeholder {
-          color: rgba(255, 255, 255, 0.7) !important;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        }
+        /* removed global input placeholder override to allow Tailwind placeholder classes to work correctly */
       `}</style>
     </AnimatePresence>
   );
