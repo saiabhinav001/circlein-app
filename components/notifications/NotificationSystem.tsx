@@ -806,17 +806,18 @@ export function NotificationPanel() {
           rotateX: -10,
           transition: { duration: 0.2 }
         }}
-        className="fixed top-16 right-4 w-[440px] max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] z-[9999] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden"
+  className="fixed top-16 right-4 w-[440px] max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] z-[9999] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden"
         style={{ 
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
           backdropFilter: 'blur(20px) saturate(180%)'
         }}
       >
         {/* Premium Header */}
-        <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 opacity-90" />
-          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent" />
-          
+        <div className="relative">
+          {/* Header gradient limited to top area so the panel body remains light in light mode */}
+          <div className="absolute top-0 left-0 right-0 h-36 sm:h-44 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 opacity-95 pointer-events-none rounded-t-2xl" />
+          <div className="absolute top-0 left-0 right-0 h-36 sm:h-44 bg-gradient-to-br from-transparent via-white/10 to-transparent pointer-events-none rounded-t-2xl" />
+
           <div className="relative p-4 sm:p-6 text-white">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -905,7 +906,7 @@ export function NotificationPanel() {
               className="relative w-full"
             >
               <div className="relative w-full">
-                <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 pointer-events-none z-10" style={{ color: '#ffffff' }} />
+                <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 h-4 w-4 pointer-events-none z-10 text-white/90" />
                 <input
                   ref={searchRef}
                   type="text"
@@ -914,11 +915,7 @@ export function NotificationPanel() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setIsSearchFocused(false)}
-                  className="w-full h-10 pl-10 pr-10 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm font-medium"
-                  style={{ 
-                    color: '#ffffff',
-                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
-                  }}
+                  className="w-full h-10 pl-10 pr-10 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm font-medium text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-300"
                 />
                 {searchQuery && (
                   <motion.button
