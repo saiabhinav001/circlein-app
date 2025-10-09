@@ -818,7 +818,7 @@ export function NotificationPanel() {
           <div className="absolute top-0 left-0 right-0 h-36 sm:h-44 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 opacity-95 pointer-events-none rounded-t-2xl" />
           <div className="absolute top-0 left-0 right-0 h-36 sm:h-44 bg-gradient-to-br from-transparent via-white/10 to-transparent pointer-events-none rounded-t-2xl" />
 
-          <div className="relative p-4 sm:p-6 text-white">
+          <div className="relative p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <motion.div
@@ -857,7 +857,7 @@ export function NotificationPanel() {
                   />
                 </motion.div>
                 <div>
-                  <h3 className="font-bold text-lg sm:text-xl">Notifications</h3>
+                  <h3 className="font-bold text-lg sm:text-xl text-white">Notifications</h3>
                   <p className="text-xs sm:text-sm text-white/80">Stay updated with your community</p>
                 </div>
               </div>
@@ -945,10 +945,9 @@ export function NotificationPanel() {
                 className={cn(
                   "px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 min-w-[90px]",
                   filter === filterOption
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25"
-                    : "bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600"
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25 text-white"
+                    : "bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
                 )}
-                style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)' }}
               >
                 {filterOption === 'all' && <Home className="h-3 w-3" />}
                 {filterOption === 'unread' && <AlertCircle className="h-3 w-3" />}
@@ -969,8 +968,8 @@ export function NotificationPanel() {
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                   <div className="flex items-center gap-2 w-full min-w-0">
-                    <Filter className="h-3.5 w-3.5 flex-shrink-0" style={{ color: '#ffffff' }} />
-                    <div className="flex-1 text-left text-sm font-medium truncate" style={{ color: '#ffffff', textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)' }}>
+                    <Filter className="h-3.5 w-3.5 flex-shrink-0 text-gray-700 dark:text-gray-100" />
+                    <div className="flex-1 text-left text-sm font-medium truncate text-gray-900 dark:text-gray-100">
                       <SelectValue placeholder="All Categories" />
                     </div>
                   </div>
