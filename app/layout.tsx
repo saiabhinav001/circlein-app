@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/providers/theme-provider';
 import { NotificationProvider } from '@/components/notifications/NotificationSystem';
 import { ToastContainer } from '@/components/notifications/ToastNotifications';
 import { Toaster } from '@/components/ui/sonner';
+import LoadingScreen from '@/components/LoadingScreen';
 
 // Import debug functions to make them available in browser console
 import '@/lib/debug-notifications';
@@ -41,6 +42,7 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
+        <LoadingScreen />
         <AuthProvider>
           <ThemeProvider defaultTheme="dark" storageKey="circlein-theme">
             <NotificationProvider>
