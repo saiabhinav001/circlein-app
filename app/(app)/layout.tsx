@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/header';
 import { SearchProvider } from '@/components/providers/search-provider';
 import { EnhancedNotificationListener } from '@/components/notifications/EnhancedNotificationListener';
 import { FirebaseAuthSync } from '@/components/firebase-auth-sync';
+import { UserValidationGuard } from '@/components/auth/UserValidationGuard';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export default function AppLayout({
@@ -18,6 +19,9 @@ export default function AppLayout({
   return (
     <FirebaseAuthSync>
       <SearchProvider>
+        {/* User Validation Guard - Forces logout if user is deleted */}
+        <UserValidationGuard />
+        
         <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
           {/* Desktop Sidebar */}
           <div className="hidden lg:block">

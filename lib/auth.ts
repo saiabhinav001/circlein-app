@@ -306,7 +306,10 @@ export const authOptions: NextAuthOptions = {
               communityId: token.communityId
             });
           } else {
-            console.warn('⚠️ User document not found in Firestore for:', token.email);
+            // User document doesn't exist - account was deleted
+            console.error('❌ User document not found in Firestore for:', token.email, '- Account may have been deleted');
+            // Return null to invalidate the token and force sign-out
+            return null as any;
           }
         } catch (error) {
           console.error('❌ Error fetching user data for token:', error);
@@ -316,16 +319,20 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      // Pass the token data to the session
-      if (token.email) {
-        session.user.email = token.email;
-        session.user.name = token.name || '';
-        session.user.image = token.picture || undefined;
-        (session.user as any).role = token.role;
-        (session.user as any).communityId = token.communityId;
-        (session.user as any).flatNumber = token.flatNumber;
-        (session.user as any).profileCompleted = token.profileCompleted;
+      // If token is null or doesn't have email, return empty session
+      if (!token || !token.email) {
+        console.error('❌ Invalid token in session callback - forcing sign out');
+        return {} as any;
       }
+
+      // Pass the token data to the session
+      session.user.email = token.email;
+      session.user.name = token.name || '';
+      session.user.image = token.picture || undefined;
+      (session.user as any).role = token.role;
+      (session.user as any).communityId = token.communityId;
+      (session.user as any).flatNumber = token.flatNumber;
+      (session.user as any).profileCompleted = token.profileCompleted;
       
       return session;
     },
