@@ -149,13 +149,38 @@ export default function ManageUsers() {
 
   const deleteUser = async (userId: string, userEmail: string) => {
     try {
-      const userRef = doc(db, 'users', userId);
-      await deleteDoc(userRef);
-      toast.success(`User ${userEmail} deleted successfully!`);
-      fetchUsersAndAccessCodes();
+      // Show loading toast
+      const loadingToast = toast.loading(`Deleting user ${userEmail} and all associated data...`);
+      
+      // Call comprehensive deletion API
+      const response = await fetch('/api/admin/delete-resident', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          userEmail
+        }),
+      });
+
+      const data = await response.json();
+
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+
+      if (response.ok) {
+        toast.success(
+          `User deleted successfully! Removed ${data.deletedData.bookings} bookings and ${data.deletedData.notifications} notifications.`,
+          { duration: 5000 }
+        );
+        fetchUsersAndAccessCodes();
+      } else {
+        toast.error(data.error || 'Failed to delete user');
+      }
     } catch (error) {
       console.error('Error deleting user:', error);
-      toast.error('Failed to delete user');
+      toast.error('Failed to delete user. Please try again.');
     }
   };
 
@@ -460,13 +485,26 @@ export default function ManageUsers() {
                             </AlertDialogTrigger>
                             <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
                               <AlertDialogHeader>
-                                <AlertDialogTitle className="text-base sm:text-lg">Delete User</AlertDialogTitle>
-                                <AlertDialogDescription className="text-xs sm:text-sm">
-                                  Are you sure you want to delete user <strong>{user.name || user.email}</strong>? 
-                                  <br />
-                                  Email: <strong>{user.email}</strong>
-                                  <br />
-                                  <span className="text-red-600">This will permanently remove all user data and cannot be undone.</span>
+                                <AlertDialogTitle className="text-base sm:text-lg flex items-center gap-2">
+                                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                                  Delete User - Permanent Action
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-xs sm:text-sm space-y-2">
+                                  <div>
+                                    Are you sure you want to delete <strong>{user.name || user.email}</strong>?
+                                  </div>
+                                  <div className="text-red-600 font-semibold">
+                                    This will permanently delete:
+                                  </div>
+                                  <ul className="list-disc list-inside space-y-1 text-xs">
+                                    <li>User account and profile</li>
+                                    <li>All booking history (past & future)</li>
+                                    <li>All notifications</li>
+                                    <li>Session data (forces sign-out)</li>
+                                  </ul>
+                                  <div className="text-red-600 font-bold pt-2">
+                                    ⚠️ This action cannot be undone!
+                                  </div>
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter className="flex-col sm:flex-row gap-2">
@@ -475,7 +513,8 @@ export default function ManageUsers() {
                                   onClick={() => deleteUser(user.id, user.email)}
                                   className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-xs sm:text-sm"
                                 >
-                                  Delete User
+                                  <Trash2 className="w-3 h-3 mr-1" />
+                                  Delete Permanently
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
