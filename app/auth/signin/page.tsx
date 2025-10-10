@@ -264,7 +264,7 @@ export default function SignIn() {
                       onBlur={() => setFocusedField(null)}
                       placeholder="Enter your password"
                       className={`
-                        pl-9 sm:pl-10 pr-12 sm:pr-14 h-10 sm:h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 text-sm sm:text-base
+                        pl-9 sm:pl-10 pr-11 sm:pr-12 h-10 sm:h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 text-sm sm:text-base
                         transition-all duration-300 ease-out
                         ${focusedField === 'password' 
                           ? 'ring-2 ring-purple-500/50 border-transparent shadow-lg shadow-purple-500/20' 
@@ -273,19 +273,17 @@ export default function SignIn() {
                       `}
                       required
                     />
-                    <Button
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="sm"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 h-auto p-1 hover:bg-transparent text-slate-400 hover:text-slate-200"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
                     >
                       {showPassword ? (
-                        <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <EyeOff className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                       ) : (
-                        <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <Eye className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                       )}
-                    </Button>
+                    </button>
                   </div>
                 </div>
                 
