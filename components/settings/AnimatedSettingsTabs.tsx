@@ -186,16 +186,16 @@ export function AnimatedSettingsTabs({ tabs, activeTab, onTabChange, variant = '
               {isActive && (
                 <motion.div
                   layoutId={`active-indicator-${variant}`}
-                  className="absolute bottom-0.5 sm:bottom-1 left-1/2 -translate-x-1/2 w-3/4 sm:w-2/3 h-1 sm:h-1.5 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.9),0_0_24px_rgba(255,255,255,0.6)]"
+                  className="absolute bottom-0 left-0 right-0 h-[3px] sm:h-[3.5px] md:h-1 bg-white rounded-full"
                   initial={false}
                   transition={{
                     type: 'spring',
-                    stiffness: 500,
-                    damping: 35,
+                    stiffness: 380,
+                    damping: 30,
                     mass: 0.8,
                   }}
                   style={{
-                    boxShadow: '0 0 12px rgba(255,255,255,0.9), 0 0 24px rgba(255,255,255,0.6), 0 2px 8px rgba(255,255,255,0.4)',
+                    boxShadow: '0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.5), 0 0 30px rgba(255,255,255,0.3)',
                   }}
                 />
               )}
