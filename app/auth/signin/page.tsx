@@ -230,9 +230,9 @@ export default function SignIn() {
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0, opacity: 0 }}
                           transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 z-10"
                         >
-                          <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+                          <CheckCircle2 className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] text-green-400" />
                         </motion.div>
                       )}
                       {emailValid === false && (
@@ -241,9 +241,9 @@ export default function SignIn() {
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0, opacity: 0 }}
                           transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 z-10"
                         >
-                          <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
+                          <AlertCircle className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] text-red-400" />
                         </motion.div>
                       )}
                     </AnimatePresence>

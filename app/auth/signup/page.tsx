@@ -301,9 +301,9 @@ export default function SignUp() {
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0, opacity: 0 }}
                           transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 z-10"
                         >
-                          <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+                          <CheckCircle2 className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] text-green-400" />
                         </motion.div>
                       )}
                       {emailValid === false && (
@@ -312,9 +312,9 @@ export default function SignUp() {
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0, opacity: 0 }}
                           transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 z-10"
                         >
-                          <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
+                          <AlertCircle className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] text-red-400" />
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -374,7 +374,7 @@ export default function SignUp() {
                       onBlur={() => setFocusedField(null)}
                       placeholder="Confirm your password"
                       className={`
-                        pl-9 sm:pl-10 pr-[4.5rem] sm:pr-20 h-10 sm:h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 text-sm sm:text-base
+                        pl-9 sm:pl-10 pr-[4.25rem] sm:pr-[4.75rem] h-10 sm:h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 text-sm sm:text-base
                         transition-all duration-300 ease-out
                         ${focusedField === 'confirmPassword' 
                           ? 'ring-2 ring-purple-500/50 border-transparent shadow-lg shadow-purple-500/20' 
@@ -383,18 +383,19 @@ export default function SignUp() {
                       `}
                       required
                     />
+                    {/* Eye Icon - Positioned to the left of validation icon */}
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-10 sm:right-12 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                      className="absolute right-11 sm:right-12 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none z-10"
                     >
                       {showConfirmPassword ? (
-                        <EyeOff className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                        <EyeOff className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px]" />
                       ) : (
-                        <Eye className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                        <Eye className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px]" />
                       )}
                     </button>
-                    {/* Password Match Indicator */}
+                    {/* Password Match Indicator - Far right position */}
                     <AnimatePresence>
                       {passwordsMatch === true && (
                         <motion.div
@@ -402,9 +403,9 @@ export default function SignUp() {
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0, opacity: 0 }}
                           transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 z-20"
                         >
-                          <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+                          <CheckCircle2 className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] text-green-400" />
                         </motion.div>
                       )}
                       {passwordsMatch === false && (
@@ -413,9 +414,9 @@ export default function SignUp() {
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0, opacity: 0 }}
                           transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 z-20"
                         >
-                          <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
+                          <AlertCircle className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] text-red-400" />
                         </motion.div>
                       )}
                     </AnimatePresence>
