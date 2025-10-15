@@ -194,10 +194,18 @@ export function ToastNotification({ notification, onClose, index }: ToastNotific
                     )}
                     
                     <motion.button
+                      type="button"
                       whileHover={{ scale: 1.1, rotate: 90 }}
                       whileTap={{ scale: 0.9 }}
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
                       onMouseDown={(e) => {
                         e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onTouchStart={(e) => {
                         e.stopPropagation();
                       }}
                       onClick={(e) => {
@@ -210,11 +218,13 @@ export function ToastNotification({ notification, onClose, index }: ToastNotific
                       style={{ 
                         pointerEvents: 'auto',
                         position: 'relative',
-                        zIndex: 99999
+                        zIndex: 99999,
+                        touchAction: 'none',
+                        userSelect: 'none'
                       }}
                       aria-label="Close notification"
                     >
-                      <X className="h-4 w-4 text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-400 font-bold" />
+                      <X className="h-4 w-4 text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-400 font-bold pointer-events-none" />
                     </motion.button>
                   </div>
                 </div>

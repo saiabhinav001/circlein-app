@@ -42,6 +42,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/components/providers/theme-provider';
 import { useToast } from '@/hooks/use-toast';
+import { AnimatedSettingsTabs } from '@/components/settings/AnimatedSettingsTabs';
 
 export default function ResidentSettingsUI() {
   const { data: session, update } = useSession();
@@ -50,6 +51,7 @@ export default function ResidentSettingsUI() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
   
   // Resident-specific state
   const [residentProfile, setResidentProfile] = useState({
@@ -171,6 +173,15 @@ export default function ResidentSettingsUI() {
     }
   }, [session?.user?.email, session?.user?.name, session?.user?.image, (session?.user as any)?.flatNumber]);
 
+  // Define tabs configuration
+  const settingsTabs = [
+    { value: 'profile', label: 'Profile', icon: User },
+    { value: 'notifications', label: 'Notifications', icon: Bell, badge: 3 },
+    { value: 'privacy', label: 'Privacy', icon: Shield },
+    { value: 'appearance', label: 'Appearance', icon: Palette },
+    { value: 'security', label: 'Security', icon: Lock },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 max-w-6xl">
@@ -207,30 +218,17 @@ export default function ResidentSettingsUI() {
           </div>
         </motion.div>
 
-        <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto sm:h-14 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border border-gray-200 dark:border-slate-700 gap-1 sm:gap-0 p-1">
-            <TabsTrigger value="profile" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium py-2 sm:py-0">
-              <User className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden xs:inline">Profile</span>
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium py-2 sm:py-0">
-              <Bell className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden xs:inline">Notifications</span>
-            </TabsTrigger>
-            <TabsTrigger value="privacy" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium py-2 sm:py-0">
-              <Shield className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden xs:inline">Privacy</span>
-            </TabsTrigger>
-            <TabsTrigger value="appearance" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium py-2 sm:py-0">
-              <Palette className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden xs:inline">Appearance</span>
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium py-2 sm:py-0">
-              <Lock className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden xs:inline">Security</span>
-            </TabsTrigger>
-          </TabsList>
+        {/* Animated Settings Tabs */}
+        <div className="mb-6">
+          <AnimatedSettingsTabs
+            tabs={settingsTabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            variant="resident"
+          />
+        </div>
 
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           {/* Profile Tab */}
           <TabsContent value="profile">
             <motion.div
