@@ -182,100 +182,69 @@ export function AnimatedSettingsTabs({ tabs, activeTab, onTabChange, variant = '
                 )}
               </AnimatePresence>
 
-              {/* State-of-the-art Active indicator with multiple animation layers */}
+              {/* Ultra-premium active indicator - Best-in-class design */}
               {isActive && (
-                <>
-                  {/* Main glowing underline bar */}
-                  <motion.div
-                    layoutId={`active-indicator-${variant}`}
-                    className="absolute bottom-0 left-0 right-0 h-[4px] sm:h-[5px] md:h-[6px] bg-gradient-to-r from-white/80 via-white to-white/80 rounded-full overflow-hidden"
-                    initial={false}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 300,
-                      damping: 25,
-                      mass: 0.6,
-                    }}
-                    style={{
-                      boxShadow: '0 0 15px rgba(255,255,255,0.9), 0 0 30px rgba(255,255,255,0.6), 0 0 45px rgba(255,255,255,0.3), 0 -2px 10px rgba(255,255,255,0.4)',
-                    }}
-                  >
-                    {/* Animated shimmer effect */}
+                <motion.div
+                  layoutId={`active-indicator-${variant}`}
+                  className="absolute -bottom-[2px] left-1/2 -translate-x-1/2 w-[90%] sm:w-[85%] md:w-[80%]"
+                  initial={false}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 400,
+                    damping: 30,
+                    mass: 0.5,
+                  }}
+                >
+                  {/* Main glowing bar */}
+                  <div className="relative h-[3px] sm:h-[3.5px] md:h-1 rounded-full overflow-visible">
+                    {/* Core white bar with gradient */}
                     <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent"
+                      className="absolute inset-0 bg-gradient-to-r from-white/70 via-white to-white/70 rounded-full"
                       animate={{
-                        x: ['-100%', '100%'],
+                        opacity: [0.9, 1, 0.9],
                       }}
                       transition={{
                         duration: 2,
                         repeat: Infinity,
-                        ease: 'linear',
-                        repeatDelay: 0.5,
+                        ease: 'easeInOut',
+                      }}
+                      style={{
+                        boxShadow: '0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(255,255,255,0.4), 0 4px 12px rgba(255,255,255,0.3)',
                       }}
                     />
                     
-                    {/* Pulsing glow effect */}
+                    {/* Animated shine/shimmer overlay */}
                     <motion.div
-                      className="absolute inset-0 bg-white/30 rounded-full"
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.8) 50%, transparent 100%)',
+                      }}
                       animate={{
-                        opacity: [0.3, 0.6, 0.3],
-                        scale: [1, 1.05, 1],
+                        x: ['-200%', '200%'],
                       }}
                       transition={{
                         duration: 2.5,
                         repeat: Infinity,
                         ease: 'easeInOut',
+                        repeatDelay: 1,
                       }}
                     />
-                  </motion.div>
-
-                  {/* Secondary glow layer for depth */}
-                  <motion.div
-                    className="absolute bottom-0 left-0 right-0 h-[6px] sm:h-[7px] md:h-[8px] bg-white/20 rounded-full blur-sm"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ 
-                      opacity: [0.5, 0.8, 0.5],
-                      scale: 1,
-                    }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{
-                      opacity: {
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                      },
-                      scale: {
-                        type: 'spring',
-                        stiffness: 300,
-                        damping: 25,
-                      }
-                    }}
-                  />
-
-                  {/* Sparkle particles effect */}
-                  {[...Array(3)].map((_, i) => (
+                    
+                    {/* Soft outer glow for depth */}
                     <motion.div
-                      key={i}
-                      className="absolute bottom-1 bg-white rounded-full"
-                      style={{
-                        width: '2px',
-                        height: '2px',
-                        left: `${30 + i * 20}%`,
-                      }}
+                      className="absolute -inset-2 bg-white/10 rounded-full blur-md"
                       animate={{
-                        opacity: [0, 1, 0],
-                        y: [0, -8, -16],
-                        scale: [0, 1, 0],
+                        scale: [1, 1.1, 1],
+                        opacity: [0.3, 0.5, 0.3],
                       }}
                       transition={{
-                        duration: 1.5,
+                        duration: 3,
                         repeat: Infinity,
-                        delay: i * 0.5,
-                        ease: 'easeOut',
+                        ease: 'easeInOut',
                       }}
                     />
-                  ))}
-                </>
+                  </div>
+                </motion.div>
               )}
             </motion.button>
           );
