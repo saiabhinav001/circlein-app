@@ -47,7 +47,12 @@ export function AnimatedSettingsTabs({ tabs, activeTab, onTabChange, variant = '
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-700 shadow-lg min-w-max sm:min-w-0"
+        transition={{ 
+          type: "spring",
+          stiffness: 260,
+          damping: 20 
+        }}
+        className="flex items-center gap-1.5 sm:gap-2 md:gap-3 p-1.5 sm:p-2 md:p-2.5 bg-gradient-to-br from-white/90 via-white/95 to-white/90 dark:from-slate-800/90 dark:via-slate-800/95 dark:to-slate-800/90 backdrop-blur-2xl rounded-xl sm:rounded-2xl border-2 border-gray-200/80 dark:border-slate-700/80 shadow-2xl shadow-gray-900/10 dark:shadow-black/30 min-w-max sm:min-w-0"
       >
         {tabs.map((tab, index) => {
           const Icon = tab.icon;
@@ -64,20 +69,21 @@ export function AnimatedSettingsTabs({ tabs, activeTab, onTabChange, variant = '
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
               className={`
-                relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3
-                rounded-lg sm:rounded-xl font-medium transition-all duration-300
-                ${isActive ? `${colors.activeBg} ${colors.textActive} shadow-lg ${colors.hoverGlow}` : `${colors.textInactive} ${colors.hoverBg}`}
+                relative flex items-center gap-1.5 sm:gap-2 md:gap-2.5 px-3.5 sm:px-5 md:px-6 lg:px-7 py-2.5 sm:py-3 md:py-3.5
+                rounded-xl sm:rounded-xl md:rounded-2xl font-semibold transition-all duration-300
+                ${isActive ? `${colors.activeBg} ${colors.textActive} shadow-xl ${colors.hoverGlow} ring-2 ring-white/30` : `${colors.textInactive} ${colors.hoverBg}`}
                 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-800
                 ${variant === 'resident' ? 'focus:ring-blue-500' : 'focus:ring-amber-500'}
                 disabled:opacity-50 disabled:cursor-not-allowed
-                text-xs sm:text-sm md:text-base
+                text-xs sm:text-sm md:text-base lg:text-base
                 whitespace-nowrap
+                hover:shadow-lg
               `}
               whileHover={{ 
                 scale: 1.05,
-                y: -2,
+                y: -3,
               }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.97 }}
             >
               {/* Background glow effect */}
               <AnimatePresence>
@@ -102,32 +108,42 @@ export function AnimatedSettingsTabs({ tabs, activeTab, onTabChange, variant = '
 
               {/* Content */}
               <motion.div
-                className="relative z-10 flex items-center gap-1.5 sm:gap-2"
+                className="relative z-10 flex items-center gap-1.5 sm:gap-2 md:gap-2.5"
                 animate={{
                   scale: isActive ? 1.05 : 1,
                 }}
-                transition={{ duration: 0.2 }}
+                transition={{ 
+                  duration: 0.3,
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 20
+                }}
               >
                 {/* Icon with animation */}
                 <motion.div
                   animate={{
                     rotate: isActive ? [0, -10, 10, -5, 5, 0] : 0,
-                    scale: isActive ? [1, 1.2, 1] : isHovered ? 1.1 : 1,
+                    scale: isActive ? [1, 1.15, 1] : isHovered ? 1.15 : 1,
                   }}
                   transition={{
-                    duration: 0.5,
+                    duration: 0.6,
                     repeat: isActive ? Infinity : 0,
                     repeatDelay: 3,
+                    ease: "easeInOut"
                   }}
+                  className={isActive ? "drop-shadow-[0_2px_8px_rgba(255,255,255,0.6)]" : ""}
                 >
-                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                  <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 lg:w-5.5 lg:h-5.5" />
                 </motion.div>
 
                 {/* Label */}
                 <motion.span
-                  className="hidden xs:inline font-semibold"
+                  className="hidden xs:inline font-bold tracking-wide"
                   animate={{
-                    opacity: isActive ? 1 : 0.8,
+                    opacity: isActive ? 1 : 0.85,
+                  }}
+                  style={{
+                    textShadow: isActive ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
                   }}
                 >
                   {tab.label}
@@ -166,15 +182,20 @@ export function AnimatedSettingsTabs({ tabs, activeTab, onTabChange, variant = '
                 )}
               </AnimatePresence>
 
-              {/* Active indicator line */}
+              {/* Active indicator line - Enhanced white underline */}
               {isActive && (
                 <motion.div
                   layoutId={`active-indicator-${variant}`}
-                  className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-1 bg-white rounded-full`}
+                  className="absolute bottom-0.5 sm:bottom-1 left-1/2 -translate-x-1/2 w-3/4 sm:w-2/3 h-1 sm:h-1.5 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.9),0_0_24px_rgba(255,255,255,0.6)]"
+                  initial={false}
                   transition={{
                     type: 'spring',
                     stiffness: 500,
-                    damping: 30,
+                    damping: 35,
+                    mass: 0.8,
+                  }}
+                  style={{
+                    boxShadow: '0 0 12px rgba(255,255,255,0.9), 0 0 24px rgba(255,255,255,0.6), 0 2px 8px rgba(255,255,255,0.4)',
                   }}
                 />
               )}
