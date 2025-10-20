@@ -15,9 +15,12 @@ export const CircleInLogo: React.FC<CircleInLogoProps> = ({ className = '', size
       viewBox="0 0 120 120" 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={`${className}`}
       style={{ 
         filter: 'drop-shadow(0 4px 20px rgba(59, 130, 246, 0.3))',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        display: 'block'
       }}
     >
       <defs>

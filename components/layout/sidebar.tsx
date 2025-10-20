@@ -98,14 +98,14 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
   if (!mounted) {
     return (
       <div className="h-screen w-[280px] bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col relative z-50 shadow-xl">
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800">
+        <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 flex items-center justify-center shrink-0">
-              <CircleInLogo size={48} />
+              <CircleInLogo size={48} className="w-full h-full" />
             </div>
-            <div>
-              <span className="text-xl font-bold text-black dark:text-white">CircleIn</span>
-              <div className="text-xs text-black dark:text-slate-400">Community Hub</div>
+            <div className="flex-1 min-w-0">
+              <span className="text-lg sm:text-xl font-bold text-black dark:text-white truncate block">CircleIn</span>
+              <div className="text-xs text-black dark:text-slate-400 truncate">Community Hub</div>
             </div>
           </div>
         </div>
@@ -140,7 +140,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
             // Collapsed state - only on desktop - show logo icon
             <div className="flex flex-col items-center gap-3">
               <div className="w-10 h-10 flex items-center justify-center">
-                <CircleInLogo size={40} />
+                <CircleInLogo size={40} className="w-full h-full" />
               </div>
               <Button
                 variant="ghost"
@@ -156,14 +156,14 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
             <>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
-                  <div className="relative shrink-0">
-                    <div className="w-12 h-12 flex items-center justify-center transition-transform duration-300 hover:scale-110">
-                      <CircleInLogo size={48} />
+                  <div className="relative shrink-0 w-12 h-12">
+                    <div className="w-full h-full flex items-center justify-center transition-transform duration-300 hover:scale-110">
+                      <CircleInLogo size={48} className="w-full h-full" />
                     </div>
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg shadow-green-400/50" />
                   </div>
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
+                    <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
                       CircleIn
                     </span>
                     <span className="text-xs text-slate-600 dark:text-slate-400 -mt-0.5 truncate">
