@@ -128,14 +128,14 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
       <motion.div
         variants={sidebarVariants}
         animate={isCollapsed ? 'closed' : 'open'}
-        className="h-screen bg-gradient-to-b from-white via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col relative shadow-xl w-[280px] lg:w-auto"
+        className="h-screen bg-white dark:bg-slate-950 border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col relative shadow-2xl w-[280px] lg:w-auto"
         style={{ zIndex: 50 }}
       >
         {/* Decorative top gradient */}
         <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent pointer-events-none" />
         
         {/* Header */}
-        <div className="relative p-4 border-b border-slate-200/50 dark:border-slate-800/50 shrink-0">
+        <div className="relative p-4 lg:p-6 border-b border-slate-200/50 dark:border-slate-800/50 shrink-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md">
           {isCollapsed ? (
             // Collapsed state - only on desktop - show logo icon
             <div className="flex flex-col items-center gap-3">
@@ -154,19 +154,19 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
           ) : (
             // Expanded state - show logo and toggle button
             <>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
                   <div className="relative shrink-0">
                     <div className="w-12 h-12 flex items-center justify-center transition-transform duration-300 hover:scale-110">
                       <CircleInLogo size={48} />
                     </div>
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg shadow-green-400/50" />
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
                       CircleIn
                     </span>
-                    <span className="text-xs text-slate-600 dark:text-slate-400 -mt-1">
+                    <span className="text-xs text-slate-600 dark:text-slate-400 -mt-0.5 truncate">
                       Community Hub
                     </span>
                   </div>
@@ -176,7 +176,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center"
+                    className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center shrink-0"
                   >
                     <motion.div
                       animate={{ rotate: 180 }}
@@ -184,6 +184,16 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                     >
                       <ChevronRight className="w-4 h-4 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
                     </motion.div>
+                  </Button>
+                )}
+                {onClose && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onClose}
+                    className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center shrink-0 lg:hidden"
+                  >
+                    <X className="w-4 h-4 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
                   </Button>
                 )}
               </div>
@@ -195,10 +205,10 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800/50 dark:to-slate-700/50 rounded-xl border border-blue-100 dark:border-slate-700"
+                    className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800/50 dark:to-slate-700/50 rounded-xl border border-blue-100 dark:border-slate-700"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-sm font-medium">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-sm font-medium shrink-0">
                         {session.user.name?.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -209,7 +219,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                           {session.user.email}
                         </p>
                       </div>
-                      <Sparkles className="w-4 h-4 text-blue-500 animate-pulse" />
+                      <Sparkles className="w-4 h-4 text-blue-500 animate-pulse shrink-0" />
                     </div>
                   </motion.div>
                 )}

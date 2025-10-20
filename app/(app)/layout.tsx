@@ -37,7 +37,7 @@ export default function AppLayout({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+                  className="fixed inset-0 bg-black/60 z-[100000] lg:hidden backdrop-blur-sm"
                   onClick={() => setMobileMenuOpen(false)}
                 />
                 <motion.div
@@ -45,7 +45,7 @@ export default function AppLayout({
                   animate={{ x: 0 }}
                   exit={{ x: '-100%' }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="fixed inset-y-0 left-0 z-50 lg:hidden"
+                  className="fixed inset-y-0 left-0 z-[100001] lg:hidden"
                 >
                   <Sidebar onClose={() => setMobileMenuOpen(false)} />
                 </motion.div>
