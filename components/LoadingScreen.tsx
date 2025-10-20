@@ -45,115 +45,34 @@ export default function LoadingScreen() {
 
           {/* Logo and Loading Animation */}
           <div className="relative z-10 flex flex-col items-center gap-6 sm:gap-8">
-            {/* Animated Logo with Enhanced Effects */}
+            {/* Animated Logo - Clean & Powerful */}
             <motion.div
-              initial={{ scale: 0, rotate: -180, opacity: 0 }}
-              animate={{ 
-                scale: 1, 
-                rotate: 0,
-                opacity: 1
-              }}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               transition={{
-                type: 'spring',
-                stiffness: 260,
-                damping: 20,
-                duration: 1,
+                duration: 0.6,
+                ease: [0.34, 1.56, 0.64, 1], // Canva-style easing
               }}
               className="relative"
             >
-              {/* Pulsing glow ring behind logo */}
+              {/* Subtle Pulsing Glow */}
               <motion.div
                 animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 0.8, 0.5],
+                  scale: [1, 1.1, 1],
+                  opacity: [0.4, 0.6, 0.4],
                 }}
                 transition={{
                   duration: 2,
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className="absolute inset-0 -m-4 rounded-full bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-pink-500/30 blur-2xl"
+                className="absolute inset-0 -m-6 rounded-full bg-gradient-to-r from-blue-500/30 to-purple-500/30 blur-2xl"
               />
               
-              {/* Secondary rotating glow */}
-              <motion.div
-                animate={{
-                  rotate: 360,
-                  scale: [1, 1.15, 1],
-                }}
-                transition={{
-                  rotate: { duration: 8, repeat: Infinity, ease: "linear" },
-                  scale: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-                }}
-                className="absolute inset-0 -m-3 rounded-full bg-gradient-to-tr from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 blur-xl"
-              />
-              
-              {/* Main logo with glossy appearance */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3, duration: 0.8 }}
-                className="relative"
-                style={{ 
-                  filter: 'drop-shadow(0 20px 40px rgba(139, 92, 246, 0.6)) drop-shadow(0 10px 20px rgba(59, 130, 246, 0.4))',
-                }}
-              >
-                <motion.div
-                  animate={{
-                    y: [0, -8, 0],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                >
-                  <CircleInLogo 
-                    size={128}
-                    animated={true}
-                    className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32"
-                  />
-                </motion.div>
-              </motion.div>
-              
-              {/* Sparkling particles around logo */}
-              <motion.div
-                animate={{
-                  scale: [0, 1, 0],
-                  opacity: [0, 1, 0],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatDelay: 1,
-                }}
-                className="absolute -top-2 -right-2 w-2 h-2 bg-yellow-300 rounded-full blur-sm"
-              />
-              <motion.div
-                animate={{
-                  scale: [0, 1, 0],
-                  opacity: [0, 1, 0],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatDelay: 1.5,
-                  delay: 0.5,
-                }}
-                className="absolute -bottom-2 -left-2 w-2 h-2 bg-blue-300 rounded-full blur-sm"
-              />
-              <motion.div
-                animate={{
-                  scale: [0, 1, 0],
-                  opacity: [0, 1, 0],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatDelay: 1.3,
-                  delay: 0.8,
-                }}
-                className="absolute top-1/2 -right-3 w-1.5 h-1.5 bg-purple-300 rounded-full blur-sm"
+              {/* Logo */}
+              <CircleInLogo 
+                size={128}
+                className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32"
               />
             </motion.div>
 
@@ -161,7 +80,7 @@ export default function LoadingScreen() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
               className="text-center"
             >
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-purple-500 bg-clip-text text-transparent mb-2">
