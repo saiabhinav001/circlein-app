@@ -1,0 +1,44 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient Definitions -->
+  <defs>
+    <linearGradient id="circleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#6366F1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="innerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A78BFA;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Outer Circle with Gradient -->
+  <circle cx="60" cy="60" r="54" fill="url(#circleGradient)" filter="url(#glow)" opacity="0.95"/>
+  
+  <!-- Inner Circle (representing community) -->
+  <circle cx="60" cy="60" r="42" fill="white" opacity="0.15"/>
+  
+  <!-- Modern "C" shape with elegant curves -->
+  <path d="M 85 60 A 25 25 0 1 1 60 35 L 60 45 A 15 15 0 1 0 75 60 Z" 
+        fill="white" opacity="0.95"/>
+  
+  <!-- Three connecting dots (representing community connection) -->
+  <circle cx="45" cy="45" r="4" fill="white" opacity="0.9"/>
+  <circle cx="75" cy="45" r="4" fill="white" opacity="0.9"/>
+  <circle cx="60" cy="70" r="4" fill="white" opacity="0.9"/>
+  
+  <!-- Subtle connection lines -->
+  <line x1="45" y1="45" x2="60" y2="70" stroke="white" stroke-width="1.5" opacity="0.3"/>
+  <line x1="75" y1="45" x2="60" y2="70" stroke="white" stroke-width="1.5" opacity="0.3"/>
+  <line x1="45" y1="45" x2="75" y2="45" stroke="white" stroke-width="1.5" opacity="0.3"/>
+  
+  <!-- Inner decorative ring -->
+  <circle cx="60" cy="60" r="30" fill="none" stroke="url(#innerGradient)" stroke-width="2" opacity="0.4"/>
+</svg>
