@@ -39,6 +39,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Preload logo for instant display */}
+        <link rel="preload" as="image" href="/logo.svg" type="image/svg+xml" />
+        <link rel="preload" as="image" href="/favicon.svg" type="image/svg+xml" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

@@ -99,8 +99,12 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
       <div className="h-screen w-[280px] bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col relative z-50 shadow-xl">
         <div className="p-6 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Home className="w-5 h-5 text-white" />
+            <div className="w-12 h-12 flex items-center justify-center shrink-0">
+              <img 
+                src="/logo.svg" 
+                alt="CircleIn Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <span className="text-xl font-bold text-black dark:text-white">CircleIn</span>
@@ -136,15 +140,22 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
         {/* Header */}
         <div className="relative p-4 border-b border-slate-200/50 dark:border-slate-800/50 shrink-0">
           {isCollapsed ? (
-            // Collapsed state - only on desktop
-            <div className="flex justify-center">
+            // Collapsed state - only on desktop - show logo icon
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 flex items-center justify-center">
+                <img 
+                  src="/logo.svg" 
+                  alt="CircleIn" 
+                  className="w-full h-full object-contain transition-transform duration-300 hover:scale-110"
+                />
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-10 h-10 flex items-center justify-center"
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center"
               >
-                <Menu className="w-5 h-5 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
+                <Menu className="w-4 h-4 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
               </Button>
             </div>
           ) : (
@@ -152,11 +163,15 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
             <>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="relative">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-                      <Home className="w-5 h-5 text-white" />
+                  <div className="relative shrink-0">
+                    <div className="w-12 h-12 flex items-center justify-center">
+                      <img 
+                        src="/logo.svg" 
+                        alt="CircleIn Logo" 
+                        className="w-full h-full object-contain transition-transform duration-300 hover:scale-110"
+                      />
                     </div>
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full animate-pulse" />
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg shadow-green-400/50" />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
