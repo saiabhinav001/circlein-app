@@ -2,39 +2,59 @@
   <defs>
     <linearGradient id="appleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#6366F1;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="35%" style="stop-color:#6366F1;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A855F7;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="appleAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FBBF24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:1" />
     </linearGradient>
     <filter id="appleShadow">
-      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feColorMatrix in="coloredBlur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="glow"/>
+      <feBlend in="SourceGraphic" in2="glow"/>
     </filter>
   </defs>
   
-  <!-- Background -->
+  <!-- Premium background with iOS corner radius -->
   <rect width="180" height="180" rx="40" fill="url(#appleGradient)"/>
   
-  <!-- Main circle -->
-  <circle cx="90" cy="90" r="70" fill="white" opacity="0.12"/>
-  <circle cx="90" cy="90" r="55" fill="white" opacity="0.08"/>
+  <!-- Glow layers -->
+  <circle cx="90" cy="90" r="75" fill="white" opacity="0.1"/>
+  <circle cx="90" cy="90" r="65" fill="white" opacity="0.08"/>
   
-  <!-- Large "C" shape -->
-  <path d="M 130 90 A 40 40 0 1 1 90 50 L 90 65 A 25 25 0 1 0 115 90 Z" 
-        fill="white" filter="url(#appleShadow)"/>
+  <!-- Modern "C" lettermark -->
+  <path 
+    d="M 132 90 A 42 42 0 1 1 90 48 L 90 66 A 24 24 0 1 0 114 90 Z" 
+    fill="white" 
+    opacity="0.98"
+    filter="url(#appleShadow)"
+  />
   
-  <!-- Connection dots -->
-  <circle cx="70" cy="70" r="6" fill="white" opacity="0.95"/>
-  <circle cx="110" cy="70" r="6" fill="white" opacity="0.95"/>
-  <circle cx="90" cy="110" r="6" fill="white" opacity="0.95"/>
+  <!-- Three perfectly positioned community dots -->
+  <g opacity="0.95">
+    <!-- Top left -->
+    <circle cx="70" cy="72" r="7" fill="white"/>
+    <circle cx="70" cy="72" r="4.5" fill="url(#appleAccent)"/>
+    
+    <!-- Top right -->
+    <circle cx="110" cy="72" r="7" fill="white"/>
+    <circle cx="110" cy="72" r="4.5" fill="url(#appleAccent)"/>
+    
+    <!-- Bottom center -->
+    <circle cx="90" cy="108" r="7" fill="white"/>
+    <circle cx="90" cy="108" r="4.5" fill="url(#appleAccent)"/>
+  </g>
   
   <!-- Connection lines -->
-  <line x1="70" y1="70" x2="90" y2="110" stroke="white" stroke-width="2.5" opacity="0.4" stroke-linecap="round"/>
-  <line x1="110" y1="70" x2="90" y2="110" stroke="white" stroke-width="2.5" opacity="0.4" stroke-linecap="round"/>
-  <line x1="70" y1="70" x2="110" y2="70" stroke="white" stroke-width="2.5" opacity="0.4" stroke-linecap="round"/>
+  <g opacity="0.4" stroke="white" stroke-width="3" stroke-linecap="round">
+    <line x1="70" y1="72" x2="110" y2="72"/>
+    <line x1="70" y1="72" x2="90" y2="108"/>
+    <line x1="110" y1="72" x2="90" y2="108"/>
+  </g>
   
-  <!-- Decorative ring -->
-  <circle cx="90" cy="90" r="45" fill="none" stroke="white" stroke-width="2" opacity="0.3"/>
+  <!-- Accent rings -->
+  <circle cx="90" cy="90" r="54" fill="none" stroke="white" stroke-width="2" opacity="0.25"/>
+  <circle cx="90" cy="90" r="78" fill="none" stroke="white" stroke-width="1.5" opacity="0.15"/>
 </svg>

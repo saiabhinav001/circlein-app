@@ -2,39 +2,56 @@
   <defs>
     <linearGradient id="pwaGradient512" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#6366F1;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="35%" style="stop-color:#6366F1;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A855F7;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="pwaAccent512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FBBF24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:1" />
     </linearGradient>
     <filter id="pwaShadow512">
-      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feColorMatrix in="coloredBlur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="glow"/>
+      <feBlend in="SourceGraphic" in2="glow"/>
     </filter>
   </defs>
   
-  <!-- Background -->
+  <!-- Premium background -->
   <rect width="512" height="512" rx="110" fill="url(#pwaGradient512)"/>
   
-  <!-- Main circles -->
-  <circle cx="256" cy="256" r="200" fill="white" opacity="0.12"/>
-  <circle cx="256" cy="256" r="160" fill="white" opacity="0.08"/>
+  <!-- Glow layers -->
+  <circle cx="256" cy="256" r="215" fill="white" opacity="0.1"/>
+  <circle cx="256" cy="256" r="185" fill="white" opacity="0.08"/>
   
-  <!-- Large "C" shape -->
-  <path d="M 368 256 A 112 112 0 1 1 256 144 L 256 186 A 70 70 0 1 0 326 256 Z" 
-        fill="white" filter="url(#pwaShadow512)" opacity="0.98"/>
+  <!-- Modern "C" lettermark -->
+  <path 
+    d="M 374 256 A 118 118 0 1 1 256 138 L 256 187 A 69 69 0 1 0 325 256 Z" 
+    fill="white" 
+    opacity="0.98"
+    filter="url(#pwaShadow512)"
+  />
   
-  <!-- Connection dots -->
-  <circle cx="200" cy="200" r="17" fill="white" opacity="0.95"/>
-  <circle cx="312" cy="200" r="17" fill="white" opacity="0.95"/>
-  <circle cx="256" cy="312" r="17" fill="white" opacity="0.95"/>
+  <!-- Three community dots with golden accent -->
+  <g opacity="0.95">
+    <circle cx="200" cy="205" r="20" fill="white"/>
+    <circle cx="200" cy="205" r="13" fill="url(#pwaAccent512)"/>
+    
+    <circle cx="312" cy="205" r="20" fill="white"/>
+    <circle cx="312" cy="205" r="13" fill="url(#pwaAccent512)"/>
+    
+    <circle cx="256" cy="307" r="20" fill="white"/>
+    <circle cx="256" cy="307" r="13" fill="url(#pwaAccent512)"/>
+  </g>
   
   <!-- Connection lines -->
-  <line x1="200" y1="200" x2="256" y2="312" stroke="white" stroke-width="7" opacity="0.4" stroke-linecap="round"/>
-  <line x1="312" y1="200" x2="256" y2="312" stroke="white" stroke-width="7" opacity="0.4" stroke-linecap="round"/>
-  <line x1="200" y1="200" x2="312" y2="200" stroke="white" stroke-width="7" opacity="0.4" stroke-linecap="round"/>
+  <g opacity="0.4" stroke="white" stroke-width="8" stroke-linecap="round">
+    <line x1="200" y1="205" x2="312" y2="205"/>
+    <line x1="200" y1="205" x2="256" y2="307"/>
+    <line x1="312" y1="205" x2="256" y2="307"/>
+  </g>
   
-  <!-- Decorative ring -->
-  <circle cx="256" cy="256" r="128" fill="none" stroke="white" stroke-width="5" opacity="0.3"/>
+  <!-- Accent rings -->
+  <circle cx="256" cy="256" r="152" fill="none" stroke="white" stroke-width="5" opacity="0.25"/>
+  <circle cx="256" cy="256" r="220" fill="none" stroke="white" stroke-width="4" opacity="0.15"/>
 </svg>

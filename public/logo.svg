@@ -1,44 +1,78 @@
 <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Gradient Definitions -->
   <defs>
-    <linearGradient id="circleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Premium gradient definitions -->
+    <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#6366F1;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="35%" style="stop-color:#6366F1;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A855F7;stop-opacity:1" />
     </linearGradient>
-    <linearGradient id="innerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#A78BFA;stop-opacity:1" />
+    
+    <linearGradient id="glowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#C084FC;stop-opacity:0.8" />
     </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+    
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FBBF24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Professional glow effect -->
+    <filter id="premiumGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="glow"/>
+      <feBlend in="SourceGraphic" in2="glow" mode="normal"/>
+    </filter>
+    
+    <!-- Subtle shadow -->
+    <filter id="softShadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.3"/>
     </filter>
   </defs>
   
-  <!-- Outer Circle with Gradient -->
-  <circle cx="60" cy="60" r="54" fill="url(#circleGradient)" filter="url(#glow)" opacity="0.95"/>
+  <!-- Background circle with premium gradient -->
+  <circle cx="60" cy="60" r="56" fill="url(#mainGradient)" filter="url(#premiumGlow)"/>
   
-  <!-- Inner Circle (representing community) -->
-  <circle cx="60" cy="60" r="42" fill="white" opacity="0.15"/>
+  <!-- Subtle inner glow layer -->
+  <circle cx="60" cy="60" r="50" fill="url(#glowGradient)" opacity="0.2"/>
   
-  <!-- Modern "C" shape with elegant curves -->
-  <path d="M 85 60 A 25 25 0 1 1 60 35 L 60 45 A 15 15 0 1 0 75 60 Z" 
-        fill="white" opacity="0.95"/>
+  <!-- Inner circle for depth -->
+  <circle cx="60" cy="60" r="44" fill="white" opacity="0.08"/>
   
-  <!-- Three connecting dots (representing community connection) -->
-  <circle cx="45" cy="45" r="4" fill="white" opacity="0.9"/>
-  <circle cx="75" cy="45" r="4" fill="white" opacity="0.9"/>
-  <circle cx="60" cy="70" r="4" fill="white" opacity="0.9"/>
+  <!-- Modern geometric "C" lettermark -->
+  <path 
+    d="M 88 60 A 28 28 0 1 1 60 32 L 60 44 A 16 16 0 1 0 76 60 Z" 
+    fill="white" 
+    opacity="0.98"
+    filter="url(#softShadow)"
+  />
   
-  <!-- Subtle connection lines -->
-  <line x1="45" y1="45" x2="60" y2="70" stroke="white" stroke-width="1.5" opacity="0.3"/>
-  <line x1="75" y1="45" x2="60" y2="70" stroke="white" stroke-width="1.5" opacity="0.3"/>
-  <line x1="45" y1="45" x2="75" y2="45" stroke="white" stroke-width="1.5" opacity="0.3"/>
+  <!-- Three perfectly positioned community dots forming triangle -->
+  <g opacity="0.95">
+    <!-- Top left dot -->
+    <circle cx="47" cy="48" r="4.5" fill="white"/>
+    <circle cx="47" cy="48" r="3" fill="url(#accentGradient)"/>
+    
+    <!-- Top right dot -->
+    <circle cx="73" cy="48" r="4.5" fill="white"/>
+    <circle cx="73" cy="48" r="3" fill="url(#accentGradient)"/>
+    
+    <!-- Bottom center dot -->
+    <circle cx="60" cy="72" r="4.5" fill="white"/>
+    <circle cx="60" cy="72" r="3" fill="url(#accentGradient)"/>
+  </g>
   
-  <!-- Inner decorative ring -->
-  <circle cx="60" cy="60" r="30" fill="none" stroke="url(#innerGradient)" stroke-width="2" opacity="0.4"/>
+  <!-- Connection lines with perfect positioning -->
+  <g opacity="0.4" stroke="white" stroke-width="2" stroke-linecap="round">
+    <line x1="47" y1="48" x2="73" y2="48"/>
+    <line x1="47" y1="48" x2="60" y2="72"/>
+    <line x1="73" y1="48" x2="60" y2="72"/>
+  </g>
+  
+  <!-- Decorative accent ring -->
+  <circle cx="60" cy="60" r="36" fill="none" stroke="white" stroke-width="1.5" opacity="0.25"/>
+  
+  <!-- Subtle outer ring for premium feel -->
+  <circle cx="60" cy="60" r="52" fill="none" stroke="white" stroke-width="1" opacity="0.15"/>
 </svg>
