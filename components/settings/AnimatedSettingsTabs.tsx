@@ -44,9 +44,9 @@ export function AnimatedSettingsTabs({ tabs, activeTab, onTabChange, variant = '
 
   return (
     <div className="w-full">
-      {/* Canva-inspired navigation container */}
+      {/* Canva-inspired navigation container - NO SCROLLBAR */}
       <div className="relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl border border-gray-200/60 dark:border-slate-700/60 shadow-xl shadow-gray-900/5 dark:shadow-black/20 p-2">
-        <div className="flex items-center justify-start sm:justify-center gap-1 sm:gap-2 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
           {tabs.map((tab, index) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.value;
@@ -192,7 +192,7 @@ export function AnimatedSettingsTabs({ tabs, activeTab, onTabChange, variant = '
                 {isActive && (
                   <motion.div
                     layoutId={`indicator-${variant}`}
-                    className={`absolute -bottom-2 left-1/2 -translate-x-1/2 w-[60%] h-[3px] sm:h-1 rounded-full bg-gradient-to-r ${colors.indicatorGradient}`}
+                    className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-[70%] h-[3px] sm:h-1 rounded-full bg-gradient-to-r ${colors.indicatorGradient}`}
                     initial={false}
                     transition={{
                       type: 'spring',

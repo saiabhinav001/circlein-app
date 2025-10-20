@@ -176,7 +176,7 @@ export default function ResidentSettingsUI() {
   // Define tabs configuration
   const settingsTabs = [
     { value: 'profile', label: 'Profile', icon: User },
-    { value: 'notifications', label: 'Notifications', icon: Bell, badge: 3 },
+    { value: 'notifications', label: 'Notifications', icon: Bell },
     { value: 'privacy', label: 'Privacy', icon: Shield },
     { value: 'appearance', label: 'Appearance', icon: Palette },
     { value: 'security', label: 'Security', icon: Lock },

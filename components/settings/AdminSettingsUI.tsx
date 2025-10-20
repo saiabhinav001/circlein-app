@@ -68,7 +68,7 @@ export default function AdminSettingsUI() {
     { value: 'profile', label: 'Profile', icon: User },
     { value: 'system', label: 'System', icon: Server },
     { value: 'community', label: 'Community', icon: Building },
-    { value: 'notifications', label: 'Alerts', icon: Bell, badge: 5 },
+    { value: 'notifications', label: 'Alerts', icon: Bell },
     { value: 'appearance', label: 'Appearance', icon: Palette },
     { value: 'security', label: 'Security', icon: Lock },
   ];
