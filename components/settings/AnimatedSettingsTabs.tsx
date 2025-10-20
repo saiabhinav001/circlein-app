@@ -67,10 +67,10 @@ export function AnimatedSettingsTabs({ tabs, activeTab, onTabChange, variant = '
                   damping: 25
                 }}
                 className={`
-                  relative group flex flex-col items-center justify-center gap-1.5 sm:gap-2
-                  px-3 sm:px-4 md:px-5 lg:px-6 py-3 sm:py-3.5 md:py-4
+                  relative group flex flex-col items-center justify-center gap-2 sm:gap-2.5
+                  px-4 sm:px-5 md:px-6 lg:px-7 py-3 sm:py-3.5 md:py-4
                   rounded-xl transition-all duration-300 ease-out
-                  min-w-[70px] sm:min-w-[80px] md:min-w-[90px]
+                  min-w-[80px] sm:min-w-[90px] md:min-w-[100px]
                   ${isActive 
                     ? `${colors.activeBg} ${colors.activeText} shadow-lg` 
                     : `bg-transparent ${colors.inactiveText} ${colors.hoverBg}`
@@ -177,7 +177,7 @@ export function AnimatedSettingsTabs({ tabs, activeTab, onTabChange, variant = '
                 {/* Label */}
                 <motion.span
                   className={`
-                    relative z-10 text-[10px] sm:text-xs md:text-sm font-semibold
+                    relative z-10 text-[11px] sm:text-xs md:text-sm font-semibold
                     tracking-wide whitespace-nowrap
                     ${isActive ? 'text-white' : ''}
                   `}
@@ -188,34 +188,38 @@ export function AnimatedSettingsTabs({ tabs, activeTab, onTabChange, variant = '
                   {tab.label}
                 </motion.span>
 
-                {/* Active indicator line at bottom */}
+                {/* Premium Active Indicator - Perfect Positioning */}
                 {isActive && (
                   <motion.div
                     layoutId={`indicator-${variant}`}
-                    className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-[70%] h-[3px] sm:h-1 rounded-full bg-gradient-to-r ${colors.indicatorGradient}`}
+                    className="absolute left-0 right-0 bottom-1 flex justify-center"
                     initial={false}
                     transition={{
                       type: 'spring',
                       stiffness: 500,
-                      damping: 35,
-                    }}
-                    style={{
-                      boxShadow: `0 0 20px ${colors.glowColor}, 0 4px 12px ${colors.glowColor}`,
+                      damping: 40,
+                      mass: 0.8,
                     }}
                   >
-                    {/* Animated shimmer on indicator */}
-                    <motion.div
-                      className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/60 to-transparent"
-                      animate={{
-                        x: ['-100%', '100%'],
+                    <div className={`w-[75%] h-[3px] sm:h-[4px] rounded-full bg-gradient-to-r ${colors.indicatorGradient} relative overflow-hidden`}
+                      style={{
+                        boxShadow: `0 0 16px ${colors.glowColor}, 0 2px 8px ${colors.glowColor}`,
                       }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: 'linear',
-                        repeatDelay: 1,
-                      }}
-                    />
+                    >
+                      {/* Shimmer effect */}
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent"
+                        animate={{
+                          x: ['-200%', '200%'],
+                        }}
+                        transition={{
+                          duration: 2.5,
+                          repeat: Infinity,
+                          ease: 'linear',
+                          repeatDelay: 1.5,
+                        }}
+                      />
+                    </div>
                   </motion.div>
                 )}
 
