@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { signOut } from 'next-auth/react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { CircleInLogo } from '@/components/ui/CircleInLogo';
+import { CircleInLogo } from '@/components/ui';
 
 const sidebarVariants = {
   open: { 

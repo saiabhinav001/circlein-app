@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { CircleInLogo } from '@/components/ui/CircleInLogo';
+import { CircleInLogo } from '@/components/ui';
 
 export default function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true);

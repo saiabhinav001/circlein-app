@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-interface CircleInLogoProps {
+export interface CircleInLogoProps {
   className?: string;
   size?: number;
 }
@@ -111,3 +111,5 @@ export const CircleInLogo: React.FC<CircleInLogoProps> = ({ className = '', size
     </svg>
   );
 };
+
+export default CircleInLogo;
