@@ -128,7 +128,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
       <motion.div
         variants={sidebarVariants}
         animate={isCollapsed ? 'closed' : 'open'}
-        className="h-screen bg-white dark:bg-slate-950 border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col relative shadow-2xl w-[280px] lg:w-auto"
+        className="h-screen bg-white dark:bg-slate-950 border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col relative shadow-2xl w-[280px] lg:w-auto overflow-hidden"
         style={{ zIndex: 50 }}
       >
         {/* Decorative top gradient */}
@@ -229,14 +229,14 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 p-3 sm:p-4 space-y-1.5 sm:space-y-2 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-slate-700">
           <AnimatePresence>
             {!isCollapsed && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="px-3 py-2 mb-4"
+                className="px-3 py-2 mb-2 sm:mb-4"
               >
                 <h3 className="text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider">
                   Navigation
@@ -290,7 +290,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                   href={item.href}
                   onClick={() => onClose?.()}
                   className={cn(
-                    'group relative flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
+                    'group relative flex items-center px-3 py-2.5 sm:py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
                     pathname === item.href
                       ? 'bg-gradient-to-r text-white shadow-lg'
                       : 'text-black dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30'
@@ -365,7 +365,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
 
           {session?.user?.role === 'admin' && (
             <>
-              <div className="my-6 relative">
+              <div className="my-4 sm:my-6 relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200 dark:border-slate-700" />
                 </div>
@@ -377,7 +377,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                       exit={{ opacity: 0, scale: 0.9 }}
                       className="relative flex justify-center text-xs font-semibold"
                     >
-                      <span className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-3 py-1 text-black dark:text-slate-400 uppercase tracking-wider rounded-full font-bold">
+                      <span className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-2.5 sm:px-3 py-1 text-black dark:text-slate-400 uppercase tracking-wider rounded-full font-bold">
                         Admin
                       </span>
                     </motion.div>
@@ -507,7 +507,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-b from-transparent to-slate-50/50 dark:to-slate-900/50 space-y-2">
+        <div className="p-3 sm:p-4 border-t border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-b from-transparent to-slate-50/50 dark:to-slate-900/50 space-y-1.5 sm:space-y-2 shrink-0">
           {/* Theme Toggle */}
           <motion.div
             variants={linkVariants}
@@ -608,7 +608,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="mt-3 px-3"
+                className="mt-2 sm:mt-3 px-3"
               >
                 <div className="text-xs text-slate-400 dark:text-slate-500 text-center">
                   CircleIn v1.0.0

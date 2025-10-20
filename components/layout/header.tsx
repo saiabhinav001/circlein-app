@@ -42,7 +42,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
     <motion.header
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="h-14 sm:h-16 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl flex items-center justify-between px-3 sm:px-4 md:px-6 relative z-[99998] gap-3 sm:gap-4"
+      className="h-14 sm:h-16 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl flex items-center justify-between px-3 sm:px-4 md:px-6 relative z-40 gap-2 sm:gap-3 md:gap-4"
     >
       <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
         {/* Hamburger Menu */}
@@ -63,7 +63,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
 
       <div className="flex items-center gap-2 sm:gap-3 md:gap-4 shrink-0">
         {/* Notifications */}
-        <div className="relative z-[99999]" style={{ zIndex: 99999, position: 'relative' }}>
+        <div className="relative">
           <NotificationBell />
           <NotificationPanel />
         </div>
