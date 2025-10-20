@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { CircleInLogo } from '@/components/ui';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -172,9 +173,9 @@ export default function SignUp() {
               stiffness: 200,
               damping: 15
             }}
-            className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 via-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-2xl shadow-purple-500/20"
+            className="flex items-center justify-center mx-auto mb-4 sm:mb-6"
           >
-            <span className="text-xl sm:text-2xl font-bold text-white">C</span>
+            <CircleInLogo size={64} className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16" />
           </motion.div>
           
           <motion.h1

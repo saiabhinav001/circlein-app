@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, Mail, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { signOut } from 'next-auth/react';
+import { CircleInLogo } from '@/components/ui';
 
 export default function CommunityRequired() {
   const { data: session } = useSession();
@@ -18,6 +19,10 @@ export default function CommunityRequired() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
+        <div className="flex justify-center mb-6">
+          <CircleInLogo size={80} className="w-16 h-16 sm:w-20 sm:h-20" />
+        </div>
+        
         <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950 dark:border-orange-800">
           <CardHeader className="text-center">
             <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
