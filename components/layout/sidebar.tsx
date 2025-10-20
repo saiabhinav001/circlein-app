@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { signOut } from 'next-auth/react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { CircleInLogo } from '@/components/ui/CircleInLogo';
 
 const sidebarVariants = {
   open: { 
@@ -100,11 +101,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
         <div className="p-6 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 flex items-center justify-center shrink-0">
-              <img 
-                src="/logo.svg" 
-                alt="CircleIn Logo" 
-                className="w-full h-full object-contain"
-              />
+              <CircleInLogo size={48} />
             </div>
             <div>
               <span className="text-xl font-bold text-black dark:text-white">CircleIn</span>
@@ -143,11 +140,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
             // Collapsed state - only on desktop - show logo icon
             <div className="flex flex-col items-center gap-3">
               <div className="w-10 h-10 flex items-center justify-center">
-                <img 
-                  src="/logo.svg" 
-                  alt="CircleIn" 
-                  className="w-full h-full object-contain transition-transform duration-300 hover:scale-110"
-                />
+                <CircleInLogo size={40} />
               </div>
               <Button
                 variant="ghost"
@@ -164,12 +157,8 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="relative shrink-0">
-                    <div className="w-12 h-12 flex items-center justify-center">
-                      <img 
-                        src="/logo.svg" 
-                        alt="CircleIn Logo" 
-                        className="w-full h-full object-contain transition-transform duration-300 hover:scale-110"
-                      />
+                    <div className="w-12 h-12 flex items-center justify-center transition-transform duration-300 hover:scale-110">
+                      <CircleInLogo size={48} />
                     </div>
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg shadow-green-400/50" />
                   </div>

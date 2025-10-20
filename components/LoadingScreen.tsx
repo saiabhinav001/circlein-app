@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { CircleInLogo } from '@/components/ui/CircleInLogo';
 
 export default function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true);
@@ -54,19 +55,18 @@ export default function LoadingScreen() {
                 damping: 15,
                 duration: 0.8,
               }}
-              className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32"
+              className="relative"
             >
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.6 }}
-                className="w-full h-full"
+                className="drop-shadow-2xl"
+                style={{ filter: 'drop-shadow(0 10px 30px rgba(139, 92, 246, 0.4))' }}
               >
-                <img 
-                  src="/logo.svg" 
-                  alt="CircleIn Logo" 
-                  className="w-full h-full object-contain drop-shadow-2xl"
-                  style={{ filter: 'drop-shadow(0 10px 30px rgba(139, 92, 246, 0.4))' }}
+                <CircleInLogo 
+                  size={128}
+                  className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32"
                 />
               </motion.div>
             </motion.div>
