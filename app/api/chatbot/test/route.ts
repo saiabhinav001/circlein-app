@@ -30,9 +30,9 @@ export async function GET(request: NextRequest) {
 
     // Initialize Gemini AI
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Use gemini-1.5-flash which is available in v1beta API
+    // Use gemini-pro which works with Google AI Studio API keys
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash',
+      model: 'gemini-pro',
       generationConfig: {
         temperature: 0.9,
         topK: 1,
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log('✅ Model initialized with gemini-1.5-flash, testing with simple prompt...');
+    console.log('✅ Model initialized with gemini-pro, testing with simple prompt...');
 
     // Test with a simple prompt
     const result = await model.generateContent('Say "Hello! CircleIn chatbot is working!" in a friendly way.');
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       message: 'Chatbot API is working correctly',
       testResponse: text,
       apiKeyStatus: 'Configured and valid',
-      modelUsed: 'gemini-1.5-flash',
+      modelUsed: 'gemini-pro',
       timestamp: new Date().toISOString()
     });
 

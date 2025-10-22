@@ -18,12 +18,9 @@ export async function GET(request: NextRequest) {
     
     // Try different model names
     const modelsToTest = [
-      'gemini-1.5-flash-001',
-      'gemini-1.5-pro-001',
-      'gemini-1.0-pro',
+      'gemini-pro',
       'gemini-1.5-flash',
-      'gemini-1.5-pro',
-      'gemini-pro'
+      'gemini-1.5-pro'
     ];
     
     const testResults: any[] = [];

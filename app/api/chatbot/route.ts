@@ -126,10 +126,9 @@ export async function POST(request: NextRequest) {
     console.log('🔧 Initializing Gemini AI...');
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // Use the specific model version that works with Google AI Studio API keys
-    // Based on @google/generative-ai v0.24.1
+    // Use gemini-pro which works with Google AI Studio API keys
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash-001',  // Use specific version number
+      model: 'gemini-pro',
       generationConfig: {
         temperature: 0.9,
         topK: 1,
@@ -137,7 +136,7 @@ export async function POST(request: NextRequest) {
         maxOutputTokens: 2048,
       },
     });
-    console.log('✅ Model initialized with gemini-1.5-flash-001');
+    console.log('✅ Model initialized with gemini-pro');
 
     // Build conversation context
     const conversationContext = conversationHistory
