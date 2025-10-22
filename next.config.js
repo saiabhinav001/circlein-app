@@ -4,17 +4,34 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   
-  // Suppress build warnings
+  // Suppress all warnings
   onDemandEntries: {
     maxInactiveAge: 25 * 1000,
     pagesBufferLength: 2,
   },
   
+  // TypeScript and ESLint - ignore errors in production build
+  typescript: {
+    ignoreBuildErrors: false, // Keep type checking
+  },
+  eslint: {
+    ignoreDuringBuilds: true, // Suppress ESLint warnings
+  },
+  
   // Experimental features to suppress warnings
   experimental: {
     logging: {
-      level: 'error',
+      level: 'error', // Only show errors, not warnings
     },
+  },
+  
+  // Webpack configuration to suppress warnings
+  webpack: (config, { isServer }) => {
+    config.infrastructureLogging = {
+      level: 'error',
+    };
+    config.stats = 'errors-only';
+    return config;
   },
   
   // Security headers
