@@ -59,12 +59,16 @@ export default function ContactPage() {
     try {
       const response = await fetch('/api/chatbot', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        },
         body: JSON.stringify({
           message: currentInput,
           userRole: session?.user?.role || 'resident',
           conversationHistory: messages.slice(-10)
-        })
+        }),
+        cache: 'no-store'
       });
 
       if (!response.ok) {
