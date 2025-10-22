@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, ChevronRight, Sparkles, Bell, LogOut } from 'lucide-react';
+import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, ChevronRight, Sparkles, Bell, LogOut, MessageCircle } from 'lucide-react';
 import { useTheme } from '../providers/theme-provider';
 import { Button } from '@/components/ui/button';
 import { signOut } from 'next-auth/react';
@@ -80,6 +80,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
     { name: 'My Bookings', href: '/bookings', icon: BookOpen, color: 'from-purple-500 to-pink-500' },
     { name: 'Calendar', href: '/calendar', icon: Calendar, color: 'from-green-500 to-emerald-500' },
     { name: 'Notifications', href: '/notifications', icon: Bell, color: 'from-orange-500 to-yellow-500' },
+    { name: 'Contact Us', href: '/contact', icon: MessageCircle, color: 'from-teal-500 to-cyan-500' },
     { name: 'Settings', href: '/settings', icon: Settings, color: 'from-gray-500 to-slate-600' },
   ];
 
