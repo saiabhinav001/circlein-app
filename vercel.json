@@ -5,7 +5,8 @@
   "framework": "nextjs",
   "regions": ["iad1"],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "NEXTAUTH_URL": "https://circlein-app.vercel.app"
   },
   "functions": {
     "app/api/**/*.ts": {
