@@ -20,14 +20,9 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   themeColor: '#3B82F6',
   icons: {
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/logo.svg', sizes: 'any', type: 'image/svg+xml' }
-    ],
-    apple: [
-      { url: '/apple-touch-icon.svg', sizes: '180x180', type: 'image/svg+xml' }
-    ],
-    shortcut: [{ url: '/favicon.svg', type: 'image/svg+xml' }]
+    icon: '/logo.svg',
+    apple: '/logo.svg',
+    shortcut: '/logo.svg'
   },
 };
 

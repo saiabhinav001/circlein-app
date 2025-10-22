@@ -101,12 +101,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if Gemini API key is configured
-    if (!process.env.GEMINI_API_KEY) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('❌ GEMINI_API_KEY is not configured in environment variables');
       return NextResponse.json(
-        { error: 'Gemini API key not configured' },
+        { error: 'AI service is not configured. Please contact support.' },
         { status: 500 }
       );
     }
+
+    console.log('✅ Gemini API key found, initializing model...');
 
     // Initialize Gemini model with the latest model name
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });

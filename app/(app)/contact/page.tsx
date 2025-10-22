@@ -189,9 +189,11 @@ export default function ContactPage() {
         createdAt: serverTimestamp()
       };
 
-      console.log('📧 Sending email to:', recipientEmail);
+      console.log('📧 Attempting to send email to:', recipientEmail);
+      console.log('📧 Mail data:', { to: recipientEmail, subject: mailData.message.subject });
       
-      await addDoc(collection(db, 'mail'), mailData);
+      const docRef = await addDoc(collection(db, 'mail'), mailData);
+      console.log('✅ Email document created with ID:', docRef.id);
 
       toast.success('Message sent successfully! ✅', {
         description: 'We\'ll get back to you within 24 hours.',
@@ -202,8 +204,13 @@ export default function ContactPage() {
 
     } catch (error: any) {
       console.error('❌ Email send error:', error);
+      console.error('❌ Error details:', {
+        code: error.code,
+        message: error.message,
+        stack: error.stack
+      });
       toast.error('Failed to send message ❌', {
-        description: error.message || 'Please try again or contact us directly.',
+        description: error.message || 'Please check your internet connection and try again.',
         duration: 6000
       });
     } finally {
