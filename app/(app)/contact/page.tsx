@@ -10,8 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 type ContactMode = 'chatbot' | 'email';
 
@@ -135,65 +133,31 @@ export default function ContactPage() {
     try {
       const recipientEmail = isAdmin ? 'circleinapp1@gmail.com' : 'abhinav.sadineni@gmail.com';
       
-      const mailData = {
-        to: recipientEmail,
-        message: {
-          subject: `[CircleIn Contact] ${emailForm.subject}`,
-          html: `
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <style>
-                  body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                  .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb; }
-                  .header { background: linear-gradient(135deg, #3B82F6, #8B5CF6); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }
-                  .content { background: white; padding: 30px; border-radius: 0 0 10px 10px; }
-                  .info-box { background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3B82F6; }
-                  .message-box { background: #fefce8; border-left: 4px solid #eab308; padding: 15px; margin: 20px 0; }
-                  .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <div class="header">
-                    <h1>📧 New Contact Form Submission</h1>
-                    <p style="margin: 0; opacity: 0.9;">from CircleIn Community Platform</p>
-                  </div>
-                  <div class="content">
-                    <div class="info-box">
-                      <p style="margin: 5px 0;"><strong>From:</strong> ${session.user.name || 'Unknown'}</p>
-                      <p style="margin: 5px 0;"><strong>Email:</strong> ${session.user.email}</p>
-                      <p style="margin: 5px 0;"><strong>Role:</strong> <span style="background: ${isAdmin ? '#3B82F6' : '#10B981'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${isAdmin ? 'Admin' : 'Resident'}</span></p>
-                      <p style="margin: 5px 0;"><strong>Subject:</strong> ${emailForm.subject}</p>
-                      <p style="margin: 5px 0;"><strong>Sent:</strong> ${new Date().toLocaleString()}</p>
-                    </div>
-                    
-                    <h3 style="color: #1f2937; margin-top: 20px;">Message:</h3>
-                    <div class="message-box">
-                      <p style="white-space: pre-wrap; margin: 0;">${emailForm.message}</p>
-                    </div>
-                    
-                    <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280;">
-                      <em>📱 This email was sent from the CircleIn Contact Us form. Please respond to ${session.user.email}</em>
-                    </p>
-                  </div>
-                  <div class="footer">
-                    <p>© ${new Date().getFullYear()} CircleIn Community Management</p>
-                    <p style="margin-top: 5px;">Powered by Firebase & Vercel</p>
-                  </div>
-                </div>
-              </body>
-            </html>
-          `
-        },
-        createdAt: serverTimestamp()
-      };
-
-      console.log('📧 Attempting to send email to:', recipientEmail);
-      console.log('📧 Mail data:', { to: recipientEmail, subject: mailData.message.subject });
+      console.log('📧 Sending email to:', recipientEmail);
+      console.log('📧 From:', session.user.email);
       
-      const docRef = await addDoc(collection(db, 'mail'), mailData);
-      console.log('✅ Email document created with ID:', docRef.id);
+      // Send email via API
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: recipientEmail,
+          subject: emailForm.subject,
+          message: emailForm.message,
+          senderName: session.user.name,
+          senderEmail: session.user.email,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.details || result.error || 'Failed to send email');
+      }
+
+      console.log('✅ Email sent successfully:', result.messageId);
 
       toast.success('Message sent successfully! ✅', {
         description: 'We\'ll get back to you within 24 hours.',
