@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 
 export async function POST(request: NextRequest) {
   try {
-    const { to, subject, message, senderName, senderEmail } = await request.json();
+    const { to, subject, message, senderName, senderEmail, senderRole } = await request.json();
 
     if (!to || !subject || !message) {
       return NextResponse.json(
@@ -11,6 +11,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    
+    console.log('📧 Email request:', { to, senderRole, senderName, senderEmail });
 
     // Create transporter using Gmail SMTP
     const transporter = nodemailer.createTransport({
@@ -22,6 +24,9 @@ export async function POST(request: NextRequest) {
     });
 
     // HTML email template
+    const roleLabel = senderRole === 'admin' ? 'Admin' : 'Resident';
+    const roleColor = senderRole === 'admin' ? '#3B82F6' : '#10B981';
+    
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -35,6 +40,7 @@ export async function POST(request: NextRequest) {
             .content { background: white; padding: 30px; border-radius: 0 0 10px 10px; }
             .info-box { background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3B82F6; }
             .message-box { background: #fefce8; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #eab308; }
+            .role-badge { background: ${roleColor}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }
             .footer { margin-top: 20px; padding: 15px; text-align: center; color: #6b7280; font-size: 12px; }
           </style>
         </head>
@@ -42,21 +48,23 @@ export async function POST(request: NextRequest) {
           <div class="container">
             <div class="header">
               <h1 style="margin: 0;">📬 CircleIn Contact Form</h1>
-              <p style="margin: 5px 0;">New message from resident</p>
+              <p style="margin: 5px 0;">New message from <span class="role-badge">${roleLabel}</span></p>
             </div>
             <div class="content">
               <div class="info-box">
-                <p><strong>From:</strong> ${senderName || 'Anonymous'}</p>
-                <p><strong>Email:</strong> ${senderEmail || 'Not provided'}</p>
-                <p><strong>Subject:</strong> ${subject}</p>
+                <p style="margin: 5px 0;"><strong>From:</strong> ${senderName || 'Anonymous'}</p>
+                <p style="margin: 5px 0;"><strong>Email:</strong> ${senderEmail || 'Not provided'}</p>
+                <p style="margin: 5px 0;"><strong>Role:</strong> <span style="background: ${roleColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${roleLabel}</span></p>
+                <p style="margin: 5px 0;"><strong>Subject:</strong> ${subject}</p>
+                <p style="margin: 5px 0;"><strong>Sent:</strong> ${new Date().toLocaleString()}</p>
               </div>
               <div class="message-box">
                 <h3 style="margin-top: 0;">Message:</h3>
-                <p>${message.replace(/\n/g, '<br>')}</p>
+                <p style="white-space: pre-wrap;">${message.replace(/\n/g, '<br>')}</p>
               </div>
               <div class="footer">
                 <p>© ${new Date().getFullYear()} CircleIn Community Management</p>
-                <p style="margin-top: 5px;">Powered by CircleIn Platform</p>
+                <p style="margin-top: 5px;">Please reply directly to ${senderEmail}</p>
               </div>
             </div>
           </div>

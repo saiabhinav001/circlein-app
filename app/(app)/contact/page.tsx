@@ -131,10 +131,20 @@ export default function ContactPage() {
     setEmailSending(true);
 
     try {
-      const recipientEmail = isAdmin ? 'circleinapp1@gmail.com' : 'abhinav.sadineni@gmail.com';
+      // Get recipient email based on role
+      // Admin emails go to main support, Resident emails go to their community admin
+      let recipientEmail = 'circleinapp1@gmail.com'; // Default to main support
+      
+      if (isAdmin) {
+        // Admin sending to main support
+        recipientEmail = 'circleinapp1@gmail.com';
+      } else {
+        // Resident sending to their admin - get admin email from community
+        recipientEmail = session.user.adminEmail || 'abhinav.sadineni@gmail.com';
+      }
       
       console.log('📧 Sending email to:', recipientEmail);
-      console.log('📧 From:', session.user.email);
+      console.log('📧 From:', session.user.email, '| Role:', isAdmin ? 'admin' : 'resident');
       
       // Send email via API
       const response = await fetch('/api/send-email', {
@@ -148,6 +158,9 @@ export default function ContactPage() {
           message: emailForm.message,
           senderName: session.user.name,
           senderEmail: session.user.email,
+          senderRole: isAdmin ? 'admin' : 'resident',
+        }),
+      });
         }),
       });
 
