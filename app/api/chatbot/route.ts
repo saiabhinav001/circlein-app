@@ -125,9 +125,17 @@ export async function POST(request: NextRequest) {
     // Initialize Gemini AI with API key
     console.log('🔧 Initializing Gemini AI...');
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Use gemini-pro which is the stable, widely available model
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-    console.log('✅ Model initialized successfully with gemini-pro');
+    // Try gemini-1.5-pro model (newer, more stable)
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-1.5-pro',
+      generationConfig: {
+        temperature: 0.9,
+        topK: 1,
+        topP: 1,
+        maxOutputTokens: 2048,
+      },
+    });
+    console.log('✅ Model initialized successfully with gemini-1.5-pro');
 
     // Build conversation context
     const conversationContext = conversationHistory
