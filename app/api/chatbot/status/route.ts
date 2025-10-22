@@ -13,17 +13,8 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Initialize and list available models
+    // Initialize
     const genAI = new GoogleGenerativeAI(apiKey);
-    
-    // Try to list models
-    let availableModels: string[] = [];
-    try {
-      const models = await genAI.listModels();
-      availableModels = models.map((m: any) => m.name || m.model);
-    } catch (e: any) {
-      console.error('Failed to list models:', e.message);
-    }
     
     // Try different model names
     const modelsToTest = [
@@ -32,9 +23,7 @@ export async function GET(request: NextRequest) {
       'gemini-1.0-pro',
       'gemini-1.5-flash',
       'gemini-1.5-pro',
-      'gemini-pro',
-      'models/gemini-1.5-flash',
-      'models/gemini-pro'
+      'gemini-pro'
     ];
     
     const testResults: any[] = [];
@@ -67,7 +56,6 @@ export async function GET(request: NextRequest) {
       status: testResults.some(r => r.status === 'success') ? 'success' : 'error',
       apiKeyConfigured: true,
       apiKeyLength: apiKey.length,
-      availableModels: availableModels,
       testResults: testResults,
       timestamp: new Date().toISOString()
     });
