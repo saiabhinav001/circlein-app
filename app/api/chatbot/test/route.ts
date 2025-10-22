@@ -30,9 +30,10 @@ export async function GET(request: NextRequest) {
 
     // Initialize Gemini AI
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    // Use gemini-pro which is the stable model
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    console.log('✅ Model initialized, testing with simple prompt...');
+    console.log('✅ Model initialized with gemini-pro, testing with simple prompt...');
 
     // Test with a simple prompt
     const result = await model.generateContent('Say "Hello! CircleIn chatbot is working!" in a friendly way.');
