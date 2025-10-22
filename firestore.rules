@@ -50,5 +50,11 @@ service cloud.firestore {
     match /community-notifications/{notificationId} {
       allow read, write: if true;
     }
+    
+    // Mail collection (for Firebase Email Extension)
+    match /mail/{emailId} {
+      allow create: if true; // Allow anyone to create emails
+      allow read, update, delete: if false; // Only backend can read/update/delete
+    }
   }
 }
