@@ -160,6 +160,7 @@ export default function ContactPage() {
           senderName: session.user.name,
           senderEmail: session.user.email,
           senderRole: isAdmin ? 'admin' : 'resident',
+          communityName: session.user.communityId || 'Unknown Community',
         }),
       });
 

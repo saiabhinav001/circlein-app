@@ -20,14 +20,8 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   themeColor: '#3B82F6',
   icons: {
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/logo.svg', type: 'image/svg+xml' }
-    ],
-    apple: [
-      { url: '/apple-touch-icon.svg', type: 'image/svg+xml' }
-    ],
-    shortcut: '/favicon.svg'
+    icon: '/favicon.svg',
+    apple: '/apple-touch-icon.svg',
   },
 };
 
@@ -39,9 +33,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Preload logo for instant display */}
-        <link rel="preload" as="image" href="/logo.svg" type="image/svg+xml" />
-        <link rel="preload" as="image" href="/favicon.svg" type="image/svg+xml" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-
 // CircleIn Knowledge Base - Secure and comprehensive
 const CIRCLEIN_KNOWLEDGE_BASE = `
 You are CircleIn AI Assistant, a helpful and friendly support bot for the CircleIn Community Management Platform.
@@ -114,7 +111,8 @@ export async function POST(request: NextRequest) {
     console.log('✅ Gemini API key found, length:', apiKey.length);
     console.log('✅ Initializing model: gemini-1.5-flash');
 
-    // Initialize Gemini model with the latest model name
+    // Initialize Gemini AI with API key
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     // Build conversation context

@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 
 export async function POST(request: NextRequest) {
   try {
-    const { to, subject, message, senderName, senderEmail, senderRole } = await request.json();
+    const { to, subject, message, senderName, senderEmail, senderRole, communityName } = await request.json();
 
     if (!to || !subject || !message) {
       return NextResponse.json(
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log('📧 Email request:', { to, senderRole, senderName, senderEmail });
+    console.log('📧 Email request:', { to, senderRole, senderName, senderEmail, communityName });
 
     // Create transporter using Gmail SMTP
     const transporter = nodemailer.createTransport({
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
                 <p style="margin: 5px 0;"><strong>From:</strong> ${senderName || 'Anonymous'}</p>
                 <p style="margin: 5px 0;"><strong>Email:</strong> ${senderEmail || 'Not provided'}</p>
                 <p style="margin: 5px 0;"><strong>Role:</strong> <span style="background: ${roleColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${roleLabel}</span></p>
+                <p style="margin: 5px 0;"><strong>Community:</strong> ${communityName || 'Not specified'}</p>
                 <p style="margin: 5px 0;"><strong>Subject:</strong> ${subject}</p>
                 <p style="margin: 5px 0;"><strong>Sent:</strong> ${new Date().toLocaleString()}</p>
               </div>
