@@ -88,9 +88,13 @@ If asked about technical backend details, politely redirect: "I can't share tech
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🤖 Chatbot API called');
+    
     const { message, userRole, conversationHistory } = await request.json();
+    console.log('📝 Request data:', { message: message?.substring(0, 50), userRole, historyLength: conversationHistory?.length });
 
     if (!message?.trim()) {
+      console.error('❌ Empty message received');
       return NextResponse.json(
         { error: 'Message is required' },
         { status: 400 }
@@ -100,20 +104,29 @@ export async function POST(request: NextRequest) {
     // Check if Gemini API key is configured
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey || apiKey.trim() === '') {
-      console.error('❌ GEMINI_API_KEY is not configured in environment variables');
-      console.error('❌ Available env vars:', Object.keys(process.env).filter(k => k.includes('GEMINI')));
+      console.error('❌ GEMINI_API_KEY is not configured');
+      console.error('❌ Environment check:', { 
+        hasKey: !!apiKey, 
+        keyLength: apiKey?.length,
+        nodeEnv: process.env.NODE_ENV 
+      });
       return NextResponse.json(
         { error: 'AI service is not configured. Please contact support.' },
         { status: 500 }
       );
     }
 
-    console.log('✅ Gemini API key found, length:', apiKey.length);
-    console.log('✅ Initializing model: gemini-1.5-flash');
+    console.log('✅ API key verified:', { 
+      length: apiKey.length, 
+      prefix: apiKey.substring(0, 10) + '...',
+      suffix: '...' + apiKey.substring(apiKey.length - 5)
+    });
 
     // Initialize Gemini AI with API key
+    console.log('🔧 Initializing Gemini AI...');
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    console.log('✅ Model initialized successfully');
 
     // Build conversation context
     const conversationContext = conversationHistory
@@ -135,10 +148,19 @@ ${message}
 ## Your Response:
 Please provide a helpful, accurate, and concise response based on the CircleIn knowledge base. If the question is outside your knowledge scope, politely suggest using the email support option.`;
 
+    console.log('📤 Sending prompt to Gemini...');
+    
     // Generate response
     const result = await model.generateContent(prompt);
+    console.log('📥 Received response from Gemini');
+    
     const response = await result.response;
     const text = response.text();
+    
+    console.log('✅ Response text extracted:', { 
+      length: text.length, 
+      preview: text.substring(0, 100) 
+    });
 
     // Security check - ensure no sensitive info is leaked
     const sensitivePatterns = [
@@ -157,22 +179,39 @@ Please provide a helpful, accurate, and concise response based on the CircleIn k
     
     // If response contains sensitive terms, use a safe fallback
     if (sensitivePatterns.some(pattern => pattern.test(text))) {
+      console.log('⚠️ Sensitive content detected, using safe response');
       sanitizedResponse = "I notice your question involves technical details that I cannot discuss for security reasons. However, I'm happy to help with using CircleIn features! Could you rephrase your question, or would you like to contact our support team via email?";
     }
 
+    console.log('✅ Returning response to client');
     return NextResponse.json({ response: sanitizedResponse });
 
   } catch (error: any) {
-    console.error('Chatbot error:', error);
+    console.error('❌ Chatbot error:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack?.substring(0, 200)
+    });
     
     // Handle specific error types
-    if (error.message?.includes('API key')) {
+    if (error.message?.includes('API key') || error.message?.includes('API_KEY_INVALID')) {
+      console.error('❌ API Key error detected');
       return NextResponse.json(
         { error: 'AI service configuration error. Please contact support.' },
         { status: 500 }
       );
     }
 
+    if (error.message?.includes('quota') || error.message?.includes('429')) {
+      console.error('❌ Quota exceeded');
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable. Please try again in a moment.' },
+        { status: 429 }
+      );
+    }
+
+    console.error('❌ Generic error occurred');
     return NextResponse.json(
       { error: 'Failed to generate response. Please try again or use email support.' },
       { status: 500 }
