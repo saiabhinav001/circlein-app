@@ -13,23 +13,63 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Test the API
+    // Initialize and list available models
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     
-    const result = await model.generateContent('Say "Hello! Chatbot is working!" in one sentence.');
-    const response = await result.response;
-    const text = response.text();
+    // Try to list models
+    let availableModels: string[] = [];
+    try {
+      const models = await genAI.listModels();
+      availableModels = models.map((m: any) => m.name || m.model);
+    } catch (e: any) {
+      console.error('Failed to list models:', e.message);
+    }
+    
+    // Try different model names
+    const modelsToTest = [
+      'gemini-1.5-flash-001',
+      'gemini-1.5-pro-001',
+      'gemini-1.0-pro',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
+      'gemini-pro',
+      'models/gemini-1.5-flash',
+      'models/gemini-pro'
+    ];
+    
+    const testResults: any[] = [];
+    
+    for (const modelName of modelsToTest) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent('Say "Hello" in one word.');
+        const response = await result.response;
+        const text = response.text();
+        
+        testResults.push({
+          model: modelName,
+          status: 'success',
+          response: text
+        });
+        
+        // If we found a working model, stop testing
+        break;
+      } catch (error: any) {
+        testResults.push({
+          model: modelName,
+          status: 'failed',
+          error: error.message
+        });
+      }
+    }
     
     return NextResponse.json({
-      status: 'success',
-      message: 'Chatbot API is working correctly',
+      status: testResults.some(r => r.status === 'success') ? 'success' : 'error',
       apiKeyConfigured: true,
       apiKeyLength: apiKey.length,
-      modelUsed: 'gemini-1.5-flash',
-      testResponse: text,
-      timestamp: new Date().toISOString(),
-      deployment: 'latest'
+      availableModels: availableModels,
+      testResults: testResults,
+      timestamp: new Date().toISOString()
     });
 
   } catch (error: any) {

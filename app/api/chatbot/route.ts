@@ -126,10 +126,10 @@ export async function POST(request: NextRequest) {
     console.log('🔧 Initializing Gemini AI...');
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // Use gemini-1.5-flash which is available in v1beta API
-    // Note: gemini-pro is deprecated in v1beta, use gemini-1.5-flash instead
+    // Use the specific model version that works with Google AI Studio API keys
+    // Based on @google/generative-ai v0.24.1
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash',
+      model: 'gemini-1.5-flash-001',  // Use specific version number
       generationConfig: {
         temperature: 0.9,
         topK: 1,
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
         maxOutputTokens: 2048,
       },
     });
-    console.log('✅ Model initialized successfully with gemini-1.5-flash');
+    console.log('✅ Model initialized with gemini-1.5-flash-001');
 
     // Build conversation context
     const conversationContext = conversationHistory
