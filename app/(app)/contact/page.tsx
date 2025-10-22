@@ -139,8 +139,9 @@ export default function ContactPage() {
         // Admin sending to main support
         recipientEmail = 'circleinapp1@gmail.com';
       } else {
-        // Resident sending to their admin - get admin email from community
-        recipientEmail = session.user.adminEmail || 'abhinav.sadineni@gmail.com';
+        // Resident sending to their admin
+        // TODO: Get admin email from community/user data
+        recipientEmail = 'abhinav.sadineni@gmail.com';
       }
       
       console.log('📧 Sending email to:', recipientEmail);
@@ -159,8 +160,6 @@ export default function ContactPage() {
           senderName: session.user.name,
           senderEmail: session.user.email,
           senderRole: isAdmin ? 'admin' : 'resident',
-        }),
-      });
         }),
       });
 
