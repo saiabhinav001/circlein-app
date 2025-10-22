@@ -126,34 +126,18 @@ export async function POST(request: NextRequest) {
     console.log('🔧 Initializing Gemini AI...');
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // Try different model names in order of preference
-    let model;
-    try {
-      // First try gemini-1.5-pro-latest (most recent stable)
-      model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-pro-latest',
-        generationConfig: {
-          temperature: 0.9,
-          topK: 1,
-          topP: 1,
-          maxOutputTokens: 2048,
-        },
-      });
-      console.log('✅ Model initialized successfully with gemini-1.5-pro-latest');
-    } catch (e) {
-      console.log('⚠️ gemini-1.5-pro-latest failed, trying gemini-pro...');
-      // Fallback to original gemini-pro
-      model = genAI.getGenerativeModel({ 
-        model: 'gemini-pro',
-        generationConfig: {
-          temperature: 0.9,
-          topK: 1,
-          topP: 1,
-          maxOutputTokens: 2048,
-        },
-      });
-      console.log('✅ Model initialized successfully with gemini-pro');
-    }
+    // Use gemini-1.5-flash which is available in v1beta API
+    // Note: gemini-pro is deprecated in v1beta, use gemini-1.5-flash instead
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-1.5-flash',
+      generationConfig: {
+        temperature: 0.9,
+        topK: 1,
+        topP: 1,
+        maxOutputTokens: 2048,
+      },
+    });
+    console.log('✅ Model initialized successfully with gemini-1.5-flash');
 
     // Build conversation context
     const conversationContext = conversationHistory
