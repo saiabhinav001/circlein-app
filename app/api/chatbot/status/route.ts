@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,47 +12,59 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Initialize
-    const genAI = new GoogleGenerativeAI(apiKey);
+    // Fetch available models directly from the API
+    const modelsResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+    );
     
-    // Try different model names
-    const modelsToTest = [
-      'gemini-pro',
-      'gemini-1.5-flash',
-      'gemini-1.5-pro'
-    ];
+    if (!modelsResponse.ok) {
+      throw new Error(`Failed to fetch models: ${modelsResponse.status}`);
+    }
     
-    const testResults: any[] = [];
+    const modelsData = await modelsResponse.json();
+    const availableModels = modelsData.models?.map((m: any) => ({
+      name: m.name,
+      displayName: m.displayName,
+      supportedMethods: m.supportedGenerationMethods
+    })) || [];
     
-    for (const modelName of modelsToTest) {
-      try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent('Say "Hello" in one word.');
-        const response = await result.response;
-        const text = response.text();
-        
-        testResults.push({
+    // Try to use the first available model that supports generateContent
+    const workingModel = availableModels.find((m: any) => 
+      m.supportedMethods?.includes('generateContent')
+    );
+    
+    let testResult = null;
+    if (workingModel) {
+      // Test with the working model
+      const modelName = workingModel.name.replace('models/', '');
+      const testResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Say "Hello" in one word.' }] }]
+          })
+        }
+      );
+      
+      if (testResponse.ok) {
+        const testData = await testResponse.json();
+        testResult = {
           model: modelName,
           status: 'success',
-          response: text
-        });
-        
-        // If we found a working model, stop testing
-        break;
-      } catch (error: any) {
-        testResults.push({
-          model: modelName,
-          status: 'failed',
-          error: error.message
-        });
+          response: testData.candidates?.[0]?.content?.parts?.[0]?.text || 'No response'
+        };
       }
     }
     
     return NextResponse.json({
-      status: testResults.some(r => r.status === 'success') ? 'success' : 'error',
+      status: testResult ? 'success' : 'error',
       apiKeyConfigured: true,
       apiKeyLength: apiKey.length,
-      testResults: testResults,
+      availableModels: availableModels,
+      workingModel: workingModel?.name || null,
+      testResult: testResult,
       timestamp: new Date().toISOString()
     });
 
@@ -62,7 +73,6 @@ export async function GET(request: NextRequest) {
       status: 'error',
       message: error.message,
       errorName: error.name,
-      errorStatus: error.status,
       timestamp: new Date().toISOString()
     }, { status: 500 });
   }
