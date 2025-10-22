@@ -125,17 +125,35 @@ export async function POST(request: NextRequest) {
     // Initialize Gemini AI with API key
     console.log('🔧 Initializing Gemini AI...');
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Try gemini-1.5-pro model (newer, more stable)
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-pro',
-      generationConfig: {
-        temperature: 0.9,
-        topK: 1,
-        topP: 1,
-        maxOutputTokens: 2048,
-      },
-    });
-    console.log('✅ Model initialized successfully with gemini-1.5-pro');
+    
+    // Try different model names in order of preference
+    let model;
+    try {
+      // First try gemini-1.5-pro-latest (most recent stable)
+      model = genAI.getGenerativeModel({ 
+        model: 'gemini-1.5-pro-latest',
+        generationConfig: {
+          temperature: 0.9,
+          topK: 1,
+          topP: 1,
+          maxOutputTokens: 2048,
+        },
+      });
+      console.log('✅ Model initialized successfully with gemini-1.5-pro-latest');
+    } catch (e) {
+      console.log('⚠️ gemini-1.5-pro-latest failed, trying gemini-pro...');
+      // Fallback to original gemini-pro
+      model = genAI.getGenerativeModel({ 
+        model: 'gemini-pro',
+        generationConfig: {
+          temperature: 0.9,
+          topK: 1,
+          topP: 1,
+          maxOutputTokens: 2048,
+        },
+      });
+      console.log('✅ Model initialized successfully with gemini-pro');
+    }
 
     // Build conversation context
     const conversationContext = conversationHistory
@@ -221,8 +239,19 @@ Please provide a helpful, accurate, and concise response based on the CircleIn k
     }
 
     console.error('❌ Generic error occurred');
+    console.error('❌ Full error:', JSON.stringify({
+      message: error.message,
+      name: error.name,
+      cause: error.cause,
+      status: error.status
+    }, null, 2));
+    
     return NextResponse.json(
-      { error: 'Failed to generate response. Please try again or use email support.' },
+      { 
+        error: 'Failed to generate response. Please try again or use email support.',
+        details: error.message,
+        errorType: error.name
+      },
       { status: 500 }
     );
   }
