@@ -87,6 +87,158 @@ const priorityStyles = {
   urgent: 'border-l-red-500 dark:border-l-red-400 bg-red-50/50 dark:bg-red-950/20'
 };
 
+// Separate component for notification card to use hooks properly
+interface NotificationCardProps {
+  notification: Notification;
+  removeNotification: (id: string) => void;
+  markAsRead: (id: string) => void;
+  getPriorityColor: (priority: string) => string;
+  getNotificationIcon: (notification: Notification) => React.ReactNode;
+  formatTimeAgo: (date: Date) => string;
+  router: any;
+  setIsOpen: (open: boolean) => void;
+}
+
+const NotificationCard: React.FC<NotificationCardProps> = ({
+  notification,
+  removeNotification,
+  markAsRead,
+  getPriorityColor,
+  getNotificationIcon,
+  formatTimeAgo,
+  router,
+  setIsOpen
+}) => {
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  
+  // Direct DOM event handler for delete button - bypasses React's synthetic events
+  useEffect(() => {
+    const button = deleteButtonRef.current;
+    if (!button) return;
+    
+    const handleDelete = (e: MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      // Haptic feedback
+      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+      console.log('🗑️ Delete button clicked:', notification.id);
+      removeNotification(notification.id);
+    };
+    
+    // Use native DOM events instead of React synthetic events
+    button.addEventListener('click', handleDelete, true); // Use capture phase
+    
+    return () => {
+      button.removeEventListener('click', handleDelete, true);
+    };
+  }, [notification.id, removeNotification]);
+  
+  return (
+    <div className="relative group">
+      {/* Delete button - using native DOM events via useRef */}
+      <button
+        ref={deleteButtonRef}
+        className="absolute top-3 right-3 z-[9999] p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors duration-200 bg-white dark:bg-gray-800 shadow-md hover:shadow-lg"
+        title="Remove notification"
+        type="button"
+        style={{ 
+          pointerEvents: 'auto',
+          isolation: 'isolate',
+          position: 'absolute'
+        }}
+      >
+        <X className="h-4 w-4" />
+      </button>
+
+      {/* Clickable notification card */}
+      <div
+        className={cn(
+          "p-4 sm:p-5 pr-14 cursor-pointer transition-all duration-300 relative overflow-hidden",
+          "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20 active:scale-[0.99]",
+          !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
+        )}
+        onClick={(e) => {
+          // Don't handle if clicking on button area
+          const target = e.target as HTMLElement;
+          if (target.closest('button')) {
+            return;
+          }
+          // Haptic feedback
+          if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+            navigator.vibrate(30);
+          }
+          if (!notification.read) markAsRead(notification.id);
+          if (notification.actionUrl) {
+            router.push(notification.actionUrl);
+            setIsOpen(false);
+          }
+        }}
+      >
+        {/* Enhanced Priority indicator */}
+        {!notification.read && (
+          <div
+            className={cn(
+              "absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b rounded-r-full",
+              getPriorityColor(notification.priority)
+            )}
+          />
+        )}
+
+        {/* Hover effect overlay */}
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+        />
+
+        <div className="flex items-start gap-3 sm:gap-4 relative z-10">
+          {/* Enhanced Icon */}
+          <div
+            className={cn(
+              "flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br relative overflow-hidden transition-transform hover:scale-105",
+              getPriorityColor(notification.priority)
+            )}
+          >
+            {getNotificationIcon(notification)}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-sm sm:text-base leading-tight line-clamp-2 text-gray-900 dark:text-white">
+                  {notification.title}
+                  {!notification.read && (
+                    <span className="ml-2 inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                  )}
+                </h4>
+              </div>
+              
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-xs font-medium whitespace-nowrap text-gray-500 dark:text-gray-300">
+                  {formatTimeAgo(new Date(notification.timestamp))}
+                </span>
+              </div>
+            </div>
+            
+            <p className="text-sm line-clamp-2 leading-relaxed mb-3 text-gray-700 dark:text-gray-300">
+              {notification.message}
+            </p>
+
+            {/* Action button if available */}
+            {notification.actionLabel && (
+              <button
+                className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold rounded-lg transition-all duration-200 shadow-md hover:scale-105 active:scale-95"
+              >
+                {notification.actionLabel}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -1187,166 +1339,19 @@ export function NotificationPanel() {
             </div>
           ) : (
             <div className="divide-y divide-gray-100/50 dark:divide-gray-700/50">
-              {filteredAndSortedNotifications.map((notification, index) => {
-                const deleteButtonRef = React.useRef<HTMLButtonElement>(null);
-                
-                // Direct DOM event handler for delete button - bypasses React's synthetic events
-                React.useEffect(() => {
-                  const button = deleteButtonRef.current;
-                  if (!button) return;
-                  
-                  const handleDelete = (e: MouseEvent) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    // Haptic feedback
-                    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-                      navigator.vibrate(50);
-                    }
-                    console.log('🗑️ Delete button clicked:', notification.id);
-                    removeNotification(notification.id);
-                  };
-                  
-                  // Use native DOM events instead of React synthetic events
-                  button.addEventListener('click', handleDelete, true); // Use capture phase
-                  
-                  return () => {
-                    button.removeEventListener('click', handleDelete, true);
-                  };
-                }, [notification.id]);
-                
-                return (
-                  <div
-                    key={notification.id}
-                    className="relative group"
-                  >
-                    {/* Delete button - using native DOM events via useRef */}
-                    <button
-                      ref={deleteButtonRef}
-                      className="absolute top-3 right-3 z-[9999] p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors duration-200 bg-white dark:bg-gray-800 shadow-md hover:shadow-lg"
-                      title="Remove notification"
-                      type="button"
-                      style={{ 
-                        pointerEvents: 'auto',
-                        isolation: 'isolate',
-                        position: 'absolute'
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-
-                    {/* Clickable notification card */}
-                    <div
-                      className={cn(
-                        "p-4 sm:p-5 pr-14 cursor-pointer transition-all duration-300 relative overflow-hidden",
-                        "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20 active:scale-[0.99]",
-                        !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
-                      )}
-                      onClick={(e) => {
-                        // Don't handle if clicking on button area
-                        const target = e.target as HTMLElement;
-                        if (target.closest('button')) {
-                          return;
-                        }
-                        // Haptic feedback
-                        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-                          navigator.vibrate(30);
-                        }
-                        if (!notification.read) markAsRead(notification.id);
-                        if (notification.actionUrl) {
-                          router.push(notification.actionUrl);
-                          setIsOpen(false);
-                        }
-                      }}
-                    >
-                  {/* Enhanced Priority indicator */}
-                  {!notification.read && (
-                    <div
-                      className={cn(
-                        "absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b rounded-r-full",
-                        getPriorityColor(notification.priority)
-                      )}
-                    />
-                  )}
-
-                  {/* Hover effect overlay */}
-                  <div
-                    className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                  />
-
-                  <div className="flex items-start gap-3 sm:gap-4 relative z-10">
-                    {/* Enhanced Icon */}
-                    <div
-                      className={cn(
-                        "flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br relative overflow-hidden transition-transform hover:scale-105",
-                        getPriorityColor(notification.priority)
-                      )}
-                    >
-                      {getNotificationIcon(notification)}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm sm:text-base leading-tight line-clamp-2 text-gray-900 dark:text-white">
-                            {notification.title}
-                            {!notification.read && (
-                              <span
-                                className="ml-2 w-2 h-2 bg-blue-500 rounded-full inline-block animate-pulse"
-                              />
-                            )}
-                          </h4>
-                          <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs px-2 py-1 bg-white/80 dark:bg-gray-700/80 border-gray-300 dark:border-gray-600"
-                            >
-                              {notification.category}
-                            </Badge>
-                            <Badge 
-                              variant="outline"
-                              className={cn(
-                                "text-xs px-2 py-1 font-medium",
-                                notification.priority === 'urgent' && "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400",
-                                notification.priority === 'high' && "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-400",
-                                notification.priority === 'medium' && "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400",
-                                notification.priority === 'low' && "bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-700/30 dark:text-gray-400"
-                              )}
-                            >
-                              {notification.priority === 'urgent' && '🚨'}
-                              {notification.priority === 'high' && '⚡'}
-                              {notification.priority === 'medium' && '📋'}
-                              {notification.priority === 'low' && '📝'}
-                              {notification.priority}
-                            </Badge>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-xs font-medium whitespace-nowrap text-gray-500 dark:text-gray-300">
-                            {formatTimeAgo(new Date(notification.timestamp))}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <p className="text-sm line-clamp-2 leading-relaxed mb-3 text-gray-700 dark:text-gray-300">
-                        {notification.message}
-                      </p>
-
-                      {/* Action button if available */}
-                      {notification.actionLabel && (
-                        <button
-                          className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold rounded-lg transition-all duration-200 shadow-md hover:scale-105 active:scale-95"
-                        >
-                          {notification.actionLabel}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  </div>
-                  {/* Close clickable card div */}
-                </div>
-              );
-              })}
+              {filteredAndSortedNotifications.map((notification) => (
+                <NotificationCard
+                  key={notification.id}
+                  notification={notification}
+                  removeNotification={removeNotification}
+                  markAsRead={markAsRead}
+                  getPriorityColor={getPriorityColor}
+                  getNotificationIcon={getNotificationIcon}
+                  formatTimeAgo={formatTimeAgo}
+                  router={router}
+                  setIsOpen={setIsOpen}
+                />
+              ))}
             </div>
           )}
         </div>
