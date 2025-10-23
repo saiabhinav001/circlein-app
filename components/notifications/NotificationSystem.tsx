@@ -803,38 +803,15 @@ export function NotificationPanel() {
   return (
     <AnimatePresence>
       {/* Mobile backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] lg:hidden"
+      <div
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] lg:hidden animate-fade-in"
         onClick={() => setIsOpen(false)}
       />
 
       {/* Premium Notification Panel */}
-      <motion.div
+      <div
         ref={panelRef}
-        initial={{ opacity: 0, y: -20, scale: 0.9, rotateX: -10 }}
-        animate={{ 
-          opacity: 1, 
-          y: 0, 
-          scale: 1, 
-          rotateX: 0,
-          transition: {
-            type: "spring",
-            stiffness: 300,
-            damping: 25,
-            mass: 0.9
-          }
-        }}
-        exit={{ 
-          opacity: 0, 
-          y: -20, 
-          scale: 0.9, 
-          rotateX: -10,
-          transition: { duration: 0.2 }
-        }}
-  className="fixed top-16 right-4 w-[440px] max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] z-[9999] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden"
+  className="fixed top-16 right-4 w-[440px] max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] z-[9999] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden animate-slide-down"
         style={{ 
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
           backdropFilter: 'blur(20px) saturate(180%)'
@@ -1193,62 +1170,26 @@ export function NotificationPanel() {
         {/* Premium Notifications List */}
         <div className="max-h-80 sm:max-h-96 overflow-y-auto custom-scrollbar">
           {filteredAndSortedNotifications.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div
               className="p-8 sm:p-12 text-center"
             >
-              <motion.div
-                animate={{ 
-                  y: [0, -10, 0],
-                  rotate: [0, 5, -5, 0]
-                }}
-                transition={{ 
-                  duration: 4, 
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-gradient-to-br from-blue-500 via-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center relative overflow-hidden"
+              <div
+                className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-gradient-to-br from-blue-500 via-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center relative overflow-hidden animate-bounce"
               >
                 <Bell className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                  animate={{ x: [-60, 60] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                  style={{ transform: "skewX(-20deg)" }}
-                />
-              </motion.div>
+              </div>
               <h4 className="font-bold text-lg mb-2 text-gray-900 dark:text-white">All caught up!</h4>
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {searchQuery ? 'No matching notifications found for your search' :
                  filter === 'unread' ? 'You have no unread notifications' : 
                  'No notifications to display at this time'}
               </p>
-            </motion.div>
+            </div>
           ) : (
             <div className="divide-y divide-gray-100/50 dark:divide-gray-700/50">
-              <AnimatePresence mode="popLayout">
-                {filteredAndSortedNotifications.map((notification, index) => (
-                  <motion.div
-                    key={notification.id}
-                    initial={{ opacity: 0, x: -50, rotateY: -15 }}
-                    animate={{ 
-                      opacity: 1, 
-                      x: 0, 
-                      rotateY: 0,
-                      transition: { 
-                        delay: index * 0.08,
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 20
-                      }
-                    }}
-                    exit={{ 
-                      opacity: 0, 
-                      x: 100, 
-                      scale: 0.8,
-                      transition: { duration: 0.3 }
-                    }}
+              {filteredAndSortedNotifications.map((notification, index) => (
+                <div
+                  key={notification.id}
                   className={cn(
                     "p-4 sm:p-5 cursor-pointer transition-all duration-300 relative overflow-hidden group",
                     "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
@@ -1280,40 +1221,29 @@ export function NotificationPanel() {
                 >
                   {/* Enhanced Priority indicator */}
                   {!notification.read && (
-                    <motion.div
-                      initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: '4px', opacity: 1 }}
+                    <div
                       className={cn(
-                        "absolute left-0 top-0 bottom-0 bg-gradient-to-b rounded-r-full",
+                        "absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b rounded-r-full",
                         getPriorityColor(notification.priority)
                       )}
                     />
                   )}
 
                   {/* Hover effect overlay */}
-                  <motion.div
+                  <div
                     className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                    initial={false}
                   />
 
                   <div className="flex items-start gap-3 sm:gap-4 relative z-10">
-                    {/* Enhanced Icon with better animations */}
-                    <motion.div
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      whileTap={{ scale: 0.9 }}
+                    {/* Enhanced Icon */}
+                    <div
                       className={cn(
-                        "flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br relative overflow-hidden",
+                        "flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br relative overflow-hidden transition-transform hover:scale-105",
                         getPriorityColor(notification.priority)
                       )}
                     >
                       {getNotificationIcon(notification)}
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                        animate={{ x: [-40, 40] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                        style={{ transform: "skewX(-20deg)" }}
-                      />
-                    </motion.div>
+                    </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-2">
@@ -1321,17 +1251,8 @@ export function NotificationPanel() {
                           <h4 className="font-semibold text-sm sm:text-base leading-tight line-clamp-2 text-gray-900 dark:text-white">
                             {notification.title}
                             {!notification.read && (
-                              <motion.span
-                                animate={{ 
-                                  scale: [1, 1.2, 1],
-                                  opacity: [1, 0.7, 1]
-                                }}
-                                transition={{ 
-                                  duration: 2, 
-                                  repeat: Infinity,
-                                  ease: "easeInOut"
-                                }}
-                                className="ml-2 w-2 h-2 bg-blue-500 rounded-full inline-block"
+                              <span
+                                className="ml-2 w-2 h-2 bg-blue-500 rounded-full inline-block animate-pulse"
                               />
                             )}
                           </h4>
@@ -1392,19 +1313,16 @@ export function NotificationPanel() {
 
                       {/* Action button if available */}
                       {notification.actionLabel && (
-                        <motion.button
-                          whileHover={{ scale: 1.05, y: -1 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold rounded-lg transition-all duration-200 shadow-md"
+                        <button
+                          className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold rounded-lg transition-all duration-200 shadow-md hover:scale-105 active:scale-95"
                         >
                           {notification.actionLabel}
-                        </motion.button>
+                        </button>
                       )}
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))}
-              </AnimatePresence>
             </div>
           )}
         </div>
@@ -1414,63 +1332,53 @@ export function NotificationPanel() {
           <div className="p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-t border-gray-200/50 dark:border-gray-700/50">
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               {unreadCount > 0 && (
-                <motion.button
-                  whileHover={{ scale: 1.02, y: -1 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   onClick={() => markAllAsRead()}
-                  className="flex-1 py-2.5 px-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-sm font-semibold rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 px-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-sm font-semibold rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Check className="h-4 w-4" />
                   Mark All Read ({unreadCount})
-                </motion.button>
+                </button>
               )}
-              <motion.button
-                whileHover={{ scale: 1.02, y: -1 }}
-                whileTap={{ scale: 0.98 }}
+              <button
                 onClick={handleSettingsClick}
-                className="flex-1 py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <Settings className="h-4 w-4" />
                 Manage All
-              </motion.button>
+              </button>
             </div>
             
             {/* Enhanced quick stats */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+            <div 
               className="flex justify-center gap-4 mt-3 text-xs font-medium text-gray-700 dark:text-white"
             >
               <span className="flex items-center gap-1">
-                <motion.div 
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="w-2 h-2 bg-blue-500 rounded-full"
+                <div 
+                  className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"
                 />
                 {notifications.length} total
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <motion.div 
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-                  className="w-2 h-2 bg-red-500 rounded-full"
+                <div 
+                  className="w-2 h-2 bg-red-500 rounded-full animate-pulse"
+                  style={{ animationDelay: '500ms' }}
                 />
                 {unreadCount} unread
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <motion.div 
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 1 }}
-                  className="w-2 h-2 bg-green-500 rounded-full"
+                <div 
+                  className="w-2 h-2 bg-green-500 rounded-full animate-pulse"
+                  style={{ animationDelay: '1000ms' }}
                 />
                 {filteredAndSortedNotifications.length} showing
               </span>
-            </motion.div>
+            </div>
           </div>
         )}
-      </motion.div>
+      </div>
 
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -1486,7 +1394,34 @@ export function NotificationPanel() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(156, 163, 175, 0.8);
         }
-        /* removed global input placeholder override to allow Tailwind placeholder classes to work correctly */
+        
+        @keyframes slide-down {
+          from {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        
+        .animate-slide-down {
+          animation: slide-down 0.3s ease-out;
+        }
+        
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
       `}</style>
     </AnimatePresence>
   );

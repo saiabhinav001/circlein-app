@@ -207,7 +207,7 @@ export const emailTemplates = {
               </div>
 
               <center>
-                <a href="#" class="button">View My Bookings</a>
+                <a href="https://circlein-app.vercel.app/bookings" class="button">View My Bookings</a>
               </center>
 
               <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
@@ -428,7 +428,7 @@ export const emailTemplates = {
               </div>
 
               <center>
-                <a href="#" class="button">View Booking Details</a>
+                <a href="https://circlein-app.vercel.app/bookings" class="button">View Booking Details</a>
               </center>
 
               <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
@@ -659,7 +659,7 @@ export const emailTemplates = {
               </div>
 
               <center>
-                <a href="#" class="button">Make New Booking</a>
+                <a href="https://circlein-app.vercel.app/bookings" class="button">Make New Booking</a>
               </center>
 
               <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
@@ -900,7 +900,7 @@ export const emailTemplates = {
               </div>
 
               <center>
-                <a href="#" class="button">View Available Amenities</a>
+                <a href="https://circlein-app.vercel.app/dashboard" class="button">View Available Amenities</a>
               </center>
 
               <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
