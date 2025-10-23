@@ -1,215 +1,163 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// CircleIn Knowledge Base - Dynamic and Community-Aware
+// CircleIn Knowledge Base - Dynamic and Role-Aware
 const CIRCLEIN_KNOWLEDGE_BASE = `
 You are CircleIn AI Assistant, a helpful and friendly support assistant for CircleIn - a modern community management platform.
 
 ## Your Personality:
 - Warm, conversational, and genuinely helpful
 - Natural and human-like in responses
-- Concise but complete (2-3 sentences typically)
+- Concise but complete (1-3 sentences typically)
 - Use simple, everyday language
 - Occasional friendly emojis when appropriate 😊
 
 ## About CircleIn:
-CircleIn helps residents easily book community amenities, stay connected with neighbors, and manage community life seamlessly. It's designed to make community living simple and enjoyable.
+CircleIn helps communities manage amenity bookings, stay connected, and simplify community living.
 
 ## Core Features:
 
-### Amenity Booking 🏊‍♂️
-Book facilities like swimming pool, gym, clubhouse, tennis court, or party hall. Just go to "My Bookings" → "Book Now" → select amenity, date, and time → confirm. You'll get instant confirmation!
+### FOR RESIDENTS 🏠
+**Amenity Booking:** Book facilities like pool, gym, clubhouse, tennis court. Go to "My Bookings" → "Book Now" → select amenity & time → confirm.
+**Calendar View:** See all bookings in an organized calendar.
+**Notifications:** Get instant alerts for bookings and announcements.
+**Profile:** Update your details in Settings.
 
-### Calendar View 📅
-See all bookings in an organized calendar. Check what's available and plan your bookings ahead.
+### FOR ADMINS 👨‍💼
+**All Resident Features PLUS:**
+- **Manage Amenities:** Add/edit/delete amenities, set availability, block slots for maintenance
+- **Booking Management:** View all resident bookings, approve/cancel as needed
+- **Send Announcements:** Broadcast messages to entire community or specific residents
+- **User Management:** View resident profiles, manage access
+- **Analytics:** View booking statistics and community engagement
 
-### Notifications 🔔
-Get instant alerts for booking confirmations, cancellations, and important community announcements.
+## Quick Help:
 
-### Your Profile ⚙️
-Update your details, manage preferences, and view your account information in Settings.
-
-### Admin Tools 👨‍💼
-(For admins only) Manage amenities, handle booking requests, block slots for maintenance, send announcements, and oversee community operations.
-
-## Common Help Topics:
-
-**Booking an Amenity:**
-Easy! Go to "My Bookings" → "Book Now" → pick your amenity and time slot → confirm. Done!
-
-**Canceling a Booking:**
-No problem! Find your booking in "My Bookings" → click "Cancel". Just make sure to cancel with enough advance notice (check your community's policy).
-
-**Multiple Bookings:**
-You can book different amenities, but typically one slot per amenity per day to keep things fair for everyone.
-
-**Blocked Amenities:**
-These are temporarily unavailable, usually for maintenance or cleaning. If it affects your booking, you'll be notified.
-
-**Contact Admin:**
-You can reach out through this chat for quick help, or use the "Email Support" tab above for detailed queries.
-
-**Update Details:**
-Go to Settings → Profile → update your information → save. Some changes might need admin approval.
-
-**Notification Issues:**
-Check: 1) CircleIn Settings → ensure notifications are ON, 2) Browser settings → allow notifications for CircleIn.
-
-**Booking Guidelines:**
-Most communities require booking in advance and timely cancellations. Specific rules (like advance booking time, cancellation penalties, slot duration) vary by community - check with your admin for details.
+**Book Amenity:** My Bookings → Book Now → pick amenity/time → confirm
+**Cancel Booking:** My Bookings → find booking → Cancel
+**Admin Send Announcement:** (Admins only) Notifications → Send Announcement → compose → send
+**Admin Block Slot:** (Admins only) Manage Amenities → select amenity → Block Time
+**Update Profile:** Settings → Profile → edit → save
 
 ## Important Principles:
+✅ Tailor responses based on user role (admin vs resident)
+✅ Keep answers brief and actionable
+✅ Acknowledge community-specific policies vary
+✅ Be honest when you don't know specifics
 
-✅ Always respond naturally and helpfully
-✅ Keep answers conversational and brief
-✅ Acknowledge when specific info varies by community
-✅ Guide users step-by-step for tasks
-✅ Suggest email support for complex/specific issues
-✅ Be honest when you don't know something specific
-
-❌ Never share technical backend details
-❌ No database, API, or infrastructure information
-❌ No credentials, passwords, or access codes
-❌ No other users' personal information
-❌ Don't make up specific rules - they vary by community
-
-## When Asked About You:
-"I'm CircleIn's AI assistant, created by the CircleIn development team to help you 24/7 with all things CircleIn!"
+❌ Never share technical details (backend, APIs, databases)
+❌ Never share credentials or sensitive info
+❌ Don't make up specific community rules
 
 ## When You Don't Know:
-"That's a great question! Since [policies/rules/details] vary by community, I'd recommend checking with your admin or using the Email Support option for specific information about your community."
-
-## Community-Specific Awareness:
-Remember that rules, penalties, booking policies, and amenity availability are unique to each community. Always acknowledge this when relevant rather than giving generic rules.
+"Since [policies/details] vary by community, check with your admin or use Email Support for specific information."
 `;
+
+// Singleton pattern for model initialization - prevents re-initialization on every request
+let modelInstance: any = null;
+let genAIInstance: any = null;
+
+function getModelInstance() {
+  if (!modelInstance || !genAIInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey.trim() === '') {
+      throw new Error('GEMINI_API_KEY not configured');
+    }
+    
+    genAIInstance = new GoogleGenerativeAI(apiKey);
+    modelInstance = genAIInstance.getGenerativeModel({ 
+      model: 'gemini-1.5-flash-8b',  // Ultra-fast 8B model for instant responses
+      generationConfig: {
+        temperature: 0.8,  // Balanced creativity
+        topK: 20,
+        topP: 0.9,
+        maxOutputTokens: 512,  // Concise responses for speed
+      },
+    });
+  }
+  return modelInstance;
+}
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🤖 Chatbot API called');
-    
     const { message, userRole, conversationHistory } = await request.json();
-    console.log('📝 Request data:', { message: message?.substring(0, 50), userRole, historyLength: conversationHistory?.length });
 
+    // Quick validation
     if (!message?.trim()) {
-      console.error('❌ Empty message received');
       return NextResponse.json(
         { error: 'Message is required' },
         { status: 400 }
       );
     }
 
-    // Check if Gemini API key is configured
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey || apiKey.trim() === '') {
-      console.error('❌ GEMINI_API_KEY is not configured');
-      console.error('❌ Environment check:', { 
-        hasKey: !!apiKey, 
-        keyLength: apiKey?.length,
-        nodeEnv: process.env.NODE_ENV 
-      });
-      return NextResponse.json(
-        { error: 'AI service is not configured. Please contact support.' },
-        { status: 500 }
-      );
-    }
+    // Get pre-initialized model instance
+    const model = getModelInstance();
 
-    console.log('✅ API key verified:', { 
-      length: apiKey.length, 
-      prefix: apiKey.substring(0, 10) + '...',
-      suffix: '...' + apiKey.substring(apiKey.length - 5)
-    });
+    // Determine user context (admin vs resident)
+    const isAdmin = userRole === 'admin';
+    const roleContext = isAdmin 
+      ? '\n\n**USER ROLE: ADMIN** - This user has administrative privileges. Mention admin-specific features when relevant (manage amenities, send announcements, view all bookings, etc.).'
+      : '\n\n**USER ROLE: RESIDENT** - This is a regular community member. Focus on resident features (booking amenities, viewing calendar, managing their profile).';
 
-    // Initialize Gemini AI with API key
-    console.log('🔧 Initializing Gemini AI...');
-    const genAI = new GoogleGenerativeAI(apiKey);
-    
-    // Use gemini-2.5-flash optimized for speed and quality
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.5-flash',
-      generationConfig: {
-        temperature: 0.7,  // More focused responses
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024,  // Shorter for faster responses
-      },
-    });
-    console.log('✅ Model initialized with gemini-2.5-flash');
-
-    // Build conversation context for natural flow
+    // Build minimal conversation context (last 3 messages only for speed)
     const conversationContext = conversationHistory
-      ?.slice(-5) // Last 5 messages for context
-      .map((msg: any) => `${msg.role === 'user' ? 'User' : 'You'}: ${msg.content}`)
-      .join('\n');
+      ?.slice(-3)
+      .map((msg: any) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+      .join('\n') || '';
 
-    // Build the complete prompt for natural, helpful responses
-    const prompt = `${CIRCLEIN_KNOWLEDGE_BASE}
+    // Optimized prompt for instant responses
+    const prompt = `${CIRCLEIN_KNOWLEDGE_BASE}${roleContext}
 
-## Current Conversation:
-${conversationContext || 'User is starting a new conversation'}
+${conversationContext ? `Recent conversation:\n${conversationContext}\n` : ''}
+User: ${message}
 
-User's latest message: "${message}"
+Respond naturally and concisely (1-3 sentences). Be helpful and specific to their role.
+Assistant:`;
 
-Respond naturally as CircleIn's helpful assistant. Be conversational, brief (2-3 sentences), and directly answer their question. If it's a greeting, respond warmly. If it's about community-specific policies (like penalties, booking times, or rules), acknowledge these vary by community and suggest checking with their admin.
+    // Fast generation with timeout protection
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s max
 
-Your response:`;
+    try {
+      const result = await model.generateContent(prompt);
+      clearTimeout(timeoutId);
+      
+      const response = await result.response;
+      const text = response.text();
+      
+      if (!text || text.trim() === '') {
+        return NextResponse.json({ 
+          response: "I'm here to help! Could you rephrase your question?" 
+        });
+      }
+      
+      // Quick security check
+      const sensitivePatterns = [
+        /firebase/i, /database/i, /api[_-]?key/i, /password/i, 
+        /credential/i, /mongodb/i, /firestore/i, /collection/i, /schema/i
+      ];
 
-    console.log('📤 Sending prompt to Gemini...');
-    
-    // Generate response - fast and direct (no retry delays for real-time feel)
-    const result = await model.generateContent(prompt);
-    console.log('📥 Received response from Gemini');
-    
-    const response = await result.response;
-    const text = response.text();
-    
-    // Ensure we have a valid response
-    if (!text || text.trim() === '') {
-      console.error('⚠️ Empty response received');
-      return NextResponse.json({ 
-        response: "I'm here to help! Could you rephrase your question or let me know what you'd like assistance with?" 
-      });
+      const sanitizedResponse = sensitivePatterns.some(pattern => pattern.test(text))
+        ? "I notice your question involves technical details. For security, I can only help with using CircleIn features. Try rephrasing or contact support via email."
+        : text;
+
+      return NextResponse.json({ response: sanitizedResponse });
+    } catch (genError: any) {
+      clearTimeout(timeoutId);
+      
+      if (genError.name === 'AbortError') {
+        return NextResponse.json({ 
+          response: "The response is taking too long. Please try a simpler question or use email support." 
+        });
+      }
+      throw genError;
     }
-    
-    console.log('✅ Response text extracted:', { 
-      length: text.length, 
-      preview: text.substring(0, 100) 
-    });
-
-    // Security check - ensure no sensitive info is leaked
-    const sensitivePatterns = [
-      /firebase/i,
-      /database/i,
-      /api[_-]?key/i,
-      /password/i,
-      /credential/i,
-      /mongodb/i,
-      /firestore/i,
-      /collection/i,
-      /schema/i
-    ];
-
-    let sanitizedResponse = text;
-    
-    // If response contains sensitive terms, use a safe fallback
-    if (sensitivePatterns.some(pattern => pattern.test(text))) {
-      console.log('⚠️ Sensitive content detected, using safe response');
-      sanitizedResponse = "I notice your question involves technical details that I cannot discuss for security reasons. However, I'm happy to help with using CircleIn features! Could you rephrase your question, or would you like to contact our support team via email?";
-    }
-
-    console.log('✅ Returning response to client');
-    return NextResponse.json({ response: sanitizedResponse });
 
   } catch (error: any) {
-    console.error('❌ Chatbot error:', error);
-    console.error('❌ Error details:', {
-      message: error.message,
-      name: error.name,
-      stack: error.stack?.substring(0, 200)
-    });
+    console.error('❌ Chatbot error:', error?.message);
     
-    // Handle specific error types
+    // Handle specific errors gracefully
     if (error.message?.includes('API key') || error.message?.includes('API_KEY_INVALID')) {
-      console.error('❌ API Key error detected');
       return NextResponse.json(
         { error: 'AI service configuration error. Please contact support.' },
         { status: 500 }
@@ -217,26 +165,22 @@ Your response:`;
     }
 
     if (error.message?.includes('quota') || error.message?.includes('429')) {
-      console.error('❌ Quota exceeded');
       return NextResponse.json(
-        { error: 'Service temporarily unavailable. Please try again in a moment.' },
+        { error: 'High traffic detected. Please try again in a moment.' },
         { status: 429 }
       );
     }
 
-    console.error('❌ Generic error occurred');
-    console.error('❌ Full error:', JSON.stringify({
-      message: error.message,
-      name: error.name,
-      cause: error.cause,
-      status: error.status
-    }, null, 2));
+    if (error.message?.includes('GEMINI_API_KEY not configured')) {
+      return NextResponse.json(
+        { error: 'AI service not available. Please use email support.' },
+        { status: 503 }
+      );
+    }
     
     return NextResponse.json(
       { 
-        error: 'Failed to generate response. Please try again or use email support.',
-        details: error.message,
-        errorType: error.name
+        error: 'Unable to generate response. Please try again or use email support.'
       },
       { status: 500 }
     );

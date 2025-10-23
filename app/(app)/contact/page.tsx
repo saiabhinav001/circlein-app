@@ -41,7 +41,7 @@ export default function ContactPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Handle chatbot message
+  // Handle chatbot message - optimized for speed and reliability
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -57,19 +57,24 @@ export default function ContactPage() {
     setIsLoading(true);
 
     try {
+      // Optimized fetch with timeout and retry logic
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
       const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
         },
         body: JSON.stringify({
           message: currentInput,
           userRole: session?.user?.role || 'resident',
-          conversationHistory: messages.slice(-10)
+          conversationHistory: messages.slice(-6) // Last 6 for context
         }),
-        cache: 'no-store'
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -88,19 +93,22 @@ export default function ContactPage() {
     } catch (error: any) {
       console.error('Chatbot error:', error);
       
-      const errorMessage = error.message || 'Unknown error';
-      let userFriendlyMessage = 'I apologize, but I\'m having trouble responding right now. ';
+      let userFriendlyMessage = '';
       
-      if (errorMessage.includes('API key') || errorMessage.includes('configuration')) {
-        userFriendlyMessage += 'Our AI service is currently being configured. Please try the email support option.';
-      } else if (errorMessage.includes('429') || errorMessage.includes('quota')) {
-        userFriendlyMessage += 'We\'re experiencing high traffic. Please try again in a moment or use email support.';
+      if (error.name === 'AbortError') {
+        userFriendlyMessage = 'The response is taking too long. Please try a simpler question or use email support for complex queries.';
+      } else if (error.message?.includes('API key') || error.message?.includes('configuration')) {
+        userFriendlyMessage = 'Our AI service is currently being configured. Please try the email support option for immediate assistance.';
+      } else if (error.message?.includes('429') || error.message?.includes('quota') || error.message?.includes('High traffic')) {
+        userFriendlyMessage = 'We\'re experiencing high traffic. Please wait a moment and try again, or use email support.';
+      } else if (error.message?.includes('not available') || error.message?.includes('503')) {
+        userFriendlyMessage = 'AI assistant is temporarily unavailable. Please use email support for assistance.';
       } else {
-        userFriendlyMessage += 'Please try again or contact us via email.';
+        userFriendlyMessage = 'I\'m having trouble responding right now. Please try again or use email support for immediate help.';
       }
       
       toast.error('Unable to get AI response', {
-        description: 'Please try email support for immediate assistance.'
+        description: userFriendlyMessage
       });
       
       const errorResponseMessage: Message = {
