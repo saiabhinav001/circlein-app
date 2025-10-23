@@ -247,6 +247,32 @@ export default function AdminPanel() {
       if (!currentStatus) {
         // Blocking the amenity
         await sendInstantBlockNotification(name, reason);
+        
+        // Send email to all residents
+        try {
+          await fetch('/api/notifications/amenity-block', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amenityName: name,
+              reason: reason,
+              startDate: new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              }),
+              endDate: 'Until further notice',
+              communityId: session?.user?.communityId,
+              communityName: (session?.user as any)?.communityName || 'Your Community',
+              isFestive: false,
+            }),
+          });
+          console.log('✅ Amenity block emails sent to all residents');
+        } catch (emailError) {
+          console.error('⚠️ Failed to send block emails:', emailError);
+          // Don't fail the block if email fails
+        }
       } else {
         // Unblocking the amenity
         addNotification({
@@ -364,6 +390,40 @@ export default function AdminPanel() {
         selectedDates,
         reason
       );
+
+      // Send email to all residents about festive blocking
+      try {
+        const startDate = selectedDates[0].toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+        const endDate = selectedDates[selectedDates.length - 1].toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+        
+        await fetch('/api/notifications/amenity-block', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amenityName: selectedAmenityForBlock.name,
+            reason: reason,
+            startDate: startDate,
+            endDate: endDate,
+            communityId: session?.user?.communityId,
+            communityName: (session?.user as any)?.communityName || 'Your Community',
+            isFestive: true,
+          }),
+        });
+        console.log('✅ Festive block emails sent to all residents');
+      } catch (emailError) {
+        console.error('⚠️ Failed to send festive block emails:', emailError);
+        // Don't fail the block if email fails
+      }
 
       toast.success(`Added ${selectedDates.length} blackout date(s) for ${selectedAmenityForBlock.name}`);
       setShowDateBlockDialog(false);

@@ -218,7 +218,36 @@ export default function AmenityBooking() {
 
       const docRef = await addDoc(collection(db, 'bookings'), bookingData);
       
-      toast.success('Booking confirmed successfully! Redirecting to My Bookings...');
+      // Send instant email confirmation
+      try {
+        await fetch('/api/notifications/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'booking_confirmation',
+            data: {
+              userEmail: session.user.email,
+              userName: session.user.name || 'Resident',
+              amenityName: amenity.name,
+              date: selectedDate.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              }),
+              timeSlot: selectedSlot,
+              bookingId: docRef.id,
+              communityName: (session.user as any).communityName || 'Your Community',
+            },
+          }),
+        });
+        console.log('✅ Booking confirmation email sent');
+      } catch (emailError) {
+        console.error('⚠️ Failed to send email, but booking created:', emailError);
+        // Don't fail the booking if email fails
+      }
+      
+      toast.success('Booking confirmed successfully! Check your email for details. Redirecting...');
       setShowBookingModal(false);
       
       // Redirect to bookings page after successful booking

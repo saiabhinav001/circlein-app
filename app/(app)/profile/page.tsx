@@ -76,7 +76,7 @@ export default function ProfilePage() {
               {isAdmin ? 'Manage your admin profile and community settings' : 'View and manage your profile information'}
             </p>
           </div>
-          <Link href="/settings">
+          <Link href={isAdmin ? "/admin/settings" : "/settings"}>
             <Button variant="outline" className="flex items-center gap-2">
               <Edit className="h-4 w-4" />
               Edit Profile
@@ -454,7 +454,7 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Link href="/settings">
+              <Link href={isAdmin ? "/admin/settings" : "/settings"}>
                 <Button variant="outline" className="w-full flex items-center gap-2 h-12">
                   <Settings className="h-4 w-4" />
                   Account Settings
