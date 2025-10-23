@@ -140,6 +140,11 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
       <button
         type="button"
         onClick={handleDeleteClick}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          removeNotification(notification.id);
+        }}
         className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border-2 border-gray-300 dark:border-gray-600 hover:border-red-500 hover:bg-red-500 shadow-lg [&:hover>svg]:text-white"
         style={{ 
           zIndex: 999999,
