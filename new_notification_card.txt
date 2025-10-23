@@ -1,0 +1,48 @@
+const NotificationCard: React.FC<NotificationCardProps> = ({
+  notification,
+  removeNotification,
+  markAsRead,
+  getPriorityColor,
+  getNotificationIcon,
+  formatTimeAgo,
+  router,
+  setIsOpen
+}) => {
+  const handleCardClick = () => {
+    console.log('Card clicked');
+    if (!notification.read) markAsRead(notification.id);
+    if (notification.actionUrl) {
+      router.push(notification.actionUrl);
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div className='relative'>
+      <div className='grid grid-cols-[1fr_auto] gap-3 p-4 sm:p-5'>
+        <div onClick={handleCardClick} className='cursor-pointer'>
+          <div className='flex items-start gap-3 sm:gap-4'>
+            <div className={cn('flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br', getPriorityColor(notification.priority))}>
+              {getNotificationIcon(notification)}
+            </div>
+            <div className='flex-1 min-w-0'>
+              <div className='flex items-start justify-between gap-2 mb-2'>
+                <h4 className='font-semibold text-sm sm:text-base leading-tight text-gray-900 dark:text-white'>
+                  {notification.title}
+                  {!notification.read && <span className='ml-2 inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse' />}
+                </h4>
+                <span className='text-xs font-medium whitespace-nowrap text-gray-500 dark:text-gray-300'>{formatTimeAgo(new Date(notification.timestamp))}</span>
+              </div>
+              <p className='text-sm line-clamp-2 leading-relaxed text-gray-700 dark:text-gray-300'>{notification.message}</p>
+              {notification.actionLabel && <button className='mt-2 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-semibold rounded-lg'>{notification.actionLabel}</button>}
+            </div>
+          </div>
+        </div>
+        <div className='flex items-start pt-1'>
+          <DeleteButton notificationId={notification.id} onDelete={() => removeNotification(notification.id)} />
+        </div>
+      </div>
+      {!notification.read && <div className={cn('absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b rounded-r-full', getPriorityColor(notification.priority))} />}
+    </div>
+  );
+};

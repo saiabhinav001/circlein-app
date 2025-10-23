@@ -204,14 +204,6 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
           </div>
         </div>
       </div>
-      
-      {/* DELETE BUTTON - NEW SEPARATE COMPONENT */}
-      <div className="flex items-start pt-1 absolute top-4 right-4">
-        <DeleteButton 
-          notificationId={notification.id}
-          onDelete={() => removeNotification(notification.id)}
-        />
-      </div>
     </div>
   );
 };
