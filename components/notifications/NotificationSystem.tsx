@@ -141,7 +141,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
         type="button"
         onClick={handleDeleteClick}
         onTouchStart={handleDeleteClick}
-        className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border-2 border-gray-300 dark:border-gray-600 hover:border-red-500 hover:bg-red-500 transition-all duration-200 shadow-lg hover:shadow-xl group/delete"
+        className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border-2 border-gray-300 dark:border-gray-600 hover:border-red-500 hover:bg-red-500 transition-colors duration-200 shadow-lg hover:shadow-xl"
         style={{ 
           zIndex: 999999,
           pointerEvents: 'auto',
@@ -150,7 +150,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
         aria-label="Delete notification"
       >
         <X 
-          className="w-5 h-5 text-gray-600 dark:text-gray-300 group-hover/delete:text-white group-hover/delete:rotate-90 transition-all duration-200" 
+          className="w-5 h-5 text-gray-600 dark:text-gray-300 hover:text-white transition-colors duration-200" 
           strokeWidth={2.5}
         />
       </button>
