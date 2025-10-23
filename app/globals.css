@@ -155,11 +155,12 @@ button[aria-label="Remove notification"],
 button[title="Remove notification"] {
   pointer-events: auto !important;
   cursor: pointer !important;
-  z-index: 99999 !important;
+  z-index: 999999 !important;
   position: absolute !important;
   touch-action: manipulation !important;
   -webkit-user-select: none !important;
   user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 /* Prevent parent elements from blocking the button */
@@ -172,5 +173,14 @@ button[title="Remove notification"] {
 button[aria-label="Remove notification"] > svg,
 button[title="Remove notification"] > svg {
   pointer-events: none !important;
+}
+
+/* Make button area larger for easier clicking */
+button[aria-label="Remove notification"]::before,
+button[title="Remove notification"]::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  cursor: pointer;
 }
 

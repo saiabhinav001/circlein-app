@@ -109,62 +109,26 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   router,
   setIsOpen
 }) => {
-  const deleteButtonRef = useRef<HTMLButtonElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
+  // Simple, direct delete handler - NO useEffect conflicts
+  const handleDeleteClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    // Haptic feedback
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(50);
+    }
+    
+    console.log('🗑️ DELETE CLICKED - Notification ID:', notification.id);
+    removeNotification(notification.id);
+  };
   
-  // Enhanced delete handler with multiple event types for desktop compatibility
-  useEffect(() => {
-    const button = deleteButtonRef.current;
-    if (!button) return;
-    
-    const handleDelete = (e: Event) => {
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      e.preventDefault();
-      
-      // Haptic feedback
-      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-        navigator.vibrate(50);
-      }
-      
-      console.log('🗑️ Delete button clicked:', notification.id);
-      removeNotification(notification.id);
-    };
-    
-    // Register multiple event types for maximum compatibility
-    button.addEventListener('click', handleDelete, true); // Capture phase for click
-    button.addEventListener('mouseup', handleDelete, true); // Also handle mouseup for desktop
-    button.addEventListener('touchend', handleDelete, true); // Touch devices
-    
-    // Prevent any parent handlers from interfering
-    const preventBubbling = (e: Event) => {
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-    };
-    
-    button.addEventListener('pointerdown', preventBubbling, true);
-    button.addEventListener('mousedown', preventBubbling, true);
-    button.addEventListener('touchstart', preventBubbling, true);
-    
-    return () => {
-      button.removeEventListener('click', handleDelete, true);
-      button.removeEventListener('mouseup', handleDelete, true);
-      button.removeEventListener('touchend', handleDelete, true);
-      button.removeEventListener('pointerdown', preventBubbling, true);
-      button.removeEventListener('mousedown', preventBubbling, true);
-      button.removeEventListener('touchstart', preventBubbling, true);
-    };
-  }, [notification.id, removeNotification]);
-  
-  // Prevent card click when clicking delete button area
-  const handleCardClick = (e: React.MouseEvent) => {
+  // Card click handler - only triggers if not clicking delete button
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Don't process if clicking on delete button
     const target = e.target as HTMLElement;
-    const button = deleteButtonRef.current;
-    
-    // Check if click is on or within the delete button
-    if (button && (target === button || button.contains(target))) {
-      e.preventDefault();
-      e.stopPropagation();
+    if (target.closest('button[aria-label="Remove notification"]')) {
+      console.log('🚫 Clicked on delete button - ignoring card click');
       return;
     }
     
@@ -173,6 +137,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
       navigator.vibrate(30);
     }
     
+    console.log('📋 Card clicked - Notification ID:', notification.id);
     if (!notification.read) markAsRead(notification.id);
     if (notification.actionUrl) {
       router.push(notification.actionUrl);
@@ -181,37 +146,21 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   };
   
   return (
-    <div ref={cardRef} className="notification-card-wrapper relative group" style={{ isolation: 'isolate' }}>
-      {/* Delete button - Enhanced for desktop compatibility */}
+    <div className="notification-card-wrapper relative group" style={{ isolation: 'isolate' }}>
+      {/* SIMPLIFIED Delete button - Direct onClick handler ONLY */}
       <button
-        ref={deleteButtonRef}
-        className="absolute top-3 right-3 z-[99999] p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-all duration-200 bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 border border-gray-200 dark:border-gray-700"
+        onClick={handleDeleteClick}
+        className="absolute top-3 right-3 z-[99999] p-2.5 text-gray-600 hover:text-white hover:bg-red-500 dark:hover:bg-red-600 rounded-full transition-all duration-200 bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 border-2 border-gray-300 dark:border-gray-600 hover:border-red-500"
         title="Remove notification"
         type="button"
         aria-label="Remove notification"
         style={{ 
           pointerEvents: 'auto',
           isolation: 'isolate',
-          position: 'absolute',
-          cursor: 'pointer',
-          touchAction: 'manipulation',
-          userSelect: 'none',
-          WebkitUserSelect: 'none'
-        }}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-        }}
-        onTouchStart={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
+          cursor: 'pointer'
         }}
       >
-        <X className="h-4 w-4 pointer-events-none" />
+        <X className="h-4 w-4 pointer-events-none" strokeWidth={2.5} />
       </button>
 
       {/* Clickable notification card */}
@@ -222,14 +171,6 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
           !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
         )}
         onClick={handleCardClick}
-        onMouseDown={(e) => {
-          const target = e.target as HTMLElement;
-          const button = deleteButtonRef.current;
-          if (button && (target === button || button.contains(target))) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        }}
       >
         {/* Enhanced Priority indicator */}
         {!notification.read && (
