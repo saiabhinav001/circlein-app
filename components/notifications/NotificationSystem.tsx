@@ -135,7 +135,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   };
 
   return (
-    <div className="relative group mb-3">
+    <div className="relative mb-3">
       {/* DELETE BUTTON FIRST - HIGHEST Z-INDEX */}
       <button
         type="button"
@@ -174,12 +174,6 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
             )}
           />
         )}
-
-        {/* Hover effect overlay */}
-        <div
-          className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-          style={{ zIndex: 2 }}
-        />
 
         <div className="flex items-start gap-3 sm:gap-4 relative" style={{ zIndex: 3 }}>
           {/* Enhanced Icon */}
