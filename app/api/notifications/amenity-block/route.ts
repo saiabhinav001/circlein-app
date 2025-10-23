@@ -52,12 +52,19 @@ export async function POST(request: NextRequest) {
       isFestive: isFestive || false,
     });
 
+    // Prepare batch emails
+    const emails = residentEmails.map(email => ({
+      to: email,
+      subject: template.subject,
+      html: template.html,
+    }));
+
     // Send batch emails
     console.log(`📧 Sending amenity block notifications to ${residentEmails.length} residents`);
-    const results = await sendBatchEmails(residentEmails, template);
+    const results = await sendBatchEmails(emails, 'amenityBlocked');
 
-    const successCount = results.filter(r => r.success).length;
-    const failCount = results.length - successCount;
+    const successCount = results.sent;
+    const failCount = results.failed;
 
     return NextResponse.json({ 
       success: true,
