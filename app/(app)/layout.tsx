@@ -49,7 +49,7 @@ export default function AppLayout({
                   animate={{ x: 0 }}
                   exit={{ x: '-100%' }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="fixed inset-y-0 left-0 z-[100001] lg:hidden"
+                  className="fixed inset-y-0 left-0 z-[100001] w-full sm:w-[320px] md:w-[340px] max-w-[85vw] lg:hidden"
                 >
                   <Sidebar onClose={() => setMobileMenuOpen(false)} />
                 </motion.div>

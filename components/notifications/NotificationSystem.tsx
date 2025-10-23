@@ -110,6 +110,24 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   router,
   setIsOpen
 }) => {
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't handle click if it's on the delete button area
+    const target = e.target as HTMLElement;
+    const isDeleteButton = target.closest('[data-delete-button]');
+    
+    if (isDeleteButton) {
+      console.log('🛑 Card click blocked - delete button area');
+      return;
+    }
+    
+    console.log('📋 Card clicked');
+    if (!notification.read) markAsRead(notification.id);
+    if (notification.actionUrl) {
+      router.push(notification.actionUrl);
+      setIsOpen(false);
+    }
+  };
+
   return (
     <div className="relative group">
       {/* Main clickable notification card */}
@@ -119,14 +137,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
           "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
           !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
         )}
-        onClick={(e) => {
-          console.log('📋 Card clicked');
-          if (!notification.read) markAsRead(notification.id);
-          if (notification.actionUrl) {
-            router.push(notification.actionUrl);
-            setIsOpen(false);
-          }
-        }}
+        onClick={handleCardClick}
       >
         {/* Enhanced Priority indicator */}
         {!notification.read && (
@@ -188,16 +199,14 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
         </div>
       </div>
       
-      {/* DELETE BUTTON - POSITIONED ABSOLUTE OUTSIDE CLICKABLE CARD */}
-      <div className="absolute top-3 right-3 z-[100]">
-        <RadixDeleteButton 
-          notificationId={notification.id}
-          onDelete={() => {
-            console.log('🗑️ Delete triggered for:', notification.id);
-            removeNotification(notification.id);
-          }}
-        />
-      </div>
+      {/* DELETE BUTTON - RADIX UI WITH ABSOLUTE POSITIONING */}
+      <RadixDeleteButton 
+        notificationId={notification.id}
+        onDelete={() => {
+          console.log('🗑️ Delete triggered for:', notification.id);
+          removeNotification(notification.id);
+        }}
+      />
     </div>
   );
 };

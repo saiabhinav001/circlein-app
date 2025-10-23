@@ -42,26 +42,28 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
     <motion.header
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="h-14 sm:h-16 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl flex items-center justify-between px-3 sm:px-4 md:px-6 relative z-40 gap-2 sm:gap-3 md:gap-4"
+      className="h-16 md:h-18 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl flex items-center justify-between px-4 md:px-6 lg:px-8 relative z-40 gap-3 md:gap-4"
     >
-      <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-        {/* Hamburger Menu */}
-        <HamburgerMenu isOpen={isMenuOpen} onClick={onMenuClick || (() => {})} />
+      <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+        {/* Hamburger Menu - Only on mobile/tablet */}
+        <div className="lg:hidden">
+          <HamburgerMenu isOpen={isMenuOpen} onClick={onMenuClick || (() => {})} />
+        </div>
 
-        {/* Search Bar */}
-        <div className="relative flex-1 max-w-xs sm:max-w-sm md:max-w-md">
-          <Search className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
+        {/* Search Bar - Responsive */}
+        <div className="relative flex-1 max-w-xs md:max-w-md lg:max-w-lg">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Search..."
             value={searchQuery}
             onChange={handleSearchChange}
-            className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 bg-slate-100 dark:bg-slate-800 border-0 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all duration-200"
+            className="w-full pl-10 pr-4 py-2.5 md:py-3 bg-slate-100 dark:bg-slate-800 border-0 rounded-xl text-sm md:text-base focus:ring-2 focus:ring-blue-500 outline-none transition-all duration-200 placeholder:text-slate-400"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 shrink-0">
+      <div className="flex items-center gap-2 md:gap-3 lg:gap-4 shrink-0">
         {/* Notifications */}
         <div className="relative">
           <NotificationBell />
@@ -71,11 +73,11 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
         {/* User Avatar */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-full p-0">
-              <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
+            <Button variant="ghost" className="relative h-10 w-10 md:h-11 md:w-11 rounded-full p-0 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <Avatar className="h-10 w-10 md:h-11 md:w-11 ring-2 ring-slate-200 dark:ring-slate-700">
                 <AvatarImage src={session?.user?.image || ''} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs sm:text-sm">
-                  {session?.user?.name?.[0] || <User className="w-3 h-3 sm:w-4 sm:h-4" />}
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm md:text-base font-semibold">
+                  {session?.user?.name?.[0]?.toUpperCase() || <User className="w-5 h-5" />}
                 </AvatarFallback>
               </Avatar>
             </Button>

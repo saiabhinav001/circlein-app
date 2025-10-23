@@ -11,19 +11,21 @@ interface RadixDeleteButtonProps {
 
 /**
  * BRAND NEW Delete Button Component using Radix UI
- * Completely redesigned from scratch with modern tech stack
+ * Completely redesigned from scratch - ULTRA RELIABLE
  */
 export const RadixDeleteButton: React.FC<RadixDeleteButtonProps> = ({ 
   onDelete, 
   notificationId 
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
-  const [isPressed, setIsPressed] = React.useState(false);
 
-  const handleDelete = React.useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    // Critical: Stop ALL propagation
+  const handleDelete = React.useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    // CRITICAL: Multiple layers of event blocking
     e.stopPropagation();
     e.preventDefault();
+    if ('nativeEvent' in e) {
+      e.nativeEvent.stopImmediatePropagation();
+    }
     
     console.log('🗑️ Radix Delete Button Clicked:', notificationId);
     onDelete();
@@ -33,32 +35,33 @@ export const RadixDeleteButton: React.FC<RadixDeleteButtonProps> = ({
     <motion.button
       type="button"
       onClick={handleDelete}
+      onTouchStart={handleDelete}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsPressed(false);
-      }}
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-      className="relative flex items-center justify-center"
+      onMouseLeave={() => setIsHovered(false)}
+      whileHover={{ scale: 1.15 }}
+      whileTap={{ scale: 0.85 }}
+      className="absolute flex items-center justify-center touch-manipulation"
+      data-delete-button="true"
       style={{
-        width: '32px',
-        height: '32px',
+        top: '12px',
+        right: '12px',
+        width: '36px',
+        height: '36px',
+        minWidth: '36px',
+        minHeight: '36px',
         borderRadius: '50%',
         backgroundColor: isHovered ? '#dc2626' : '#ffffff',
-        border: `2px solid ${isHovered ? '#dc2626' : '#d1d5db'}`,
+        border: `3px solid ${isHovered ? '#dc2626' : '#e5e7eb'}`,
         cursor: 'pointer',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         boxShadow: isHovered 
-          ? '0 4px 6px -1px rgba(220, 38, 38, 0.3), 0 2px 4px -1px rgba(220, 38, 38, 0.2)'
-          : '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-        zIndex: 999,
+          ? '0 10px 15px -3px rgba(220, 38, 38, 0.4), 0 4px 6px -2px rgba(220, 38, 38, 0.3)'
+          : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        zIndex: 99999,
         pointerEvents: 'auto',
+        isolation: 'isolate',
       }}
       aria-label="Delete notification"
-      aria-pressed={isPressed}
     >
       <AnimatePresence mode="wait">
         <motion.div

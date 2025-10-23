@@ -129,11 +129,12 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
       <motion.div
         variants={sidebarVariants}
         animate={isCollapsed ? 'closed' : 'open'}
-        className="h-screen bg-white dark:bg-slate-950 border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col relative shadow-2xl w-[280px] lg:w-auto overflow-hidden"
+        className="h-screen bg-gradient-to-b from-white via-slate-50/50 to-white dark:from-slate-950 dark:via-slate-900/50 dark:to-slate-950 border-r border-slate-200/80 dark:border-slate-800/80 flex flex-col relative shadow-2xl w-full sm:w-[280px] lg:w-auto overflow-hidden"
         style={{ zIndex: 50 }}
       >
-        {/* Decorative top gradient */}
-        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent pointer-events-none" />
+        {/* Enhanced decorative gradient overlay */}
+        <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-br from-blue-500/10 via-purple-500/8 to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-100/30 dark:from-slate-900/30 to-transparent pointer-events-none" />
         
         {/* Header */}
         <div className="relative p-4 lg:p-6 border-b border-slate-200/50 dark:border-slate-800/50 shrink-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md">
@@ -289,10 +290,10 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                   href={item.href}
                   onClick={() => onClose?.()}
                   className={cn(
-                    'group relative flex items-center px-3 py-2.5 sm:py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
+                    'group relative flex items-center px-4 py-3 md:py-3.5 rounded-xl text-sm md:text-base font-medium transition-all duration-300 overflow-hidden',
                     pathname === item.href
-                      ? 'bg-gradient-to-r text-white shadow-lg'
-                      : 'text-black dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30'
+                      ? 'bg-gradient-to-r text-white shadow-lg scale-[1.02]'
+                      : 'text-black dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30 active:scale-[0.98]'
                   )}
                   style={{
                     background: pathname === item.href ? `linear-gradient(135deg, ${item.color.split(' ')[1]} 0%, ${item.color.split(' ')[3]} 100%)` : undefined
@@ -319,10 +320,10 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
 
                   <motion.div
                     variants={iconVariants}
-                    className="relative z-10"
+                    className="relative z-10 flex-shrink-0"
                   >
                     <item.icon className={cn(
-                      "w-5 h-5 transition-colors duration-300",
+                      "w-5 h-5 md:w-6 md:h-6 transition-colors duration-300",
                       pathname === item.href ? "text-gray-900 dark:text-white" : "text-gray-600 dark:text-slate-400 group-hover:text-gray-800 dark:group-hover:text-slate-200"
                     )} />
                   </motion.div>
@@ -335,7 +336,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                         animate="visible"
                         exit="hidden"
                         className={cn(
-                          "ml-3 relative z-10 transition-colors duration-300 font-medium",
+                          "ml-3 md:ml-4 relative z-10 transition-colors duration-300 font-medium",
                           pathname === item.href ? "text-gray-900 dark:text-white font-semibold" : "text-gray-700 dark:text-slate-300 group-hover:text-gray-900 dark:group-hover:text-slate-100"
                         )}
                       >
