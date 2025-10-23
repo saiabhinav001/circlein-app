@@ -137,11 +137,10 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
 
   return (
     <div className="relative mb-3">
-      {/* Main clickable notification card */}
+      {/* Main clickable notification card - NO ONCLICK ON WRAPPER */}
       <div
-        onClick={handleCardClick}
         className={cn(
-          "p-4 sm:p-5 pr-16 cursor-pointer relative rounded-lg border border-gray-200 dark:border-gray-700",
+          "p-4 sm:p-5 pr-16 relative rounded-lg border border-gray-200 dark:border-gray-700",
           "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
           !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
         )}
@@ -179,7 +178,12 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
           />
         )}
 
-        <div className="flex items-start gap-3 sm:gap-4 relative" style={{ zIndex: 3 }}>
+        {/* CLICKABLE CONTENT AREA */}
+        <div 
+          className="flex items-start gap-3 sm:gap-4 relative cursor-pointer" 
+          style={{ zIndex: 3 }}
+          onClick={handleCardClick}
+        >
           {/* Enhanced Icon */}
           <div
             className={cn(
