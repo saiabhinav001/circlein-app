@@ -112,23 +112,6 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
 }) => {
   return (
     <div className="notification-card-wrapper relative group" style={{ isolation: 'isolate' }}>
-      {/* ULTRA SIMPLE Delete button - ZERO complexity */}
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-          console.log('�️ DELETING:', notification.id);
-          removeNotification(notification.id);
-        }}
-        className="absolute top-3 right-3 z-[999999] p-2.5 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 hover:bg-red-500 hover:border-red-500 dark:hover:bg-red-600 shadow-lg"
-        style={{ 
-          pointerEvents: 'auto',
-          cursor: 'pointer',
-          transition: 'background-color 0.15s ease, border-color 0.15s ease'
-        }}
-      >
-        <X className="h-4 w-4 text-gray-600" strokeWidth={2.5} style={{ pointerEvents: 'none' }} />
-      </div>
-
       {/* Clickable notification card */}
       <div
         className={cn(
