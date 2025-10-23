@@ -1263,13 +1263,24 @@ export function NotificationPanel() {
                   onClick={(e) => {
                     // Don't handle click if it's on the delete button or its children
                     const target = e.target as HTMLElement;
-                    if (target.closest('[data-delete-button]')) {
+                    const deleteButton = target.closest('[data-delete-button]');
+                    if (deleteButton) {
+                      console.log('🔕 Click on delete button detected, stopping propagation');
+                      e.stopPropagation();
+                      e.preventDefault();
                       return;
                     }
                     if (!notification.read) markAsRead(notification.id);
                     if (notification.actionUrl) {
                       router.push(notification.actionUrl);
                       setIsOpen(false);
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    // Also stop propagation on mouse down for delete button
+                    const target = e.target as HTMLElement;
+                    if (target.closest('[data-delete-button]')) {
+                      e.stopPropagation();
                     }
                   }}
                 >
@@ -1361,21 +1372,28 @@ export function NotificationPanel() {
                             {formatTimeAgo(new Date(notification.timestamp))}
                           </span>
                           <button
-                            data-delete-button
+                            data-delete-button="true"
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log('Delete button clicked for:', notification.id);
+                              console.log('🗑️ Delete button clicked for notification:', notification.id);
                               removeNotification(notification.id);
                             }}
                             onMouseDown={(e) => {
+                              e.preventDefault();
                               e.stopPropagation();
+                              console.log('🗑️ Delete button mouse down');
                             }}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 cursor-pointer"
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              console.log('🗑️ Delete button touch start');
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 cursor-pointer z-50 relative"
                             title="Remove notification"
                             type="button"
+                            style={{ pointerEvents: 'auto' }}
                           >
-                            <X className="h-3.5 w-3.5 pointer-events-none" />
+                            <X className="h-3.5 w-3.5" style={{ pointerEvents: 'none' }} />
                           </button>
                         </div>
                       </div>

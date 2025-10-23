@@ -139,14 +139,22 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
 
   // Memoized status calculation for better performance
   const getBookingStatus = useCallback((booking: SimpleBooking) => {
+    // CRITICAL: Always respect the database status first
+    // If booking is cancelled, completed, or archived, return that status immediately
+    if (booking.status === 'cancelled') {
+      return 'cancelled';
+    }
+    if (booking.status === 'completed') {
+      return 'completed';
+    }
+    if (booking.status === 'archived') {
+      return 'archived';
+    }
+
+    // Only calculate time-based status if booking is not manually set
     const now = new Date();
     const startTime = new Date(booking.startTime);
     const endTime = new Date(booking.endTime);
-
-    // If manually cancelled or completed, respect that status
-    if (booking.status === 'cancelled' || booking.status === 'completed') {
-      return booking.status;
-    }
 
     // Time-based status determination
     if (now < startTime) {
@@ -320,9 +328,48 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
         case 'cancel':
           // Update the booking status in Firestore
           await updateDoc(bookingRef, {
-            status: 'cancelled'
+            status: 'cancelled',
+            cancelledAt: new Date(),
+            cancelledBy: booking.userId
           });
-          toast.success('Booking cancelled', { description: 'Your reservation has been cancelled and updated in the database' });
+          
+          // Send cancellation email
+          try {
+            await fetch('/api/notifications/email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'booking_cancellation',
+                data: {
+                  userEmail: booking.userId,
+                  userName: 'Resident',
+                  amenityName: booking.amenityName,
+                  date: new Date(booking.startTime).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  }),
+                  timeSlot: `${new Date(booking.startTime).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  })} - ${new Date(booking.endTime).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  })}`,
+                  bookingId: booking.id,
+                  isAdminCancellation: false,
+                }
+              })
+            });
+            console.log('✅ Cancellation email sent');
+          } catch (emailError) {
+            console.error('⚠️ Failed to send cancellation email:', emailError);
+          }
+          
+          toast.success('Booking cancelled', { description: 'Your reservation has been cancelled. Check your email for confirmation.' });
           break;
           
         case 'checkin':
