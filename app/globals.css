@@ -150,37 +150,20 @@
   z-index: 100000 !important;
 }
 
-/* Notification delete button - ensure always clickable on desktop and mobile */
-button[aria-label="Remove notification"],
-button[title="Remove notification"] {
+/* Notification delete button - MAXIMUM PRIORITY */
+.notification-card-wrapper > div:first-child {
   pointer-events: auto !important;
   cursor: pointer !important;
   z-index: 999999 !important;
   position: absolute !important;
-  touch-action: manipulation !important;
-  -webkit-user-select: none !important;
-  user-select: none !important;
-  -webkit-tap-highlight-color: transparent !important;
 }
 
-/* Prevent parent elements from blocking the button */
-.notification-card-wrapper {
-  position: relative !important;
-  isolation: isolate !important;
-}
-
-/* Ensure X icon inside button doesn't block clicks */
-button[aria-label="Remove notification"] > svg,
-button[title="Remove notification"] > svg {
+.notification-card-wrapper > div:first-child svg {
   pointer-events: none !important;
 }
 
-/* Make button area larger for easier clicking */
-button[aria-label="Remove notification"]::before,
-button[title="Remove notification"]::before {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  cursor: pointer;
+.notification-card-wrapper {
+  position: relative !important;
+  isolation: isolate !important;
 }
 
