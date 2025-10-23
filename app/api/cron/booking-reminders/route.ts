@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase-admin';
+import { adminDb } from '@/lib/firebase-admin';
 import { emailTemplates, sendEmail } from '@/lib/email-service';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
 
     // Get all bookings that start in approximately 1 hour
-    const bookingsSnapshot = await db
+    const bookingsSnapshot = await adminDb
       .collection('bookings')
       .where('status', '==', 'confirmed')
       .get();
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
       if (isOneHourAway && !booking.reminderSent) {
         // Get user details
-        const userDoc = await db.collection('users').doc(booking.userId).get();
+        const userDoc = await adminDb.collection('users').doc(booking.userId).get();
         const user = userDoc.data();
 
         if (user?.email) {
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
           }).then(async (result) => {
             if (result.success) {
               // Mark reminder as sent
-              await db.collection('bookings').doc(doc.id).update({
+              await adminDb.collection('bookings').doc(doc.id).update({
                 reminderSent: true,
                 reminderSentAt: new Date().toISOString(),
               });

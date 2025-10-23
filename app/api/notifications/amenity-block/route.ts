@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { emailTemplates, sendBatchEmails } from '@/lib/email-service';
-import { db } from '@/lib/firebase-admin';
+import { adminDb } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,14 +23,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get all residents' emails from the community
-    const usersSnapshot = await db
+    const usersSnapshot = await adminDb
       .collection('users')
       .where('communityId', '==', communityId)
       .where('role', '==', 'resident')
       .get();
 
     const residentEmails: string[] = [];
-    usersSnapshot.forEach(doc => {
+    usersSnapshot.forEach((doc: any) => {
       const email = doc.data().email;
       if (email) residentEmails.push(email);
     });
