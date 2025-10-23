@@ -104,14 +104,48 @@ export function ToastNotification({ notification, onClose, index }: ToastNotific
         y: -5,
         transition: { duration: 0.2 }
       }}
-      className="w-full max-w-sm"
+      className="w-full max-w-sm relative"
       style={{ 
         transformStyle: 'preserve-3d',
         perspective: '1000px'
       }}
     >
+      {/* CLOSE BUTTON - OUTSIDE CARD TO AVOID STACKING CONTEXT */}
+      <motion.button
+        type="button"
+        whileHover={{ scale: 1.1, rotate: 90 }}
+        whileTap={{ scale: 0.9 }}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onMouseDown={(e) => {
+          console.log('TOAST DELETE BUTTON ONMOUSEDOWN FIRED');
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onTouchStart={(e) => {
+          e.stopPropagation();
+        }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Toast close button clicked', notification.id);
+          onClose();
+        }}
+        className="absolute top-2 right-2 p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer shadow-lg hover:shadow-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+        style={{ 
+          pointerEvents: 'auto',
+          zIndex: 9999,
+          touchAction: 'none',
+          userSelect: 'none'
+        }}
+        aria-label="Close notification"
+      >
+        <X className="h-4 w-4 text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-400 font-bold pointer-events-none" />
+      </motion.button>
+      
       <motion.div
-        className="relative"
         whileHover={{ rotateY: 2, rotateX: 2 }}
         transition={{ duration: 0.3 }}
       >
@@ -192,40 +226,6 @@ export function ToastNotification({ notification, onClose, index }: ToastNotific
                         <Zap className="h-3 w-3 text-red-500" />
                       </motion.div>
                     )}
-                    
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.1, rotate: 90 }}
-                      whileTap={{ scale: 0.9 }}
-                      onPointerDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onTouchStart={(e) => {
-                        e.stopPropagation();
-                      }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('Toast close button clicked', notification.id);
-                        onClose();
-                      }}
-                      className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors z-[99999] relative cursor-pointer shadow-lg hover:shadow-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
-                      style={{ 
-                        pointerEvents: 'auto',
-                        position: 'relative',
-                        zIndex: 99999,
-                        touchAction: 'none',
-                        userSelect: 'none'
-                      }}
-                      aria-label="Close notification"
-                    >
-                      <X className="h-4 w-4 text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-400 font-bold pointer-events-none" />
-                    </motion.button>
                   </div>
                 </div>
                 
