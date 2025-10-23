@@ -1249,12 +1249,6 @@ export function NotificationPanel() {
                       scale: 0.8,
                       transition: { duration: 0.3 }
                     }}
-                    whileHover={{ 
-                    scale: 1.01,
-                    y: -2,
-                    backgroundColor: 'rgba(59, 130, 246, 0.08)',
-                    transition: { duration: 0.2 }
-                  }}
                   className={cn(
                     "p-4 sm:p-5 cursor-pointer transition-all duration-300 relative overflow-hidden group",
                     "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",

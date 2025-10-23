@@ -297,40 +297,40 @@ export default function AmenityBooking() {
       animate={{ opacity: 1, y: 0 }}
       className="p-8"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
         {/* Amenity Info */}
         <Card className="border-0 bg-white dark:bg-slate-900">
           <div className="relative overflow-hidden rounded-t-lg">
             <img
               src={amenity.imageUrl || 'https://images.pexels.com/photos/296282/pexels-photo-296282.jpeg?auto=compress&cs=tinysrgb&w=1200'}
               alt={amenity.name}
-              className="w-full h-64 object-cover"
+              className="w-full h-48 sm:h-56 lg:h-64 object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
             <div className="absolute bottom-4 left-4">
-              <h1 className="text-3xl font-bold text-white mb-2">{amenity.name}</h1>
-              <Badge className="bg-white/20 text-white border-white/30">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{amenity.name}</h1>
+              <Badge className="bg-white/20 text-white border-white/30 text-xs sm:text-sm">
                 Available Now
               </Badge>
             </div>
           </div>
           
-          <CardHeader>
-            <CardDescription className="text-slate-600 dark:text-slate-400 text-base">
+          <CardHeader className="p-4 sm:p-6">
+            <CardDescription className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">
               {amenity.description}
             </CardDescription>
             
-            <div className="flex flex-wrap gap-4 pt-4">
-              <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                <Users className="w-4 h-4 mr-2" />
+            <div className="flex flex-wrap gap-3 sm:gap-4 pt-4">
+              <div className="flex items-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 <span>Max {amenity.rules.maxSlotsPerFamily} per family</span>
               </div>
-              <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                <Clock className="w-4 h-4 mr-2" />
+              <div className="flex items-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 <span>2-hour slots</span>
               </div>
-              <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                <MapPin className="w-4 h-4 mr-2" />
+              <div className="flex items-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                 <span>Community Center</span>
               </div>
             </div>
@@ -340,20 +340,44 @@ export default function AmenityBooking() {
         {/* Booking Calendar */}
         <Card className="border-0 bg-white dark:bg-slate-900">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <CalendarIcon className="w-5 h-5 mr-2" />
+            <CardTitle className="flex items-center text-base sm:text-lg">
+              <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Select Date & Time
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               Choose your preferred date and time slot
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              disabled={(date) => {
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex justify-center w-full overflow-x-auto">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                className="rounded-md border w-full max-w-full"
+                classNames={{
+                  months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                  month: "space-y-4 w-full",
+                  caption: "flex justify-center pt-1 relative items-center",
+                  caption_label: "text-sm font-medium",
+                  nav: "space-x-1 flex items-center",
+                  nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+                  nav_button_previous: "absolute left-1",
+                  nav_button_next: "absolute right-1",
+                  table: "w-full border-collapse space-y-1",
+                  head_row: "flex w-full",
+                  head_cell: "text-muted-foreground rounded-md w-full font-normal text-[0.8rem]",
+                  row: "flex w-full mt-2",
+                  cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 w-full",
+                  day: "h-8 w-full sm:h-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md",
+                  day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                  day_today: "bg-accent text-accent-foreground",
+                  day_outside: "text-muted-foreground opacity-50",
+                  day_disabled: "text-muted-foreground opacity-50",
+                  day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                  day_hidden: "invisible",
+                }}
+                disabled={(date) => {
                 // Disable past dates
                 if (date < new Date(Date.now() - 86400000)) return true;
                 
@@ -399,8 +423,8 @@ export default function AmenityBooking() {
                 
                 return false;
               }}
-              className="rounded-md border dark:border-slate-700"
             />
+            </div>
             
             {/* Show blocked dates info */}
             {amenity.rules?.blackoutDates && amenity.rules.blackoutDates.length > 0 && (
@@ -474,8 +498,8 @@ export default function AmenityBooking() {
                 animate={{ opacity: 1, height: 'auto' }}
                 className="mt-6"
               >
-                <h3 className="font-semibold mb-4">Available Time Slots</h3>
-                <div className="grid grid-cols-2 gap-2">
+                <h3 className="font-semibold mb-4 text-sm sm:text-base">Available Time Slots</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   {timeSlots.map((slot) => {
                     const booked = isSlotBooked(slot);
                     return (
@@ -483,15 +507,18 @@ export default function AmenityBooking() {
                         key={slot}
                         variant={booked ? 'secondary' : 'outline'}
                         disabled={booked}
-                        className={`${
+                        className={`text-xs sm:text-sm py-2 sm:py-3 ${
                           selectedSlot === slot
                             ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
                             : ''
                         } ${booked ? 'opacity-50 cursor-not-allowed' : ''}`}
                         onClick={() => !booked && setSelectedSlot(slot)}
                       >
-                        {slot}
-                        {booked && <Badge className="ml-2">Booked</Badge>}
+                        <span className="flex items-center justify-center gap-1 sm:gap-2 w-full">
+                          <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                          {slot}
+                          {booked && <Badge className="ml-1 sm:ml-2 text-xs">Booked</Badge>}
+                        </span>
                       </Button>
                     );
                   })}
@@ -500,27 +527,28 @@ export default function AmenityBooking() {
                 {selectedSlot && (
                   <Dialog open={showBookingModal} onOpenChange={setShowBookingModal}>
                     <DialogTrigger asChild>
-                      <Button className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white">
+                      <Button className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-sm sm:text-base py-2 sm:py-3">
                         Book {selectedSlot}
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-[95vw] sm:max-w-md">
                       <DialogHeader>
-                        <DialogTitle>Confirm Booking</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-base sm:text-lg">Confirm Booking</DialogTitle>
+                        <DialogDescription className="text-sm">
                           {amenity.name} on {selectedDate.toLocaleDateString()} at {selectedSlot}
                         </DialogDescription>
                       </DialogHeader>
                       
                       <div className="space-y-4">
                         <div>
-                          <Label>Attendees (including yourself)</Label>
+                          <Label className="text-sm">Attendees (including yourself)</Label>
                           {attendees.map((attendee, index) => (
                             <div key={index} className="flex items-center space-x-2 mt-2">
                               <Input
                                 placeholder={index === 0 ? "Your name" : "Attendee name"}
                                 value={attendee}
                                 onChange={(e) => updateAttendee(index, e.target.value)}
+                                className="text-sm"
                               />
                               {index > 0 && (
                                 <Button

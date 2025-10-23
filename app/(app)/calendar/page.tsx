@@ -711,24 +711,48 @@ export default function CalendarPage() {
                 </div>
               </CardHeader>
               <CardContent className="px-4 sm:px-6">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  month={currentMonth}
-                  onMonthChange={setCurrentMonth}
-                  modifiers={{
-                    hasBooking: bookingDates
-                  }}
-                  modifiersStyles={{
-                    hasBooking: {
-                      backgroundColor: 'rgb(59 130 246 / 0.1)',
-                      color: 'rgb(37 99 235)',
-                      fontWeight: 'bold'
-                    }
-                  }}
-                  className="rounded-md text-sm sm:text-base"
-                />
+                <div className="overflow-x-auto">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    month={currentMonth}
+                    onMonthChange={setCurrentMonth}
+                    modifiers={{
+                      hasBooking: bookingDates
+                    }}
+                    modifiersStyles={{
+                      hasBooking: {
+                        backgroundColor: 'rgb(59 130 246 / 0.1)',
+                        color: 'rgb(37 99 235)',
+                        fontWeight: 'bold'
+                      }
+                    }}
+                    className="rounded-md w-full"
+                    classNames={{
+                      months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                      month: "space-y-4 w-full",
+                      caption: "flex justify-center pt-1 relative items-center",
+                      caption_label: "text-sm font-medium",
+                      nav: "space-x-1 flex items-center",
+                      nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+                      nav_button_previous: "absolute left-1",
+                      nav_button_next: "absolute right-1",
+                      table: "w-full border-collapse space-y-1",
+                      head_row: "flex w-full",
+                      head_cell: "text-muted-foreground rounded-md w-full font-normal text-[0.65rem] sm:text-[0.8rem]",
+                      row: "flex w-full mt-2",
+                      cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 w-full aspect-square",
+                      day: "h-full w-full p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md text-xs sm:text-sm",
+                      day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                      day_today: "bg-accent text-accent-foreground",
+                      day_outside: "text-muted-foreground opacity-50",
+                      day_disabled: "text-muted-foreground opacity-50",
+                      day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                      day_hidden: "invisible",
+                    }}
+                  />
+                </div>
               </CardContent>
             </Card>
 
