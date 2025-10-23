@@ -150,16 +150,18 @@
   z-index: 100000 !important;
 }
 
-/* Notification delete button - MAXIMUM PRIORITY */
+/* Notification delete button - STABLE, NO ANIMATIONS */
 .notification-card-wrapper > div:first-child {
   pointer-events: auto !important;
   cursor: pointer !important;
   z-index: 999999 !important;
   position: absolute !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease !important;
 }
 
 .notification-card-wrapper > div:first-child svg {
   pointer-events: none !important;
+  transition: none !important;
 }
 
 .notification-card-wrapper {

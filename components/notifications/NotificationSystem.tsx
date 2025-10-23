@@ -118,20 +118,21 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
           console.log('�️ DELETING:', notification.id);
           removeNotification(notification.id);
         }}
-        className="absolute top-3 right-3 z-[999999] p-2.5 text-gray-600 hover:text-white hover:bg-red-500 dark:hover:bg-red-600 rounded-full transition-all duration-200 bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl cursor-pointer border-2 border-gray-300 dark:border-gray-600 hover:border-red-500"
+        className="absolute top-3 right-3 z-[999999] p-2.5 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 hover:bg-red-500 hover:border-red-500 dark:hover:bg-red-600 shadow-lg"
         style={{ 
           pointerEvents: 'auto',
-          isolation: 'isolate'
+          cursor: 'pointer',
+          transition: 'background-color 0.15s ease, border-color 0.15s ease'
         }}
       >
-        <X className="h-4 w-4" strokeWidth={2.5} style={{ pointerEvents: 'none' }} />
+        <X className="h-4 w-4 text-gray-600" strokeWidth={2.5} style={{ pointerEvents: 'none' }} />
       </div>
 
       {/* Clickable notification card */}
       <div
         className={cn(
           "p-4 sm:p-5 pr-14 cursor-pointer transition-all duration-300 relative",
-          "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20 active:scale-[0.99]",
+          "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
           !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
         )}
         onClick={(e) => {
