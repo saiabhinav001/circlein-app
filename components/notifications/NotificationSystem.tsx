@@ -111,18 +111,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   router,
   setIsOpen
 }) => {
-  const handleCardClick = (e: React.MouseEvent) => {
-    // ULTRA PROTECTION: Don't handle click if it's on ANY delete button
-    const target = e.target as HTMLElement;
-    const isDeleteButton = target.closest('[data-ultra-delete]') || target.closest('[data-delete-button]');
-    
-    if (isDeleteButton) {
-      console.log('🛑 Card click blocked - delete button area');
-      e.stopPropagation();
-      e.preventDefault();
-      return;
-    }
-    
+  const handleCardClick = () => {
     console.log('📋 Card clicked');
     if (!notification.read) markAsRead(notification.id);
     if (notification.actionUrl) {
@@ -131,26 +120,22 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
     }
   };
 
+  const handleDeleteClick = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    console.log('�️ Delete button clicked:', notification.id);
+    removeNotification(notification.id);
+  };
+
   return (
-    <div 
-      className="relative group"
-      style={{ isolation: 'isolate' }}
-    >
-      {/* Main clickable notification card */}
+    <div className="relative group mb-3">
+      {/* Main clickable notification card - NO onClick on the div */}
       <div
         className={cn(
-          "p-4 sm:p-5 pr-16 cursor-pointer transition-all duration-300 relative rounded-lg border border-gray-200 dark:border-gray-700",
+          "p-4 sm:p-5 pr-16 transition-all duration-300 relative rounded-lg border border-gray-200 dark:border-gray-700",
           "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
           !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
         )}
-        onClick={handleCardClick}
-        onMouseDown={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.closest('[data-ultra-delete]')) {
-            e.stopPropagation();
-            e.preventDefault();
-          }
-        }}
       >
         {/* Enhanced Priority indicator */}
         {!notification.read && (
@@ -167,7 +152,12 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
           className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
         />
 
-        <div className="flex items-start gap-3 sm:gap-4 relative">
+        {/* CLICKABLE AREA - separate from delete button */}
+        <div 
+          className="cursor-pointer"
+          onClick={handleCardClick}
+        >
+          <div className="flex items-start gap-3 sm:gap-4 relative">
           {/* Enhanced Icon */}
           <div
             className={cn(
@@ -210,16 +200,23 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
             )}
           </div>
         </div>
-      </div>
+        </div> {/* Close clickable area */}
+      </div> {/* Close card */}
       
-      {/* ULTRA DELETE BUTTON - FINAL SOLUTION - GUARANTEED TO WORK */}
-      <UltraDeleteButton 
-        notificationId={notification.id}
-        onDelete={() => {
-          console.log('🗑️ ULTRA Delete triggered for:', notification.id);
-          removeNotification(notification.id);
-        }}
-      />
+      {/* DELETE BUTTON - COMPLETELY SEPARATE - NO NESTING */}
+      <button
+        type="button"
+        onClick={handleDeleteClick}
+        onTouchEnd={handleDeleteClick}
+        className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border-2 border-gray-300 dark:border-gray-600 hover:border-red-500 hover:bg-red-500 transition-all duration-200 shadow-lg hover:shadow-xl z-[999999] group/delete"
+        style={{ pointerEvents: 'auto' }}
+        aria-label="Delete notification"
+      >
+        <X 
+          className="w-5 h-5 text-gray-600 dark:text-gray-300 group-hover/delete:text-white group-hover/delete:rotate-90 transition-all duration-200" 
+          strokeWidth={2.5}
+        />
+      </button>
     </div>
   );
 };
