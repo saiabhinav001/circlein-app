@@ -58,26 +58,12 @@ export async function GET(request: NextRequest) {
       `,
     });
 
-    if (result.success) {
-      return NextResponse.json({
-        success: true,
-        message: '✅ Email sent successfully! Check your inbox.',
-        messageId: result.messageId,
-        timestamp: new Date().toISOString(),
-      });
-    } else {
-      return NextResponse.json({
-        success: false,
-        error: result.error,
-        troubleshooting: {
-          emailUser: process.env.EMAIL_USER,
-          passwordExists: !!process.env.EMAIL_PASSWORD,
-          suggestion: !process.env.EMAIL_PASSWORD 
-            ? 'EMAIL_PASSWORD environment variable is missing. Add Gmail app password to Vercel.'
-            : 'Check if Gmail app password is correct. Ensure 2FA is enabled and password is valid.',
-        },
-      }, { status: 500 });
-    }
+    return NextResponse.json({
+      success: true,
+      message: '✅ Email sent successfully! Check your inbox.',
+      messageId: result.messageId,
+      timestamp: new Date().toISOString(),
+    });
   } catch (error: any) {
     console.error('❌ Test email error:', error);
     return NextResponse.json({
