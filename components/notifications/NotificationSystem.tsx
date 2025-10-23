@@ -160,7 +160,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
       <div
         onClick={handleCardClick}
         className={cn(
-          "p-4 sm:p-5 pr-16 cursor-pointer transition-all duration-300 relative rounded-lg border border-gray-200 dark:border-gray-700",
+          "p-4 sm:p-5 pr-16 cursor-pointer relative rounded-lg border border-gray-200 dark:border-gray-700",
           "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
           !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
         )}
@@ -180,7 +180,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
           {/* Enhanced Icon */}
           <div
             className={cn(
-              "flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br relative overflow-hidden transition-transform hover:scale-105",
+              "flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br relative overflow-hidden",
               getPriorityColor(notification.priority)
             )}
           >
@@ -212,7 +212,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
             {/* Action button if available */}
             {notification.actionLabel && (
               <button
-                className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold rounded-lg transition-all duration-200 shadow-md hover:scale-105 active:scale-95"
+                className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold rounded-lg shadow-md"
               >
                 {notification.actionLabel}
               </button>
