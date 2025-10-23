@@ -13,7 +13,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useUserCreation } from '@/hooks/use-user-creation';
 import { useSearch } from '@/components/providers/search-provider';
 
@@ -299,14 +298,11 @@ export default function Dashboard() {
         {filteredAmenities.map((amenity) => (
           <motion.div key={amenity.id} variants={itemVariants}>
             <Card className="group hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 overflow-hidden border-0 bg-white dark:bg-slate-900 h-full flex flex-col">
-              <div className="relative overflow-hidden h-40 sm:h-48">
-                <Image
+              <div className="relative overflow-hidden">
+                <img
                   src={amenity.imageUrl || 'https://images.pexels.com/photos/296282/pexels-photo-296282.jpeg?auto=compress&cs=tinysrgb&w=600'}
                   alt={amenity.name}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  priority={false}
+                  className="w-full h-40 sm:h-48 object-cover group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

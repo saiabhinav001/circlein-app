@@ -1187,67 +1187,77 @@ export function NotificationPanel() {
             </div>
           ) : (
             <div className="divide-y divide-gray-100/50 dark:divide-gray-700/50">
-              {filteredAndSortedNotifications.map((notification, index) => (
-                <div
-                  key={notification.id}
-                  className="relative group"
-                >
-                  {/* Delete button - using onMouseUp for better reliability */}
-                  <button
-                    onMouseUp={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      // Haptic feedback
-                      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-                        navigator.vibrate(50);
-                      }
-                      console.log('🗑️ Delete button clicked (onMouseUp):', notification.id);
-                      removeNotification(notification.id);
-                    }}
-                    onClickCapture={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }}
-                    onMouseDownCapture={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }}
-                    className="absolute top-3 right-3 z-[9999] p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors duration-200 bg-white dark:bg-gray-800 shadow-md hover:shadow-lg"
-                    title="Remove notification"
-                    type="button"
-                    style={{ 
-                      pointerEvents: 'auto',
-                      isolation: 'isolate',
-                      position: 'absolute'
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-
-                  {/* Clickable notification card */}
+              {filteredAndSortedNotifications.map((notification, index) => {
+                const deleteButtonRef = React.useRef<HTMLButtonElement>(null);
+                
+                // Direct DOM event handler for delete button - bypasses React's synthetic events
+                React.useEffect(() => {
+                  const button = deleteButtonRef.current;
+                  if (!button) return;
+                  
+                  const handleDelete = (e: MouseEvent) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    // Haptic feedback
+                    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+                      navigator.vibrate(50);
+                    }
+                    console.log('🗑️ Delete button clicked:', notification.id);
+                    removeNotification(notification.id);
+                  };
+                  
+                  // Use native DOM events instead of React synthetic events
+                  button.addEventListener('click', handleDelete, true); // Use capture phase
+                  
+                  return () => {
+                    button.removeEventListener('click', handleDelete, true);
+                  };
+                }, [notification.id]);
+                
+                return (
                   <div
-                    className={cn(
-                      "p-4 sm:p-5 pr-14 cursor-pointer transition-all duration-300 relative overflow-hidden",
-                      "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20 active:scale-[0.99]",
-                      !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
-                    )}
-                    onClick={(e) => {
-                      // Don't handle if clicking on button area
-                      const target = e.target as HTMLElement;
-                      if (target.closest('button')) {
-                        return;
-                      }
-                      // Haptic feedback
-                      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-                        navigator.vibrate(30);
-                      }
-                      if (!notification.read) markAsRead(notification.id);
-                      if (notification.actionUrl) {
-                        router.push(notification.actionUrl);
-                        setIsOpen(false);
-                      }
-                    }}
+                    key={notification.id}
+                    className="relative group"
                   >
+                    {/* Delete button - using native DOM events via useRef */}
+                    <button
+                      ref={deleteButtonRef}
+                      className="absolute top-3 right-3 z-[9999] p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors duration-200 bg-white dark:bg-gray-800 shadow-md hover:shadow-lg"
+                      title="Remove notification"
+                      type="button"
+                      style={{ 
+                        pointerEvents: 'auto',
+                        isolation: 'isolate',
+                        position: 'absolute'
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+
+                    {/* Clickable notification card */}
+                    <div
+                      className={cn(
+                        "p-4 sm:p-5 pr-14 cursor-pointer transition-all duration-300 relative overflow-hidden",
+                        "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20 active:scale-[0.99]",
+                        !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
+                      )}
+                      onClick={(e) => {
+                        // Don't handle if clicking on button area
+                        const target = e.target as HTMLElement;
+                        if (target.closest('button')) {
+                          return;
+                        }
+                        // Haptic feedback
+                        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+                          navigator.vibrate(30);
+                        }
+                        if (!notification.read) markAsRead(notification.id);
+                        if (notification.actionUrl) {
+                          router.push(notification.actionUrl);
+                          setIsOpen(false);
+                        }
+                      }}
+                    >
                   {/* Enhanced Priority indicator */}
                   {!notification.read && (
                     <div
@@ -1335,7 +1345,8 @@ export function NotificationPanel() {
                   </div>
                   {/* Close clickable card div */}
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </div>

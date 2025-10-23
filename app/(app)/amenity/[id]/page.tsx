@@ -6,7 +6,6 @@ import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp
 import { db } from '@/lib/firebase';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import { Calendar as CalendarIcon, Clock, Users, MapPin, Info } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -317,14 +316,11 @@ export default function AmenityBooking() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
         {/* Amenity Info */}
         <Card className="border-0 bg-white dark:bg-slate-900">
-          <div className="relative overflow-hidden rounded-t-lg h-48 sm:h-56 lg:h-64">
-            <Image
+          <div className="relative overflow-hidden rounded-t-lg">
+            <img
               src={amenity.imageUrl || 'https://images.pexels.com/photos/296282/pexels-photo-296282.jpeg?auto=compress&cs=tinysrgb&w=1200'}
               alt={amenity.name}
-              fill
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover"
-              priority={true}
+              className="w-full h-48 sm:h-56 lg:h-64 object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
             <div className="absolute bottom-4 left-4">
