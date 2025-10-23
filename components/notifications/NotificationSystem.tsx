@@ -136,22 +136,19 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
 
   return (
     <div className="relative mb-3">
-      {/* DELETE BUTTON - SIMPLE AND CLEAN */}
+      {/* DELETE BUTTON - NO ANIMATIONS */}
       <button
         type="button"
         onClick={handleDeleteClick}
-        onTouchStart={handleDeleteClick}
         className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border-2 border-gray-300 dark:border-gray-600 hover:border-red-500 hover:bg-red-500 shadow-lg [&:hover>svg]:text-white"
         style={{ 
           zIndex: 999999,
-          pointerEvents: 'auto',
-          touchAction: 'manipulation',
-          transition: 'background-color 0.2s, border-color 0.2s'
+          pointerEvents: 'auto'
         }}
         aria-label="Delete notification"
       >
         <X 
-          className="w-5 h-5 text-gray-600 dark:text-gray-300 transition-colors duration-200"
+          className="w-5 h-5 text-gray-600 dark:text-gray-300"
           strokeWidth={2.5}
         />
       </button>
