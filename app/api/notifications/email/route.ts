@@ -64,17 +64,10 @@ export async function POST(request: NextRequest) {
       html: template.html,
     });
 
-    if (result.success) {
-      return NextResponse.json({ 
-        success: true, 
-        messageId: result.messageId 
-      });
-    } else {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json({ 
+      success: true, 
+      messageId: result.messageId 
+    });
   } catch (error: any) {
     console.error('Email notification error:', error);
     return NextResponse.json(
