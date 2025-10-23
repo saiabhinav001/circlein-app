@@ -6,6 +6,7 @@ import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp
 import { db } from '@/lib/firebase';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { Calendar as CalendarIcon, Clock, Users, MapPin, Info } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,6 +57,7 @@ export default function AmenityBooking() {
   const [selectedSlot, setSelectedSlot] = useState<string>('');
   const [attendees, setAttendees] = useState<string[]>(['']);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [isBooking, setIsBooking] = useState(false); // Prevent double booking
 
   useEffect(() => {
     if (params.id) {
@@ -146,10 +148,23 @@ export default function AmenityBooking() {
   };
 
   const handleBooking = async () => {
+    // Prevent double booking
+    if (isBooking) {
+      console.log('🚫 Booking already in progress, ignoring duplicate request');
+      return;
+    }
+
     if (!selectedDate || !selectedSlot || !session?.user?.email || !amenity) {
       toast.error('Please fill in all required fields');
       return;
     }
+
+    // Haptic feedback
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate([50, 30, 50]);
+    }
+
+    setIsBooking(true); // Lock the booking process
 
     // Check if the selected date is a blackout date
     const isBlackoutDate = amenity.rules?.blackoutDates?.some((blackoutItem: any) => {
@@ -259,6 +274,8 @@ export default function AmenityBooking() {
     } catch (error) {
       console.error('Error creating booking:', error);
       toast.error('Failed to create booking. Please try again.');
+    } finally {
+      setIsBooking(false); // Unlock booking process
     }
   };
 
@@ -300,11 +317,14 @@ export default function AmenityBooking() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
         {/* Amenity Info */}
         <Card className="border-0 bg-white dark:bg-slate-900">
-          <div className="relative overflow-hidden rounded-t-lg">
-            <img
+          <div className="relative overflow-hidden rounded-t-lg h-48 sm:h-56 lg:h-64">
+            <Image
               src={amenity.imageUrl || 'https://images.pexels.com/photos/296282/pexels-photo-296282.jpeg?auto=compress&cs=tinysrgb&w=1200'}
               alt={amenity.name}
-              className="w-full h-48 sm:h-56 lg:h-64 object-cover"
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover"
+              priority={true}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
             <div className="absolute bottom-4 left-4">
@@ -589,14 +609,26 @@ export default function AmenityBooking() {
                             variant="outline"
                             onClick={() => setShowBookingModal(false)}
                             className="flex-1"
+                            disabled={isBooking}
                           >
                             Cancel
                           </Button>
                           <Button
                             onClick={handleBooking}
-                            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                            disabled={isBooking}
+                            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            Confirm Booking
+                            {isBooking ? (
+                              <span className="flex items-center justify-center">
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Booking...
+                              </span>
+                            ) : (
+                              'Confirm Booking'
+                            )}
                           </Button>
                         </div>
                       </div>

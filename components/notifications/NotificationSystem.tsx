@@ -1192,15 +1192,34 @@ export function NotificationPanel() {
                   key={notification.id}
                   className="relative group"
                 >
-                  {/* Delete button - OUTSIDE clickable area */}
+                  {/* Delete button - using onMouseUp for better reliability */}
                   <button
-                    onClick={(e) => {
+                    onMouseUp={(e) => {
                       e.stopPropagation();
+                      e.preventDefault();
+                      // Haptic feedback
+                      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+                        navigator.vibrate(50);
+                      }
+                      console.log('🗑️ Delete button clicked (onMouseUp):', notification.id);
                       removeNotification(notification.id);
                     }}
-                    className="absolute top-2 right-2 z-50 p-2 text-gray-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-all duration-200 cursor-pointer opacity-0 group-hover:opacity-100"
+                    onClickCapture={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    onMouseDownCapture={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    className="absolute top-3 right-3 z-[9999] p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors duration-200 bg-white dark:bg-gray-800 shadow-md hover:shadow-lg"
                     title="Remove notification"
                     type="button"
+                    style={{ 
+                      pointerEvents: 'auto',
+                      isolation: 'isolate',
+                      position: 'absolute'
+                    }}
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -1208,11 +1227,20 @@ export function NotificationPanel() {
                   {/* Clickable notification card */}
                   <div
                     className={cn(
-                      "p-4 sm:p-5 cursor-pointer transition-all duration-300 relative overflow-hidden",
-                      "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
+                      "p-4 sm:p-5 pr-14 cursor-pointer transition-all duration-300 relative overflow-hidden",
+                      "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20 active:scale-[0.99]",
                       !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
                     )}
-                    onClick={() => {
+                    onClick={(e) => {
+                      // Don't handle if clicking on button area
+                      const target = e.target as HTMLElement;
+                      if (target.closest('button')) {
+                        return;
+                      }
+                      // Haptic feedback
+                      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+                        navigator.vibrate(30);
+                      }
                       if (!notification.read) markAsRead(notification.id);
                       if (notification.actionUrl) {
                         router.push(notification.actionUrl);
