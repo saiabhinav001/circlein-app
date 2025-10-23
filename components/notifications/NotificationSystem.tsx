@@ -110,69 +110,124 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   setIsOpen
 }) => {
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   
-  // Direct DOM event handler for delete button - bypasses React's synthetic events
+  // Enhanced delete handler with multiple event types for desktop compatibility
   useEffect(() => {
     const button = deleteButtonRef.current;
     if (!button) return;
     
-    const handleDelete = (e: MouseEvent) => {
+    const handleDelete = (e: Event) => {
       e.stopPropagation();
+      e.stopImmediatePropagation();
       e.preventDefault();
+      
       // Haptic feedback
       if (typeof window !== 'undefined' && 'vibrate' in navigator) {
         navigator.vibrate(50);
       }
+      
       console.log('🗑️ Delete button clicked:', notification.id);
       removeNotification(notification.id);
     };
     
-    // Use native DOM events instead of React synthetic events
-    button.addEventListener('click', handleDelete, true); // Use capture phase
+    // Register multiple event types for maximum compatibility
+    button.addEventListener('click', handleDelete, true); // Capture phase for click
+    button.addEventListener('mouseup', handleDelete, true); // Also handle mouseup for desktop
+    button.addEventListener('touchend', handleDelete, true); // Touch devices
+    
+    // Prevent any parent handlers from interfering
+    const preventBubbling = (e: Event) => {
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    };
+    
+    button.addEventListener('pointerdown', preventBubbling, true);
+    button.addEventListener('mousedown', preventBubbling, true);
+    button.addEventListener('touchstart', preventBubbling, true);
     
     return () => {
       button.removeEventListener('click', handleDelete, true);
+      button.removeEventListener('mouseup', handleDelete, true);
+      button.removeEventListener('touchend', handleDelete, true);
+      button.removeEventListener('pointerdown', preventBubbling, true);
+      button.removeEventListener('mousedown', preventBubbling, true);
+      button.removeEventListener('touchstart', preventBubbling, true);
     };
   }, [notification.id, removeNotification]);
   
+  // Prevent card click when clicking delete button area
+  const handleCardClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const button = deleteButtonRef.current;
+    
+    // Check if click is on or within the delete button
+    if (button && (target === button || button.contains(target))) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
+    // Haptic feedback for card click
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(30);
+    }
+    
+    if (!notification.read) markAsRead(notification.id);
+    if (notification.actionUrl) {
+      router.push(notification.actionUrl);
+      setIsOpen(false);
+    }
+  };
+  
   return (
-    <div className="relative group">
-      {/* Delete button - using native DOM events via useRef */}
+    <div ref={cardRef} className="notification-card-wrapper relative group" style={{ isolation: 'isolate' }}>
+      {/* Delete button - Enhanced for desktop compatibility */}
       <button
         ref={deleteButtonRef}
-        className="absolute top-3 right-3 z-[9999] p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors duration-200 bg-white dark:bg-gray-800 shadow-md hover:shadow-lg"
+        className="absolute top-3 right-3 z-[99999] p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-all duration-200 bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 border border-gray-200 dark:border-gray-700"
         title="Remove notification"
         type="button"
+        aria-label="Remove notification"
         style={{ 
           pointerEvents: 'auto',
           isolation: 'isolate',
-          position: 'absolute'
+          position: 'absolute',
+          cursor: 'pointer',
+          touchAction: 'manipulation',
+          userSelect: 'none',
+          WebkitUserSelect: 'none'
+        }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+        }}
+        onTouchStart={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
         }}
       >
-        <X className="h-4 w-4" />
+        <X className="h-4 w-4 pointer-events-none" />
       </button>
 
       {/* Clickable notification card */}
       <div
         className={cn(
-          "p-4 sm:p-5 pr-14 cursor-pointer transition-all duration-300 relative overflow-hidden",
+          "p-4 sm:p-5 pr-14 cursor-pointer transition-all duration-300 relative",
           "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20 active:scale-[0.99]",
           !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
         )}
-        onClick={(e) => {
-          // Don't handle if clicking on button area
+        onClick={handleCardClick}
+        onMouseDown={(e) => {
           const target = e.target as HTMLElement;
-          if (target.closest('button')) {
-            return;
-          }
-          // Haptic feedback
-          if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-            navigator.vibrate(30);
-          }
-          if (!notification.read) markAsRead(notification.id);
-          if (notification.actionUrl) {
-            router.push(notification.actionUrl);
-            setIsOpen(false);
+          const button = deleteButtonRef.current;
+          if (button && (target === button || button.contains(target))) {
+            e.preventDefault();
+            e.stopPropagation();
           }
         }}
       >

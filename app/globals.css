@@ -149,3 +149,28 @@
 [data-radix-dialog-content] {
   z-index: 100000 !important;
 }
+
+/* Notification delete button - ensure always clickable on desktop and mobile */
+button[aria-label="Remove notification"],
+button[title="Remove notification"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 99999 !important;
+  position: absolute !important;
+  touch-action: manipulation !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Prevent parent elements from blocking the button */
+.notification-card-wrapper {
+  position: relative !important;
+  isolation: isolate !important;
+}
+
+/* Ensure X icon inside button doesn't block clicks */
+button[aria-label="Remove notification"] > svg,
+button[title="Remove notification"] > svg {
+  pointer-events: none !important;
+}
+
