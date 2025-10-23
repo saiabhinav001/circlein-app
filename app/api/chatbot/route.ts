@@ -59,19 +59,22 @@ let genAIInstance: any = null;
 
 function getModelInstance() {
   if (!modelInstance || !genAIInstance) {
-    const apiKey = process.env.GEMINI_API_KEY;
+    let apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey || apiKey.trim() === '') {
       throw new Error('GEMINI_API_KEY not configured');
     }
     
+    // Remove quotes if present (common issue in .env files)
+    apiKey = apiKey.replace(/^["']|["']$/g, '').trim();
+    
     genAIInstance = new GoogleGenerativeAI(apiKey);
     modelInstance = genAIInstance.getGenerativeModel({ 
-      model: 'gemini-1.5-flash-8b',  // Ultra-fast 8B model for instant responses
+      model: 'gemini-1.5-flash',  // Fast and reliable model
       generationConfig: {
-        temperature: 0.8,  // Balanced creativity
-        topK: 20,
-        topP: 0.9,
-        maxOutputTokens: 512,  // Concise responses for speed
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 1024,
       },
     });
   }

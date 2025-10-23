@@ -111,21 +111,15 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   setIsOpen
 }) => {
   return (
-    <div className="notification-card-wrapper relative">
+    <div className="relative group">
       {/* Main clickable notification card */}
       <div
         className={cn(
-          "p-4 sm:p-5 pr-16 cursor-pointer transition-all duration-300 relative",
+          "p-4 sm:p-5 pr-14 cursor-pointer transition-all duration-300 relative rounded-lg border border-gray-200 dark:border-gray-700",
           "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
           !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
         )}
         onClick={(e) => {
-          // Only trigger if not clicking the delete button area
-          const target = e.target as HTMLElement;
-          if (target.closest('.delete-button-container')) {
-            return;
-          }
-          
           console.log('📋 Card clicked');
           if (!notification.read) markAsRead(notification.id);
           if (notification.actionUrl) {
@@ -194,14 +188,8 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
         </div>
       </div>
       
-      {/* DELETE BUTTON - ABSOLUTE POSITIONED, ISOLATED FROM CARD */}
-      <div 
-        className="delete-button-container absolute top-4 right-4"
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-        }}
-      >
+      {/* DELETE BUTTON - POSITIONED ABSOLUTE OUTSIDE CLICKABLE CARD */}
+      <div className="absolute top-3 right-3 z-[100]">
         <DeleteButton 
           notificationId={notification.id}
           onDelete={() => {
@@ -1397,21 +1385,6 @@ export function NotificationPanel() {
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(156, 163, 175, 0.8);
-        }
-        
-        /* Delete button container - ensure it's always on top and clickable */
-        .delete-button-container {
-          position: absolute;
-          top: 1rem;
-          right: 1rem;
-          z-index: 50;
-          pointer-events: auto;
-        }
-        
-        /* Notification card wrapper - relative positioning */
-        .notification-card-wrapper {
-          position: relative;
-          isolation: isolate;
         }
         
         @keyframes slide-down {

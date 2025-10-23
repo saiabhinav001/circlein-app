@@ -11,8 +11,8 @@ interface DeleteButtonProps {
 export const DeleteButton: React.FC<DeleteButtonProps> = ({ onDelete, notificationId }) => {
   const [isHovered, setIsHovered] = React.useState(false);
 
-  const handleClick = (e: React.MouseEvent) => {
-    // CRITICAL: Stop all event propagation
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    // Stop event from reaching parent elements
     e.stopPropagation();
     e.preventDefault();
     
@@ -26,16 +26,17 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ onDelete, notificati
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="w-9 h-9 flex items-center justify-center rounded-full border-2 transition-all duration-200 hover:scale-110 active:scale-95 shadow-md hover:shadow-lg"
+      className="relative z-[100] w-8 h-8 flex items-center justify-center rounded-full border-2 transition-all duration-200 hover:scale-110 active:scale-95"
       style={{
         backgroundColor: isHovered ? '#ef4444' : '#ffffff',
         borderColor: isHovered ? '#ef4444' : '#d1d5db',
         cursor: 'pointer',
+        pointerEvents: 'auto',
       }}
       aria-label="Delete notification"
     >
       <X
-        className="w-5 h-5"
+        className="w-4 h-4 pointer-events-none"
         style={{
           color: isHovered ? '#ffffff' : '#6b7280',
         }}
