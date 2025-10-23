@@ -1190,35 +1190,36 @@ export function NotificationPanel() {
               {filteredAndSortedNotifications.map((notification, index) => (
                 <div
                   key={notification.id}
-                  className={cn(
-                    "p-4 sm:p-5 cursor-pointer transition-all duration-300 relative overflow-hidden group",
-                    "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
-                    !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
-                  )}
-                  onClick={(e) => {
-                    // Don't handle click if it's on the delete button or its children
-                    const target = e.target as HTMLElement;
-                    const deleteButton = target.closest('[data-delete-button]');
-                    if (deleteButton) {
-                      console.log('🔕 Click on delete button detected, stopping propagation');
-                      e.stopPropagation();
-                      e.preventDefault();
-                      return;
-                    }
-                    if (!notification.read) markAsRead(notification.id);
-                    if (notification.actionUrl) {
-                      router.push(notification.actionUrl);
-                      setIsOpen(false);
-                    }
-                  }}
-                  onMouseDown={(e) => {
-                    // Also stop propagation on mouse down for delete button
-                    const target = e.target as HTMLElement;
-                    if (target.closest('[data-delete-button]')) {
-                      e.stopPropagation();
-                    }
-                  }}
+                  className="relative group"
                 >
+                  {/* Delete button - OUTSIDE clickable area */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeNotification(notification.id);
+                    }}
+                    className="absolute top-2 right-2 z-50 p-2 text-gray-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-all duration-200 cursor-pointer opacity-0 group-hover:opacity-100"
+                    title="Remove notification"
+                    type="button"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+
+                  {/* Clickable notification card */}
+                  <div
+                    className={cn(
+                      "p-4 sm:p-5 cursor-pointer transition-all duration-300 relative overflow-hidden",
+                      "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
+                      !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
+                    )}
+                    onClick={() => {
+                      if (!notification.read) markAsRead(notification.id);
+                      if (notification.actionUrl) {
+                        router.push(notification.actionUrl);
+                        setIsOpen(false);
+                      }
+                    }}
+                  >
                   {/* Enhanced Priority indicator */}
                   {!notification.read && (
                     <div
@@ -1286,24 +1287,6 @@ export function NotificationPanel() {
                           <span className="text-xs font-medium whitespace-nowrap text-gray-500 dark:text-gray-300">
                             {formatTimeAgo(new Date(notification.timestamp))}
                           </span>
-                          <button
-                            data-delete-button="true"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              console.log('🗑️ DELETE CLICKED for:', notification.id);
-                              removeNotification(notification.id);
-                            }}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }}
-                            className="flex-shrink-0 p-2 text-gray-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors cursor-pointer"
-                            title="Remove notification"
-                            type="button"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
                         </div>
                       </div>
                       
@@ -1321,6 +1304,8 @@ export function NotificationPanel() {
                       )}
                     </div>
                   </div>
+                  </div>
+                  {/* Close clickable card div */}
                 </div>
               ))}
             </div>
