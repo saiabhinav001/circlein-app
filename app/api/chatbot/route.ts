@@ -69,12 +69,12 @@ function getModelInstance() {
     
     genAIInstance = new GoogleGenerativeAI(apiKey);
     modelInstance = genAIInstance.getGenerativeModel({ 
-      model: 'gemini-1.5-flash',  // Fast and reliable model
+      model: 'gemini-2.5-flash',  // Latest stable Gemini 2.5 Flash - Fast and powerful
       generationConfig: {
         temperature: 0.7,
         topK: 40,
         topP: 0.95,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,  // More tokens for detailed responses
       },
     });
   }

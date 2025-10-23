@@ -13,7 +13,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { collection, query, where, onSnapshot, orderBy, limit, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { DeleteButton } from './DeleteButton';
+import { RadixDeleteButton } from './RadixDeleteButton';  // NEW: Radix UI based delete button
 
 export interface Notification {
   id: string;
@@ -190,7 +190,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
       
       {/* DELETE BUTTON - POSITIONED ABSOLUTE OUTSIDE CLICKABLE CARD */}
       <div className="absolute top-3 right-3 z-[100]">
-        <DeleteButton 
+        <RadixDeleteButton 
           notificationId={notification.id}
           onDelete={() => {
             console.log('🗑️ Delete triggered for:', notification.id);
