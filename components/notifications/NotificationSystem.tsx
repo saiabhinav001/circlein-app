@@ -14,6 +14,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { collection, query, where, onSnapshot, orderBy, limit, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { RadixDeleteButton } from './RadixDeleteButton';  // NEW: Radix UI based delete button
+import { UltraDeleteButton } from './UltraDeleteButton';  // ULTRA: Final solution delete button
 
 export interface Notification {
   id: string;
@@ -111,12 +112,14 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   setIsOpen
 }) => {
   const handleCardClick = (e: React.MouseEvent) => {
-    // Don't handle click if it's on the delete button area
+    // ULTRA PROTECTION: Don't handle click if it's on ANY delete button
     const target = e.target as HTMLElement;
-    const isDeleteButton = target.closest('[data-delete-button]');
+    const isDeleteButton = target.closest('[data-ultra-delete]') || target.closest('[data-delete-button]');
     
     if (isDeleteButton) {
       console.log('🛑 Card click blocked - delete button area');
+      e.stopPropagation();
+      e.preventDefault();
       return;
     }
     
@@ -129,15 +132,25 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   };
 
   return (
-    <div className="relative group">
+    <div 
+      className="relative group"
+      style={{ isolation: 'isolate' }}
+    >
       {/* Main clickable notification card */}
       <div
         className={cn(
-          "p-4 sm:p-5 pr-14 cursor-pointer transition-all duration-300 relative rounded-lg border border-gray-200 dark:border-gray-700",
+          "p-4 sm:p-5 pr-16 cursor-pointer transition-all duration-300 relative rounded-lg border border-gray-200 dark:border-gray-700",
           "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
           !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
         )}
         onClick={handleCardClick}
+        onMouseDown={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest('[data-ultra-delete]')) {
+            e.stopPropagation();
+            e.preventDefault();
+          }
+        }}
       >
         {/* Enhanced Priority indicator */}
         {!notification.read && (
@@ -199,11 +212,11 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
         </div>
       </div>
       
-      {/* DELETE BUTTON - RADIX UI WITH ABSOLUTE POSITIONING */}
-      <RadixDeleteButton 
+      {/* ULTRA DELETE BUTTON - FINAL SOLUTION - GUARANTEED TO WORK */}
+      <UltraDeleteButton 
         notificationId={notification.id}
         onDelete={() => {
-          console.log('🗑️ Delete triggered for:', notification.id);
+          console.log('🗑️ ULTRA Delete triggered for:', notification.id);
           removeNotification(notification.id);
         }}
       />

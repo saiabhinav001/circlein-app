@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 type ContactMode = 'chatbot' | 'email';
 
@@ -356,7 +358,15 @@ export default function ContactPage() {
                                 ) : (
                                   <User className="w-4 h-4 mt-1 shrink-0" />
                                 )}
-                                <p className="text-sm md:text-base whitespace-pre-wrap break-words flex-1">{msg.content}</p>
+                                {msg.role === 'assistant' ? (
+                                  <div className="text-sm md:text-base flex-1 prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-headings:my-2 prose-strong:text-slate-900 dark:prose-strong:text-white prose-code:text-blue-600 dark:prose-code:text-blue-400 prose-code:bg-slate-200 dark:prose-code:bg-slate-700 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                      {msg.content}
+                                    </ReactMarkdown>
+                                  </div>
+                                ) : (
+                                  <p className="text-sm md:text-base whitespace-pre-wrap break-words flex-1">{msg.content}</p>
+                                )}
                               </div>
                               <span className={`text-xs opacity-70 block ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
                                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
