@@ -111,7 +111,14 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   router,
   setIsOpen
 }) => {
-  const handleCardClick = () => {
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Check if click is on delete button - if yes, ignore
+    const target = e.target as HTMLElement;
+    const button = target.closest('button[aria-label="Delete notification"]');
+    if (button) {
+      return;
+    }
+    
     console.log('📋 Card clicked');
     if (!notification.read) markAsRead(notification.id);
     if (notification.actionUrl) {
