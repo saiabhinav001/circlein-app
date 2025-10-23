@@ -111,7 +111,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
   setIsOpen
 }) => {
   return (
-    <div className="notification-card-wrapper relative group" style={{ isolation: 'isolate' }}>
+    <div className="notification-card-wrapper relative group" style={{ isolation: 'isolate', position: 'relative' }}>
       {/* Clickable notification card */}
       <div
         className={cn(
@@ -119,6 +119,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
           "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
           !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
         )}
+        style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
         onClick={(e) => {
           console.log('📋 Card clicked');
           if (!notification.read) markAsRead(notification.id);
@@ -189,7 +190,14 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
       </div>
       
       {/* DELETE BUTTON - NEW SEPARATE COMPONENT */}
-      <div className="flex items-start pt-1 absolute top-4 right-4">
+      <div 
+        className="flex items-start pt-1 absolute top-4 right-4" 
+        style={{ 
+          zIndex: 999999, 
+          position: 'absolute',
+          pointerEvents: 'auto'
+        }}
+      >
         <DeleteButton 
           notificationId={notification.id}
           onDelete={() => removeNotification(notification.id)}

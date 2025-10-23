@@ -18,10 +18,23 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ onDelete, notificati
     onDelete();
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    handleClick(e);
+  };
+
   return (
     <button
       type="button"
       onClick={handleClick}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className="w-8 h-8 flex items-center justify-center rounded-full border-2"
@@ -30,7 +43,10 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ onDelete, notificati
         borderColor: isHovered ? '#ef4444' : '#d1d5db',
         cursor: 'pointer',
         transition: 'none',
-        flexShrink: 0
+        flexShrink: 0,
+        position: 'relative',
+        zIndex: 999999,
+        pointerEvents: 'auto'
       }}
       aria-label="Delete notification"
     >
