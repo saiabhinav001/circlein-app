@@ -154,6 +154,107 @@ export const emailTemplates = {
     `,
   }),
 
+  bookingCancellation: (data: {
+    userName: string;
+    amenityName: string;
+    date: string;
+    timeSlot: string;
+    bookingId: string;
+    cancelledBy?: string;
+    isAdminCancellation?: boolean;
+    cancellationReason?: string;
+  }) => ({
+    subject: `❌ Booking Cancelled: ${data.amenityName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .alert-box { background: #fee2e2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 5px; }
+            .details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+            .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+            .detail-label { font-weight: bold; color: #ef4444; }
+            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+            .button { display: inline-block; padding: 12px 30px; background: #3b82f6; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>❌ Booking Cancelled</h1>
+              <p>${data.isAdminCancellation ? 'This booking was cancelled by administration' : 'Your booking has been cancelled'}</p>
+            </div>
+            <div class="content">
+              <p>Hi <strong>${data.userName}</strong>,</p>
+              
+              ${data.isAdminCancellation ? `
+                <div class="alert-box">
+                  <strong>⚠️ Your booking was cancelled by an administrator.</strong>
+                  ${data.cancellationReason ? `<br><br><strong>Reason:</strong> ${data.cancellationReason}` : ''}
+                </div>
+              ` : `
+                <p>Your booking cancellation has been processed successfully.</p>
+              `}
+
+              <div class="details">
+                <div class="detail-row">
+                  <span class="detail-label">Amenity</span>
+                  <span>${data.amenityName}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Date</span>
+                  <span>${data.date}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Time</span>
+                  <span>${data.timeSlot}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Booking ID</span>
+                  <span>${data.bookingId}</span>
+                </div>
+                ${data.isAdminCancellation && data.cancelledBy ? `
+                  <div class="detail-row">
+                    <span class="detail-label">Cancelled By</span>
+                    <span>${data.cancelledBy}</span>
+                  </div>
+                ` : ''}
+                <div class="detail-row">
+                  <span class="detail-label">Status</span>
+                  <span style="color: #ef4444; font-weight: bold;">Cancelled</span>
+                </div>
+              </div>
+
+              ${data.isAdminCancellation ? `
+                <p><strong>What to do next:</strong></p>
+                <ul>
+                  <li>If you have questions about this cancellation, please contact the admin team</li>
+                  <li>You can make a new booking for a different date/time</li>
+                  <li>Check the amenity schedule for availability</li>
+                </ul>
+              ` : `
+                <p>You can book the amenity again at any time through your dashboard.</p>
+              `}
+              
+              <div style="text-align: center;">
+                <a href="https://circlein-app.vercel.app/bookings" class="button">View My Bookings</a>
+              </div>
+            </div>
+            <div class="footer">
+              <p>This is an automated message from CircleIn. Please do not reply to this email.</p>
+              <p>If you need assistance, please contact your community administrator.</p>
+              <p>&copy; 2025 CircleIn - Community Management Platform</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  }),
+
   amenityBlocked: (data: {
     amenityName: string;
     reason: string;

@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { collection, query, where, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -301,6 +301,39 @@ export default function CalendarPage() {
       });
 
       console.log('✅ Booking successfully updated to cancelled in database');
+
+      // Get user details for email notification
+      const userDoc = await getDoc(doc(db, 'users', booking.userId));
+      const userData = userDoc.data();
+
+      // Send cancellation email to the user
+      if (userData?.email) {
+        try {
+          await fetch('/api/notifications/email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'booking_cancellation',
+              data: {
+                userEmail: userData.email,
+                userName: userData.name || 'Resident',
+                amenityName: booking.amenityName,
+                date: formatDateConsistently(booking.startTime),
+                timeSlot: `${formatTimeConsistently(booking.startTime)} - ${formatTimeConsistently(booking.endTime)}`,
+                bookingId: booking.id,
+                cancelledBy: session?.user?.email,
+                isAdminCancellation: isAdmin && booking.userId !== session?.user?.email,
+                cancellationReason: isAdmin && booking.userId !== session?.user?.email ? 
+                  'Cancelled by administration' : undefined,
+              }
+            })
+          });
+          console.log('✅ Cancellation email sent to:', userData.email);
+        } catch (emailError) {
+          console.error('⚠️ Failed to send cancellation email:', emailError);
+          // Don't fail the cancellation if email fails
+        }
+      }
 
       // Send notification for admin cancellations
       if (isAdmin && booking.userId !== session?.user?.email) {

@@ -38,6 +38,19 @@ export async function POST(request: NextRequest) {
         });
         break;
 
+      case 'booking_cancellation':
+        template = emailTemplates.bookingCancellation({
+          userName: data.userName,
+          amenityName: data.amenityName,
+          date: data.date,
+          timeSlot: data.timeSlot,
+          bookingId: data.bookingId,
+          cancelledBy: data.cancelledBy,
+          isAdminCancellation: data.isAdminCancellation || false,
+          cancellationReason: data.cancellationReason,
+        });
+        break;
+
       default:
         return NextResponse.json(
           { error: 'Invalid notification type' },

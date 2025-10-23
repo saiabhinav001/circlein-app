@@ -119,9 +119,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     localStorage.setItem('circleInNotifications', JSON.stringify(notifications));
   }, [notifications]);
 
-  // Listen for community notifications from Firestore
+  // Listen for community notifications from Firestore (REAL-TIME ONLY)
   useEffect(() => {
     if (!session?.user?.communityId || !session?.user?.email) return;
+
+    // Store the connection time to only show notifications created AFTER this point
+    const connectionTime = new Date();
+    console.log('🔔 Notification listener connected at:', connectionTime.toISOString());
 
     const q = query(
       collection(db, 'communityNotifications'),
@@ -139,13 +143,29 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             timestamp: docData.timestamp?.toDate() || new Date()
           };
 
+          // CRITICAL: Only show notifications created AFTER connection time (real-time only)
+          if (notificationData.timestamp < connectionTime) {
+            console.log('🔕 Skipping old notification from:', notificationData.timestamp.toISOString());
+            return;
+          }
+
+          console.log('🔔 New real-time notification received:', notificationData.title);
+
           // Don't show notification to the sender
           if (notificationData.senderEmail === session?.user?.email) {
+            console.log('🔕 Skipping notification from self');
             return;
           }
 
           // Check if notification is targeted to specific user
-          if (notificationData.recipients !== 'all' && notificationData.recipients !== session?.user?.email) {
+          if (notificationData.targetUser && notificationData.targetUser !== session?.user?.email) {
+            console.log('🔕 Skipping notification not targeted to this user');
+            return;
+          }
+
+          // If recipients field exists and is not 'all', check if user is included
+          if (notificationData.recipients && notificationData.recipients !== 'all' && notificationData.recipients !== session?.user?.email) {
+            console.log('🔕 Skipping notification not intended for this user');
             return;
           }
 
@@ -168,14 +188,19 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           setNotifications(prev => {
             // Check if notification already exists
             const exists = prev.some(n => n.id === localNotification.id);
-            if (exists) return prev;
+            if (exists) {
+              console.log('🔕 Notification already exists, skipping');
+              return prev;
+            }
             
+            console.log('✅ Adding new notification to list');
             return [localNotification, ...prev];
           });
 
           // Mark as delivered in Firestore
           updateDoc(doc(db, 'communityNotifications', change.doc.id), {
-            delivered: true
+            delivered: true,
+            deliveredAt: new Date()
           }).catch(console.error);
         }
       });
@@ -183,7 +208,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       console.error('Error listening to community notifications:', error);
     });
 
-    return () => unsubscribe();
+    return () => {
+      console.log('🔔 Notification listener disconnected');
+      unsubscribe();
+    };
   }, [session?.user?.communityId, session?.user?.email]);
 
   const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
@@ -1332,26 +1360,23 @@ export function NotificationPanel() {
                           <span className="text-xs font-medium whitespace-nowrap text-gray-500 dark:text-gray-300">
                             {formatTimeAgo(new Date(notification.timestamp))}
                           </span>
-                          <motion.button
+                          <button
                             data-delete-button
-                            whileHover={{ scale: 1.2, rotate: 90 }}
-                            whileTap={{ scale: 0.8 }}
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               console.log('Delete button clicked for:', notification.id);
-                              try {
-                                removeNotification(notification.id);
-                              } catch (error) {
-                                console.error('Error removing notification:', error);
-                              }
+                              removeNotification(notification.id);
+                            }}
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
                             }}
                             className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 cursor-pointer"
                             title="Remove notification"
                             type="button"
                           >
                             <X className="h-3.5 w-3.5 pointer-events-none" />
-                          </motion.button>
+                          </button>
                         </div>
                       </div>
                       
