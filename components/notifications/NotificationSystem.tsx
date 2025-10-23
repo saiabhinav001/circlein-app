@@ -1361,7 +1361,7 @@ export function NotificationPanel() {
                           </div>
                         </div>
                         
-                          <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           <span className="text-xs font-medium whitespace-nowrap text-gray-500 dark:text-gray-300">
                             {formatTimeAgo(new Date(notification.timestamp))}
                           </span>
@@ -1370,24 +1370,18 @@ export function NotificationPanel() {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log('🗑️ Delete button clicked for notification:', notification.id);
+                              console.log('🗑️ DELETE CLICKED for:', notification.id);
                               removeNotification(notification.id);
                             }}
                             onMouseDown={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log('🗑️ Delete button mouse down');
                             }}
-                            onTouchStart={(e) => {
-                              e.stopPropagation();
-                              console.log('🗑️ Delete button touch start');
-                            }}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 cursor-pointer z-50 relative"
+                            className="flex-shrink-0 p-2 text-gray-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors cursor-pointer"
                             title="Remove notification"
                             type="button"
-                            style={{ pointerEvents: 'auto' }}
                           >
-                            <X className="h-3.5 w-3.5" style={{ pointerEvents: 'none' }} />
+                            <X className="h-4 w-4" />
                           </button>
                         </div>
                       </div>
