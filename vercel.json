@@ -38,11 +38,5 @@
         }
       ]
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron/booking-reminders",
-      "schedule": "*/10 * * * *"
-    }
   ]
 }

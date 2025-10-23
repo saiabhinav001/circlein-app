@@ -8,6 +8,7 @@ import { EnhancedNotificationListener } from '@/components/notifications/Enhance
 import { FirebaseAuthSync } from '@/components/firebase-auth-sync';
 import { UserValidationGuard } from '@/components/auth/UserValidationGuard';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useReminderChecker } from '@/hooks/use-reminder-checker';
 
 export default function AppLayout({
   children,
@@ -15,6 +16,9 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Check for booking reminders every 15 minutes
+  useReminderChecker();
 
   return (
     <FirebaseAuthSync>
