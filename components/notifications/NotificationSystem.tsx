@@ -13,6 +13,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { collection, query, where, onSnapshot, orderBy, limit, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { DeleteButton } from './DeleteButton';
 
 export interface Notification {
   id: string;
