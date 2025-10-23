@@ -14,7 +14,7 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ onDelete, notificati
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    console.log('🗑️ DELETE BUTTON CLICKED:', notificationId);
+    console.log('DELETE CLICKED:', notificationId);
     onDelete();
   };
 
@@ -29,7 +29,7 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ onDelete, notificati
         backgroundColor: isHovered ? '#ef4444' : '#ffffff',
         borderColor: isHovered ? '#ef4444' : '#d1d5db',
         cursor: 'pointer',
-        transition: 'background-color 0.2s ease, border-color 0.2s ease',
+        transition: 'none',
         flexShrink: 0
       }}
       aria-label="Delete notification"
@@ -38,7 +38,8 @@ export const DeleteButton: React.FC<DeleteButtonProps> = ({ onDelete, notificati
         className="w-4 h-4"
         style={{
           color: isHovered ? '#ffffff' : '#6b7280',
-          pointerEvents: 'none'
+          pointerEvents: 'none',
+          transition: 'none'
         }}
       />
     </button>
