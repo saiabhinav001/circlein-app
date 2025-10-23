@@ -137,37 +137,38 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
 
   return (
     <div className="relative mb-3">
-      {/* Main clickable notification card - NO ONCLICK ON WRAPPER */}
+      {/* DELETE BUTTON - OUTSIDE CARD WRAPPER TO AVOID STACKING CONTEXT ISSUES */}
+      <button
+        type="button"
+        onClick={handleDeleteClick}
+        onMouseDown={(e) => {
+          console.log('DELETE BUTTON ONMOUSEDOWN FIRED');
+          e.stopPropagation();
+          e.preventDefault();
+          removeNotification(notification.id);
+        }}
+        className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border-2 border-gray-300 dark:border-gray-600 hover:border-red-500 hover:bg-red-500 shadow-lg [&:hover>svg]:text-white"
+        style={{ 
+          zIndex: 999,
+          pointerEvents: 'auto'
+        }}
+        aria-label="Delete notification"
+      >
+        <X 
+          className="w-5 h-5 text-gray-600 dark:text-gray-300"
+          strokeWidth={2.5}
+        />
+      </button>
+      
+      {/* Main clickable notification card */}
       <div
         className={cn(
           "p-4 sm:p-5 pr-16 relative rounded-lg border border-gray-200 dark:border-gray-700",
           "hover:shadow-lg hover:bg-blue-50/50 dark:hover:bg-blue-900/20",
           !notification.read && "bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20"
         )}
-        style={{ zIndex: 1 }}
       >
-        {/* DELETE BUTTON INSIDE CARD */}
-        <button
-          type="button"
-          onClick={handleDeleteClick}
-          onMouseDown={(e) => {
-            console.log('DELETE BUTTON ONMOUSEDOWN FIRED');
-            e.stopPropagation();
-            e.preventDefault();
-            removeNotification(notification.id);
-          }}
-          className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border-2 border-gray-300 dark:border-gray-600 hover:border-red-500 hover:bg-red-500 shadow-lg [&:hover>svg]:text-white"
-          style={{ 
-            zIndex: 10,
-            pointerEvents: 'auto'
-          }}
-          aria-label="Delete notification"
-        >
-          <X 
-            className="w-5 h-5 text-gray-600 dark:text-gray-300"
-            strokeWidth={2.5}
-          />
-        </button>
+        
         {/* Enhanced Priority indicator */}
         {!notification.read && (
           <div
@@ -180,8 +181,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
 
         {/* CLICKABLE CONTENT AREA */}
         <div 
-          className="flex items-start gap-3 sm:gap-4 relative cursor-pointer" 
-          style={{ zIndex: 3 }}
+          className="flex items-start gap-3 sm:gap-4 relative cursor-pointer"
           onClick={handleCardClick}
         >
           {/* Enhanced Icon */}
