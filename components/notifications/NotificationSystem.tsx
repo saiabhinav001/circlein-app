@@ -116,10 +116,11 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
     const target = e.target as HTMLElement;
     const button = target.closest('button[aria-label="Delete notification"]');
     if (button) {
+      console.log('CARD DETECTED DELETE BUTTON CLICK - IGNORING');
       return;
     }
     
-    console.log('📋 Card clicked');
+    console.log('CARD CLICKED - PROCESSING');
     if (!notification.read) markAsRead(notification.id);
     if (notification.actionUrl) {
       router.push(notification.actionUrl);
@@ -141,6 +142,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
         type="button"
         onClick={handleDeleteClick}
         onMouseDown={(e) => {
+          console.log('DELETE BUTTON ONMOUSEDOWN FIRED');
           e.stopPropagation();
           e.preventDefault();
           removeNotification(notification.id);
