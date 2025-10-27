@@ -26,6 +26,16 @@ interface Amenity {
     maxSlotsPerFamily: number;
     blackoutDates: any[];
   };
+  booking?: {
+    weekdayHours?: {
+      startTime: string;
+      endTime: string;
+    };
+    weekendHours?: {
+      startTime: string;
+      endTime: string;
+    };
+  };
 }
 
 interface Booking {
@@ -36,14 +46,46 @@ interface Booking {
   status: string;
 }
 
-const timeSlots = [
-  '09:00-11:00',
-  '11:00-13:00',
-  '13:00-15:00',
-  '15:00-17:00',
-  '17:00-19:00',
-  '19:00-21:00',
-];
+// Function to generate time slots dynamically based on admin's configured hours
+const generateTimeSlots = (startTime: string, endTime: string): string[] => {
+  const slots: string[] = [];
+  
+  // Parse start and end times
+  const [startHour, startMin] = startTime.split(':').map(Number);
+  const [endHour, endMin] = endTime.split(':').map(Number);
+  
+  // Create Date objects for comparison
+  let currentTime = new Date();
+  currentTime.setHours(startHour, startMin, 0, 0);
+  
+  const finalTime = new Date();
+  finalTime.setHours(endHour, endMin, 0, 0);
+  
+  // Generate 2-hour slots
+  while (currentTime < finalTime) {
+    const slotStart = `${String(currentTime.getHours()).padStart(2, '0')}:${String(currentTime.getMinutes()).padStart(2, '0')}`;
+    
+    // Add 2 hours for slot end
+    currentTime.setHours(currentTime.getHours() + 2);
+    
+    // Don't create a slot if it would exceed the end time
+    if (currentTime > finalTime) {
+      break;
+    }
+    
+    const slotEnd = `${String(currentTime.getHours()).padStart(2, '0')}:${String(currentTime.getMinutes()).padStart(2, '0')}`;
+    
+    slots.push(`${slotStart}-${slotEnd}`);
+  }
+  
+  return slots;
+};
+
+// Helper to check if a date is weekend
+const isWeekend = (date: Date): boolean => {
+  const day = date.getDay();
+  return day === 0 || day === 6; // Sunday = 0, Saturday = 6
+};
 
 export default function AmenityBooking() {
   const params = useParams();
@@ -516,28 +558,45 @@ export default function AmenityBooking() {
               >
                 <h3 className="font-semibold mb-4 text-sm sm:text-base">Available Time Slots</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                  {timeSlots.map((slot) => {
-                    const booked = isSlotBooked(slot);
-                    return (
-                      <Button
-                        key={slot}
-                        variant={booked ? 'secondary' : 'outline'}
-                        disabled={booked}
-                        className={`text-xs sm:text-sm py-2 sm:py-3 ${
-                          selectedSlot === slot
-                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-                            : ''
-                        } ${booked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={() => !booked && setSelectedSlot(slot)}
-                      >
-                        <span className="flex items-center justify-center gap-1 sm:gap-2 w-full">
-                          <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                          {slot}
-                          {booked && <Badge className="ml-1 sm:ml-2 text-xs">Booked</Badge>}
-                        </span>
-                      </Button>
-                    );
-                  })}
+                  {(() => {
+                    // Determine if selected date is weekend or weekday
+                    const isWeekendDate = isWeekend(selectedDate);
+                    
+                    // Get appropriate hours from amenity booking config
+                    const hours = isWeekendDate 
+                      ? amenity.booking?.weekendHours 
+                      : amenity.booking?.weekdayHours;
+                    
+                    // Use configured hours or fallback to defaults
+                    const startTime = hours?.startTime || (isWeekendDate ? '08:00' : '09:00');
+                    const endTime = hours?.endTime || (isWeekendDate ? '22:00' : '21:00');
+                    
+                    // Generate time slots based on admin's configuration
+                    const timeSlots = generateTimeSlots(startTime, endTime);
+                    
+                    return timeSlots.map((slot) => {
+                      const booked = isSlotBooked(slot);
+                      return (
+                        <Button
+                          key={slot}
+                          variant={booked ? 'secondary' : 'outline'}
+                          disabled={booked}
+                          className={`text-xs sm:text-sm py-2 sm:py-3 ${
+                            selectedSlot === slot
+                              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+                              : ''
+                          } ${booked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          onClick={() => !booked && setSelectedSlot(slot)}
+                        >
+                          <span className="flex items-center justify-center gap-1 sm:gap-2 w-full">
+                            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                            {slot}
+                            {booked && <Badge className="ml-1 sm:ml-2 text-xs">Booked</Badge>}
+                          </span>
+                        </Button>
+                      );
+                    });
+                  })()}
                 </div>
                 
                 {selectedSlot && (
