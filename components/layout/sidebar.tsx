@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { signOut } from 'next-auth/react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { CircleInLogo } from '@/components/ui';
 
 const sidebarVariants = {
   open: { 
@@ -100,8 +101,8 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
       <div className="h-screen w-[280px] bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col relative z-50 shadow-xl">
         <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-xl">C</span>
+            <div style={{ width: '48px', height: '48px', flexShrink: 0 }}>
+              <CircleInLogo size={48} />
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-lg sm:text-xl font-bold text-black dark:text-white truncate block">CircleIn</span>
@@ -138,10 +139,10 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
         {/* Header */}
         <div className="relative p-4 lg:p-6 border-b border-slate-200/50 dark:border-slate-800/50 shrink-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md">
           {isCollapsed ? (
-            // Collapsed state - only on desktop - show simple icon
+            // Collapsed state - only on desktop - show logo icon
             <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">C</span>
+              <div style={{ width: '40px', height: '40px' }}>
+                <CircleInLogo size={40} />
               </div>
               <Button
                 variant="ghost"
@@ -153,14 +154,12 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
               </Button>
             </div>
           ) : (
-            // Expanded state - show simple icon and toggle button
+            // Expanded state - show logo and toggle button
             <>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
-                  <div className="relative shrink-0">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-300">
-                      <span className="text-white font-bold text-xl">C</span>
-                    </div>
+                  <div className="relative shrink-0" style={{ width: '48px', height: '48px' }}>
+                    <CircleInLogo size={48} className="hover:scale-110 transition-transform duration-300" />
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg shadow-green-400/50" />
                   </div>
                   <div className="flex flex-col min-w-0 flex-1">
