@@ -4,117 +4,135 @@ import { authOptions } from '@/lib/auth';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-// Smart standard images mapping - Comprehensive community amenities
+// Smart standard images mapping - High-quality Unsplash images for all amenity types
 const standardImages = {
-  // Swimming & Water Activities
-  pool: "https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800&q=80",
-  swim: "https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800&q=80",
-  swimming: "https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800&q=80",
-  jacuzzi: "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&q=80",
+  // Swimming & Water Activities - High Quality
+  pool: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=1200&q=90",
+  swim: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=1200&q=90",
+  swimming: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=1200&q=90",
+  jacuzzi: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1200&q=90",
+  spa: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1200&q=90",
   
-  // Fitness & Sports
-  gym: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
-  fitness: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
-  workout: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
-  badminton: "https://images.unsplash.com/photo-1521587514292-b84742881141?w=800&q=80",
-  tennis: "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&q=80",
-  court: "https://images.unsplash.com/photo-1521587514292-b84742881141?w=800&q=80",
-  basketball: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&q=80",
-  volleyball: "https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=800&q=80",
-  cricket: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&q=80",
-  football: "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80",
-  soccer: "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80",
+  // Fitness & Sports - High Quality
+  gym: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=90",
+  fitness: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=90",
+  workout: "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=1200&q=90",
+  badminton: "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1200&q=90",
+  tennis: "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1200&q=90",
+  court: "https://images.unsplash.com/photo-1622547748225-3fc4abd2cca0?w=1200&q=90",
+  basketball: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=1200&q=90",
+  volleyball: "https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=1200&q=90",
+  cricket: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=1200&q=90",
+  football: "https://images.unsplash.com/photo-1452978259579-8e92e42d2292?w=1200&q=90",
+  soccer: "https://images.unsplash.com/photo-1452978259579-8e92e42d2292?w=1200&q=90",
+  squash: "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1200&q=90",
   
-  // Community Spaces
-  clubhouse: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&q=80",
-  club: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&q=80",
-  hall: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
-  community: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&q=80",
-  meeting: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
-  event: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&q=80",
-  banquet: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&q=80",
-  party: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&q=80",
+  // Community Spaces - High Quality
+  clubhouse: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=90",
+  club: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=90",
+  hall: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1200&q=90",
+  community: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=1200&q=90",
+  meeting: "https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=1200&q=90",
+  event: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=1200&q=90",
+  banquet: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1200&q=90",
+  party: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=1200&q=90",
+  multipurpose: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=90",
   
-  // Children & Family
-  playground: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&q=80",
-  kids: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&q=80",
-  children: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&q=80",
-  play: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&q=80",
-  daycare: "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=800&q=80",
+  // Children & Family - High Quality
+  playground: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=90",
+  kids: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=90",
+  children: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=90",
+  play: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=90",
+  daycare: "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=1200&q=90",
   
-  // Outdoor & Nature
-  park: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80",
-  garden: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80",
-  lawn: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80",
-  walking: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80",
-  jogging: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80",
-  trail: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80",
-  bbq: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80",
-  barbecue: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80",
-  picnic: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
+  // Outdoor & Nature - High Quality
+  park: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=1200&q=90",
+  garden: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=1200&q=90",
+  lawn: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=1200&q=90",
+  walking: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1200&q=90",
+  jogging: "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=1200&q=90",
+  trail: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=1200&q=90",
+  bbq: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200&q=90",
+  barbecue: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200&q=90",
+  picnic: "https://images.unsplash.com/photo-1534880606858-29b0e8a24e8d?w=1200&q=90",
   
-  // Parking & Transportation
-  parking: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
-  garage: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
-  car: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
-  vehicle: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
+  // Parking & Transportation - High Quality
+  parking: "https://images.unsplash.com/photo-1590674899484-d5640e854abe?w=1200&q=90",
+  garage: "https://images.unsplash.com/photo-1590674899484-d5640e854abe?w=1200&q=90",
+  car: "https://images.unsplash.com/photo-1590674899484-d5640e854abe?w=1200&q=90",
+  vehicle: "https://images.unsplash.com/photo-1590674899484-d5640e854abe?w=1200&q=90",
   
-  // Security & Safety
-  security: "https://images.unsplash.com/photo-1516733725897-1aa73b87c8e8?w=800&q=80",
-  gate: "https://images.unsplash.com/photo-1516733725897-1aa73b87c8e8?w=800&q=80",
-  entrance: "https://images.unsplash.com/photo-1516733725897-1aa73b87c8e8?w=800&q=80",
-  guard: "https://images.unsplash.com/photo-1516733725897-1aa73b87c8e8?w=800&q=80",
+  // Security & Safety - High Quality
+  security: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=1200&q=90",
+  gate: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=1200&q=90",
+  entrance: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=1200&q=90",
+  guard: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=1200&q=90",
   
-  // Learning & Study
-  library: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80",
-  study: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80",
-  reading: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80",
-  books: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80",
-  classroom: "https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=800&q=80",
-  computer: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&q=80",
-  internet: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&q=80",
+  // Learning & Study - High Quality
+  library: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1200&q=90",
+  study: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1200&q=90",
+  reading: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1200&q=90",
+  books: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1200&q=90",
+  classroom: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1200&q=90",
+  computer: "https://images.unsplash.com/photo-1588508065123-287b28e013da?w=1200&q=90",
+  internet: "https://images.unsplash.com/photo-1588508065123-287b28e013da?w=1200&q=90",
+  lab: "https://images.unsplash.com/photo-1581092160607-ee67e5f6b119?w=1200&q=90",
   
-  // Wellness & Spa
-  spa: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80",
-  massage: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80",
-  sauna: "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&q=80",
-  yoga: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80",
-  meditation: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80",
-  wellness: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80",
+  // Wellness & Meditation - High Quality
+  massage: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1200&q=90",
+  sauna: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1200&q=90",
+  yoga: "https://images.unsplash.com/photo-1588286840104-8957b019727f?w=1200&q=90",
+  meditation: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1200&q=90",
+  wellness: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1200&q=90",
   
-  // Entertainment & Recreation
-  cinema: "https://images.unsplash.com/photo-1489185078076-b4c1b1dac2b4?w=800&q=80",
-  theater: "https://images.unsplash.com/photo-1489185078076-b4c1b1dac2b4?w=800&q=80",
-  movie: "https://images.unsplash.com/photo-1489185078076-b4c1b1dac2b4?w=800&q=80",
-  games: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80",
-  gaming: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80",
-  arcade: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80",
-  billiards: "https://images.unsplash.com/photo-1604586376495-48526febf9f6?w=800&q=80",
-  pool_table: "https://images.unsplash.com/photo-1604586376495-48526febf9f6?w=800&q=80",
-  snooker: "https://images.unsplash.com/photo-1604586376495-48526febf9f6?w=800&q=80",
+  // Entertainment & Recreation - High Quality
+  cinema: "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=1200&q=90",
+  theater: "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=1200&q=90",
+  movie: "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=1200&q=90",
+  games: "https://images.unsplash.com/photo-1578574577315-3fbeb0cecdc2?w=1200&q=90",
+  gaming: "https://images.unsplash.com/photo-1578574577315-3fbeb0cecdc2?w=1200&q=90",
+  arcade: "https://images.unsplash.com/photo-1578574577315-3fbeb0cecdc2?w=1200&q=90",
+  billiards: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&q=90",
+  pool_table: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&q=90",
+  snooker: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&q=90",
+  chess: "https://images.unsplash.com/photo-1560174038-da43ac14f82b?w=1200&q=90",
   
-  // Business & Work
-  office: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
-  workspace: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
-  coworking: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
-  conference: "https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=800&q=80",
+  // Business & Work - High Quality
+  office: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=90",
+  workspace: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=90",
+  coworking: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&q=90",
+  conference: "https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=1200&q=90",
+  boardroom: "https://images.unsplash.com/photo-1577415124269-fc1140ec09ae?w=1200&q=90",
   
-  // Food & Dining
-  restaurant: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80",
-  dining: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80",
-  cafe: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80",
-  coffee: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80",
-  kitchen: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80",
+  // Food & Dining - High Quality
+  restaurant: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&q=90",
+  dining: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&q=90",
+  cafe: "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=1200&q=90",
+  coffee: "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=1200&q=90",
+  kitchen: "https://images.unsplash.com/photo-1556912173-3bb406ef7e77?w=1200&q=90",
+  food: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&q=90",
   
-  // Special Facilities
-  laundry: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=800&q=80",
-  medical: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&q=80",
-  clinic: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&q=80",
-  salon: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&q=80",
-  beauty: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&q=80",
+  // Special Facilities - High Quality
+  laundry: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=1200&q=90",
+  medical: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1200&q=90",
+  clinic: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1200&q=90",
+  salon: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200&q=90",
+  beauty: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200&q=90",
+  barber: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=1200&q=90",
   
-  // Default fallback
-  default: "https://images.unsplash.com/photo-1584735935682-2f2b69d4e0d3?w=800&q=80",
+  // Music & Arts - High Quality
+  music: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&q=90",
+  dance: "https://images.unsplash.com/photo-1508807526345-15e9b5f4eaff?w=1200&q=90",
+  art: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1200&q=90",
+  studio: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=1200&q=90",
+  
+  // Pet Facilities - High Quality
+  pet: "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=1200&q=90",
+  dog: "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=1200&q=90",
+  animal: "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=1200&q=90",
+  
+  // Default fallback - Modern building
+  default: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=90",
 };
 
 function getSmartImage(amenityName: string, providedUrl?: string): string {
