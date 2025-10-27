@@ -5,33 +5,50 @@ import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 // Smart standard images mapping - High-quality Pexels images for all amenity types (WORKING IN PRODUCTION)
-const standardImages = {
+// NOTE: Order matters! More specific keywords FIRST (e.g., "badminton" before "court")
+const standardImages: Record<string, string> = {
   // Swimming & Water Activities - High Quality Pexels
+  "swimming pool": "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  swimming: "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200",
   pool: "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200",
   swim: "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  swimming: "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200",
   jacuzzi: "https://images.pexels.com/photos/374045/pexels-photo-374045.jpeg?auto=compress&cs=tinysrgb&w=1200",
   spa: "https://images.pexels.com/photos/3757946/pexels-photo-3757946.jpeg?auto=compress&cs=tinysrgb&w=1200",
   
-  // Fitness & Sports - High Quality Pexels
+  // Fitness & Sports - High Quality Pexels (SPECIFIC SPORTS FIRST!)
+  "badminton court": "https://images.pexels.com/photos/2202685/pexels-photo-2202685.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  badminton: "https://images.pexels.com/photos/2202685/pexels-photo-2202685.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "tennis court": "https://images.pexels.com/photos/209977/pexels-photo-209977.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  tennis: "https://images.pexels.com/photos/209977/pexels-photo-209977.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "basketball court": "https://images.pexels.com/photos/1080875/pexels-photo-1080875.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  basketball: "https://images.pexels.com/photos/1080875/pexels-photo-1080875.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "volleyball court": "https://images.pexels.com/photos/1407322/pexels-photo-1407322.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  volleyball: "https://images.pexels.com/photos/1407322/pexels-photo-1407322.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "squash court": "https://images.pexels.com/photos/3660204/pexels-photo-3660204.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  squash: "https://images.pexels.com/photos/3660204/pexels-photo-3660204.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "cricket pitch": "https://images.pexels.com/photos/163487/cricket-bat-ball-game-163487.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  cricket: "https://images.pexels.com/photos/163487/cricket-bat-ball-game-163487.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "football field": "https://images.pexels.com/photos/274422/pexels-photo-274422.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  football: "https://images.pexels.com/photos/274422/pexels-photo-274422.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "soccer field": "https://images.pexels.com/photos/274422/pexels-photo-274422.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  soccer: "https://images.pexels.com/photos/274422/pexels-photo-274422.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "fitness center": "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200",
   gym: "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200",
   fitness: "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200",
   workout: "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  badminton: "https://images.pexels.com/photos/2202685/pexels-photo-2202685.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  tennis: "https://images.pexels.com/photos/209977/pexels-photo-209977.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  court: "https://images.pexels.com/photos/209977/pexels-photo-209977.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  basketball: "https://images.pexels.com/photos/1080875/pexels-photo-1080875.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  volleyball: "https://images.pexels.com/photos/1407322/pexels-photo-1407322.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  cricket: "https://images.pexels.com/photos/163487/cricket-bat-ball-game-163487.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  football: "https://images.pexels.com/photos/274422/pexels-photo-274422.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  soccer: "https://images.pexels.com/photos/274422/pexels-photo-274422.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  squash: "https://images.pexels.com/photos/3660204/pexels-photo-3660204.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  court: "https://images.pexels.com/photos/209977/pexels-photo-209977.jpeg?auto=compress&cs=tinysrgb&w=1200", // Generic fallback for any court
   
   // Community Spaces - High Quality Pexels
+  "community clubhouse": "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "community center": "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200",
   clubhouse: "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200",
   club: "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "banquet hall": "https://images.pexels.com/photos/2747449/pexels-photo-2747449.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "party hall": "https://images.pexels.com/photos/2747449/pexels-photo-2747449.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "event hall": "https://images.pexels.com/photos/2747449/pexels-photo-2747449.jpeg?auto=compress&cs=tinysrgb&w=1200",
   hall: "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200",
   community: "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "meeting room": "https://images.pexels.com/photos/2774556/pexels-photo-2774556.jpeg?auto=compress&cs=tinysrgb&w=1200",
   meeting: "https://images.pexels.com/photos/2774556/pexels-photo-2774556.jpeg?auto=compress&cs=tinysrgb&w=1200",
   event: "https://images.pexels.com/photos/2747449/pexels-photo-2747449.jpeg?auto=compress&cs=tinysrgb&w=1200",
   banquet: "https://images.pexels.com/photos/2747449/pexels-photo-2747449.jpeg?auto=compress&cs=tinysrgb&w=1200",
@@ -141,17 +158,24 @@ function getSmartImage(amenityName: string, providedUrl?: string): string {
     return providedUrl;
   }
 
-  // Convert name to lowercase for keyword matching
-  const lowerName = amenityName.toLowerCase();
+  // Convert name to lowercase and remove extra spaces for robust matching
+  const normalizedName = amenityName.toLowerCase().trim().replace(/\s+/g, ' ');
   
-  // Check for keyword matches
-  for (const [keyword, imageUrl] of Object.entries(standardImages)) {
-    if (keyword !== 'default' && lowerName.includes(keyword)) {
-      return imageUrl;
+  // Sort keywords by length (longest first) to match "badminton court" before "court"
+  const sortedKeywords = Object.keys(standardImages)
+    .filter(k => k !== 'default')
+    .sort((a, b) => b.length - a.length);
+  
+  // Check for keyword matches - handles variations like "Badminton", "badminton court", "BADMINTON COURT"
+  for (const keyword of sortedKeywords) {
+    if (normalizedName.includes(keyword)) {
+      console.log(`✅ Image matched: "${amenityName}" → keyword: "${keyword}"`);
+      return standardImages[keyword];
     }
   }
   
   // Return default image if no keywords match
+  console.log(`⚠️ No keyword match for "${amenityName}", using default image`);
   return standardImages.default;
 }
 

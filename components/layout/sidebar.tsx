@@ -290,7 +290,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                   href={item.href}
                   onClick={() => onClose?.()}
                   className={cn(
-                    'group relative flex items-center px-4 py-3 md:py-3.5 rounded-xl text-sm md:text-base font-medium transition-all duration-300 overflow-hidden',
+                    'group relative flex items-center px-4 py-3 md:py-3.5 rounded-xl text-base font-medium transition-all duration-300 overflow-hidden',
                     pathname === item.href
                       ? 'bg-gradient-to-r text-white shadow-lg scale-[1.02]'
                       : 'text-black dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30 active:scale-[0.98]'
