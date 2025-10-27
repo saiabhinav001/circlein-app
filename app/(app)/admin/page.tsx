@@ -299,7 +299,7 @@ export default function AdminPanel() {
       await addDoc(collection(db, 'amenities'), {
         name: data.name.trim(),
         description: data.description.trim(),
-        imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1584735935682-2f2b69d4e0d3?w=800&q=80',
+        imageUrl: data.imageUrl || 'https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200',
         communityId: session?.user?.communityId,
         isActive: true,
         booking: {

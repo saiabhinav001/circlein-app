@@ -115,7 +115,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
             {navigation.map((item) => (
               <div key={item.name} className="flex items-center px-3 py-3 rounded-xl">
                 <item.icon className="w-5 h-5 text-black dark:text-slate-300" />
-                <span className="ml-3 text-black dark:text-slate-300 font-medium">{item.name}</span>
+                <span className="ml-3 text-black dark:text-slate-300 font-medium text-base">{item.name}</span>
               </div>
             ))}
           </div>

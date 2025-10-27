@@ -27,6 +27,7 @@ interface Amenity {
     blackoutDates: any[];
   };
   booking?: {
+    slotDuration?: number;
     weekdayHours?: {
       startTime: string;
       endTime: string;
@@ -46,8 +47,8 @@ interface Booking {
   status: string;
 }
 
-// Function to generate time slots dynamically based on admin's configured hours
-const generateTimeSlots = (startTime: string, endTime: string): string[] => {
+// Function to generate time slots dynamically based on admin's configured hours AND slot duration
+const generateTimeSlots = (startTime: string, endTime: string, slotDurationHours: number = 2): string[] => {
   const slots: string[] = [];
   
   // Parse start and end times
@@ -61,21 +62,27 @@ const generateTimeSlots = (startTime: string, endTime: string): string[] => {
   const finalTime = new Date();
   finalTime.setHours(endHour, endMin, 0, 0);
   
-  // Generate 2-hour slots
+  // Convert slot duration to milliseconds
+  const slotDurationMs = slotDurationHours * 60 * 60 * 1000;
+  
+  // Generate slots based on admin's configured duration
   while (currentTime < finalTime) {
     const slotStart = `${String(currentTime.getHours()).padStart(2, '0')}:${String(currentTime.getMinutes()).padStart(2, '0')}`;
     
-    // Add 2 hours for slot end
-    currentTime.setHours(currentTime.getHours() + 2);
+    // Add configured slot duration
+    const nextTime = new Date(currentTime.getTime() + slotDurationMs);
     
     // Don't create a slot if it would exceed the end time
-    if (currentTime > finalTime) {
+    if (nextTime > finalTime) {
       break;
     }
     
-    const slotEnd = `${String(currentTime.getHours()).padStart(2, '0')}:${String(currentTime.getMinutes()).padStart(2, '0')}`;
+    const slotEnd = `${String(nextTime.getHours()).padStart(2, '0')}:${String(nextTime.getMinutes()).padStart(2, '0')}`;
     
     slots.push(`${slotStart}-${slotEnd}`);
+    
+    // Move to next slot
+    currentTime = nextTime;
   }
   
   return slots;
@@ -252,8 +259,10 @@ export default function AmenityBooking() {
       const bookingStart = new Date(selectedDate);
       bookingStart.setHours(hours, minutes, 0, 0);
       
+      // Use the amenity's configured slot duration (in hours)
+      const slotDuration = amenity.booking?.slotDuration || 2;
       const bookingEnd = new Date(bookingStart);
-      bookingEnd.setHours(hours + 2, minutes, 0, 0);
+      bookingEnd.setTime(bookingStart.getTime() + (slotDuration * 60 * 60 * 1000));
 
       const bookingData = {
         amenityId: amenity.id,
@@ -385,7 +394,11 @@ export default function AmenityBooking() {
               </div>
               <div className="flex items-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                 <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                <span>2-hour slots</span>
+                <span>
+                  {amenity.booking?.slotDuration 
+                    ? `${amenity.booking.slotDuration}-hour slots` 
+                    : '2-hour slots'}
+                </span>
               </div>
               <div className="flex items-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                 <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
@@ -571,8 +584,11 @@ export default function AmenityBooking() {
                     const startTime = hours?.startTime || (isWeekendDate ? '08:00' : '09:00');
                     const endTime = hours?.endTime || (isWeekendDate ? '22:00' : '21:00');
                     
-                    // Generate time slots based on admin's configuration
-                    const timeSlots = generateTimeSlots(startTime, endTime);
+                    // Get slot duration from amenity config (in hours), default to 2 hours
+                    const slotDuration = amenity.booking?.slotDuration || 2;
+                    
+                    // Generate time slots based on admin's configuration (hours, duration)
+                    const timeSlots = generateTimeSlots(startTime, endTime, slotDuration);
                     
                     return timeSlots.map((slot) => {
                       const booked = isSlotBooked(slot);
