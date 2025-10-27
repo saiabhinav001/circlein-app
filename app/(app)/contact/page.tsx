@@ -391,30 +391,216 @@ export default function ContactPage() {
                     )}
                   </div>
 
-                  {/* Input */}
-                  <div className="border-t p-4 bg-slate-50 dark:bg-slate-800/50">
-                    <div className="flex gap-2">
-                      <Input
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                        placeholder="Type your message..."
-                        disabled={isLoading}
-                        className="flex-1 text-sm md:text-base bg-white dark:bg-slate-900 border-2 focus:border-blue-500 transition-all"
+                  {/* Advanced Modern Input Bar */}
+                  <div className="relative border-t bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 dark:from-slate-800/80 dark:via-slate-800/60 dark:to-slate-800/80 p-5 backdrop-blur-xl">
+                    {/* Decorative gradient border on top */}
+                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50"></div>
+                    
+                    {/* Floating particles effect */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                      <motion.div
+                        animate={{
+                          x: [0, 100, 0],
+                          y: [0, -50, 0],
+                          opacity: [0.1, 0.3, 0.1],
+                        }}
+                        transition={{
+                          duration: 8,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                        className="absolute top-2 left-10 w-2 h-2 rounded-full bg-blue-400 blur-sm"
                       />
-                      <Button
-                        onClick={handleSendMessage}
-                        disabled={!input.trim() || isLoading}
-                        className="bg-gradient-to-r from-blue-500 to-purple-600 hover:opacity-90 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
-                        size="lg"
-                      >
-                        {isLoading ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <Send className="w-5 h-5" />
-                        )}
-                      </Button>
+                      <motion.div
+                        animate={{
+                          x: [0, -80, 0],
+                          y: [0, -30, 0],
+                          opacity: [0.1, 0.2, 0.1],
+                        }}
+                        transition={{
+                          duration: 6,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: 1
+                        }}
+                        className="absolute top-4 right-20 w-1.5 h-1.5 rounded-full bg-purple-400 blur-sm"
+                      />
                     </div>
+
+                    <div className="flex gap-3 relative">
+                      {/* Enhanced Input Container */}
+                      <div className="flex-1 relative group">
+                        {/* Animated glow effect */}
+                        <motion.div
+                          animate={{
+                            opacity: input.length > 0 ? [0.5, 0.8, 0.5] : 0,
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                          className="absolute -inset-[2px] bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur-sm opacity-0 group-focus-within:opacity-70 transition-opacity duration-500"
+                        />
+                        
+                        {/* Main Input */}
+                        <div className="relative">
+                          <Input
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                            placeholder="Type your message..."
+                            disabled={isLoading}
+                            className="relative text-sm md:text-base pl-12 pr-4 py-6 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-2 border-slate-200 dark:border-slate-700 focus:border-transparent focus:ring-4 focus:ring-blue-500/20 dark:focus:ring-purple-500/30 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                          />
+                          
+                          {/* Icon inside input */}
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <motion.div
+                              animate={{
+                                rotate: isLoading ? 360 : 0,
+                              }}
+                              transition={{
+                                duration: 2,
+                                repeat: isLoading ? Infinity : 0,
+                                ease: "linear"
+                              }}
+                            >
+                              {isLoading ? (
+                                <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                              ) : (
+                                <MessageCircle className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                              )}
+                            </motion.div>
+                          </div>
+
+                          {/* Character count indicator */}
+                          {input.length > 0 && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
+                            >
+                              <span className="text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">
+                                {input.length}
+                              </span>
+                            </motion.div>
+                          )}
+                        </div>
+
+                        {/* Typing indicator line */}
+                        <motion.div
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: input.length > 0 ? 1 : 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 origin-left rounded-full"
+                        />
+                      </div>
+
+                      {/* Enhanced Send Button */}
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="relative"
+                      >
+                        {/* Button glow effect */}
+                        <motion.div
+                          animate={{
+                            opacity: !input.trim() || isLoading ? 0 : [0.5, 0.8, 0.5],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                          className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl blur-md opacity-0"
+                        />
+                        
+                        <Button
+                          onClick={handleSendMessage}
+                          disabled={!input.trim() || isLoading}
+                          className="relative h-[52px] w-[52px] md:h-[56px] md:w-[56px] rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 transition-all duration-300 shadow-2xl hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg border-2 border-white/20 backdrop-blur-xl group overflow-hidden"
+                          size="lg"
+                        >
+                          {/* Shimmer effect on hover */}
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                            animate={{
+                              x: ['-100%', '200%'],
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              repeatDelay: 3,
+                            }}
+                          />
+                          
+                          {/* Button icon */}
+                          <motion.div
+                            animate={{
+                              rotate: isLoading ? 360 : 0,
+                            }}
+                            transition={{
+                              duration: 1,
+                              repeat: isLoading ? Infinity : 0,
+                              ease: "linear"
+                            }}
+                            className="relative z-10"
+                          >
+                            {isLoading ? (
+                              <Loader2 className="w-6 h-6 text-white" />
+                            ) : (
+                              <motion.div
+                                whileHover={{ x: 2, y: -2 }}
+                                transition={{ duration: 0.2 }}
+                              >
+                                <Send className="w-6 h-6 text-white drop-shadow-lg" />
+                              </motion.div>
+                            )}
+                          </motion.div>
+
+                          {/* Sparkle effect */}
+                          {!isLoading && input.trim() && (
+                            <motion.div
+                              className="absolute top-1 right-1"
+                              animate={{
+                                scale: [1, 1.2, 1],
+                                opacity: [0.5, 1, 0.5],
+                              }}
+                              transition={{
+                                duration: 1.5,
+                                repeat: Infinity,
+                              }}
+                            >
+                              <Sparkles className="w-3 h-3 text-white" />
+                            </motion.div>
+                          )}
+                        </Button>
+                      </motion.div>
+                    </div>
+
+                    {/* Helpful hints */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: messages.length === 0 ? 1 : 0, y: messages.length === 0 ? 0 : 10 }}
+                      transition={{ duration: 0.3 }}
+                      className="mt-4 flex flex-wrap gap-2 justify-center"
+                    >
+                      {['Book amenity', 'Check availability', 'Community events'].map((hint, idx) => (
+                        <motion.button
+                          key={hint}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: idx * 0.1 }}
+                          whileHover={{ scale: 1.05, y: -2 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setInput(hint)}
+                          className="px-3 py-1.5 text-xs font-medium rounded-full bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200 shadow-sm hover:shadow-md text-slate-700 dark:text-slate-300"
+                        >
+                          {hint}
+                        </motion.button>
+                      ))}
+                    </motion.div>
                   </div>
                 </CardContent>
               </Card>
