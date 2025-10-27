@@ -2,7 +2,6 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { CircleInLogo } from '@/components/ui';
 
 export default function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true);
@@ -69,11 +68,10 @@ export default function LoadingScreen() {
                 className="absolute inset-0 -m-6 rounded-full bg-gradient-to-r from-blue-500/30 to-purple-500/30 blur-2xl"
               />
               
-              {/* Logo */}
-              <CircleInLogo 
-                size={128}
-                className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32"
-              />
+              {/* Simple Modern Logo Icon */}
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-3xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 flex items-center justify-center shadow-2xl">
+                <span className="text-white font-bold text-4xl sm:text-5xl md:text-6xl">C</span>
+              </div>
             </motion.div>
 
             {/* App Name */}
