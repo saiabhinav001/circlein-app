@@ -118,30 +118,28 @@ const standardImages: Record<string, string> = {
 };
 
 function getSmartImage(amenityName: string, providedUrl?: string): string {
-  // If user provided an image URL, use it
-  if (providedUrl && providedUrl.trim() !== '') {
+  // If user provided a URL, use it
+  if (providedUrl && providedUrl.trim()) {
     return providedUrl;
   }
 
-  // Convert name to lowercase and remove extra spaces for robust matching
+  // Normalize the amenity name: lowercase and remove extra whitespace
   const normalizedName = amenityName.toLowerCase().trim().replace(/\s+/g, ' ');
-  
-  // Sort keywords by length (longest first) to match "badminton court" before "court"
-  const sortedKeywords = Object.keys(standardImages)
-    .filter(k => k !== 'default')
-    .sort((a, b) => b.length - a.length);
-  
-  // Check for keyword matches - handles variations like "Badminton", "badminton court", "BADMINTON COURT"
+
+  // Sort keywords by length (longest first) to match most specific first
+  const sortedKeywords = Object.keys(standardImages).sort((a, b) => b.length - a.length);
+
+  // Find the first (longest) matching keyword
   for (const keyword of sortedKeywords) {
     if (normalizedName.includes(keyword)) {
       console.log(`✅ Image matched: "${amenityName}" → keyword: "${keyword}"`);
       return standardImages[keyword];
     }
   }
-  
-  // Return default image if no keywords match
-  console.log(`⚠️ No keyword match for "${amenityName}", using default image`);
-  return standardImages.default;
+
+  // Default fallback to Community Clubhouse (PROTECTED image)
+  console.log(`⚠️ No keyword match for "${amenityName}", using clubhouse fallback`);
+  return standardImages["clubhouse"];
 }
 
 export async function POST(request: NextRequest) {
