@@ -204,6 +204,7 @@ export default function AmenityBooking() {
     }
 
     try {
+      // Calculate booking time
       const [startTime] = selectedSlot.split('-');
       const [hours, minutes] = startTime.split(':').map(Number);
       
@@ -213,66 +214,58 @@ export default function AmenityBooking() {
       const bookingEnd = new Date(bookingStart);
       bookingEnd.setHours(hours + 2, minutes, 0, 0);
 
-      const bookingData = {
-        amenityId: amenity.id,
-        amenityName: amenity.name, // CRITICAL: Save the actual amenity name
-        amenityType: amenity.category || 'general', // Use category instead of rules.type
-        userId: session.user.email,
-        userEmail: session.user.email, // Add userEmail field
-        userName: session.user.name || session.user.email.split('@')[0], // Add userName
-        userFlatNumber: (session.user as any).flatNumber || '', // Add flat number
-        communityId: session.user.communityId,
-        attendees: attendees.filter(name => name.trim() !== ''),
-        startTime: bookingStart,
-        endTime: bookingEnd,
-        status: 'confirmed',
-        qrId: Math.random().toString(36).substring(2, 15),
-        createdAt: serverTimestamp(),
-      };
-
-      const docRef = await addDoc(collection(db, 'bookings'), bookingData);
+      // 🔥 NEW: Use transaction-based API
+      console.log('🚀 Creating booking via transaction API...');
       
-      // Send instant email confirmation
-      try {
-        await fetch('/api/notifications/email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'booking_confirmation',
-            data: {
-              userEmail: session.user.email,
-              userName: session.user.name || 'Resident',
-              amenityName: amenity.name,
-              date: selectedDate.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              }),
-              timeSlot: selectedSlot,
-              bookingId: docRef.id,
-              communityName: (session.user as any).communityName || 'Your Community',
-            },
-          }),
-        });
-        console.log('✅ Booking confirmation email sent');
-      } catch (emailError) {
-        console.error('⚠️ Failed to send email, but booking created:', emailError);
-        // Don't fail the booking if email fails
+      const response = await fetch('/api/bookings/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amenityId: amenity.id,
+          amenityName: amenity.name,
+          startTime: bookingStart.toISOString(),
+          endTime: bookingEnd.toISOString(),
+          attendees: attendees.filter(name => name.trim() !== ''),
+          userName: session.user.name || session.user.email.split('@')[0],
+          userFlatNumber: (session.user as any).flatNumber || '',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create booking');
+      }
+
+      console.log('✅ Booking created:', data);
+
+      // Show appropriate success message based on status
+      if (data.booking.status === 'confirmed') {
+        toast.success('🎉 Booking confirmed! Check your email for details. Redirecting...');
+      } else if (data.booking.status === 'waitlist') {
+        toast.success(
+          `📋 You're #${data.booking.waitlistPosition} on the waitlist. We'll notify you if a spot opens up!`,
+          { duration: 5000 }
+        );
       }
       
-      toast.success('Booking confirmed successfully! Check your email for details. Redirecting...');
       setShowBookingModal(false);
       
-      // Redirect to bookings page after successful booking
+      // Redirect to bookings page
       setTimeout(() => {
         router.push('/bookings');
-      }, 1500); // Give time for user to see the success message
+      }, 1500);
       
+      // Refresh bookings
       fetchBookings(amenity.id, selectedDate);
+      
     } catch (error) {
-      console.error('Error creating booking:', error);
-      toast.error('Failed to create booking. Please try again.');
+      console.error('❌ Booking error:', error);
+      toast.error(
+        error instanceof Error 
+          ? error.message 
+          : 'Failed to create booking. Please try again.'
+      );
     } finally {
       setIsBooking(false); // Unlock booking process
     }

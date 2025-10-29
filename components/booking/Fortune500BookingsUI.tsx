@@ -140,7 +140,13 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
   // Memoized status calculation for better performance
   const getBookingStatus = useCallback((booking: SimpleBooking) => {
     // CRITICAL: Always respect the database status first
-    // If booking is cancelled, completed, or archived, return that status immediately
+    // New statuses: waitlist, pending_confirmation (from new booking system)
+    if (booking.status === 'waitlist') {
+      return 'waitlist';
+    }
+    if (booking.status === 'pending_confirmation') {
+      return 'pending_confirmation';
+    }
     if (booking.status === 'cancelled') {
       return 'cancelled';
     }
@@ -175,6 +181,10 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
         return { label: 'Upcoming', color: 'bg-blue-500', textColor: 'text-blue-700' };
       case 'active':
         return { label: 'Active', color: 'bg-green-500', textColor: 'text-green-700' };
+      case 'waitlist':
+        return { label: 'Waitlist', color: 'bg-yellow-500', textColor: 'text-yellow-700' };
+      case 'pending_confirmation':
+        return { label: 'Pending Confirmation', color: 'bg-cyan-500', textColor: 'text-cyan-700' };
       case 'expired':
         return { label: 'Expired', color: 'bg-gray-500', textColor: 'text-gray-700' };
       case 'cancelled':
@@ -420,6 +430,8 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
     switch (status) {
       case 'upcoming': return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800';
       case 'active': return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800';
+      case 'waitlist': return 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300 dark:border-yellow-800';
+      case 'pending_confirmation': return 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950 dark:text-cyan-300 dark:border-cyan-800';
       case 'expired': return 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
       case 'cancelled': return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800';
       case 'completed': return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800';
@@ -432,6 +444,8 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
     switch (status) {
       case 'upcoming': return <Clock className="w-4 h-4" />;
       case 'active': return <Activity className="w-4 h-4" />;
+      case 'waitlist': return <Users className="w-4 h-4" />;
+      case 'pending_confirmation': return <Bell className="w-4 h-4" />;
       case 'expired': return <XCircle className="w-4 h-4" />;
       case 'cancelled': return <XCircle className="w-4 h-4" />;
       case 'completed': return <Award className="w-4 h-4" />;
@@ -755,6 +769,8 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                       <div className={`h-28 bg-gradient-to-r ${
                         getBookingStatus(booking) === 'upcoming' ? 'from-blue-400 to-cyan-500' :
                         getBookingStatus(booking) === 'active' ? 'from-emerald-400 to-green-500' :
+                        getBookingStatus(booking) === 'waitlist' ? 'from-yellow-400 to-amber-500' :
+                        getBookingStatus(booking) === 'pending_confirmation' ? 'from-cyan-400 to-teal-500' :
                         getBookingStatus(booking) === 'expired' ? 'from-gray-400 to-gray-500' :
                         getBookingStatus(booking) === 'completed' ? 'from-purple-400 to-violet-500' :
                         getBookingStatus(booking) === 'cancelled' ? 'from-red-400 to-rose-500' :
@@ -841,6 +857,69 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                               </div>
                             </div>
                           </div>
+
+                          {/* Waitlist Position Display */}
+                          {getBookingStatus(booking) === 'waitlist' && (booking as any).waitlistPosition && (
+                            <div className="flex items-center justify-between bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950 dark:to-amber-950 rounded-2xl p-4 border border-yellow-200 dark:border-yellow-800">
+                              <div className="flex items-center text-yellow-700 dark:text-yellow-300">
+                                <Users className="w-5 h-5 mr-2" />
+                                <div>
+                                  <div className="font-semibold text-sm">Waitlist Position</div>
+                                  <div className="text-xs text-yellow-600 dark:text-yellow-400">
+                                    #{(booking as any).waitlistPosition} in line • You'll be notified if a spot opens
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                                #{(booking as any).waitlistPosition}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Pending Confirmation Indicator */}
+                          {getBookingStatus(booking) === 'pending_confirmation' && (booking as any).confirmationDeadline && (
+                            <div className="flex flex-col bg-gradient-to-r from-cyan-50 to-teal-50 dark:from-cyan-950 dark:to-teal-950 rounded-2xl p-4 border border-cyan-200 dark:border-cyan-800">
+                              <div className="flex items-center text-cyan-700 dark:text-cyan-300 mb-3">
+                                <Bell className="w-5 h-5 mr-2" />
+                                <div className="flex-1">
+                                  <div className="font-semibold text-sm">Action Required: Confirm Your Booking</div>
+                                  <div className="text-xs text-cyan-600 dark:text-cyan-400 mt-1">
+                                    Confirm by {new Date((booking as any).confirmationDeadline.seconds * 1000).toLocaleString()} or spot will be offered to next person
+                                  </div>
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch(`/api/bookings/confirm/${booking.id}`, {
+                                      method: 'POST',
+                                    });
+                                    const data = await response.json();
+                                    
+                                    if (response.ok) {
+                                      toast.success('✅ Booking confirmed!', { 
+                                        description: 'You will receive a confirmation email with your QR code.' 
+                                      });
+                                      refetch();
+                                    } else {
+                                      toast.error('Failed to confirm', { 
+                                        description: data.error || 'Please try again' 
+                                      });
+                                    }
+                                  } catch (error) {
+                                    toast.error('Confirmation error', { 
+                                      description: 'Please try again or contact support' 
+                                    });
+                                  }
+                                }}
+                                className="w-full bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white rounded-xl font-semibold shadow-lg"
+                              >
+                                <Check className="w-4 h-4 mr-2" />
+                                Confirm Booking Now
+                              </Button>
+                            </div>
+                          )}
 
                           {/* Check-in Availability Indicator */}
                           {isCheckInAvailable(booking) && (
