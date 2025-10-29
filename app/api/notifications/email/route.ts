@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     let template;
-    let recipientEmail = data.userEmail;
+    let recipientEmail = body.to || data.userEmail;
 
     switch (type) {
       case 'booking_confirmation':
@@ -48,6 +48,39 @@ export async function POST(request: NextRequest) {
           cancelledBy: data.cancelledBy,
           isAdminCancellation: data.isAdminCancellation || false,
           cancellationReason: data.cancellationReason,
+        });
+        break;
+
+      case 'bookingWaitlist':
+        template = emailTemplates.bookingWaitlist({
+          userName: data.userName,
+          amenityName: data.amenityName,
+          date: data.date,
+          timeSlot: data.timeSlot,
+          waitlistPosition: data.waitlistPosition,
+          communityName: data.communityName,
+        });
+        break;
+
+      case 'waitlistPromoted':
+        template = emailTemplates.waitlistPromoted({
+          userName: data.userName,
+          amenityName: data.amenityName,
+          startTime: data.startTime,
+          endTime: data.endTime,
+          confirmationUrl: data.confirmationUrl,
+          deadline: data.deadline,
+          waitlistPosition: data.waitlistPosition,
+        });
+        break;
+
+      case 'confirmationReminder':
+        template = emailTemplates.confirmationReminder({
+          userName: data.userName,
+          amenityName: data.amenityName,
+          startTime: data.startTime,
+          confirmationUrl: data.confirmationUrl,
+          hoursRemaining: data.hoursRemaining,
         });
         break;
 

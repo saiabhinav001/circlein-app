@@ -226,6 +226,8 @@ export default function AmenityBooking() {
           startTime: bookingStart.toISOString(),
           endTime: bookingEnd.toISOString(),
           attendees: attendees.filter(name => name.trim() !== ''),
+          selectedDate: selectedDate.toISOString(),
+          selectedSlot: selectedSlot,
           userName: session.user.name || session.user.email.split('@')[0],
           userFlatNumber: (session.user as any).flatNumber || '',
         }),
@@ -240,11 +242,11 @@ export default function AmenityBooking() {
       console.log('✅ Booking created:', data);
 
       // Show appropriate success message based on status
-      if (data.booking.status === 'confirmed') {
+      if (data.status === 'confirmed') {
         toast.success('🎉 Booking confirmed! Check your email for details. Redirecting...');
-      } else if (data.booking.status === 'waitlist') {
+      } else if (data.status === 'waitlist') {
         toast.success(
-          `📋 You're #${data.booking.waitlistPosition} on the waitlist. We'll notify you if a spot opens up!`,
+          `📋 You're #${data.position} on the waitlist. We'll notify you if a spot opens up!`,
           { duration: 5000 }
         );
       }

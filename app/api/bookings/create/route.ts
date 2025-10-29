@@ -29,6 +29,8 @@ interface BookingRequest {
   attendees: string[];
   selectedDate: string; // ISO date string
   selectedSlot: string; // e.g., "10:00-12:00"
+  userName?: string;
+  userFlatNumber?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -52,7 +54,9 @@ export async function POST(request: NextRequest) {
       endTime,
       attendees,
       selectedDate,
-      selectedSlot
+      selectedSlot,
+      userName,
+      userFlatNumber
     } = bookingData;
 
     // 3. Validation
@@ -127,12 +131,13 @@ export async function POST(request: NextRequest) {
       const baseBookingData = {
         amenityId,
         amenityName,
+        amenityType: amenityData.category || 'general',
         userId: session.user.email,
         userEmail: session.user.email,
-        userName: session.user.name || session.user.email.split('@')[0],
-        userFlatNumber: (session.user as any).flatNumber || '',
+        userName: userName || session.user.name || session.user.email.split('@')[0],
+        userFlatNumber: userFlatNumber || (session.user as any).flatNumber || '',
         communityId: session.user.communityId,
-        attendees: attendees.filter(name => name.trim() !== ''),
+        attendees: attendees || [],
         startTime: Timestamp.fromDate(bookingStart),
         endTime: Timestamp.fromDate(bookingEnd),
         selectedDate,
@@ -184,33 +189,55 @@ export async function POST(request: NextRequest) {
 
     // 6. Send email notification based on status
     try {
-      const emailType = result.status === 'confirmed' 
-        ? 'booking_confirmation' 
-        : 'waitlist_notification';
-
-      await fetch(`${request.nextUrl.origin}/api/notifications/email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: emailType,
-          data: {
-            userEmail: session.user.email,
-            userName: session.user.name || 'Resident',
-            amenityName,
-            date: new Date(selectedDate).toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            }),
-            timeSlot: selectedSlot,
-            bookingId: result.bookingId,
-            communityName: (session.user as any).communityName || 'Your Community',
-            waitlistPosition: result.position,
-          },
-        }),
-      });
-      console.log(`   📧 ${emailType} email sent`);
+      if (result.status === 'confirmed') {
+        // Send confirmation email
+        await fetch(`${request.nextUrl.origin}/api/notifications/email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'booking_confirmation',
+            data: {
+              userEmail: session.user.email,
+              userName: userName || session.user.name || 'Resident',
+              amenityName,
+              date: new Date(selectedDate).toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              }),
+              timeSlot: selectedSlot,
+              bookingId: result.bookingId,
+              communityName: (session.user as any).communityName || 'Your Community',
+            },
+          }),
+        });
+        console.log('   📧 Confirmation email sent');
+      } else if (result.status === 'waitlist') {
+        // Send waitlist email (using new template)
+        await fetch(`${request.nextUrl.origin}/api/notifications/email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: session.user.email,
+            type: 'bookingWaitlist',
+            data: {
+              userName: userName || session.user.name || 'Resident',
+              amenityName,
+              date: new Date(selectedDate).toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              }),
+              timeSlot: selectedSlot,
+              waitlistPosition: result.position,
+              communityName: (session.user as any).communityName || 'Your Community',
+            },
+          }),
+        });
+        console.log(`   📧 Waitlist email sent (Position #${result.position})`);
+      }
     } catch (emailError) {
       console.error('   ⚠️ Email failed (non-critical):', emailError);
     }
@@ -218,7 +245,19 @@ export async function POST(request: NextRequest) {
     // 7. Return success
     return NextResponse.json({
       success: true,
-      ...result
+      status: result.status,
+      bookingId: result.bookingId,
+      message: result.message,
+      position: result.position,
+      capacity: result.capacity,
+      booking: {
+        id: result.bookingId,
+        status: result.status,
+        amenityName,
+        startTime: bookingStart.toISOString(),
+        endTime: bookingEnd.toISOString(),
+        waitlistPosition: result.status === 'waitlist' ? result.position : undefined,
+      }
     });
 
   } catch (error: any) {
