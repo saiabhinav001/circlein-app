@@ -115,7 +115,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
             {navigation.map((item) => (
               <div key={item.name} className="flex items-center px-3 py-3 rounded-xl">
                 <item.icon className="w-5 h-5 text-black dark:text-slate-300" />
-                <span className="ml-3 text-black dark:text-slate-300 font-medium text-base">{item.name}</span>
+                <span className="ml-3 text-black dark:text-slate-300 font-medium">{item.name}</span>
               </div>
             ))}
           </div>
@@ -290,7 +290,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                   href={item.href}
                   onClick={() => onClose?.()}
                   className={cn(
-                    'group relative flex items-center px-4 py-3 md:py-3.5 rounded-xl text-base font-medium transition-all duration-300 overflow-hidden',
+                    'group relative flex items-center px-3 sm:px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
                     pathname === item.href
                       ? 'bg-gradient-to-r text-white shadow-lg scale-[1.02]'
                       : 'text-black dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30 active:scale-[0.98]'
@@ -323,7 +323,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                     className="relative z-10 flex-shrink-0"
                   >
                     <item.icon className={cn(
-                      "w-5 h-5 md:w-6 md:h-6 transition-colors duration-300",
+                      "w-5 h-5 transition-colors duration-300",
                       pathname === item.href ? "text-gray-900 dark:text-white" : "text-gray-600 dark:text-slate-400 group-hover:text-gray-800 dark:group-hover:text-slate-200"
                     )} />
                   </motion.div>
@@ -336,7 +336,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                         animate="visible"
                         exit="hidden"
                         className={cn(
-                          "ml-3 md:ml-4 relative z-10 transition-colors duration-300 font-medium",
+                          "ml-3 relative z-10 transition-colors duration-300 font-medium text-sm",
                           pathname === item.href ? "text-gray-900 dark:text-white font-semibold" : "text-gray-700 dark:text-slate-300 group-hover:text-gray-900 dark:group-hover:text-slate-100"
                         )}
                       >
@@ -430,10 +430,10 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                       href={item.href}
                       onClick={() => onClose?.()}
                       className={cn(
-                        'group relative flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
+                        'group relative flex items-center px-3 sm:px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
                         pathname === item.href
-                          ? 'bg-gradient-to-r text-white shadow-lg'
-                          : 'text-black dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30'
+                          ? 'bg-gradient-to-r text-white shadow-lg scale-[1.02]'
+                          : 'text-black dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30 active:scale-[0.98]'
                       )}
                       style={{
                         background: pathname === item.href ? `linear-gradient(135deg, ${item.color.split(' ')[1]} 0%, ${item.color.split(' ')[3]} 100%)` : undefined
@@ -460,7 +460,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
 
                       <motion.div
                         variants={iconVariants}
-                        className="relative z-10"
+                        className="relative z-10 flex-shrink-0"
                       >
                         <item.icon className={cn(
                           "w-5 h-5 transition-colors duration-300",
@@ -476,7 +476,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                             animate="visible"
                             exit="hidden"
                             className={cn(
-                              "ml-3 relative z-10 transition-colors duration-300 font-medium",
+                              "ml-3 relative z-10 transition-colors duration-300 font-medium text-sm",
                               pathname === item.href ? "text-gray-900 dark:text-white font-semibold" : "text-gray-700 dark:text-slate-300 group-hover:text-gray-900 dark:group-hover:text-slate-100"
                             )}
                           >

@@ -41,77 +41,6 @@ import { notifyDateSpecificBlock } from '@/lib/notification-helpers';
 import { useNotifications } from '@/components/notifications/NotificationSystem';
 import { useCommunityNotifications } from '@/hooks/use-community-notifications';
 
-// Smart Image Mapping System - PROTECTED AMENITIES: Swimming Pool, Gym, Community Clubhouse, Tennis Court
-const standardImages: Record<string, string> = {
-  // SWIMMING & WATER - PROTECTED
-  "swimming pool": "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  swimming: "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  pool: "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  
-  // RACKET SPORTS - Tennis PROTECTED
-  "tennis court": "https://images.pexels.com/photos/209977/pexels-photo-209977.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  tennis: "https://images.pexels.com/photos/209977/pexels-photo-209977.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "badminton court": "https://images.pexels.com/photos/3660204/pexels-photo-3660204.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  badminton: "https://images.pexels.com/photos/3660204/pexels-photo-3660204.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "table tennis": "https://images.pexels.com/photos/976873/pexels-photo-976873.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "ping pong": "https://images.pexels.com/photos/976873/pexels-photo-976873.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "pickleball court": "https://images.pexels.com/photos/6224386/pexels-photo-6224386.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  pickleball: "https://images.pexels.com/photos/6224386/pexels-photo-6224386.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  
-  // COURT SPORTS
-  "basketball court": "https://images.pexels.com/photos/1544008/pexels-photo-1544008.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  basketball: "https://images.pexels.com/photos/1544008/pexels-photo-1544008.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "volleyball court": "https://images.pexels.com/photos/1263426/pexels-photo-1263426.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  volleyball: "https://images.pexels.com/photos/1263426/pexels-photo-1263426.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  
-  // FIELD SPORTS
-  "cricket pitch": "https://images.pexels.com/photos/1510960/pexels-photo-1510960.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  cricket: "https://images.pexels.com/photos/1510960/pexels-photo-1510960.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "football field": "https://images.pexels.com/photos/399187/pexels-photo-399187.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  football: "https://images.pexels.com/photos/399187/pexels-photo-399187.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  soccer: "https://images.pexels.com/photos/399187/pexels-photo-399187.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  
-  // FITNESS - Gym PROTECTED
-  "fitness center": "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  gym: "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  fitness: "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  workout: "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  yoga: "https://images.pexels.com/photos/3822621/pexels-photo-3822621.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  
-  // COMMUNITY - Clubhouse PROTECTED
-  "community clubhouse": "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  clubhouse: "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  community: "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  hall: "https://images.pexels.com/photos/1579253/pexels-photo-1579253.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  playground: "https://images.pexels.com/photos/1770809/pexels-photo-1770809.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  garden: "https://images.pexels.com/photos/1105019/pexels-photo-1105019.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  park: "https://images.pexels.com/photos/3889906/pexels-photo-3889906.jpeg?auto=compress&cs=tinysrgb&w=1200",
-};
-
-// Smart image selection with longest-keyword-first matching
-function getSmartImage(amenityName: string, providedUrl?: string): string {
-  // If user provided a URL, use it
-  if (providedUrl && providedUrl.trim()) {
-    return providedUrl;
-  }
-
-  // Normalize the amenity name: lowercase and remove extra whitespace
-  const normalizedName = amenityName.toLowerCase().trim().replace(/\s+/g, ' ');
-
-  // Sort keywords by length (longest first) to match most specific first
-  const sortedKeywords = Object.keys(standardImages).sort((a, b) => b.length - a.length);
-
-  // Find the first (longest) matching keyword
-  for (const keyword of sortedKeywords) {
-    if (normalizedName.includes(keyword)) {
-      return standardImages[keyword];
-    }
-  }
-
-  // Default fallback to Community Clubhouse (PROTECTED image)
-  return standardImages["clubhouse"];
-}
-
 // Schema for editing amenities
 const amenityEditSchema = z.object({
   name: z.string().min(2, 'Amenity name is required'),
@@ -250,14 +179,11 @@ export default function AdminPanel() {
 
   const saveEdit = async (data: AmenityEditData) => {
     try {
-      // Use smart image mapping based on amenity name (protects 4 perfect amenities)
-      const smartImageUrl = getSmartImage(data.name.trim(), data.imageUrl);
-      
       const amenityRef = doc(db, 'amenities', editingId!);
       await updateDoc(amenityRef, {
         name: data.name.trim(),
         description: data.description.trim(),
-        imageUrl: smartImageUrl,
+        imageUrl: data.imageUrl || undefined,
         booking: {
           maxPeople: data.maxPeople,
           slotDuration: data.slotDuration,
@@ -370,13 +296,10 @@ export default function AdminPanel() {
 
   const addAmenity = async (data: AmenityEditData) => {
     try {
-      // Use smart image mapping based on amenity name (protects 4 perfect amenities)
-      const smartImageUrl = getSmartImage(data.name.trim(), data.imageUrl);
-      
       await addDoc(collection(db, 'amenities'), {
         name: data.name.trim(),
         description: data.description.trim(),
-        imageUrl: smartImageUrl,
+        imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1584735935682-2f2b69d4e0d3?w=800&q=80',
         communityId: session?.user?.communityId,
         isActive: true,
         booking: {

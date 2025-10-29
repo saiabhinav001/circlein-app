@@ -81,6 +81,59 @@ function getModelInstance() {
   return modelInstance;
 }
 
+// Fallback responses for when AI is unavailable - ensures chatbot ALWAYS responds
+function getFallbackResponse(message: string, isAdmin: boolean): string {
+  const lowerMessage = message.toLowerCase();
+  
+  // Booking questions
+  if (lowerMessage.includes('book') || lowerMessage.includes('reservation')) {
+    return "To book an amenity: Go to 'My Bookings' → Click 'Book Now' → Select your amenity and time slot → Confirm your booking. You'll get a confirmation notification! 📅";
+  }
+  
+  // Cancel questions
+  if (lowerMessage.includes('cancel')) {
+    return "To cancel a booking: Go to 'My Bookings' → Find your booking in the list → Click the 'Cancel' button. You can cancel anytime before your booking time! ❌";
+  }
+  
+  // Admin features
+  if (isAdmin && (lowerMessage.includes('admin') || lowerMessage.includes('manage'))) {
+    return "As an admin, you can: Manage amenities (add/edit/delete), view all bookings, send announcements to the community, block time slots for maintenance, and manage users. Check the Admin Panel for all features! 👨‍💼";
+  }
+  
+  // Announcement questions
+  if (isAdmin && lowerMessage.includes('announcement')) {
+    return "To send announcements: Go to 'Notifications' → Click 'Send Announcement' → Write your message → Choose recipients (all or specific residents) → Send! 📢";
+  }
+  
+  // Calendar/schedule
+  if (lowerMessage.includes('calendar') || lowerMessage.includes('schedule')) {
+    return "View all bookings in the Calendar section! You'll see when amenities are available, your upcoming bookings, and community events. Click any booking to see details. 📆";
+  }
+  
+  // Profile/settings
+  if (lowerMessage.includes('profile') || lowerMessage.includes('setting')) {
+    return "Update your profile in Settings: Go to 'Settings' → 'Profile' → Edit your details (name, contact info, etc.) → Save changes. Keep your info current! ⚙️";
+  }
+  
+  // Notifications
+  if (lowerMessage.includes('notification') || lowerMessage.includes('alert')) {
+    return "You'll receive notifications for: Booking confirmations, cancellations, community announcements, and important updates. Check the Notifications page to see all messages! 🔔";
+  }
+  
+  // Amenities
+  if (lowerMessage.includes('amenity') || lowerMessage.includes('amenities') || lowerMessage.includes('facilities')) {
+    return "CircleIn typically includes amenities like: Swimming Pool, Gym, Tennis Court, Clubhouse, and more. Check 'My Bookings' → 'Book Now' to see available amenities in your community! 🏊‍♂️";
+  }
+  
+  // Help/how to
+  if (lowerMessage.includes('help') || lowerMessage.includes('how')) {
+    return "I'm here to help with booking amenities, viewing your calendar, managing your profile, and understanding CircleIn features. What would you like to know more about? 😊";
+  }
+  
+  // Default friendly response
+  return "I'm your CircleIn assistant! I can help you with booking amenities, viewing your calendar, managing your profile, and more. What would you like to know? Feel free to ask about specific features! 💡";
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { message, userRole, conversationHistory } = await request.json();
@@ -93,23 +146,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get pre-initialized model instance
-    const model = getModelInstance();
-
-    // Determine user context (admin vs resident)
     const isAdmin = userRole === 'admin';
-    const roleContext = isAdmin 
-      ? '\n\n**USER ROLE: ADMIN** - This user has administrative privileges. Mention admin-specific features when relevant (manage amenities, send announcements, view all bookings, etc.).'
-      : '\n\n**USER ROLE: RESIDENT** - This is a regular community member. Focus on resident features (booking amenities, viewing calendar, managing their profile).';
 
-    // Build minimal conversation context (last 3 messages only for speed)
-    const conversationContext = conversationHistory
-      ?.slice(-3)
-      .map((msg: any) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
-      .join('\n') || '';
+    // Try AI response first, with multiple fallback layers
+    try {
+      // Get pre-initialized model instance
+      const model = getModelInstance();
 
-    // Optimized prompt for instant responses
-    const prompt = `${CIRCLEIN_KNOWLEDGE_BASE}${roleContext}
+      // Determine user context
+      const roleContext = isAdmin 
+        ? '\n\n**USER ROLE: ADMIN** - This user has administrative privileges. Mention admin-specific features when relevant (manage amenities, send announcements, view all bookings, etc.).'
+        : '\n\n**USER ROLE: RESIDENT** - This is a regular community member. Focus on resident features (booking amenities, viewing calendar, managing their profile).';
+
+      // Build minimal conversation context (last 3 messages only for speed)
+      const conversationContext = conversationHistory
+        ?.slice(-3)
+        .map((msg: any) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .join('\n') || '';
+
+      // Optimized prompt for instant responses
+      const prompt = `${CIRCLEIN_KNOWLEDGE_BASE}${roleContext}
 
 ${conversationContext ? `Recent conversation:\n${conversationContext}\n` : ''}
 User: ${message}
@@ -117,75 +173,63 @@ User: ${message}
 Respond naturally and concisely (1-3 sentences). Be helpful and specific to their role.
 Assistant:`;
 
-    // Fast generation with timeout protection
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s max
+      // Fast generation with timeout protection - reduced to 5s for faster fallback
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s max
 
-    try {
-      const result = await model.generateContent(prompt);
-      clearTimeout(timeoutId);
-      
-      const response = await result.response;
-      const text = response.text();
-      
-      if (!text || text.trim() === '') {
+      try {
+        const result = await model.generateContent(prompt);
+        clearTimeout(timeoutId);
+        
+        const response = await result.response;
+        const text = response.text();
+        
+        if (!text || text.trim() === '') {
+          // Empty response - use fallback
+          return NextResponse.json({ 
+            response: getFallbackResponse(message, isAdmin)
+          });
+        }
+        
+        // Quick security check
+        const sensitivePatterns = [
+          /firebase/i, /database/i, /api[_-]?key/i, /password/i, 
+          /credential/i, /mongodb/i, /firestore/i, /collection/i, /schema/i
+        ];
+
+        const sanitizedResponse = sensitivePatterns.some(pattern => pattern.test(text))
+          ? "I notice your question involves technical details. For security, I can only help with using CircleIn features. Try rephrasing or contact support via email."
+          : text;
+
+        return NextResponse.json({ response: sanitizedResponse });
+      } catch (genError: any) {
+        clearTimeout(timeoutId);
+        
+        // Timeout or generation error - use intelligent fallback
+        console.log('⚠️ AI generation failed, using fallback:', genError.name);
         return NextResponse.json({ 
-          response: "I'm here to help! Could you rephrase your question?" 
+          response: getFallbackResponse(message, isAdmin)
         });
       }
-      
-      // Quick security check
-      const sensitivePatterns = [
-        /firebase/i, /database/i, /api[_-]?key/i, /password/i, 
-        /credential/i, /mongodb/i, /firestore/i, /collection/i, /schema/i
-      ];
 
-      const sanitizedResponse = sensitivePatterns.some(pattern => pattern.test(text))
-        ? "I notice your question involves technical details. For security, I can only help with using CircleIn features. Try rephrasing or contact support via email."
-        : text;
-
-      return NextResponse.json({ response: sanitizedResponse });
-    } catch (genError: any) {
-      clearTimeout(timeoutId);
-      
-      if (genError.name === 'AbortError') {
-        return NextResponse.json({ 
-          response: "The response is taking too long. Please try a simpler question or use email support." 
-        });
-      }
-      throw genError;
+    } catch (modelError: any) {
+      // Model initialization failed - use fallback
+      console.log('⚠️ Model initialization failed, using fallback');
+      return NextResponse.json({ 
+        response: getFallbackResponse(message, isAdmin)
+      });
     }
 
   } catch (error: any) {
     console.error('❌ Chatbot error:', error?.message);
     
-    // Handle specific errors gracefully
-    if (error.message?.includes('API key') || error.message?.includes('API_KEY_INVALID')) {
-      return NextResponse.json(
-        { error: 'AI service configuration error. Please contact support.' },
-        { status: 500 }
-      );
-    }
-
-    if (error.message?.includes('quota') || error.message?.includes('429')) {
-      return NextResponse.json(
-        { error: 'High traffic detected. Please try again in a moment.' },
-        { status: 429 }
-      );
-    }
-
-    if (error.message?.includes('GEMINI_API_KEY not configured')) {
-      return NextResponse.json(
-        { error: 'AI service not available. Please use email support.' },
-        { status: 503 }
-      );
-    }
-    
-    return NextResponse.json(
-      { 
-        error: 'Unable to generate response. Please try again or use email support.'
-      },
-      { status: 500 }
-    );
+    // Last resort - provide generic but helpful fallback
+    const isAdmin = error.userRole === 'admin';
+    return NextResponse.json({
+      response: getFallbackResponse(
+        error.message || "help", 
+        isAdmin || false
+      )
+    });
   }
 }
