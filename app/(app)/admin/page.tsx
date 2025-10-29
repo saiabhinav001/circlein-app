@@ -44,151 +44,48 @@ import { useCommunityNotifications } from '@/hooks/use-community-notifications';
 // Smart Image Mapping System - PROTECTED AMENITIES: Swimming Pool, Gym, Community Clubhouse, Tennis Court
 const standardImages: Record<string, string> = {
   // SWIMMING & WATER - PROTECTED
-  "swimming pool": "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED - PERFECT
-  swimming: "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  pool: "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  swim: "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  jacuzzi: "https://images.pexels.com/photos/12847581/pexels-photo-12847581.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "hot tub": "https://images.pexels.com/photos/12847581/pexels-photo-12847581.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "swimming pool": "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
+  swimming: "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  pool: "https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=1200",
   
-  // RACKET SPORTS - Each gets unique image (Tennis PROTECTED, Table Tennis & Pickleball separate)
-  "tennis court": "https://images.pexels.com/photos/209977/pexels-photo-209977.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED - PERFECT
-  tennis: "https://images.pexels.com/photos/209977/pexels-photo-209977.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  "badminton court": "https://images.pexels.com/photos/3660204/pexels-photo-3660204.jpeg?auto=compress&cs=tinysrgb&w=1200", // Indoor badminton
+  // RACKET SPORTS - Tennis PROTECTED
+  "tennis court": "https://images.pexels.com/photos/209977/pexels-photo-209977.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
+  tennis: "https://images.pexels.com/photos/209977/pexels-photo-209977.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "badminton court": "https://images.pexels.com/photos/3660204/pexels-photo-3660204.jpeg?auto=compress&cs=tinysrgb&w=1200",
   badminton: "https://images.pexels.com/photos/3660204/pexels-photo-3660204.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "table tennis": "https://images.pexels.com/photos/976873/pexels-photo-976873.jpeg?auto=compress&cs=tinysrgb&w=1200", // UNIQUE - Table tennis table
+  "table tennis": "https://images.pexels.com/photos/976873/pexels-photo-976873.jpeg?auto=compress&cs=tinysrgb&w=1200",
   "ping pong": "https://images.pexels.com/photos/976873/pexels-photo-976873.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "pickleball court": "https://images.pexels.com/photos/6224386/pexels-photo-6224386.jpeg?auto=compress&cs=tinysrgb&w=1200", // UNIQUE - Pickleball
+  "pickleball court": "https://images.pexels.com/photos/6224386/pexels-photo-6224386.jpeg?auto=compress&cs=tinysrgb&w=1200",
   pickleball: "https://images.pexels.com/photos/6224386/pexels-photo-6224386.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "squash court": "https://images.pexels.com/photos/6253913/pexels-photo-6253913.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  squash: "https://images.pexels.com/photos/6253913/pexels-photo-6253913.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "racquetball court": "https://images.pexels.com/photos/6253919/pexels-photo-6253919.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  racquetball: "https://images.pexels.com/photos/6253919/pexels-photo-6253919.jpeg?auto=compress&cs=tinysrgb&w=1200",
   
-  // COURT SPORTS - Each unique
-  "basketball court": "https://images.pexels.com/photos/1080875/pexels-photo-1080875.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  basketball: "https://images.pexels.com/photos/1080875/pexels-photo-1080875.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  // COURT SPORTS
+  "basketball court": "https://images.pexels.com/photos/1544008/pexels-photo-1544008.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  basketball: "https://images.pexels.com/photos/1544008/pexels-photo-1544008.jpeg?auto=compress&cs=tinysrgb&w=1200",
   "volleyball court": "https://images.pexels.com/photos/1263426/pexels-photo-1263426.jpeg?auto=compress&cs=tinysrgb&w=1200",
   volleyball: "https://images.pexels.com/photos/1263426/pexels-photo-1263426.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "handball court": "https://images.pexels.com/photos/1277386/pexels-photo-1277386.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  handball: "https://images.pexels.com/photos/1277386/pexels-photo-1277386.jpeg?auto=compress&cs=tinysrgb&w=1200",
   
-  // FIELD SPORTS - Each unique
+  // FIELD SPORTS
   "cricket pitch": "https://images.pexels.com/photos/1510960/pexels-photo-1510960.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "cricket ground": "https://images.pexels.com/photos/1510960/pexels-photo-1510960.jpeg?auto=compress&cs=tinysrgb&w=1200",
   cricket: "https://images.pexels.com/photos/1510960/pexels-photo-1510960.jpeg?auto=compress&cs=tinysrgb&w=1200",
   "football field": "https://images.pexels.com/photos/399187/pexels-photo-399187.jpeg?auto=compress&cs=tinysrgb&w=1200",
   football: "https://images.pexels.com/photos/399187/pexels-photo-399187.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "soccer field": "https://images.pexels.com/photos/399187/pexels-photo-399187.jpeg?auto=compress&cs=tinysrgb&w=1200",
   soccer: "https://images.pexels.com/photos/399187/pexels-photo-399187.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "rugby field": "https://images.pexels.com/photos/209956/pexels-photo-209956.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  rugby: "https://images.pexels.com/photos/209956/pexels-photo-209956.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "baseball field": "https://images.pexels.com/photos/1661950/pexels-photo-1661950.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  baseball: "https://images.pexels.com/photos/1661950/pexels-photo-1661950.jpeg?auto=compress&cs=tinysrgb&w=1200",
   
-  // TRACK & FITNESS - Gym PROTECTED
-  "running track": "https://images.pexels.com/photos/2803158/pexels-photo-2803158.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "jogging track": "https://images.pexels.com/photos/2803158/pexels-photo-2803158.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  track: "https://images.pexels.com/photos/2803158/pexels-photo-2803158.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  // FITNESS - Gym PROTECTED
   "fitness center": "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  gym: "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED - PERFECT
-  fitness: "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  workout: "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  "weight room": "https://images.pexels.com/photos/1552252/pexels-photo-1552252.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "cardio room": "https://images.pexels.com/photos/4162449/pexels-photo-4162449.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "aerobics room": "https://images.pexels.com/photos/3775566/pexels-photo-3775566.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "dance studio": "https://images.pexels.com/photos/3775566/pexels-photo-3775566.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  dance: "https://images.pexels.com/photos/3775566/pexels-photo-3775566.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "spin class": "https://images.pexels.com/photos/3253501/pexels-photo-3253501.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  cycling: "https://images.pexels.com/photos/3253501/pexels-photo-3253501.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  
-  // MARTIAL ARTS & COMBAT
-  "boxing ring": "https://images.pexels.com/photos/260447/pexels-photo-260447.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  boxing: "https://images.pexels.com/photos/260447/pexels-photo-260447.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "martial arts": "https://images.pexels.com/photos/7990302/pexels-photo-7990302.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  karate: "https://images.pexels.com/photos/7990302/pexels-photo-7990302.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "mma gym": "https://images.pexels.com/photos/4754146/pexels-photo-4754146.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  
-  // OTHER SPORTS
-  "skating rink": "https://images.pexels.com/photos/6266517/pexels-photo-6266517.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  skating: "https://images.pexels.com/photos/6266517/pexels-photo-6266517.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "golf course": "https://images.pexels.com/photos/424063/pexels-photo-424063.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  golf: "https://images.pexels.com/photos/424063/pexels-photo-424063.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "climbing wall": "https://images.pexels.com/photos/2859547/pexels-photo-2859547.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  climbing: "https://images.pexels.com/photos/2859547/pexels-photo-2859547.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  
-  // COMMUNITY SPACES - Clubhouse PROTECTED
-  "community clubhouse": "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED - PERFECT
-  clubhouse: "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  "community hall": "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
-  community: "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  
-  // WELLNESS
-  "yoga studio": "https://images.pexels.com/photos/3822621/pexels-photo-3822621.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  gym: "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
+  fitness: "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  workout: "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200",
   yoga: "https://images.pexels.com/photos/3822621/pexels-photo-3822621.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "meditation room": "https://images.pexels.com/photos/3822906/pexels-photo-3822906.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  meditation: "https://images.pexels.com/photos/3822906/pexels-photo-3822906.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "massage room": "https://images.pexels.com/photos/3865792/pexels-photo-3865792.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  massage: "https://images.pexels.com/photos/3865792/pexels-photo-3865792.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  spa: "https://images.pexels.com/photos/3865675/pexels-photo-3865675.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "sauna room": "https://images.pexels.com/photos/3171815/pexels-photo-3171815.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  sauna: "https://images.pexels.com/photos/3171815/pexels-photo-3171815.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "steam room": "https://images.pexels.com/photos/6466297/pexels-photo-6466297.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  steam: "https://images.pexels.com/photos/6466297/pexels-photo-6466297.jpeg?auto=compress&cs=tinysrgb&w=1200",
   
-  // ENTERTAINMENT
-  "movie theater": "https://images.pexels.com/photos/109669/pexels-photo-109669.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  cinema: "https://images.pexels.com/photos/109669/pexels-photo-109669.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  theater: "https://images.pexels.com/photos/109669/pexels-photo-109669.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "game room": "https://images.pexels.com/photos/4009599/pexels-photo-4009599.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  gaming: "https://images.pexels.com/photos/4009599/pexels-photo-4009599.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "billiards room": "https://images.pexels.com/photos/221047/pexels-photo-221047.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "pool table": "https://images.pexels.com/photos/221047/pexels-photo-221047.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  snooker: "https://images.pexels.com/photos/221047/pexels-photo-221047.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "chess room": "https://images.pexels.com/photos/277124/pexels-photo-277124.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  chess: "https://images.pexels.com/photos/277124/pexels-photo-277124.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "music room": "https://images.pexels.com/photos/1751731/pexels-photo-1751731.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  music: "https://images.pexels.com/photos/1751731/pexels-photo-1751731.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "art studio": "https://images.pexels.com/photos/1762851/pexels-photo-1762851.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  art: "https://images.pexels.com/photos/1762851/pexels-photo-1762851.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  pottery: "https://images.pexels.com/photos/1139317/pexels-photo-1139317.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  
-  // BUSINESS
-  "conference room": "https://images.pexels.com/photos/260931/pexels-photo-260931.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "meeting room": "https://images.pexels.com/photos/1181396/pexels-photo-1181396.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "business center": "https://images.pexels.com/photos/380768/pexels-photo-380768.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  office: "https://images.pexels.com/photos/380768/pexels-photo-380768.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "coworking space": "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  
-  // DINING
-  "banquet hall": "https://images.pexels.com/photos/1579253/pexels-photo-1579253.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "party hall": "https://images.pexels.com/photos/1579253/pexels-photo-1579253.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  restaurant: "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  cafe: "https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  cafeteria: "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  kitchen: "https://images.pexels.com/photos/1599791/pexels-photo-1599791.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  
-  // CHILDREN & OUTDOOR
+  // COMMUNITY - Clubhouse PROTECTED
+  "community clubhouse": "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200", // PROTECTED
+  clubhouse: "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  community: "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  hall: "https://images.pexels.com/photos/1579253/pexels-photo-1579253.jpeg?auto=compress&cs=tinysrgb&w=1200",
   playground: "https://images.pexels.com/photos/1770809/pexels-photo-1770809.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "kids zone": "https://images.pexels.com/photos/1170572/pexels-photo-1170572.jpeg?auto=compress&cs=tinysrgb&w=1200",
   garden: "https://images.pexels.com/photos/1105019/pexels-photo-1105019.jpeg?auto=compress&cs=tinysrgb&w=1200",
   park: "https://images.pexels.com/photos/3889906/pexels-photo-3889906.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "bbq area": "https://images.pexels.com/photos/1260968/pexels-photo-1260968.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  gazebo: "https://images.pexels.com/photos/1544965/pexels-photo-1544965.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  amphitheater: "https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  
-  // OTHER FACILITIES
-  parking: "https://images.pexels.com/photos/753876/pexels-photo-753876.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  security: "https://images.pexels.com/photos/8961157/pexels-photo-8961157.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  library: "https://images.pexels.com/photos/2079451/pexels-photo-2079451.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "study room": "https://images.pexels.com/photos/159844/cellular-education-classroom-159844.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  laundry: "https://images.pexels.com/photos/3746839/pexels-photo-3746839.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "medical center": "https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  clinic: "https://images.pexels.com/photos/127873/pexels-photo-127873.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "beauty salon": "https://images.pexels.com/photos/1813272/pexels-photo-1813272.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  salon: "https://images.pexels.com/photos/1813272/pexels-photo-1813272.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  "pet park": "https://images.pexels.com/photos/2853130/pexels-photo-2853130.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  terrace: "https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1200",
 };
 
 // Smart image selection with longest-keyword-first matching
