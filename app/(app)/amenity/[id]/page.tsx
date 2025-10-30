@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
@@ -23,10 +23,20 @@ interface Amenity {
   imageUrl: string;
   category?: string;
   timeSlots?: string[]; // Dynamic time slots from Firestore
+  weekdaySlots?: string[]; // Specific slots for Monday-Friday
+  weekendSlots?: string[]; // Specific slots for Saturday-Sunday
   slotDuration?: number; // Duration in hours (e.g., 2 for 2-hour slots)
   operatingHours?: {
     start: string; // e.g., "09:00"
     end: string;   // e.g., "21:00"
+  };
+  weekdayHours?: {
+    start: string;
+    end: string;
+  };
+  weekendHours?: {
+    start: string;
+    end: string;
   };
   rules: {
     maxSlotsPerFamily: number;
@@ -67,16 +77,118 @@ export default function AmenityBooking() {
   const [timeSlots, setTimeSlots] = useState<string[]>(DEFAULT_TIME_SLOTS); // Dynamic time slots
 
   useEffect(() => {
-    if (params.id) {
-      fetchAmenity(params.id as string);
+    if (params.id && session?.user?.communityId) {
+      // Set up real-time listener for amenity changes
+      const amenityRef = doc(db, 'amenities', params.id as string);
+      const unsubscribe = onSnapshot(amenityRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const amenityData = docSnap.data();
+          
+          // Check if amenity belongs to user's community
+          if (amenityData.communityId !== session.user.communityId) {
+            console.error('Amenity not accessible to this community');
+            toast.error('This amenity is not available in your community');
+            return;
+          }
+          
+          const fetchedAmenity = {
+            id: docSnap.id,
+            ...amenityData,
+          } as Amenity;
+          
+          setAmenity(fetchedAmenity);
+          
+          // Update time slots dynamically in real-time based on day of week
+          updateTimeSlotsForDate(fetchedAmenity, selectedDate || new Date());
+          
+          setLoading(false);
+        }
+      }, (error) => {
+        console.error('Error listening to amenity changes:', error);
+        toast.error('Failed to load amenity details');
+        setLoading(false);
+      });
+
+      // Cleanup listener on unmount
+      return () => unsubscribe();
     }
-  }, [params.id]);
+  }, [params.id, session?.user?.communityId]);
 
   useEffect(() => {
     if (selectedDate && params.id) {
       fetchBookings(params.id as string, selectedDate);
+      
+      // Update time slots when date changes (weekday vs weekend)
+      if (amenity) {
+        updateTimeSlotsForDate(amenity, selectedDate);
+      }
     }
-  }, [selectedDate, params.id]);
+  }, [selectedDate, params.id, amenity]);
+
+  // Update time slots based on selected date (weekday vs weekend)
+  const updateTimeSlotsForDate = (amenityData: Amenity, date: Date) => {
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
+    // Priority 1: Check for weekday/weekend specific slots
+    if (isWeekend && amenityData.weekendSlots && amenityData.weekendSlots.length > 0) {
+      console.log('📅 [Real-time] Using weekend slots:', amenityData.weekendSlots);
+      setTimeSlots(amenityData.weekendSlots);
+      return;
+    }
+    
+    if (!isWeekend && amenityData.weekdaySlots && amenityData.weekdaySlots.length > 0) {
+      console.log('📅 [Real-time] Using weekday slots:', amenityData.weekdaySlots);
+      setTimeSlots(amenityData.weekdaySlots);
+      return;
+    }
+    
+    // Priority 2: Check for custom time slots (applies to all days)
+    if (amenityData.timeSlots && Array.isArray(amenityData.timeSlots) && amenityData.timeSlots.length > 0) {
+      console.log('📅 [Real-time] Using custom time slots:', amenityData.timeSlots);
+      setTimeSlots(amenityData.timeSlots);
+      return;
+    }
+    
+    // Priority 3: Generate from weekday/weekend operating hours
+    if (isWeekend && amenityData.weekendHours && amenityData.slotDuration) {
+      const generatedSlots = generateTimeSlots(
+        amenityData.weekendHours.start,
+        amenityData.weekendHours.end,
+        amenityData.slotDuration
+      );
+      console.log('📅 [Real-time] Generated weekend slots:', generatedSlots);
+      setTimeSlots(generatedSlots);
+      return;
+    }
+    
+    if (!isWeekend && amenityData.weekdayHours && amenityData.slotDuration) {
+      const generatedSlots = generateTimeSlots(
+        amenityData.weekdayHours.start,
+        amenityData.weekdayHours.end,
+        amenityData.slotDuration
+      );
+      console.log('📅 [Real-time] Generated weekday slots:', generatedSlots);
+      setTimeSlots(generatedSlots);
+      return;
+    }
+    
+    // Priority 4: Generate from general operating hours
+    if (amenityData.operatingHours && amenityData.slotDuration) {
+      const generatedSlots = generateTimeSlots(
+        amenityData.operatingHours.start,
+        amenityData.operatingHours.end,
+        amenityData.slotDuration
+      );
+      console.log('📅 [Real-time] Generated time slots:', generatedSlots);
+      setTimeSlots(generatedSlots);
+      return;
+    }
+    
+    // Priority 5: Use default time slots
+    console.log('📅 [Real-time] Using default time slots');
+    setTimeSlots(DEFAULT_TIME_SLOTS);
+  };
 
   // Generate time slots dynamically based on operating hours and duration
   const generateTimeSlots = (startHour: string, endHour: string, durationHours: number): string[] => {
@@ -117,59 +229,6 @@ export default function AmenityBooking() {
     }
     
     return slots;
-  };
-
-  const fetchAmenity = async (amenityId: string) => {
-    try {
-      if (!session?.user?.communityId) {
-        console.error('No community ID found in session');
-        return;
-      }
-
-      const amenityDoc = await getDoc(doc(db, 'amenities', amenityId));
-      if (amenityDoc.exists()) {
-        const amenityData = amenityDoc.data();
-        
-        // Check if amenity belongs to user's community
-        if (amenityData.communityId !== session.user.communityId) {
-          console.error('Amenity not accessible to this community');
-          toast.error('This amenity is not available in your community');
-          return;
-        }
-        
-        const fetchedAmenity = {
-          id: amenityDoc.id,
-          ...amenityData,
-        } as Amenity;
-        
-        setAmenity(fetchedAmenity);
-        
-        // Set time slots dynamically
-        if (amenityData.timeSlots && Array.isArray(amenityData.timeSlots) && amenityData.timeSlots.length > 0) {
-          // Use custom time slots from Firestore
-          console.log('📅 Using custom time slots from amenity:', amenityData.timeSlots);
-          setTimeSlots(amenityData.timeSlots);
-        } else if (amenityData.operatingHours && amenityData.slotDuration) {
-          // Generate time slots based on operating hours and duration
-          const generatedSlots = generateTimeSlots(
-            amenityData.operatingHours.start,
-            amenityData.operatingHours.end,
-            amenityData.slotDuration
-          );
-          console.log('📅 Generated time slots:', generatedSlots);
-          setTimeSlots(generatedSlots);
-        } else {
-          // Use default time slots
-          console.log('📅 Using default time slots');
-          setTimeSlots(DEFAULT_TIME_SLOTS);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching amenity:', error);
-      toast.error('Failed to load amenity details');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const fetchBookings = async (amenityId: string, date: Date) => {
