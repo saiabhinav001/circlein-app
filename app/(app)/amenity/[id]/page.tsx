@@ -22,6 +22,12 @@ interface Amenity {
   description: string;
   imageUrl: string;
   category?: string;
+  timeSlots?: string[]; // Dynamic time slots from Firestore
+  slotDuration?: number; // Duration in hours (e.g., 2 for 2-hour slots)
+  operatingHours?: {
+    start: string; // e.g., "09:00"
+    end: string;   // e.g., "21:00"
+  };
   rules: {
     maxSlotsPerFamily: number;
     blackoutDates: any[];
@@ -36,7 +42,8 @@ interface Booking {
   status: string;
 }
 
-const timeSlots = [
+// Default time slots (fallback if amenity doesn't have custom slots)
+const DEFAULT_TIME_SLOTS = [
   '09:00-11:00',
   '11:00-13:00',
   '13:00-15:00',
@@ -57,6 +64,7 @@ export default function AmenityBooking() {
   const [attendees, setAttendees] = useState<string[]>(['']);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [isBooking, setIsBooking] = useState(false); // Prevent double booking
+  const [timeSlots, setTimeSlots] = useState<string[]>(DEFAULT_TIME_SLOTS); // Dynamic time slots
 
   useEffect(() => {
     if (params.id) {
@@ -69,6 +77,47 @@ export default function AmenityBooking() {
       fetchBookings(params.id as string, selectedDate);
     }
   }, [selectedDate, params.id]);
+
+  // Generate time slots dynamically based on operating hours and duration
+  const generateTimeSlots = (startHour: string, endHour: string, durationHours: number): string[] => {
+    const slots: string[] = [];
+    const [startH, startM] = startHour.split(':').map(Number);
+    const [endH, endM] = endHour.split(':').map(Number);
+    
+    let currentHour = startH;
+    let currentMinute = startM || 0;
+    
+    while (currentHour < endH || (currentHour === endH && currentMinute < (endM || 0))) {
+      const slotStart = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+      
+      // Calculate end time
+      let slotEndHour = currentHour + durationHours;
+      let slotEndMinute = currentMinute;
+      
+      if (slotEndMinute >= 60) {
+        slotEndHour += Math.floor(slotEndMinute / 60);
+        slotEndMinute = slotEndMinute % 60;
+      }
+      
+      const slotEnd = `${String(slotEndHour).padStart(2, '0')}:${String(slotEndMinute).padStart(2, '0')}`;
+      
+      // Only add if end time doesn't exceed operating hours
+      if (slotEndHour < endH || (slotEndHour === endH && slotEndMinute <= (endM || 0))) {
+        slots.push(`${slotStart}-${slotEnd}`);
+      }
+      
+      // Move to next slot
+      currentHour += durationHours;
+      currentMinute += (durationHours % 1) * 60; // Handle fractional hours
+      
+      if (currentMinute >= 60) {
+        currentHour += Math.floor(currentMinute / 60);
+        currentMinute = currentMinute % 60;
+      }
+    }
+    
+    return slots;
+  };
 
   const fetchAmenity = async (amenityId: string) => {
     try {
@@ -88,10 +137,32 @@ export default function AmenityBooking() {
           return;
         }
         
-        setAmenity({
+        const fetchedAmenity = {
           id: amenityDoc.id,
           ...amenityData,
-        } as Amenity);
+        } as Amenity;
+        
+        setAmenity(fetchedAmenity);
+        
+        // Set time slots dynamically
+        if (amenityData.timeSlots && Array.isArray(amenityData.timeSlots) && amenityData.timeSlots.length > 0) {
+          // Use custom time slots from Firestore
+          console.log('📅 Using custom time slots from amenity:', amenityData.timeSlots);
+          setTimeSlots(amenityData.timeSlots);
+        } else if (amenityData.operatingHours && amenityData.slotDuration) {
+          // Generate time slots based on operating hours and duration
+          const generatedSlots = generateTimeSlots(
+            amenityData.operatingHours.start,
+            amenityData.operatingHours.end,
+            amenityData.slotDuration
+          );
+          console.log('📅 Generated time slots:', generatedSlots);
+          setTimeSlots(generatedSlots);
+        } else {
+          // Use default time slots
+          console.log('📅 Using default time slots');
+          setTimeSlots(DEFAULT_TIME_SLOTS);
+        }
       }
     } catch (error) {
       console.error('Error fetching amenity:', error);
