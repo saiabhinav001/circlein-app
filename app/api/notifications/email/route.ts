@@ -91,20 +91,43 @@ export async function POST(request: NextRequest) {
         );
     }
 
+    console.log(`📧 Preparing to send ${type} email to ${recipientEmail}`);
+
     const result = await sendEmail({
       to: recipientEmail,
       subject: template.subject,
       html: template.html,
     });
 
+    if (!result.success) {
+      console.error(`❌ Failed to send ${type} email:`, result.error);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: result.error,
+          type: type,
+          recipient: recipientEmail
+        },
+        { status: 500 }
+      );
+    }
+
+    console.log(`✅ Successfully sent ${type} email to ${recipientEmail}`);
+    
     return NextResponse.json({ 
       success: true, 
-      messageId: result.messageId 
+      messageId: result.messageId,
+      type: type,
+      recipient: recipientEmail
     });
   } catch (error: any) {
-    console.error('Email notification error:', error);
+    console.error('❌ Email notification API error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to send email notification' },
+      { 
+        success: false,
+        error: error.message || 'Failed to send email notification',
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
       { status: 500 }
     );
   }

@@ -1,12 +1,41 @@
 import nodemailer from 'nodemailer';
 
-// Email configuration
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER || 'circleinapp1@gmail.com',
-    pass: process.env.EMAIL_PASSWORD,
-  },
+// Email configuration with proper error handling
+const createTransporter = () => {
+  const emailUser = process.env.EMAIL_USER || 'circleinapp1@gmail.com';
+  const emailPassword = process.env.EMAIL_PASSWORD;
+
+  if (!emailPassword) {
+    console.error('⚠️  EMAIL_PASSWORD not configured in environment variables');
+    console.error('   Email notifications will NOT work!');
+    console.error('   Please set EMAIL_PASSWORD in Vercel or .env.local');
+  }
+
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: emailUser,
+      pass: emailPassword,
+    },
+    tls: {
+      rejectUnauthorized: false // Allow self-signed certificates
+    },
+  });
+};
+
+const transporter = createTransporter();
+
+// Verify email configuration on startup
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ Email Configuration Error:', error);
+    console.error('   Please check:');
+    console.error('   1. EMAIL_USER is set correctly');
+    console.error('   2. EMAIL_PASSWORD is a valid App Password (not regular Gmail password)');
+    console.error('   3. 2-Step Verification is enabled on Gmail account');
+  } else {
+    console.log('✅ Email service is ready to send messages');
+  }
 });
 
 // Helper function to format dates beautifully
@@ -1367,25 +1396,90 @@ export const emailTemplates = {
 };
 
 // Send a single email
-export async function sendEmail(options: {
-  to: string;
-  subject: string;
-  html: string;
-}) {
-  try {
-    const info = await transporter.sendMail({
-      from: '"CircleIn" <circleinapp1@gmail.com>',
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-    });
-
-    console.log('Email sent successfully:', info.messageId);
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error('Error sending email:', error);
-    throw error;
+export async function sendEmail(
+  options: {
+    to: string;
+    subject: string;
+    html: string;
+  },
+  retries = 3
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // Validate inputs
+  if (!options.to || !options.to.includes('@')) {
+    console.error('❌ Invalid email address:', options.to);
+    return { 
+      success: false, 
+      error: 'Invalid email address' 
+    };
   }
+
+  if (!process.env.EMAIL_PASSWORD) {
+    console.error('❌ EMAIL_PASSWORD not configured');
+    return { 
+      success: false, 
+      error: 'Email service not configured. Please set EMAIL_PASSWORD environment variable.' 
+    };
+  }
+
+  let lastError: any = null;
+
+  // Retry logic for transient failures
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`📧 Sending email (attempt ${attempt}/${retries})...`);
+      console.log(`   To: ${options.to}`);
+      console.log(`   Subject: ${options.subject}`);
+
+      const info = await transporter.sendMail({
+        from: '"CircleIn Community" <circleinapp1@gmail.com>',
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        // Add these for better deliverability
+        replyTo: 'circleinapp1@gmail.com',
+        priority: 'high',
+      });
+
+      console.log(`✅ Email sent successfully!`);
+      console.log(`   Message ID: ${info.messageId}`);
+      console.log(`   Response: ${info.response}`);
+
+      return { 
+        success: true, 
+        messageId: info.messageId 
+      };
+
+    } catch (error: any) {
+      lastError = error;
+      console.error(`❌ Email send failed (attempt ${attempt}/${retries}):`, error.message);
+
+      // Log specific error types
+      if (error.code === 'EAUTH') {
+        console.error('   Authentication failed - Check EMAIL_PASSWORD');
+        console.error('   Make sure you are using an App Password, not your regular Gmail password');
+        break; // Don't retry auth errors
+      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
+        console.error('   Network error - Will retry...');
+        if (attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // Exponential backoff
+        }
+      } else if (error.responseCode === 550) {
+        console.error('   Recipient address rejected - Invalid email');
+        break; // Don't retry invalid emails
+      } else {
+        console.error('   Unknown error:', error);
+      }
+    }
+  }
+
+  // All retries failed
+  console.error(`❌ Failed to send email after ${retries} attempts`);
+  console.error('   Last error:', lastError?.message);
+
+  return { 
+    success: false, 
+    error: lastError?.message || 'Unknown error' 
+  };
 }
 
 // Send batch emails with rate limiting (to avoid Gmail limits)

@@ -2,13 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email-service';
 
 export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const testEmail = searchParams.get('email') || process.env.EMAIL_USER || 'circleinapp1@gmail.com';
+
   try {
     console.log('🧪 Testing email configuration...');
     console.log('EMAIL_USER:', process.env.EMAIL_USER);
     console.log('EMAIL_PASSWORD exists:', !!process.env.EMAIL_PASSWORD);
+    console.log('EMAIL_PASSWORD length:', process.env.EMAIL_PASSWORD?.length || 0);
+    console.log('Test recipient:', testEmail);
+
+    if (!process.env.EMAIL_PASSWORD) {
+      return NextResponse.json({
+        success: false,
+        error: 'EMAIL_PASSWORD not configured',
+        instructions: [
+          '1. Go to https://myaccount.google.com/apppasswords',
+          '2. Generate App Password for Mail',
+          '3. Add EMAIL_PASSWORD to Vercel environment variables',
+          '4. Redeploy the application',
+        ],
+      }, { status: 500 });
+    }
 
     const result = await sendEmail({
-      to: process.env.EMAIL_USER || 'circleinapp1@gmail.com',
+      to: testEmail,
       subject: '✅ CircleIn Email Test - Configuration Working!',
       html: `
         <!DOCTYPE html>
