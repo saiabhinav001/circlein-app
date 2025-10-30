@@ -4,17 +4,28 @@ import { emailTemplates, sendEmail } from '@/lib/email-service';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, data } = body;
+    const { type, data, to } = body;
+
+    console.log('📧 Email API called:', { type, recipient: to || data?.userEmail });
 
     if (!type || !data) {
+      console.error('❌ Missing required fields:', { type: !!type, data: !!data });
       return NextResponse.json(
-        { error: 'Missing type or data' },
+        { success: false, error: 'Missing type or data' },
         { status: 400 }
       );
     }
 
     let template;
-    let recipientEmail = body.to || data.userEmail;
+    let recipientEmail = to || data.userEmail;
+
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+      console.error('❌ Invalid or missing recipient email:', recipientEmail);
+      return NextResponse.json(
+        { success: false, error: 'Invalid recipient email address' },
+        { status: 400 }
+      );
+    }
 
     switch (type) {
       case 'booking_confirmation':
@@ -29,6 +40,7 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'booking_reminder':
+      case 'bookingReminder':
         template = emailTemplates.bookingReminder({
           userName: data.userName,
           amenityName: data.amenityName,
@@ -39,6 +51,7 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'booking_cancellation':
+      case 'bookingCancellation':
         template = emailTemplates.bookingCancellation({
           userName: data.userName,
           amenityName: data.amenityName,
@@ -63,6 +76,7 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'waitlistPromoted':
+      case 'waitlist_promoted': // Support both naming conventions
         template = emailTemplates.waitlistPromoted({
           userName: data.userName,
           amenityName: data.amenityName,
@@ -75,6 +89,7 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'confirmationReminder':
+      case 'confirmation_reminder': // Support both naming conventions
         template = emailTemplates.confirmationReminder({
           userName: data.userName,
           amenityName: data.amenityName,

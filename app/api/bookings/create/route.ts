@@ -188,58 +188,45 @@ export async function POST(request: NextRequest) {
     });
 
     // 6. Send email notification based on status
+    console.log(`   📧 Preparing email notification (${result.status})...`);
+    
     try {
-      if (result.status === 'confirmed') {
-        // Send confirmation email
-        await fetch(`${request.nextUrl.origin}/api/notifications/email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'booking_confirmation',
-            data: {
-              userEmail: session.user.email,
-              userName: userName || session.user.name || 'Resident',
-              amenityName,
-              date: new Date(selectedDate).toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              }),
-              timeSlot: selectedSlot,
-              bookingId: result.bookingId,
-              communityName: (session.user as any).communityName || 'Your Community',
-            },
-          }),
-        });
-        console.log('   📧 Confirmation email sent');
-      } else if (result.status === 'waitlist') {
-        // Send waitlist email (using new template)
-        await fetch(`${request.nextUrl.origin}/api/notifications/email`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: session.user.email,
-            type: 'bookingWaitlist',
-            data: {
-              userName: userName || session.user.name || 'Resident',
-              amenityName,
-              date: new Date(selectedDate).toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              }),
-              timeSlot: selectedSlot,
-              waitlistPosition: result.position,
-              communityName: (session.user as any).communityName || 'Your Community',
-            },
-          }),
-        });
-        console.log(`   📧 Waitlist email sent (Position #${result.position})`);
+      const emailResponse = await fetch(`${request.nextUrl.origin}/api/notifications/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: result.status === 'confirmed' ? 'booking_confirmation' : 'bookingWaitlist',
+          to: session.user.email, // Explicit recipient
+          data: {
+            userEmail: session.user.email, // Fallback recipient
+            userName: userName || session.user.name || 'Resident',
+            amenityName,
+            date: new Date(selectedDate).toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            }),
+            timeSlot: selectedSlot,
+            bookingId: result.bookingId,
+            waitlistPosition: result.position, // For waitlist emails
+            communityName: (session.user as any).communityName || 'Your Community',
+          },
+        }),
+      });
+
+      const emailResult = await emailResponse.json();
+      
+      if (emailResult.success) {
+        console.log(`   ✅ ${result.status === 'confirmed' ? 'Confirmation' : 'Waitlist'} email sent successfully`);
+        console.log(`   📨 Message ID: ${emailResult.messageId}`);
+      } else {
+        console.error(`   ⚠️ Email failed:`, emailResult.error);
+        // Don't throw - booking is still successful
       }
-    } catch (emailError) {
-      console.error('   ⚠️ Email failed (non-critical):', emailError);
+    } catch (emailError: any) {
+      console.error('   ⚠️ Email API call failed (non-critical):', emailError.message);
+      // Don't throw - booking succeeded, email is just a notification
     }
 
     // 7. Return success
