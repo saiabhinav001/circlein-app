@@ -1,24 +1,24 @@
 # Firebase Time Slots Migration Guide
 
-## 🚀 Quick Setup & Run
+## ⚠️ NOTE: Migration Script Removed
 
-### Step 1: Download Firebase Service Account Key
+The migration script has been removed from production to avoid deployment issues.
 
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Select your project: **circlein-f76c1**
-3. Click the ⚙️ gear icon (Project Settings) → **Service accounts**
-4. Click **"Generate new private key"**
-5. Save the downloaded JSON file as `serviceAccountKey.json` in the **root directory** of this project
+## 🎯 Alternative: Use Admin UI Instead
 
-### Step 2: Run the Migration
+You can set up time slots for all amenities using the **Admin UI**:
 
-```bash
-# Make sure you're in the project directory
-cd c:\Users\Abhi\Downloads\circlein-app
+1. **Login as Admin**
+2. **Go to** `/admin/time-slots`
+3. **Edit each amenity** individually with the visual interface
+4. **Preview and Save** - changes apply instantly!
 
-# Run the migration script
-node scripts/migrate-time-slots.js
-```
+This is **BETTER** than running a migration script because:
+- ✅ No service account needed
+- ✅ Visual preview before saving
+- ✅ Can customize per amenity
+- ✅ No deployment issues
+- ✅ Changes reflect in real-time
 
 ## 📊 What This Migration Does
 

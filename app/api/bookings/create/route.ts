@@ -142,7 +142,9 @@ export async function POST(request: NextRequest) {
         endTime: Timestamp.fromDate(bookingEnd),
         selectedDate,
         selectedSlot,
+        timeSlot: selectedSlot, // Store time slot for reminder email
         qrId: Math.random().toString(36).substring(2, 15),
+        reminderSent: false, // Track if 1-hour reminder was sent
         createdAt: serverTimestamp(),
       };
 
@@ -190,32 +192,41 @@ export async function POST(request: NextRequest) {
     // 6. Send email notification based on status
     console.log(`   📧 Preparing email notification (${result.status})...`);
     
+    // Import email service directly instead of API call
+    const { emailTemplates, sendEmail } = await import('@/lib/email-service');
+    
     try {
-      const emailResponse = await fetch(`${request.nextUrl.origin}/api/notifications/email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: result.status === 'confirmed' ? 'booking_confirmation' : 'bookingWaitlist',
-          to: session.user.email, // Explicit recipient
-          data: {
-            userEmail: session.user.email, // Fallback recipient
-            userName: userName || session.user.name || 'Resident',
-            amenityName,
-            date: new Date(selectedDate).toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            }),
-            timeSlot: selectedSlot,
-            bookingId: result.bookingId,
-            waitlistPosition: result.position, // For waitlist emails
-            communityName: (session.user as any).communityName || 'Your Community',
-          },
+      // Prepare email template based on status
+      const emailData = {
+        userName: userName || session.user.name || 'Resident',
+        amenityName,
+        date: new Date(selectedDate).toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
         }),
-      });
+        timeSlot: selectedSlot,
+        bookingId: result.bookingId,
+        communityName: (session.user as any).communityName || 'Your Community',
+      };
 
-      const emailResult = await emailResponse.json();
+      let template;
+      if (result.status === 'confirmed') {
+        template = emailTemplates.bookingConfirmation(emailData);
+      } else {
+        template = emailTemplates.bookingWaitlist({
+          ...emailData,
+          waitlistPosition: result.position || 0,
+        });
+      }
+
+      // Send email directly
+      const emailResult = await sendEmail({
+        to: session.user.email,
+        subject: template.subject,
+        html: template.html,
+      });
       
       if (emailResult.success) {
         console.log(`   ✅ ${result.status === 'confirmed' ? 'Confirmation' : 'Waitlist'} email sent successfully`);
@@ -225,7 +236,7 @@ export async function POST(request: NextRequest) {
         // Don't throw - booking is still successful
       }
     } catch (emailError: any) {
-      console.error('   ⚠️ Email API call failed (non-critical):', emailError.message);
+      console.error('   ⚠️ Email send failed (non-critical):', emailError.message);
       // Don't throw - booking succeeded, email is just a notification
     }
 
