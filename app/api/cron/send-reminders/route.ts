@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, updateDoc, doc as docRef } from 'firebase/firestore';
 import { emailTemplates, sendEmail } from '@/lib/email-service';
 
 /**
@@ -119,7 +119,8 @@ export async function GET(request: NextRequest) {
 
         if (result.success) {
           // Mark reminder as sent in Firestore
-          await doc.ref.update({
+          const bookingRef = docRef(db, 'bookings', booking.id);
+          await updateDoc(bookingRef, {
             reminderSent: true,
             reminderSentAt: Timestamp.now(),
           });
