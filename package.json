@@ -59,7 +59,6 @@
     "eslint": "^8.57.1",
     "eslint-config-next": "13.5.1",
     "firebase": "^12.3.0",
-    "firebase-admin": "^13.5.0",
     "framer-motion": "^12.23.22",
     "html5-qrcode": "^2.3.8",
     "input-otp": "^1.2.4",
