@@ -59,6 +59,7 @@ export const emailTemplates = {
     timeSlot: string;
     bookingId: string;
     communityName: string;
+    flatNumber?: string;
   }) => ({
     subject: `✅ Booking Confirmed - ${data.amenityName}`,
     html: `
@@ -205,23 +206,27 @@ export const emailTemplates = {
               
               <div class="details-card">
                 <div class="detail-row">
-                  <span class="detail-label">Amenity:</span>
+                  <span class="detail-label">🏠 Resident:</span>
+                  <span class="detail-value">${data.userName}${data.flatNumber ? ` - Flat ${data.flatNumber}` : ''}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">🏊 Amenity:</span>
                   <span class="detail-value">${data.amenityName}</span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Date:</span>
+                  <span class="detail-label">📅 Date:</span>
                   <span class="detail-value">${formatDate(data.date)}</span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Time Slot:</span>
+                  <span class="detail-label">⏰ Time Slot:</span>
                   <span class="detail-value">${data.timeSlot}</span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Community:</span>
+                  <span class="detail-label">🏘️ Community:</span>
                   <span class="detail-value">${data.communityName}</span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Booking ID:</span>
+                  <span class="detail-label">🎫 Booking ID:</span>
                   <span class="detail-value">#${data.bookingId.substring(0, 8).toUpperCase()}</span>
                 </div>
               </div>
@@ -260,6 +265,7 @@ export const emailTemplates = {
     date: string;
     timeSlot: string;
     bookingId: string;
+    flatNumber?: string;
   }) => ({
     subject: `⏰ Reminder: Your ${data.amenityName} booking is in 1 hour`,
     html: `
@@ -429,19 +435,23 @@ export const emailTemplates = {
 
               <div class="details-card">
                 <div class="detail-row">
-                  <span class="detail-label">Amenity:</span>
+                  <span class="detail-label">🏠 Resident:</span>
+                  <span class="detail-value">${data.userName}${data.flatNumber ? ` - Flat ${data.flatNumber}` : ''}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">🏊 Amenity:</span>
                   <span class="detail-value">${data.amenityName}</span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Date:</span>
+                  <span class="detail-label">📅 Date:</span>
                   <span class="detail-value">${formatDate(data.date)}</span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Time Slot:</span>
+                  <span class="detail-label">⏰ Time Slot:</span>
                   <span class="detail-value">${data.timeSlot}</span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Booking ID:</span>
+                  <span class="detail-label">🎫 Booking ID:</span>
                   <span class="detail-value">#${data.bookingId.substring(0, 8).toUpperCase()}</span>
                 </div>
               </div>
@@ -484,6 +494,7 @@ export const emailTemplates = {
     cancelledBy?: string;
     isAdminCancellation?: boolean;
     cancellationReason?: string;
+    flatNumber?: string;
   }) => ({
     subject: `❌ Booking Cancelled - ${data.amenityName}`,
     html: `
@@ -647,24 +658,28 @@ export const emailTemplates = {
               
               <div class="details-card">
                 <div class="detail-row">
-                  <span class="detail-label">Amenity:</span>
+                  <span class="detail-label">🏠 Resident:</span>
+                  <span class="detail-value">${data.userName}${data.flatNumber ? ` - Flat ${data.flatNumber}` : ''}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">🏊 Amenity:</span>
                   <span class="detail-value">${data.amenityName}</span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Date:</span>
+                  <span class="detail-label">📅 Date:</span>
                   <span class="detail-value">${formatDate(data.date)}</span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Time Slot:</span>
+                  <span class="detail-label">⏰ Time Slot:</span>
                   <span class="detail-value">${data.timeSlot}</span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Booking ID:</span>
+                  <span class="detail-label">🎫 Booking ID:</span>
                   <span class="detail-value">#${data.bookingId.substring(0, 8).toUpperCase()}</span>
                 </div>
                 ${data.isAdminCancellation ? `
                 <div class="detail-row">
-                  <span class="detail-label">Cancelled By:</span>
+                  <span class="detail-label">👤 Cancelled By:</span>
                   <span class="detail-value">${data.cancelledBy || 'Administrator'}</span>
                 </div>
                 ` : ''}
@@ -1112,6 +1127,7 @@ export const emailTemplates = {
     confirmationUrl: string;
     deadline: string;
     waitlistPosition: number;
+    flatNumber?: string;
   }) => ({
     subject: `🎉 You're Next! Confirm Your ${data.amenityName} Booking`,
     html: `
@@ -1231,15 +1247,19 @@ export const emailTemplates = {
 
               <div class="details-card">
                 <div class="detail-row">
-                  <span class="detail-label">📍 Amenity:</span>
+                  <span class="detail-label">🏠 Resident:</span>
+                  <span class="detail-value">${data.userName}${data.flatNumber ? ` - Flat ${data.flatNumber}` : ''}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">🏊 Amenity:</span>
                   <span class="detail-value">${data.amenityName}</span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">⏰ Start Time:</span>
+                  <span class="detail-label">🕐 Start Time:</span>
                   <span class="detail-value">${data.startTime}</span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">⏰ End Time:</span>
+                  <span class="detail-label">🕑 End Time:</span>
                   <span class="detail-value">${data.endTime}</span>
                 </div>
               </div>
