@@ -116,7 +116,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     console.log(`   🎯 Next person: ${nextBooking.userEmail} (Position #${nextBooking.waitlistPosition})`);
 
     // 4. SET CONFIRMATION DEADLINE (48 hours from now)
-    const now = Timestamp.now();
     const confirmationDeadline = Timestamp.fromMillis(
       now.toMillis() + (48 * 60 * 60 * 1000) // 48 hours
     );
