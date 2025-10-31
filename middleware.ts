@@ -1,10 +1,17 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 export default withAuth(
   function middleware(req) {
     const { pathname } = req.nextUrl;
     const token = req.nextauth.token;
+
+    // CRITICAL: Allow ALL /api/ routes through (including cron)
+    if (pathname.startsWith('/api/')) {
+      console.log('✅ API ROUTE - BYPASSING AUTH:', pathname);
+      return NextResponse.next();
+    }
 
     // Debug logging
     console.log('🔍 Middleware check:', {
@@ -15,9 +22,8 @@ export default withAuth(
       hasToken: !!token
     });
 
-    // Allow access to setup pages and API routes
-    if (pathname.startsWith('/setup/') || 
-        pathname.startsWith('/api/')) {
+    // Allow access to setup pages
+    if (pathname.startsWith('/setup/')) {
       return NextResponse.next();
     }
 
@@ -55,6 +61,11 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
+        
+        // CRITICAL: Allow ALL /api/ routes without authentication
+        if (pathname.startsWith('/api/')) {
+          return true;
+        }
         
         // Allow access to auth pages
         if (pathname.startsWith('/auth')) {
