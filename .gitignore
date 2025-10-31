@@ -44,3 +44,5 @@ next-env.d.ts
 # Firebase service account
 serviceAccountKey.json
 *-firebase-adminsdk-*.json
+
+.env*.local
