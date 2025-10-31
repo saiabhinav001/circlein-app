@@ -708,14 +708,16 @@ export default function CalendarPage() {
                       <SelectValue placeholder="View mode" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-2 shadow-2xl">
-                  <SelectItem value="month" className="text-sm sm:text-base">Month View</SelectItem>
-                  <SelectItem value="week" className="text-sm sm:text-base">Week View</SelectItem>
-                  <SelectItem value="day" className="text-sm sm:text-base">Day View</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+                      <SelectItem value="month" className="text-base hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">📅 Month View</SelectItem>
+                      <SelectItem value="week" className="text-base hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">📆 Week View</SelectItem>
+                      <SelectItem value="day" className="text-base hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">📋 Day View</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+              </div>
+            </CardContent>
+          </div>
+        </motion.div>
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
@@ -1091,7 +1093,8 @@ export default function CalendarPage() {
             )}
           </DialogContent>
         </Dialog>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
     </CalendarErrorBoundary>
   );
