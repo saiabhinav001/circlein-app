@@ -75,6 +75,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // Convert startTime to Firestore Timestamp
     const startTimestamp = Timestamp.fromDate(new Date(startTime));
 
+    // 2.5. CHECK IF TIME SLOT HAS ALREADY PASSED
+    const now = Timestamp.now();
+    if (startTimestamp.toMillis() < now.toMillis()) {
+      console.log('   ⚠️  Time slot has already passed - no promotion needed');
+      return NextResponse.json({
+        success: true,
+        message: 'Time slot has passed. No promotion needed.',
+        promoted: false,
+        reason: 'expired',
+      });
+    }
+
     // 3. FIND NEXT PERSON IN WAITLIST
     console.log('   🔍 Finding next waitlist person...');
 
