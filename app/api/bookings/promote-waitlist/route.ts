@@ -147,6 +147,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             deadline: confirmationDeadline.toDate().toLocaleString(),
             waitlistPosition: nextBooking.waitlistPosition,
             userName: nextBooking.userName || 'Resident',
+            flatNumber: nextBooking.flatNumber,
           },
         }),
       });

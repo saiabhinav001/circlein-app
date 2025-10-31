@@ -157,6 +157,7 @@ export async function POST(
       cancellationReason: isAdmin && bookingData.userEmail !== currentUserEmail
         ? 'This booking was cancelled by administration. If you have questions, please contact your community admin.'
         : undefined,
+      flatNumber: bookingData.flatNumber,
     });
 
     const emailResult = await sendEmail({

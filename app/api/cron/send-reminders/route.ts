@@ -88,6 +88,7 @@ async function handleReminderCheck(request: NextRequest) {
           }),
           timeSlot: timeSlot,
           bookingId: doc.id,
+          flatNumber: booking.flatNumber,
         });
 
         // Send email

@@ -209,6 +209,7 @@ export async function POST(request: NextRequest) {
         timeSlot: selectedSlot,
         bookingId: result.bookingId,
         communityName: (session.user as any).communityName || 'Your Community',
+        flatNumber: (session.user as any).flatNumber,
       };
 
       let template;
