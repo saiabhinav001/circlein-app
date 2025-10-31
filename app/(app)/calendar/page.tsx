@@ -284,8 +284,8 @@ export default function CalendarPage() {
         }
       }
 
-      // Update booking status to cancelled in database
-      console.log('🗑️ Updating booking in database:', {
+      // Use the new cancel API endpoint (handles email + waitlist promotion automatically)
+      console.log('🗑️ Cancelling booking via API:', {
         bookingId: booking.id,
         userId: booking.userId,
         amenity: booking.amenityName,
@@ -293,81 +293,32 @@ export default function CalendarPage() {
         currentUser: session?.user?.email
       });
 
-      await updateDoc(doc(db, 'bookings', booking.id), {
-        status: 'cancelled',
-        cancelledAt: new Date(),
-        cancelledBy: session?.user?.email,
-        adminCancellation: isAdmin && booking.userId !== session?.user?.email
+      const cancelResponse = await fetch(`/api/bookings/cancel/${booking.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      console.log('✅ Booking successfully updated to cancelled in database');
-
-      // Get user details for email notification
-      const userDoc = await getDoc(doc(db, 'users', booking.userId));
-      const userData = userDoc.data();
-
-      // Send cancellation email to the user
-      if (userData?.email) {
-        try {
-          await fetch('/api/notifications/email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'booking_cancellation',
-              data: {
-                userEmail: userData.email,
-                userName: userData.name || 'Resident',
-                amenityName: booking.amenityName,
-                date: formatDateConsistently(booking.startTime),
-                timeSlot: `${formatTimeConsistently(booking.startTime)} - ${formatTimeConsistently(booking.endTime)}`,
-                bookingId: booking.id,
-                cancelledBy: session?.user?.email,
-                isAdminCancellation: isAdmin && booking.userId !== session?.user?.email,
-                cancellationReason: isAdmin && booking.userId !== session?.user?.email ? 
-                  'Cancelled by administration' : undefined,
-              }
-            })
-          });
-          console.log('✅ Cancellation email sent to:', userData.email);
-        } catch (emailError) {
-          console.error('⚠️ Failed to send cancellation email:', emailError);
-          // Don't fail the cancellation if email fails
-        }
+      if (!cancelResponse.ok) {
+        const errorData = await cancelResponse.json();
+        throw new Error(errorData.error || 'Failed to cancel booking');
       }
 
-      // Send notification for admin cancellations
-      if (isAdmin && booking.userId !== session?.user?.email) {
-        // Send targeted notification to the specific user
-        await sendCommunityNotification({
-          title: `🚫 Booking Cancelled by Admin`,
-          message: `Your ${booking.amenityName} booking for ${formatDateConsistently(booking.startTime)} at ${formatTimeConsistently(booking.startTime)} has been cancelled by administration. If you have questions, please contact the admin team.`,
-          type: 'warning',
-          priority: 'high',
-          category: 'booking',
-          autoHide: false,
-          targetUser: booking.userId, // Target the specific user
-          metadata: {
-            bookingId: booking.id,
-            amenityName: booking.amenityName,
-            originalUser: booking.userId,
-            cancelledBy: session?.user?.email,
-            targetUser: booking.userId // Add target user for better filtering
-          }
-        });
+      const cancelData = await cancelResponse.json();
+      console.log('✅ Booking cancelled successfully:', cancelData);
 
-        console.log('📢 Admin cancellation notification sent for booking:', {
-          bookingId: booking.id,
-          originalUser: booking.userId,
-          amenity: booking.amenityName,
-          date: formatDateConsistently(booking.startTime)
+      // Show success message with waitlist info
+      if (cancelData.waitlistPromoted) {
+        toast({
+          title: "✅ Booking Cancelled & Waitlist Promoted",
+          description: `${booking.amenityName} booking cancelled. The next person (${cancelData.promotedUser}) has been notified and will have 48 hours to confirm.`,
+        });
+      } else {
+        toast({
+          title: "Booking Cancelled",
+          description: `${booking.amenityName} booking has been cancelled successfully.`,
+          variant: "destructive",
         });
       }
-
-      toast({
-        title: "Booking Cancelled",
-        description: `${booking.amenityName} booking has been cancelled successfully.`,
-        variant: "destructive",
-      });
 
       // Close dialog if open
       setShowBookingDialog(false);

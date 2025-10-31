@@ -1252,12 +1252,23 @@ export const emailTemplates = {
                 </p>
               </div>
 
-              <center>
-                <a href="${data.confirmationUrl}" class="button">✅ Confirm My Booking</a>
-              </center>
+              <div style="text-align: center; margin: 30px 0;">
+                <p style="font-size: 18px; font-weight: 600; color: #2d3748; margin-bottom: 20px;">
+                  Do you want to confirm this booking?
+                </p>
+                <div style="display: inline-block;">
+                  <a href="${data.confirmationUrl}?action=confirm" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 18px; margin: 0 10px; box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);">
+                    ✅ YES, Confirm
+                  </a>
+                  <a href="${data.confirmationUrl}?action=decline" style="display: inline-block; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 18px; margin: 0 10px; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);">
+                    ❌ NO, Decline
+                  </a>
+                </div>
+              </div>
 
               <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
-                Click the button above to secure your booking and receive your QR code!
+                Click YES to secure your booking and receive your QR code!<br/>
+                Click NO if you can't make it, so the next person can book the slot.
               </p>
             </div>
             <div class="footer">

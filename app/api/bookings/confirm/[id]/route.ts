@@ -35,8 +35,13 @@ export async function POST(
   { params }: RouteParams
 ): Promise<NextResponse> {
   try {
+    // Parse action from request body (confirm or decline)
+    const body = await req.json().catch(() => ({}));
+    const action = body.action || 'confirm'; // Default to confirm for backward compatibility
+
     console.log('\n🎯 === BOOKING CONFIRMATION REQUEST ===');
     console.log(`   📋 Booking ID: ${params.id}`);
+    console.log(`   🎬 Action: ${action}`);
 
     // 1. AUTHENTICATION CHECK
     const session = await getServerSession(authOptions);
@@ -155,7 +160,50 @@ export async function POST(
       );
     }
 
-    // 6. CONFIRM BOOKING
+    // 6. HANDLE ACTION: CONFIRM OR DECLINE
+    if (action === 'decline') {
+      console.log('   ❌ User declined booking');
+      
+      // Update booking status to declined
+      await bookingRef.update({
+        status: 'declined',
+        declinedAt: now,
+        updatedAt: now,
+      });
+
+      console.log('   ✅ Booking marked as declined');
+
+      // 7. PROMOTE NEXT WAITLIST PERSON
+      console.log('   🚀 Triggering next waitlist promotion...');
+      
+      try {
+        const promotionResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/bookings/promote-waitlist`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amenityId: bookingData.amenityId,
+            startTime: bookingData.startTime.toDate().toISOString(),
+            reason: 'manual',
+          }),
+        });
+
+        if (promotionResponse.ok) {
+          const promotionData = await promotionResponse.json();
+          console.log('   ✅ Next person promoted:', promotionData);
+        }
+      } catch (promoError) {
+        console.error('   ⚠️  Promotion error:', promoError);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Booking declined. The spot has been offered to the next person in line.',
+        action: 'declined',
+        bookingId: params.id,
+      });
+    }
+
+    // 6. CONFIRM BOOKING (Default action)
     console.log('   ✅ Confirming booking...');
 
     await bookingRef.update({
