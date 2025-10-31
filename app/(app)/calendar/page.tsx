@@ -505,123 +505,209 @@ export default function CalendarPage() {
 
   return (
     <CalendarErrorBoundary>
-      <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="space-y-4 sm:space-y-5 md:space-y-6"
-        >
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3">
-              <CalendarIcon className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-blue-600" />
-              Calendar
-              {isAdmin && (
-                <Badge className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800 text-xs sm:text-sm">
-                  Admin
-                </Badge>
-              )}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
-              {isAdmin 
-                ? "Manage all community bookings and view events" 
-                : "Manage your bookings and view community events"
-              }
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Button 
-              variant="outline" 
-              onClick={handleRefresh} 
-              disabled={refreshing}
-              className="flex items-center gap-2 text-xs sm:text-sm"
-              size="sm"
-            >
-              <RefreshCw className={`h-3 h-3 sm:h-4 sm:w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              {refreshing ? 'Refreshing...' : 'Refresh'}
-            </Button>
-            <Link href="/dashboard">
-              <Button className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
-                <Plus className="h-3 h-3 sm:h-4 sm:w-4" />
-                <span className="hidden xs:inline">New Booking</span>
-                <span className="xs:hidden">New</span>
-              </Button>
-            </Link>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-blue-950/10 dark:to-indigo-950/10">
+        <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="space-y-6 sm:space-y-7 md:space-y-8"
+          >
+          {/* Header - Enhanced with glassmorphism */}
+          <motion.div 
+            className="relative overflow-hidden rounded-3xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-2xl shadow-blue-500/10 p-6 sm:p-8"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 dark:from-blue-500/10 dark:via-purple-500/10 dark:to-pink-500/10 animate-gradient-x"></div>
+            
+            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
+              <div className="space-y-2">
+                <motion.h1 
+                  className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent flex items-center gap-3"
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <motion.div
+                    className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg shadow-blue-500/30"
+                    whileHover={{ scale: 1.05, rotate: 5 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <CalendarIcon className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
+                  </motion.div>
+                  Calendar
+                  {isAdmin && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 200, delay: 0.4 }}
+                    >
+                      <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 shadow-lg shadow-blue-500/30 text-sm px-3 py-1">
+                        Admin
+                      </Badge>
+                    </motion.div>
+                  )}
+                </motion.h1>
+                <motion.p 
+                  className="text-gray-600 dark:text-gray-300 text-base sm:text-lg font-medium"
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  {isAdmin 
+                    ? "🎯 Manage all community bookings and events" 
+                    : "📅 Your personal booking dashboard"
+                  }
+                </motion.p>
+              </div>
+              
+              <motion.div 
+                className="flex items-center gap-3"
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleRefresh} 
+                    disabled={refreshing}
+                    className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border-2 border-blue-200 dark:border-blue-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all duration-300 shadow-lg shadow-blue-500/10"
+                    size="default"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                    {refreshing ? 'Refreshing...' : 'Refresh'}
+                  </Button>
+                </motion.div>
+                <Link href="/dashboard">
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-xl shadow-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/40 transition-all duration-300">
+                      <Plus className="h-4 w-4" />
+                      <span className="font-semibold">New Booking</span>
+                    </Button>
+                  </motion.div>
+                </Link>
+              </motion.div>
+            </div>
+          </motion.div>
 
-        {/* Admin Info Panel */}
+        {/* Admin Info Panel - Enhanced with animation */}
         {isAdmin && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.4, type: "spring", stiffness: 100 }}
           >
-            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
-              <CardContent className="pt-4 sm:pt-5 md:pt-6 px-4 sm:px-6">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900 rounded-full">
-                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-100 text-sm sm:text-base">Admin Privileges Active</h3>
-                    <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-300">
-                      You can view, edit, and cancel all community bookings. Residents will be notified of admin actions.
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 dark:from-blue-500/20 dark:via-purple-500/20 dark:to-pink-500/20 backdrop-blur-xl border-2 border-blue-300/50 dark:border-blue-600/50 shadow-xl shadow-blue-500/20">
+              {/* Animated background pattern */}
+              <div className="absolute inset-0 opacity-30">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 via-transparent to-purple-400/20 animate-pulse"></div>
+              </div>
+              
+              <CardContent className="relative z-10 pt-6 px-6 pb-6">
+                <div className="flex items-start gap-4">
+                  <motion.div 
+                    className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg shadow-blue-500/30"
+                    animate={{ 
+                      boxShadow: [
+                        "0 10px 30px rgba(59, 130, 246, 0.3)",
+                        "0 10px 40px rgba(168, 85, 247, 0.4)",
+                        "0 10px 30px rgba(59, 130, 246, 0.3)"
+                      ]
+                    }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  >
+                    <Users className="w-6 h-6 text-white" />
+                  </motion.div>
+                  <div className="flex-1 space-y-1">
+                    <h3 className="font-bold text-blue-900 dark:text-blue-100 text-lg flex items-center gap-2">
+                      Admin Privileges Active
+                      <motion.span
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="inline-block w-2 h-2 bg-green-500 rounded-full shadow-lg shadow-green-500/50"
+                      />
+                    </h3>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
+                      Full access to view, edit, and manage all community bookings. Residents receive automatic notifications for any admin actions.
                     </p>
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </div>
           </motion.div>
         )}
 
-        {/* Filters */}
-        <Card>
-          <CardContent className="pt-4 sm:pt-5 md:pt-6 px-4 sm:px-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
-                <Input
-                  placeholder="Search bookings..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 sm:pl-10 text-sm sm:text-base h-9 sm:h-10"
-                />
-              </div>
-              
-              <Select value={selectedAmenity} onValueChange={setSelectedAmenity}>
-                <SelectTrigger className="text-sm sm:text-base h-9 sm:h-10">
-                  <SelectValue placeholder="Filter by amenity" />
-                </SelectTrigger>
-                <SelectContent>
-                  {amenityTypes.map((amenity) => (
-                    <SelectItem key={amenity} value={amenity} className="text-sm sm:text-base">
-                      {amenity}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="text-sm sm:text-base h-9 sm:h-10">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="text-sm sm:text-base">All Status</SelectItem>
-                  <SelectItem value="confirmed" className="text-sm sm:text-base">Confirmed</SelectItem>
-                  <SelectItem value="pending" className="text-sm sm:text-base">Pending</SelectItem>
-                  <SelectItem value="cancelled" className="text-sm sm:text-base">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
-                <SelectTrigger className="text-sm sm:text-base h-9 sm:h-10">
-                  <SelectValue placeholder="View mode" />
-                </SelectTrigger>
-                <SelectContent>
+        {/* Filters - Enhanced with glassmorphism and animations */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+        >
+          <div className="rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-xl shadow-blue-500/5 overflow-hidden">
+            <CardContent className="pt-6 px-6 pb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <motion.div 
+                  className="relative group"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-300" />
+                  <Input
+                    placeholder="Search bookings..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-12 h-12 bg-gradient-to-r from-slate-50 to-blue-50/50 dark:from-slate-800 dark:to-blue-900/20 border-2 border-gray-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 rounded-xl text-base font-medium shadow-sm hover:shadow-md transition-all duration-300"
+                  />
+                </motion.div>
+                
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Select value={selectedAmenity} onValueChange={setSelectedAmenity}>
+                    <SelectTrigger className="h-12 bg-gradient-to-r from-slate-50 to-purple-50/50 dark:from-slate-800 dark:to-purple-900/20 border-2 border-gray-200 dark:border-slate-700 focus:border-purple-500 dark:focus:border-purple-500 rounded-xl text-base font-medium shadow-sm hover:shadow-md transition-all duration-300">
+                      <SelectValue placeholder="Filter by amenity" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-2 shadow-2xl">
+                      {amenityTypes.map((amenity) => (
+                        <SelectItem key={amenity} value={amenity} className="text-base hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">
+                          {amenity}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+                
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                    <SelectTrigger className="h-12 bg-gradient-to-r from-slate-50 to-pink-50/50 dark:from-slate-800 dark:to-pink-900/20 border-2 border-gray-200 dark:border-slate-700 focus:border-pink-500 dark:focus:border-pink-500 rounded-xl text-base font-medium shadow-sm hover:shadow-md transition-all duration-300">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-2 shadow-2xl">
+                      <SelectItem value="all" className="text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">All Status</SelectItem>
+                      <SelectItem value="confirmed" className="text-base hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">✓ Confirmed</SelectItem>
+                      <SelectItem value="pending" className="text-base hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors">⏳ Pending</SelectItem>
+                      <SelectItem value="cancelled" className="text-base hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">✗ Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+                
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
+                    <SelectTrigger className="h-12 bg-gradient-to-r from-slate-50 to-indigo-50/50 dark:from-slate-800 dark:to-indigo-900/20 border-2 border-gray-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-500 rounded-xl text-base font-medium shadow-sm hover:shadow-md transition-all duration-300">
+                      <SelectValue placeholder="View mode" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-2 shadow-2xl">
                   <SelectItem value="month" className="text-sm sm:text-base">Month View</SelectItem>
                   <SelectItem value="week" className="text-sm sm:text-base">Week View</SelectItem>
                   <SelectItem value="day" className="text-sm sm:text-base">Day View</SelectItem>
