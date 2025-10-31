@@ -17,6 +17,8 @@ import { adminDb } from '@/lib/firebase-admin';
  * Security: Admin-only access
  */
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     console.log('\n📊 === ADMIN WAITLIST DATA REQUEST ===');
