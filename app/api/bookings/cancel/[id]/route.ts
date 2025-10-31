@@ -153,10 +153,10 @@ export async function POST(
       })}`,
       bookingId: bookingId,
       cancelledBy: isAdmin && bookingData.userEmail !== currentUserEmail ? 'Administration' : 'You',
+      isAdminCancellation: isAdmin && bookingData.userEmail !== currentUserEmail,
       cancellationReason: isAdmin && bookingData.userEmail !== currentUserEmail
         ? 'This booking was cancelled by administration. If you have questions, please contact your community admin.'
         : undefined,
-      communityName: (session.user as any).communityName || 'Your Community',
     });
 
     const emailResult = await sendEmail({
@@ -198,7 +198,7 @@ export async function POST(
             message: 'Booking cancelled successfully',
             bookingId,
             waitlistPromoted: promotionData.promoted,
-            promotedUser: promotionData.promotedUser,
+            promotedUser: promotionData.booking?.userEmail || 'Next person',
           });
         } else {
           console.error('   ⚠️ Waitlist promotion failed');
