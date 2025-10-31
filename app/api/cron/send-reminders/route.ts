@@ -20,7 +20,7 @@ import { emailTemplates, sendEmail } from '@/lib/email-service';
  * Security: Protected by CRON_SECRET token
  */
 
-export async function GET(request: NextRequest) {
+async function handleReminderCheck(request: NextRequest) {
   try {
     console.log('\n🔔 === BOOKING REMINDER CHECK ===');
     console.log(`   ⏰ Time: ${new Date().toISOString()}`);
@@ -176,7 +176,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Export as GET handler
+export async function GET(request: NextRequest) {
+  return handleReminderCheck(request);
+}
+
 // Also support POST for testing
 export async function POST(request: NextRequest) {
-  return GET(request);
+  return handleReminderCheck(request);
 }

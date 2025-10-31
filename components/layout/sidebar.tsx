@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, ChevronRight, Sparkles, Bell, LogOut, MessageCircle, Clock, ListOrdered } from 'lucide-react';
+import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, ChevronRight, Sparkles, Bell, LogOut, MessageCircle } from 'lucide-react';
 import { useTheme } from '../providers/theme-provider';
 import { Button } from '@/components/ui/button';
 import { signOut } from 'next-auth/react';
@@ -92,8 +92,6 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
   const adminNavigation = [
     { name: 'Admin Panel', href: '/admin', icon: Shield, color: 'from-orange-500 to-red-500' },
     { name: 'Manage Users', href: '/admin/users', icon: Users, color: 'from-indigo-500 to-purple-500' },
-    { name: 'Time Slots', href: '/admin/time-slots', icon: Clock, color: 'from-blue-500 to-cyan-500' },
-    { name: 'Waitlist', href: '/admin/waitlist', icon: ListOrdered, color: 'from-yellow-500 to-amber-500' },
     { name: 'Settings', href: '/admin/settings', icon: Settings, color: 'from-gray-500 to-slate-600' },
   ];
 
