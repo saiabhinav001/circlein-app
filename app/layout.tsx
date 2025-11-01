@@ -6,6 +6,7 @@ import { AuthProvider } from '@/components/providers/auth-provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { NotificationProvider } from '@/components/notifications/NotificationSystem';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 // Import debug functions to make them available in browser console
 import '@/lib/debug-notifications';
@@ -13,16 +14,18 @@ import '@/lib/debug-notifications';
 // Dynamic imports for better performance
 const ToastContainer = dynamic(
   () => import('@/components/notifications/ToastNotifications').then(mod => ({ default: mod.ToastContainer })),
-  { ssr: false }
+  { ssr: false, loading: () => null }
 );
-const Toaster = dynamic(() => import('@/components/ui/sonner').then(mod => ({ default: mod.Toaster })), { ssr: false });
-const LoadingScreen = dynamic(() => import('@/components/LoadingScreen'), { ssr: false });
+const Toaster = dynamic(() => import('@/components/ui/sonner').then(mod => ({ default: mod.Toaster })), { ssr: false, loading: () => null });
 
-// Optimize font loading
+// Optimize font loading with minimal subsetting
 const inter = Inter({ 
   subsets: ['latin'],
   display: 'swap',
   preload: true,
+  adjustFontFallback: true,
+  fallback: ['system-ui', 'arial'],
+  variable: '--font-inter',
 });
 
 export const metadata: Metadata = {
@@ -67,7 +70,6 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <LoadingScreen />
         <AuthProvider>
           <ThemeProvider defaultTheme="dark" storageKey="circlein-theme">
             <NotificationProvider>
@@ -78,6 +80,7 @@ export default function RootLayout({
           </ThemeProvider>
         </AuthProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

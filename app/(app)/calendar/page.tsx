@@ -75,6 +75,8 @@ interface Booking {
   qrId: string;
   userId: string;
   communityId: string;
+  checkInTime?: Date;
+  checkOutTime?: Date;
 }
 
 // Real bookings would come from your database/API
@@ -257,6 +259,27 @@ export default function CalendarPage() {
 
   const handleCancelBooking = async (booking: Booking) => {
     try {
+      // CRITICAL: Prevent cancellation if already checked in
+      if (booking.checkInTime || booking.checkOutTime) {
+        toast({
+          title: "Cannot Cancel",
+          description: "This booking cannot be cancelled as check-in has already been completed. Please contact support if you need assistance.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if booking time has already passed
+      const now = new Date();
+      if (new Date(booking.endTime) < now) {
+        toast({
+          title: "Cannot Cancel",
+          description: "This booking has already ended and cannot be cancelled.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Check if user can cancel this booking
       const canCancel = isAdmin || booking.userId === session?.user?.email;
       
@@ -414,6 +437,12 @@ export default function CalendarPage() {
                   ✓ Your Booking
                 </Badge>
               )}
+              {/* Checked-in status - CRITICAL INDICATOR */}
+              {(booking.checkInTime || booking.checkOutTime) && (
+                <Badge className="text-xs bg-emerald-600 text-white border-0 animate-pulse">
+                  ✓ Checked In
+                </Badge>
+              )}
             </div>
             
             {/* Booking details - Simplified and optimized */}
@@ -489,8 +518,11 @@ export default function CalendarPage() {
                 </DropdownMenuItem>
               )}
               
-              {/* Cancel: Own bookings or admin can cancel any booking */}
-              {(isAdmin || booking.userId === session?.user?.email) && booking.status !== 'cancelled' && (
+              {/* Cancel: Own bookings or admin can cancel any booking - ONLY if NOT checked in */}
+              {!booking.checkInTime && 
+               !booking.checkOutTime && 
+               (isAdmin || booking.userId === session?.user?.email) && 
+               booking.status !== 'cancelled' && (
                 <DropdownMenuItem 
                   onClick={() => handleBookingAction('cancel', booking)}
                   className="text-sm font-medium rounded-lg cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/50 focus:bg-red-50 dark:focus:bg-red-950/50 text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 py-3"
@@ -772,11 +804,12 @@ export default function CalendarPage() {
           >
             <div className="rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-xl shadow-purple-500/5 overflow-hidden">
               <CardHeader className="pb-4 px-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 border-b border-purple-200/30 dark:border-purple-800/30">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
-                    📅 {currentMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle className="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent flex items-center gap-2">
+                    <span className="text-xl sm:text-2xl">📅</span>
+                    <span className="whitespace-nowrap">{currentMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</span>
                   </CardTitle>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                       <Button
                         variant="outline"
@@ -964,11 +997,11 @@ export default function CalendarPage() {
                         })}
                       </span>
                     </CardTitle>
-                    <CardDescription className="text-sm font-medium text-slate-600 dark:text-slate-400 ml-14">
+                    <CardDescription className="text-sm font-medium text-slate-600 dark:text-slate-400 ml-14 mt-1">
                       {selectedDateBookings.length} booking{selectedDateBookings.length !== 1 ? 's' : ''} scheduled
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
+                  <CardContent className="space-y-4 px-6 py-6">
                     <AnimatePresence>
                       {loading ? (
                         <motion.div
@@ -1260,8 +1293,11 @@ export default function CalendarPage() {
                           </Button>
                         )}
                         
-                        {/* Cancel: Own bookings or admin can cancel any booking */}
-                        {(isAdmin || selectedBooking.userId === session?.user?.email) && selectedBooking.status !== 'cancelled' && (
+                        {/* Cancel: Own bookings or admin can cancel any booking - ONLY if NOT checked in */}
+                        {!selectedBooking.checkInTime && 
+                         !selectedBooking.checkOutTime && 
+                         (isAdmin || selectedBooking.userId === session?.user?.email) && 
+                         selectedBooking.status !== 'cancelled' && (
                           <Button 
                             variant="outline" 
                             size="sm" 
