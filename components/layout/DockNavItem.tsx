@@ -35,11 +35,11 @@ export function DockNavItem({
     return val - bounds.y - bounds.height / 2;
   });
 
-  // Perfect dock sizing - all 10 icons always visible even when magnified
+  // Compact sizing - all 10 icons visible without scroll
   const heightSync = useTransform(
     distance, 
     [-150, -75, 0, 75, 150], 
-    [52, 60, 68, 60, 52]
+    [50, 58, 64, 58, 50]
   );
   const height = useSpring(heightSync, { 
     mass: 0.12, 
@@ -51,7 +51,7 @@ export function DockNavItem({
   const widthSync = useTransform(
     distance, 
     [-150, -75, 0, 75, 150], 
-    [52, 60, 68, 60, 52]
+    [50, 58, 64, 58, 50]
   );
   const width = useSpring(widthSync, { 
     mass: 0.12, 
@@ -63,7 +63,7 @@ export function DockNavItem({
   const iconSizeSync = useTransform(
     distance, 
     [-150, -75, 0, 75, 150], 
-    [22, 26, 30, 26, 22]
+    [22, 25, 28, 25, 22]
   );
   const iconSize = useSpring(iconSizeSync, { 
     mass: 0.12, 
@@ -213,7 +213,7 @@ export function DockNavItem({
                     className={cn(
                       'w-full h-full transition-all duration-300',
                       isActive 
-                        ? 'text-white dark:text-white drop-shadow-[0_2px_8px_rgba(255,255,255,0.3)]' 
+                        ? 'text-slate-900 dark:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)] dark:drop-shadow-[0_2px_8px_rgba(255,255,255,0.3)]' 
                         : 'text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:drop-shadow-[0_2px_4px_rgba(59,130,246,0.3)]'
                     )} 
                     strokeWidth={isActive ? 2.5 : 2}
@@ -228,7 +228,7 @@ export function DockNavItem({
                     {/* Primary indicator dot */}
                     <motion.div
                       layoutId="activeDockIndicator"
-                      className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white dark:bg-white shadow-lg"
+                      className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-slate-900 dark:bg-white shadow-lg"
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0, opacity: 0 }}
@@ -236,7 +236,7 @@ export function DockNavItem({
                     />
                     {/* Breathing pulse ring */}
                     <motion.div
-                      className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white dark:bg-white"
+                      className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-slate-900 dark:bg-white"
                       animate={{ 
                         scale: [1, 2.5, 1],
                         opacity: [0.8, 0, 0.8]
