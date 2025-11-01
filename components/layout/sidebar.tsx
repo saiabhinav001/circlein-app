@@ -241,7 +241,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
 
         {/* Navigation */}
         <nav 
-          className="flex-1 p-3 sm:p-4 space-y-1.5 sm:space-y-2 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-slate-700"
+          className="flex-1 p-3 sm:p-4 space-y-1.5 sm:space-y-2 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-slate-700"
           onMouseMove={(e) => isCollapsed && mouseY.set(e.pageY)}
           onMouseLeave={() => isCollapsed && mouseY.set(Infinity)}
         >
