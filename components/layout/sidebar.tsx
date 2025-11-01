@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
 import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, ChevronRight, Sparkles, Bell, LogOut, MessageCircle } from 'lucide-react';
 import { useTheme } from '../providers/theme-provider';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import { signOut } from 'next-auth/react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { CircleInLogo } from '@/components/ui';
+import { DockNavItem } from './DockNavItem';
+import { DockActionButton } from './DockActionButton';
 
 const sidebarVariants = {
   open: { 
@@ -70,6 +72,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const mouseY = useMotionValue(Infinity);
 
   // Notify parent when collapse state changes
   const handleCollapseToggle = () => {
@@ -237,7 +240,11 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-3 sm:p-4 space-y-1.5 sm:space-y-2 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-slate-700">
+        <nav 
+          className="flex-1 p-3 sm:p-4 space-y-1.5 sm:space-y-2 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-slate-700"
+          onMouseMove={(e) => isCollapsed && mouseY.set(e.pageY)}
+          onMouseLeave={() => isCollapsed && mouseY.set(Infinity)}
+        >
           <AnimatePresence>
             {!isCollapsed && (
               <motion.div
@@ -263,36 +270,15 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               {isCollapsed ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link
-                      href={item.href}
-                      onClick={() => onClose?.()}
-                      className={cn(
-                        'group relative flex items-center justify-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
-                        pathname === item.href
-                          ? 'bg-gradient-to-r text-white shadow-lg'
-                          : 'text-black dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30'
-                      )}
-                      style={{
-                        background: pathname === item.href ? `linear-gradient(135deg, ${item.color.split(' ')[1]} 0%, ${item.color.split(' ')[3]} 100%)` : undefined
-                      }}
-                    >
-                      <motion.div
-                        variants={iconVariants}
-                        className="relative z-10"
-                      >
-                        <item.icon className={cn(
-                          "w-5 h-5 transition-colors duration-300",
-                          pathname === item.href ? "text-white" : "text-black dark:text-slate-400 group-hover:text-black dark:group-hover:text-slate-200"
-                        )} />
-                      </motion.div>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p className="font-medium">{item.name}</p>
-                  </TooltipContent>
-                </Tooltip>
+                <DockNavItem
+                  icon={item.icon}
+                  label={item.name}
+                  href={item.href}
+                  isActive={pathname === item.href}
+                  color={item.color}
+                  mouseY={mouseY}
+                  onClick={() => onClose?.()}
+                />
               ) : (
                 <Link
                   href={item.href}
@@ -403,36 +389,15 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   style={{ animationDelay: `${(navigation.length + index) * 0.1}s` }}
                 >
                   {isCollapsed ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={item.href}
-                          onClick={() => onClose?.()}
-                          className={cn(
-                            'group relative flex items-center justify-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
-                            pathname === item.href
-                              ? 'bg-gradient-to-r text-white shadow-lg'
-                              : 'text-black dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30'
-                          )}
-                          style={{
-                            background: pathname === item.href ? `linear-gradient(135deg, ${item.color.split(' ')[1]} 0%, ${item.color.split(' ')[3]} 100%)` : undefined
-                          }}
-                        >
-                          <motion.div
-                            variants={iconVariants}
-                            className="relative z-10"
-                          >
-                            <item.icon className={cn(
-                              "w-5 h-5 transition-colors duration-300",
-                              pathname === item.href ? "text-gray-900 dark:text-white" : "text-gray-600 dark:text-slate-400 group-hover:text-gray-800 dark:group-hover:text-slate-200"
-                            )} />
-                          </motion.div>
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p className="font-medium">{item.name}</p>
-                      </TooltipContent>
-                    </Tooltip>
+                    <DockNavItem
+                      icon={item.icon}
+                      label={item.name}
+                      href={item.href}
+                      isActive={pathname === item.href}
+                      color={item.color}
+                      mouseY={mouseY}
+                      onClick={() => onClose?.()}
+                    />
                   ) : (
                     <Link
                       href={item.href}
@@ -515,7 +480,11 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
         </nav>
 
         {/* Footer */}
-        <div className="p-3 sm:p-4 border-t border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-b from-transparent to-slate-50/50 dark:to-slate-900/50 space-y-1.5 sm:space-y-2 shrink-0">
+        <div 
+          className="p-3 sm:p-4 border-t border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-b from-transparent to-slate-50/50 dark:to-slate-900/50 space-y-1.5 sm:space-y-2 shrink-0"
+          onMouseMove={(e) => isCollapsed && mouseY.set(e.pageY)}
+          onMouseLeave={() => isCollapsed && mouseY.set(Infinity)}
+        >
           {/* Theme Toggle */}
           <motion.div
             variants={linkVariants}
@@ -523,12 +492,21 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
             whileHover="hover"
             whileTap="tap"
           >
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-full justify-start px-3 py-3 rounded-xl hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30 transition-all duration-300 group"
-            >
+            {isCollapsed ? (
+              <DockActionButton
+                icon={theme === 'dark' ? Sun : Moon}
+                label={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                mouseY={mouseY}
+                variant="warning"
+              />
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="w-full justify-start px-3 py-3 rounded-xl hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30 transition-all duration-300 group"
+              >
               <motion.div
                 animate={{ 
                   rotate: theme === 'dark' ? 0 : 180,
@@ -545,19 +523,18 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
               </motion.div>
               
               <AnimatePresence mode="wait">
-                {!isCollapsed && (
-                  <motion.span
-                    variants={textVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="hidden"
-                    className="ml-3 text-black dark:text-slate-300 group-hover:text-black dark:group-hover:text-slate-100 transition-colors font-medium"
-                  >
-                    {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                  </motion.span>
-                )}
+                <motion.span
+                  variants={textVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                  className="ml-3 text-black dark:text-slate-300 group-hover:text-black dark:group-hover:text-slate-100 transition-colors font-medium"
+                >
+                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </motion.span>
               </AnimatePresence>
             </Button>
+            )}
           </motion.div>
 
           {/* Logout Button */}
@@ -568,21 +545,13 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
             whileTap="tap"
           >
             {isCollapsed ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-                    className="w-full justify-center px-3 py-3 rounded-xl hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 transition-all duration-300 group"
-                  >
-                    <LogOut className="w-5 h-5 text-red-500 group-hover:text-red-600 transition-colors" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p className="font-medium">Logout</p>
-                </TooltipContent>
-              </Tooltip>
+              <DockActionButton
+                icon={LogOut}
+                label="Sign Out"
+                onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                mouseY={mouseY}
+                variant="danger"
+              />
             ) : (
               <Button
                 variant="ghost"

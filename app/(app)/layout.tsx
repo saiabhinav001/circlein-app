@@ -3,7 +3,6 @@
 import { useState, createContext, useContext } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
-import { NavigationDock } from '@/components/layout/NavigationDock';
 import { SearchProvider } from '@/components/providers/search-provider';
 import { EnhancedNotificationListener } from '@/components/notifications/EnhancedNotificationListener';
 import { FirebaseAuthSync } from '@/components/firebase-auth-sync';
@@ -80,9 +79,6 @@ export default function AppLayout({
                 {children}
               </main>
             </div>
-            
-            {/* Navigation Dock - Only show when sidebar is collapsed on desktop */}
-            {sidebarCollapsed && <NavigationDock />}
             
             <EnhancedNotificationListener />
           </div>
