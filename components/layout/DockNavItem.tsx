@@ -196,28 +196,30 @@ export function DockNavItem({
               />
 
               {/* Icon container with enhanced animations */}
-              <motion.div 
-                className="relative z-10 flex items-center justify-center w-full h-full"
-                style={{ width: iconSize, height: iconSize }}
-                animate={{ 
-                  scale: isHovered ? 1.08 : 1,
-                  rotate: isHovered ? [0, -4, 4, 0] : 0,
-                }}
-                transition={{ 
-                  scale: { type: "spring", stiffness: 400, damping: 25 },
-                  rotate: { duration: 0.6, ease: "easeInOut" }
-                }}
-              >
-                <Icon 
-                  className={cn(
-                    'w-full h-full transition-all duration-300',
-                    isActive 
-                      ? 'text-white dark:text-white drop-shadow-[0_2px_8px_rgba(255,255,255,0.3)]' 
-                      : 'text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:drop-shadow-[0_2px_4px_rgba(59,130,246,0.3)]'
-                  )} 
-                  strokeWidth={isActive ? 2.5 : 2}
-                />
-              </motion.div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div 
+                  className="relative z-10"
+                  style={{ width: iconSize, height: iconSize }}
+                  animate={{ 
+                    scale: isHovered ? 1.08 : 1,
+                    rotate: isHovered ? [0, -4, 4, 0] : 0,
+                  }}
+                  transition={{ 
+                    scale: { type: "spring", stiffness: 400, damping: 25 },
+                    rotate: { duration: 0.6, ease: "easeInOut" }
+                  }}
+                >
+                  <Icon 
+                    className={cn(
+                      'w-full h-full transition-all duration-300',
+                      isActive 
+                        ? 'text-white dark:text-white drop-shadow-[0_2px_8px_rgba(255,255,255,0.3)]' 
+                        : 'text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:drop-shadow-[0_2px_4px_rgba(59,130,246,0.3)]'
+                    )} 
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                </motion.div>
+              </div>
 
               {/* Sophisticated active indicator */}
               <AnimatePresence>

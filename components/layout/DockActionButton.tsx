@@ -200,26 +200,28 @@ export function DockActionButton({
               />
 
               {/* Icon container with enhanced animations */}
-              <motion.div 
-                className="relative z-10 flex items-center justify-center w-full h-full"
-                style={{ width: iconSize, height: iconSize }}
-                animate={{ 
-                  scale: isHovered ? 1.08 : 1,
-                  rotate: isHovered && variant === 'warning' ? [0, -10, 10, 0] : isHovered && variant === 'danger' ? [0, 5, -5, 0] : isHovered ? [0, -4, 4, 0] : 0
-                }}
-                transition={{ 
-                  scale: { type: "spring", stiffness: 400, damping: 25 },
-                  rotate: { duration: 0.6, ease: "easeInOut" }
-                }}
-              >
-                <Icon 
-                  className={cn(
-                    'w-full h-full transition-all duration-300',
-                    styles.text
-                  )} 
-                  strokeWidth={2}
-                />
-              </motion.div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div 
+                  className="relative z-10"
+                  style={{ width: iconSize, height: iconSize }}
+                  animate={{ 
+                    scale: isHovered ? 1.08 : 1,
+                    rotate: isHovered && variant === 'warning' ? [0, -10, 10, 0] : isHovered && variant === 'danger' ? [0, 5, -5, 0] : isHovered ? [0, -4, 4, 0] : 0
+                  }}
+                  transition={{ 
+                    scale: { type: "spring", stiffness: 400, damping: 25 },
+                    rotate: { duration: 0.6, ease: "easeInOut" }
+                  }}
+                >
+                  <Icon 
+                    className={cn(
+                      'w-full h-full transition-all duration-300',
+                      styles.text
+                    )} 
+                    strokeWidth={2}
+                  />
+                </motion.div>
+              </div>
 
               {/* Ambient glow on hover */}
               {isHovered && (

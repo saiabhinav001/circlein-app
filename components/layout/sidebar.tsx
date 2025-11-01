@@ -244,7 +244,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
           className={cn(
             "flex-1 overflow-x-hidden",
             isCollapsed 
-              ? "flex flex-col items-center justify-center py-1 px-2 gap-1 overflow-y-auto [&::-webkit-scrollbar]:hidden" 
+              ? "flex flex-col items-center justify-start py-2 px-2 gap-1 overflow-y-hidden" 
               : "p-3 sm:p-4 space-y-1.5 sm:space-y-2 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-slate-700"
           )}
           onMouseMove={(e) => isCollapsed && mouseY.set(e.pageY)}
