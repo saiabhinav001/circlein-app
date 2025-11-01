@@ -29,40 +29,40 @@ export function DockActionButton({
     return val - bounds.y - bounds.height / 2;
   });
 
-  // Fortune 500 grade transformations - optimized for perfect fit
+  // Compact size for perfect fit - all icons visible
   const heightSync = useTransform(
     distance, 
-    [-200, -100, 0, 100, 200], 
-    [48, 58, 72, 58, 48]
+    [-180, -90, 0, 90, 180], 
+    [40, 50, 64, 50, 40]
   );
   const height = useSpring(heightSync, { 
     mass: 0.1, 
-    stiffness: 220, 
-    damping: 20,
+    stiffness: 240, 
+    damping: 22,
     restDelta: 0.001
   });
 
   const widthSync = useTransform(
     distance, 
-    [-200, -100, 0, 100, 200], 
-    [48, 58, 72, 58, 48]
+    [-180, -90, 0, 90, 180], 
+    [40, 50, 64, 50, 40]
   );
   const width = useSpring(widthSync, { 
     mass: 0.1, 
-    stiffness: 220, 
-    damping: 20,
+    stiffness: 240, 
+    damping: 22,
     restDelta: 0.001
   });
 
   const iconSizeSync = useTransform(
     distance, 
-    [-200, -100, 0, 100, 200], 
-    [20, 24, 28, 24, 20]
+    [-180, -90, 0, 90, 180], 
+    [18, 22, 26, 22, 18]
   );
   const iconSize = useSpring(iconSizeSync, { 
     mass: 0.1, 
-    stiffness: 220, 
-    damping: 20,
+    stiffness: 240, 
+    damping: 22,
     restDelta: 0.001
   });
 
