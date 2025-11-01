@@ -366,147 +366,96 @@ export default function CalendarPage() {
       return `${formatTimeFromDate(startTime)} - ${formatTimeFromDate(endTime)}`;
     };
 
-    // Get user display name and flat number
+    // Get user display name and flat number - FIXED to show flat number
     const getUserDisplay = () => {
-      const userName = (booking as any).userName || 'Resident';
-      const flatNumber = (booking as any).flatNumber;
+      const userName = (booking as any).userName || (booking as any).userEmail || 'Resident';
+      const flatNumber = (booking as any).flatNumber || (booking as any).userFlatNumber;
       return flatNumber ? `${userName} - Flat ${flatNumber}` : userName;
     };
     
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -20, scale: 0.95 }}
-        whileHover={{ scale: 1.02, y: -4 }}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      <div
         className={cn(
-          "relative group booking-card rounded-2xl border-2 overflow-hidden",
-          "bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-800/90 dark:to-slate-900/90",
-          "border-slate-200/60 dark:border-slate-700/60",
-          "shadow-lg shadow-slate-200/50 dark:shadow-slate-900/50",
-          "hover:shadow-2xl hover:shadow-slate-300/50 dark:hover:shadow-slate-900/80",
+          "relative group rounded-2xl border overflow-hidden transition-all duration-200",
+          "bg-white dark:bg-slate-800/90",
+          "border-slate-200 dark:border-slate-700",
+          "shadow-md hover:shadow-xl",
           "hover:border-blue-300 dark:hover:border-blue-600",
-          "backdrop-blur-sm",
-          isCompact ? "p-3 sm:p-4" : "p-4 sm:p-6"
+          isCompact ? "p-3 sm:p-4" : "p-4 sm:p-5"
         )}
       >
-        {/* Animated gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="flex-1 min-w-0 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex-1 min-w-0 space-y-3">
             {/* Header with amenity name and status */}
             <div className="flex flex-wrap items-center gap-2">
-              <motion.h3 
-                className={cn(
-                  "font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent",
-                  isCompact ? "text-sm sm:text-base" : "text-base sm:text-lg"
-                )}
-                whileHover={{ scale: 1.02 }}
-              >
+              <h3 className={cn(
+                "font-bold text-slate-900 dark:text-white",
+                isCompact ? "text-sm sm:text-base" : "text-base sm:text-lg"
+              )}>
                 {booking.amenityName}
-              </motion.h3>
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-                <Badge variant="outline" className={cn(
-                  "text-xs font-semibold shadow-sm",
-                  statusColors[booking.status as keyof typeof statusColors] || statusColors.confirmed
-                )}>
-                  <StatusIcon className="w-3 h-3 mr-1.5" />
-                  {(booking.status || 'confirmed').toUpperCase()}
-                </Badge>
-              </motion.div>
+              </h3>
+              <Badge variant="outline" className={cn(
+                "text-xs font-semibold",
+                statusColors[booking.status as keyof typeof statusColors] || statusColors.confirmed
+              )}>
+                <StatusIcon className="w-3 h-3 mr-1.5" />
+                {(booking.status || 'confirmed').toUpperCase()}
+              </Badge>
               {/* Admin badge */}
               {isAdmin && booking.userId !== session?.user?.email && (
-                <motion.div 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  whileHover={{ scale: 1.1 }}
-                >
-                  <Badge className="text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 shadow-lg shadow-blue-500/30">
-                    🛡️ Admin
-                  </Badge>
-                </motion.div>
+                <Badge className="text-xs bg-blue-600 text-white border-0">
+                  🛡️ Admin
+                </Badge>
               )}
               {/* Own booking */}
               {booking.userId === session?.user?.email && (
-                <motion.div 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  whileHover={{ scale: 1.1 }}
-                >
-                  <Badge className="text-xs bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 shadow-lg shadow-green-500/30">
-                    ✓ Your Booking
-                  </Badge>
-                </motion.div>
+                <Badge className="text-xs bg-green-600 text-white border-0">
+                  ✓ Your Booking
+                </Badge>
               )}
             </div>
             
-            {/* Enhanced booking details */}
-            <div className="space-y-3">
+            {/* Booking details - Simplified and optimized */}
+            <div className="space-y-2">
               {/* Booked by - with flat number */}
-              <motion.div 
-                className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50/50 dark:from-blue-950/30 dark:to-purple-950/30 border border-blue-200/50 dark:border-blue-800/50"
-                whileHover={{ scale: 1.02, x: 2 }}
-              >
-                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg shadow-lg shadow-blue-500/30">
-                  <Users className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">Booked by</div>
-                  <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                    {getUserDisplay()}
-                  </div>
-                </div>
-              </motion.div>
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                <span className="text-slate-600 dark:text-slate-400">Booked by:</span>
+                <span className="font-semibold text-slate-900 dark:text-white truncate">
+                  {getUserDisplay()}
+                </span>
+              </div>
 
               {/* Time slot */}
-              <motion.div 
-                className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100/50 dark:from-slate-800/50 dark:to-slate-900/50 border border-slate-200/50 dark:border-slate-700/50"
-                whileHover={{ scale: 1.02, x: 2 }}
-              >
-                <div className="p-2 bg-gradient-to-br from-slate-600 to-slate-800 rounded-lg shadow-lg">
-                  <Clock className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">Time Slot</div>
-                  <div className="text-sm font-bold text-slate-900 dark:text-white">
-                    {formatDateRange(booking.startTime, booking.endTime)}
-                  </div>
-                </div>
-              </motion.div>
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="w-4 h-4 text-slate-600 dark:text-slate-400 flex-shrink-0" />
+                <span className="text-slate-900 dark:text-white font-medium">
+                  {formatDateRange(booking.startTime, booking.endTime)}
+                </span>
+              </div>
 
               {/* Attendees count */}
               {!isCompact && (
-                <motion.div 
-                  className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50/50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200/50 dark:border-green-800/50"
-                  whileHover={{ scale: 1.02, x: 2 }}
-                >
-                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-lg shadow-green-500/30">
-                    <Users className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">Attendees</div>
-                    <div className="text-sm font-bold text-slate-900 dark:text-white">
-                      {booking.attendees?.length || 1} {(booking.attendees?.length || 1) === 1 ? 'person' : 'people'}
-                    </div>
-                  </div>
-                </motion.div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Users className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                  <span className="text-slate-600 dark:text-slate-400">Attendees:</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {booking.attendees?.length || 1} {(booking.attendees?.length || 1) === 1 ? 'person' : 'people'}
+                  </span>
+                </div>
               )}
             </div>
           </div>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <motion.div whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-10 w-10 p-0 flex-shrink-0 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700 border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm"
-                >
-                  <MoreHorizontal className="w-5 h-5" />
-                </Button>
-              </motion.div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 flex-shrink-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 rounded-xl border-2 shadow-2xl p-2">
               <DropdownMenuItem 
@@ -552,15 +501,15 @@ export default function CalendarPage() {
               
               {/* Show read-only indicator for other users' bookings when not admin */}
               {!isAdmin && booking.userId !== session?.user?.email && (
-                <DropdownMenuItem disabled className="text-sm font-medium rounded-lg text-gray-400 py-3">
-                  <Eye className="w-4 h-4 mr-3" />
+                <DropdownMenuItem disabled className="text-gray-400">
+                  <Eye className="w-4 h-4 mr-2" />
                   View Only
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </motion.div>
+      </div>
     );
   };
 
