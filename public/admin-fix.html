@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CircleIn Admin Fix</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #1a202c;
+            font-size: 32px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #718096;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .status {
+            background: #f7fafc;
+            border-left: 4px solid #4299e1;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        
+        .status h3 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .status code {
+            background: #e2e8f0;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 15px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 2px solid #9ae6b4;
+        }
+        
+        .result.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 2px solid #fc8181;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .instructions {
+            background: #fffaf0;
+            border: 2px solid #fbd38d;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .instructions h3 {
+            color: #744210;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            color: #744210;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .highlight {
+            background: #fef5e7;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔧 CircleIn Admin Fix</h1>
+        <p class="subtitle">One-click authentication recovery</p>
+        
+        <div class="status">
+            <h3>Your Admin Account:</h3>
+            <p>Email: <code>abhinav.sadineni@gmail.com</code></p>
+            <p>Role: <code>admin</code></p>
+            <p>Community: <code>sunny-meadows</code></p>
+        </div>
+        
+        <button id="fixButton" onclick="fixAccount()">
+            🚀 Fix My Account Now
+        </button>
+        
+        <div id="result" class="result"></div>
+        
+        <div class="instructions">
+            <h3>📋 After Clicking Fix:</h3>
+            <ol>
+                <li>Wait for the <span class="highlight">success message</span></li>
+                <li><span class="highlight">Sign out</span> from CircleIn completely</li>
+                <li>Clear browser cache: Press <code>Ctrl+Shift+Delete</code></li>
+                <li><span class="highlight">Sign back in</span> with Google</li>
+                <li>You'll land on the dashboard with <span class="highlight">full admin access</span>! 🎉</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script>
+        async function fixAccount() {
+            const button = document.getElementById('fixButton');
+            const result = document.getElementById('result');
+            
+            button.disabled = true;
+            button.textContent = '⏳ Fixing your account...';
+            result.classList.remove('show', 'success', 'error');
+            
+            try {
+                const response = await fetch('/api/assign-admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'abhinav.sadineni@gmail.com',
+                        communityId: 'sunny-meadows',
+                        role: 'admin'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    result.className = 'result success show';
+                    result.innerHTML = `
+                        <h3 style="margin-bottom: 15px;">✅ Account Fixed Successfully!</h3>
+                        <p style="margin-bottom: 10px;"><strong>${data.message}</strong></p>
+                        <p style="margin-bottom: 15px;">Your admin account is now properly configured in Firebase.</p>
+                        <p style="background: #f0fff4; padding: 10px; border-radius: 5px; border-left: 4px solid #48bb78;">
+                            <strong>Next:</strong> Sign out, clear cache, and sign back in!
+                        </p>
+                    `;
+                    button.textContent = '✅ Account Fixed!';
+                } else {
+                    throw new Error(data.error || 'Failed to fix account');
+                }
+            } catch (error) {
+                result.className = 'result error show';
+                result.innerHTML = `
+                    <h3 style="margin-bottom: 15px;">❌ Error Occurred</h3>
+                    <p style="margin-bottom: 10px;"><strong>${error.message}</strong></p>
+                    <p style="margin-bottom: 10px;">Please try again or check:</p>
+                    <ul style="margin-left: 20px;">
+                        <li>You're accessing this from your CircleIn app</li>
+                        <li>Firebase is properly configured</li>
+                        <li>Network connection is stable</li>
+                    </ul>
+                `;
+                button.textContent = '🔄 Try Again';
+                button.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
