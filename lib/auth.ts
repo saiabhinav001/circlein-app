@@ -306,10 +306,55 @@ export const authOptions: NextAuthOptions = {
               communityId: token.communityId
             });
           } else {
-            // User document doesn't exist - account was deleted
-            console.error('❌ User document not found in Firestore for:', token.email, '- Account may have been deleted');
-            // Return null to invalidate the token and force sign-out
-            return null as any;
+            // User document doesn't exist - check if there's an invite first
+            console.log('⚠️ User document not found, checking for invite:', token.email);
+            
+            const invitesQuery = query(
+              collection(db, 'invites'),
+              where('email', '==', token.email)
+            );
+            const inviteSnapshot = await getDocs(invitesQuery);
+            
+            if (!inviteSnapshot.empty) {
+              // Found an invite - auto-create user from invite
+              const inviteData = inviteSnapshot.docs[0].data();
+              console.log('✅ Found invite, auto-creating user:', inviteData);
+              
+              const newUserData = {
+                email: token.email,
+                name: token.name || token.email?.split('@')[0] || '',
+                role: inviteData.role || 'admin',
+                communityId: inviteData.communityId || 'sunny-meadows',
+                authProvider: account?.provider || 'google',
+                profileCompleted: true,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                lastLogin: serverTimestamp(),
+              };
+              
+              await setDoc(doc(db, 'users', token.email), newUserData);
+              
+              // Update token with new user data
+              token.role = newUserData.role;
+              token.communityId = newUserData.communityId;
+              token.profileCompleted = true;
+              
+              console.log('✅ User auto-created from invite:', {
+                email: token.email,
+                role: token.role,
+                communityId: token.communityId
+              });
+            } else {
+              // No invite found - check if this is a new user or deleted account
+              if (token.role || token.communityId) {
+                // User had data before, account was deleted
+                console.error('❌ User account was deleted:', token.email);
+                return null as any;
+              } else {
+                // New user without invite - allow through to setup flow
+                console.log('⚠️ New user without invite, allowing through to setup:', token.email);
+              }
+            }
           }
         } catch (error) {
           console.error('❌ Error fetching user data for token:', error);

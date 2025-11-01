@@ -25,12 +25,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
+    // Check if user already exists to preserve data
+    const { getDoc } = await import('firebase/firestore');
+    const existingUserDoc = await getDoc(doc(db, 'users', email));
+    const existingData = existingUserDoc.exists() ? existingUserDoc.data() : {};
+
     // Update user document with communityId and admin role
     const userDoc = {
       email: email,
       communityId: communityId,
       role: role,
-      name: email.split('@')[0], // Use email prefix as name
+      name: existingData.name || email.split('@')[0], // Preserve existing name
+      authProvider: existingData.authProvider || 'google',
+      profileCompleted: true, // CRITICAL: Ensure profile is marked as complete
+      createdAt: existingData.createdAt || serverTimestamp(),
       updatedAt: serverTimestamp(),
       lastLogin: serverTimestamp(),
     };

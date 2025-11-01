@@ -41,6 +41,12 @@ export default withAuth(
         pathname.startsWith('/notifications') ||
         pathname.startsWith('/settings')) {
       
+      // CRITICAL: Allow admins through without communityId check
+      if (token?.role === 'admin') {
+        console.log('✅ ADMIN USER - Bypassing communityId check for:', token?.email);
+        return NextResponse.next();
+      }
+      
       if (!token?.communityId) {
         console.error('❌ MIDDLEWARE BLOCKING: No communityId in token for:', token?.email);
         console.error('Token data:', JSON.stringify(token, null, 2));
