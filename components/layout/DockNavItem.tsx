@@ -35,11 +35,11 @@ export function DockNavItem({
     return val - bounds.y - bounds.height / 2;
   });
 
-  // Compact sizing - all 10 icons visible without scroll
+  // Ultra-compact sizing - all 10 icons guaranteed visible
   const heightSync = useTransform(
     distance, 
     [-150, -75, 0, 75, 150], 
-    [50, 58, 64, 58, 50]
+    [46, 54, 60, 54, 46]
   );
   const height = useSpring(heightSync, { 
     mass: 0.12, 
@@ -51,7 +51,7 @@ export function DockNavItem({
   const widthSync = useTransform(
     distance, 
     [-150, -75, 0, 75, 150], 
-    [50, 58, 64, 58, 50]
+    [46, 54, 60, 54, 46]
   );
   const width = useSpring(widthSync, { 
     mass: 0.12, 
@@ -63,7 +63,7 @@ export function DockNavItem({
   const iconSizeSync = useTransform(
     distance, 
     [-150, -75, 0, 75, 150], 
-    [22, 25, 28, 25, 22]
+    [20, 23, 26, 23, 20]
   );
   const iconSize = useSpring(iconSizeSync, { 
     mass: 0.12, 
@@ -225,18 +225,18 @@ export function DockNavItem({
               <AnimatePresence>
                 {isActive && (
                   <>
-                    {/* Primary indicator dot */}
+                    {/* Primary indicator dot - FIXED POSITION */}
                     <motion.div
                       layoutId="activeDockIndicator"
-                      className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-slate-900 dark:bg-white shadow-lg"
+                      className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-slate-900 dark:bg-white shadow-lg z-20"
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0, opacity: 0 }}
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
-                    {/* Breathing pulse ring */}
+                    {/* Breathing pulse ring - FIXED POSITION */}
                     <motion.div
-                      className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-slate-900 dark:bg-white"
+                      className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-slate-900 dark:bg-white z-10"
                       animate={{ 
                         scale: [1, 2.5, 1],
                         opacity: [0.8, 0, 0.8]

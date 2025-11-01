@@ -29,11 +29,11 @@ export function DockActionButton({
     return val - bounds.y - bounds.height / 2;
   });
 
-  // Compact sizing - all 10 icons visible without scroll
+  // Ultra-compact sizing - all 10 icons guaranteed visible
   const heightSync = useTransform(
     distance, 
     [-150, -75, 0, 75, 150], 
-    [50, 58, 64, 58, 50]
+    [46, 54, 60, 54, 46]
   );
   const height = useSpring(heightSync, { 
     mass: 0.12, 
@@ -45,7 +45,7 @@ export function DockActionButton({
   const widthSync = useTransform(
     distance, 
     [-150, -75, 0, 75, 150], 
-    [50, 58, 64, 58, 50]
+    [46, 54, 60, 54, 46]
   );
   const width = useSpring(widthSync, { 
     mass: 0.12, 
@@ -57,7 +57,7 @@ export function DockActionButton({
   const iconSizeSync = useTransform(
     distance, 
     [-150, -75, 0, 75, 150], 
-    [22, 25, 28, 25, 22]
+    [20, 23, 26, 23, 20]
   );
   const iconSize = useSpring(iconSizeSync, { 
     mass: 0.12, 
