@@ -29,11 +29,11 @@ export function DockActionButton({
     return val - bounds.y - bounds.height / 2;
   });
 
-  // Fortune 500 grade transformations - dramatic, elegant
+  // Fortune 500 grade transformations - optimized for perfect fit
   const heightSync = useTransform(
     distance, 
     [-200, -100, 0, 100, 200], 
-    [44, 56, 76, 56, 44]
+    [48, 58, 72, 58, 48]
   );
   const height = useSpring(heightSync, { 
     mass: 0.1, 
@@ -45,7 +45,7 @@ export function DockActionButton({
   const widthSync = useTransform(
     distance, 
     [-200, -100, 0, 100, 200], 
-    [44, 56, 76, 56, 44]
+    [48, 58, 72, 58, 48]
   );
   const width = useSpring(widthSync, { 
     mass: 0.1, 
@@ -57,7 +57,7 @@ export function DockActionButton({
   const iconSizeSync = useTransform(
     distance, 
     [-200, -100, 0, 100, 200], 
-    [20, 24, 30, 24, 20]
+    [20, 24, 28, 24, 20]
   );
   const iconSize = useSpring(iconSizeSync, { 
     mass: 0.1, 

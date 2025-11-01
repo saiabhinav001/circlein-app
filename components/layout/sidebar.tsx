@@ -244,7 +244,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
           className={cn(
             "flex-1 overflow-x-hidden",
             isCollapsed 
-              ? "flex flex-col items-center justify-start py-2 px-2 space-y-1 overflow-y-auto [&::-webkit-scrollbar]:hidden" 
+              ? "flex flex-col items-center justify-center py-3 px-2 gap-2 overflow-y-auto [&::-webkit-scrollbar]:hidden" 
               : "p-3 sm:p-4 space-y-1.5 sm:space-y-2 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-slate-700"
           )}
           onMouseMove={(e) => isCollapsed && mouseY.set(e.pageY)}
@@ -367,7 +367,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
             <>
               <div className={cn(
                 "my-4 sm:my-6 relative",
-                isCollapsed && "my-2 w-full px-2"
+                isCollapsed && "my-1.5 w-full px-2"
               )}>
                 <div className="absolute inset-0 flex items-center">
                   <div className={cn(
@@ -496,7 +496,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
         <div 
           className={cn(
             "border-t border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-b from-transparent to-slate-50/50 dark:to-slate-900/50 shrink-0",
-            isCollapsed ? "flex flex-col items-center justify-center py-2 px-2 space-y-1" : "p-3 sm:p-4 space-y-1.5 sm:space-y-2"
+            isCollapsed ? "flex flex-col items-center justify-center py-3 px-2 gap-2" : "p-3 sm:p-4 space-y-1.5 sm:space-y-2"
           )}
           onMouseMove={(e) => isCollapsed && mouseY.set(e.pageY)}
           onMouseLeave={() => isCollapsed && mouseY.set(Infinity)}
