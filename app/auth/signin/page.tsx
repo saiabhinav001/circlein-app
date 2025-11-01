@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,32 @@ export default function SignIn() {
   const [ripplePosition, setRipplePosition] = useState({ x: 0, y: 0 });
   const [showRipple, setShowRipple] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Check for error parameter
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      // Show error toast based on error type
+      if (error === 'AccountDeleted') {
+        toast.error('Account Deleted', {
+          description: 'Your account has been deleted by an administrator.',
+        });
+      } else if (error === 'NoAccount') {
+        toast.error('No Account Found', {
+          description: 'Please contact your administrator for an invite or access code.',
+        });
+      } else if (error === 'OAuthAccountNotLinked') {
+        toast.error('Account Not Linked', {
+          description: 'This email is already associated with another sign-in method.',
+        });
+      } else {
+        toast.error('Sign-In Failed', {
+          description: 'Unable to complete sign-in. Please try again.',
+        });
+      }
+    }
+  }, [searchParams]);
 
   // Email validation
   const validateEmail = (value: string) => {
@@ -67,14 +93,32 @@ export default function SignIn() {
     console.log('Starting Google sign-in...');
     try {
       const result = await signIn('google', { 
-        callbackUrl: '/dashboard', // Redirect to dashboard after Google sign-in
+        callbackUrl: '/dashboard',
         redirect: false 
       });
       console.log('Google sign-in result:', result);
       
       if (result?.error) {
         console.error('Google sign-in error:', result.error);
-        toast.error('Failed to sign in with Google: ' + result.error);
+        
+        // Show specific error messages
+        if (result.error === 'AccountDeleted') {
+          toast.error('Account Deleted', {
+            description: 'Your account has been deleted. Contact your administrator.',
+          });
+        } else if (result.error === 'NoAccount') {
+          toast.error('No Account Found', {
+            description: 'No existing account or invite found for this email.',
+          });
+        } else if (result.error === 'OAuthAccountNotLinked') {
+          toast.error('Account Not Linked', {
+            description: 'This email is already registered with another sign-in method.',
+          });
+        } else {
+          toast.error('Sign-In Failed', {
+            description: result.error,
+          });
+        }
       } else if (result?.url) {
         console.log('Redirecting to:', result.url);
         window.location.href = result.url;

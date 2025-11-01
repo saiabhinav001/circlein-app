@@ -413,16 +413,31 @@ export const authOptions: NextAuthOptions = {
                 // User had data before - account was DELETED
                 console.error('❌ DELETED ACCOUNT: User had data but document removed:', token.email);
                 console.error('Previous data:', { role: token.role, communityId: token.communityId });
+                
+                // Store error info in token before nullifying
+                token.error = 'AccountDeleted';
+                token.errorMessage = 'Your account has been deleted by an administrator. Please contact support if you believe this is an error.';
+                
                 return null as any; // Force sign-out - user was deleted
               } else {
-                // Brand new user without invite - allow to setup flow
-                console.log('⚠️ New user without invite, allowing to setup:', token.email);
-                token.status = 'new';
+                // Brand new user without invite - NOT ALLOWED
+                console.error('❌ NEW USER WITHOUT INVITE: No existing account or invite found:', token.email);
+                
+                // Store error info in token before nullifying
+                token.error = 'NoAccount';
+                token.errorMessage = 'No account found. Please contact your community administrator to get an invite or access code.';
+                
+                return null as any; // Force sign-out - no account
               }
             }
           }
         } catch (error) {
           console.error('❌ Error in authentication layers:', error);
+          
+          // Store error info in token
+          token.error = 'AuthenticationError';
+          token.errorMessage = 'An error occurred during authentication. Please try again.';
+          
           // On error, force sign-out for security
           return null as any;
         }
@@ -437,6 +452,12 @@ export const authOptions: NextAuthOptions = {
         return {} as any;
       }
 
+      // Pass error information if present
+      if (token.error) {
+        (session as any).error = token.error;
+        (session as any).errorMessage = token.errorMessage;
+      }
+
       // Pass the token data to the session
       session.user.email = token.email;
       session.user.name = token.name || '';
@@ -445,14 +466,22 @@ export const authOptions: NextAuthOptions = {
       (session.user as any).communityId = token.communityId;
       (session.user as any).flatNumber = token.flatNumber;
       (session.user as any).profileCompleted = token.profileCompleted;
+      (session.user as any).status = token.status;
       
       return session;
     },
   },
   pages: {
     signIn: '/auth/signin',
+    error: '/auth/error', // Custom error page
   },
   session: {
     strategy: 'jwt',
+  },
+  events: {
+    async signOut({ token }) {
+      // Log when user is signed out
+      console.log('👋 User signed out:', token?.email);
+    },
   },
 };
