@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/components/providers/theme-provider';
 import { NotificationProvider } from '@/components/notifications/NotificationSystem';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import LoadingScreen from '@/components/LoadingScreen';
 
 // Import debug functions to make them available in browser console
 import '@/lib/debug-notifications';
@@ -34,8 +35,13 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   themeColor: '#3B82F6',
   icons: {
-    icon: '/favicon.svg',
-    apple: '/apple-touch-icon.svg',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icon-192x192.svg', sizes: '192x192', type: 'image/svg+xml' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.svg', type: 'image/svg+xml' },
+    ],
   },
   viewport: {
     width: 'device-width',
@@ -56,10 +62,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" sizes="192x192" href="/icon-192x192.svg" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
+        <meta name="theme-color" content="#3B82F6" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
               try {
+                // Set theme
                 if (typeof window !== 'undefined') {
                   const theme = localStorage.getItem('circlein-theme') || 'dark';
                   document.documentElement.classList.add(theme);
@@ -70,6 +81,7 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
+        <LoadingScreen />
         <AuthProvider>
           <ThemeProvider defaultTheme="dark" storageKey="circlein-theme">
             <NotificationProvider>
