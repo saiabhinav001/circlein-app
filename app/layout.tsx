@@ -36,11 +36,11 @@ export const metadata: Metadata = {
   themeColor: '#3B82F6',
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/icon-192x192.svg', sizes: '192x192', type: 'image/svg+xml' },
+      { url: '/favicon.svg?v=2', type: 'image/svg+xml' },
+      { url: '/icon-192x192.svg?v=2', sizes: '192x192', type: 'image/svg+xml' },
     ],
     apple: [
-      { url: '/apple-touch-icon.svg', type: 'image/svg+xml' },
+      { url: '/apple-touch-icon.svg?v=2', type: 'image/svg+xml' },
     ],
   },
   viewport: {
@@ -62,16 +62,22 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="icon" sizes="192x192" href="/icon-192x192.svg" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+        <link rel="icon" sizes="192x192" href="/icon-192x192.svg?v=2" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=2" />
         <meta name="theme-color" content="#3B82F6" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                // Set theme
+                // Clear any cached logo preferences
                 if (typeof window !== 'undefined') {
+                  // Remove any old loading screen cache
+                  localStorage.removeItem('circlein-loading-shown');
+                  localStorage.removeItem('circlein-last-loading-shown');
+                  sessionStorage.removeItem('circlein-loading-shown');
+                  
+                  // Set theme
                   const theme = localStorage.getItem('circlein-theme') || 'dark';
                   document.documentElement.classList.add(theme);
                 }

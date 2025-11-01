@@ -6,26 +6,11 @@ import { CircleInLogo } from '@/components/ui';
 
 export default function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true);
-  const [hasShownBefore, setHasShownBefore] = useState(false);
 
   useEffect(() => {
-    // Always show loading screen, but track if shown recently
-    const lastShown = localStorage.getItem('circlein-last-loading-shown');
-    const now = Date.now();
+    // ALWAYS show loading screen on EVERY page load/refresh
+    // No caching, no skipping - full animation every time
     
-    // Show if: never shown OR more than 30 seconds ago OR page refresh
-    const shouldShow = !lastShown || (now - parseInt(lastShown)) > 30000;
-    
-    if (!shouldShow) {
-      // Skip if shown very recently (within 30 seconds)
-      setIsLoading(false);
-      setHasShownBefore(true);
-      return;
-    }
-
-    // Mark current time
-    localStorage.setItem('circlein-last-loading-shown', now.toString());
-
     // Show loading screen for 3 seconds to see full animation
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -33,11 +18,6 @@ export default function LoadingScreen() {
 
     return () => clearTimeout(timer);
   }, []);
-
-  // Don't render anything if already shown
-  if (hasShownBefore) {
-    return null;
-  }
 
   return (
     <AnimatePresence mode="wait">
