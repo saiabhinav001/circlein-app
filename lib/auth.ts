@@ -41,12 +41,45 @@ export const authOptions: NextAuthOptions = {
           const existingUserDoc = await getDoc(doc(db, 'users', credentials?.email || ''));
           
           if (existingUserDoc.exists()) {
-            // User exists - this is a sign-in, not signup
-            console.log('✅ User already exists, proceeding with sign-in');
+            // User exists - check if this is sign-in or adding password via access code
+            console.log('✅ User already exists:', credentials?.email);
             const userData = existingUserDoc.data();
             
-            // Check if user has a password set
-            if (userData.password) {
+            // Check if user is trying to add password via access code
+            if (credentials?.accessCode && (!userData.password || userData.password === '')) {
+              console.log('🔑 User has access code and no password - allowing password setup');
+              // This is signup with access code to add password to existing account
+              // Validate access code first
+              const accessCodeDoc = await getDoc(doc(db, 'accessCodes', credentials.accessCode));
+              
+              if (!accessCodeDoc.exists()) {
+                console.log('❌ Access code not found');
+                throw new Error('Invalid or expired access code');
+              }
+
+              const accessCodeData = accessCodeDoc.data();
+              
+              if (accessCodeData.isUsed) {
+                console.log('❌ Access code already used');
+                throw new Error('This access code has already been used');
+              }
+
+              // Access code is valid, allow user to set password
+              console.log('✅ Access code valid, allowing password setup');
+              return {
+                id: credentials?.email || '',
+                email: credentials?.email || '',
+                name: credentials?.name || userData.name || '',
+                communityId: accessCodeData.communityId || userData.communityId,
+                role: userData.role || 'resident',
+                password: credentials?.password,
+                isExistingUser: false, // Treat as new signup to trigger password creation
+                isAddingPassword: true, // Flag to indicate adding password to existing account
+              };
+            }
+            
+            // Regular sign-in - check if user has a password set
+            if (userData.password && userData.password !== '') {
               // User has password, validate it
               if (!credentials?.password) {
                 console.log('❌ Password required but not provided');
@@ -82,10 +115,10 @@ export const authOptions: NextAuthOptions = {
               }
               
               console.log('✅ Password validated successfully');
-            } else if (userData.authProvider === 'google' && !userData.password) {
-              // User signed up with Google but hasn't set a password
+            } else {
+              // User exists but has no password (Google-only account)
               console.log('❌ User signed up with Google and has no password set');
-              throw new Error('This account uses Google sign-in. Please sign in with Google or set a password in settings.');
+              throw new Error('This account uses Google sign-in. Please sign in with Google or use an access code to set up a password.');
             }
             
             return {
@@ -194,37 +227,52 @@ export const authOptions: NextAuthOptions = {
               lastLogin: serverTimestamp(),
             }, { merge: true });
           } else {
-            console.log('🆕 Creating new resident user:', user.email);
+            console.log('🆕 Creating new resident user or adding password:', user.email);
             
-            // Check if user was previously deleted
+            // Check if user exists (might be Google user adding password)
             const existingUserDoc = await getDoc(doc(db, 'users', user.email));
+            const isAddingPassword = (user as any).isAddingPassword;
             
             // Hash the password before storing
             const hashedPassword = await bcrypt.hash((user as any).password || '', 12);
             
-            // Create/recreate resident user with communityId and hashed password
-            // This will overwrite any previously deleted account
-            await setDoc(doc(db, 'users', user.email), {
-              name: user.name || user.email.split('@')[0],
-              email: user.email,
-              role: 'resident',
-              communityId: (user as any).communityId,
-              password: hashedPassword,
-              authProvider: 'credentials',
-              status: 'active', // IMPORTANT: Set status to active
-              deleted: false, // IMPORTANT: Mark as NOT deleted
-              profileCompleted: true,
-              createdAt: existingUserDoc.exists() ? existingUserDoc.data().createdAt : serverTimestamp(),
-              updatedAt: serverTimestamp(),
-              lastLogin: serverTimestamp(),
-              // If previously deleted, keep history
-              ...(existingUserDoc.exists() && existingUserDoc.data().deleted ? {
-                restoredAt: serverTimestamp(),
-                restoredViaAccessCode: true,
-              } : {}),
-            });
-            
-            console.log('✅ Resident user created/restored:', user.email, 'for community:', (user as any).communityId);
+            if (isAddingPassword && existingUserDoc.exists()) {
+              // Existing Google user is adding password
+              console.log('🔑 Adding password to existing Google account:', user.email);
+              await setDoc(doc(db, 'users', user.email), {
+                password: hashedPassword,
+                authProvider: 'hybrid', // Both Google and credentials work now
+                updatedAt: serverTimestamp(),
+                lastLogin: serverTimestamp(),
+                passwordSetAt: serverTimestamp(),
+              }, { merge: true });
+              
+              console.log('✅ Password added to Google account:', user.email);
+            } else {
+              // Create/recreate resident user with communityId and hashed password
+              // This will overwrite any previously deleted account
+              await setDoc(doc(db, 'users', user.email), {
+                name: user.name || user.email.split('@')[0],
+                email: user.email,
+                role: 'resident',
+                communityId: (user as any).communityId,
+                password: hashedPassword,
+                authProvider: 'credentials',
+                status: 'active', // IMPORTANT: Set status to active
+                deleted: false, // IMPORTANT: Mark as NOT deleted
+                profileCompleted: true,
+                createdAt: existingUserDoc.exists() ? existingUserDoc.data().createdAt : serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                lastLogin: serverTimestamp(),
+                // If previously deleted, keep history
+                ...(existingUserDoc.exists() && existingUserDoc.data().deleted ? {
+                  restoredAt: serverTimestamp(),
+                  restoredViaAccessCode: true,
+                } : {}),
+              });
+              
+              console.log('✅ Resident user created/restored:', user.email, 'for community:', (user as any).communityId);
+            }
           }
         } catch (error) {
           console.error('💥 Error in credentials signIn callback:', error);
