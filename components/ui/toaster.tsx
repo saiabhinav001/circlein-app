@@ -16,17 +16,18 @@ export function Toaster() {
 
   const getToastIcon = (variant: any) => {
     const variantStr = String(variant);
+    const iconClass = "h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0";
     switch (variantStr) {
       case 'default':
-        return <Info className="h-5 w-5 text-blue-500" />;
+        return <Info className={`${iconClass} text-blue-500 dark:text-blue-400`} />;
       case 'destructive':
-        return <XCircle className="h-5 w-5 text-red-500" />;
+        return <XCircle className={`${iconClass} text-red-500 dark:text-red-400`} />;
       case 'success':
-        return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+        return <CheckCircle2 className={`${iconClass} text-green-500 dark:text-green-400`} />;
       case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+        return <AlertTriangle className={`${iconClass} text-yellow-500 dark:text-yellow-400`} />;
       default:
-        return <Sparkles className="h-5 w-5 text-blue-500" />;
+        return <Sparkles className={`${iconClass} text-blue-500 dark:text-blue-400`} />;
     }
   };
 
@@ -52,16 +53,16 @@ export function Toaster() {
             key={id} 
             {...props} 
             variant={variant}
-            className={`${getToastStyles(variant)} backdrop-blur-xl border-2 shadow-2xl`}
+            className={`${getToastStyles(variant)} backdrop-blur-xl border-2 sm:border-3 shadow-xl sm:shadow-2xl animate-in slide-in-from-top-full sm:slide-in-from-bottom-full`}
           >
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-0.5">
+            <div className="flex items-start gap-2.5 sm:gap-3 w-full">
+              <div className="flex-shrink-0 mt-0.5 sm:mt-1">
                 {getToastIcon(variant)}
               </div>
-              <div className="flex-1 grid gap-1">
-                {title && <ToastTitle className="font-bold text-slate-900 dark:text-white">{title}</ToastTitle>}
+              <div className="flex-1 min-w-0 space-y-1">
+                {title && <ToastTitle className="font-bold text-slate-900 dark:text-white break-words">{title}</ToastTitle>}
                 {description && (
-                  <ToastDescription className="text-slate-700 dark:text-slate-300">{description}</ToastDescription>
+                  <ToastDescription className="text-slate-700 dark:text-slate-300 break-words">{description}</ToastDescription>
                 )}
               </div>
             </div>

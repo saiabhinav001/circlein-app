@@ -241,6 +241,7 @@ export default function CalendarPage() {
         toast({
           title: "Edit Booking",
           description: "Edit functionality would open here.",
+          variant: "default" as any,
         });
         break;
       case 'cancel':
@@ -248,8 +249,9 @@ export default function CalendarPage() {
         break;
       case 'approve':
         toast({
-          title: "Booking Approved",
-          description: `${booking.amenityName} booking has been approved.`,
+          title: "✅ Booking Approved",
+          description: `${booking.amenityName} booking has been approved successfully.`,
+          variant: "success" as any,
         });
         // Refresh bookings after action
         fetchBookings(true);
@@ -334,12 +336,13 @@ export default function CalendarPage() {
         toast({
           title: "✅ Booking Cancelled & Waitlist Promoted",
           description: `${booking.amenityName} booking cancelled. The next person (${cancelData.promotedUser}) has been notified and will have 48 hours to confirm.`,
+          variant: "success" as any,
         });
       } else {
         toast({
           title: "Booking Cancelled",
           description: `${booking.amenityName} booking has been cancelled successfully.`,
-          variant: "destructive",
+          variant: "success" as any,
         });
       }
 
@@ -803,13 +806,13 @@ export default function CalendarPage() {
             transition={{ duration: 0.5, delay: 0.7 }}
           >
             <div className="rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-xl shadow-purple-500/5 overflow-hidden">
-              <CardHeader className="pb-4 px-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 border-b border-purple-200/30 dark:border-purple-800/30">
-                <div className="flex items-center justify-between gap-3">
-                  <CardTitle className="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent flex items-center gap-2">
-                    <span className="text-xl sm:text-2xl">📅</span>
-                    <span className="whitespace-nowrap">{currentMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</span>
+              <CardHeader className="pb-4 px-4 sm:px-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 border-b border-purple-200/30 dark:border-purple-800/30">
+                <div className="flex items-center justify-between gap-2 sm:gap-3">
+                  <CardTitle className="text-sm sm:text-base lg:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent flex items-center gap-1.5 sm:gap-2 min-w-0">
+                    <span className="text-lg sm:text-xl lg:text-2xl flex-shrink-0">📅</span>
+                    <span className="whitespace-nowrap truncate">{currentMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</span>
                   </CardTitle>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                     <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                       <Button
                         variant="outline"
