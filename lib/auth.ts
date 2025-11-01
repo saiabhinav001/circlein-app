@@ -196,10 +196,14 @@ export const authOptions: NextAuthOptions = {
           } else {
             console.log('🆕 Creating new resident user:', user.email);
             
+            // Check if user was previously deleted
+            const existingUserDoc = await getDoc(doc(db, 'users', user.email));
+            
             // Hash the password before storing
             const hashedPassword = await bcrypt.hash((user as any).password || '', 12);
             
-            // Create new resident user with communityId and hashed password
+            // Create/recreate resident user with communityId and hashed password
+            // This will overwrite any previously deleted account
             await setDoc(doc(db, 'users', user.email), {
               name: user.name || user.email.split('@')[0],
               email: user.email,
@@ -207,11 +211,20 @@ export const authOptions: NextAuthOptions = {
               communityId: (user as any).communityId,
               password: hashedPassword,
               authProvider: 'credentials',
-              createdAt: serverTimestamp(),
+              status: 'active', // IMPORTANT: Set status to active
+              deleted: false, // IMPORTANT: Mark as NOT deleted
+              profileCompleted: true,
+              createdAt: existingUserDoc.exists() ? existingUserDoc.data().createdAt : serverTimestamp(),
+              updatedAt: serverTimestamp(),
               lastLogin: serverTimestamp(),
+              // If previously deleted, keep history
+              ...(existingUserDoc.exists() && existingUserDoc.data().deleted ? {
+                restoredAt: serverTimestamp(),
+                restoredViaAccessCode: true,
+              } : {}),
             });
             
-            console.log('✅ Resident user created:', user.email, 'for community:', (user as any).communityId);
+            console.log('✅ Resident user created/restored:', user.email, 'for community:', (user as any).communityId);
           }
         } catch (error) {
           console.error('💥 Error in credentials signIn callback:', error);
@@ -406,28 +419,58 @@ export const authOptions: NextAuthOptions = {
               });
             } else {
               // ============================================
-              // 🚫 NO USER, NO INVITE: DELETED OR NEW
+              // 🚫 NO USER, NO INVITE
               // ============================================
-              // Check if this was a previously authenticated user
-              if (token.role || token.communityId) {
-                // User had data before - account was DELETED
-                console.error('❌ DELETED ACCOUNT: User had data but document removed:', token.email);
-                console.error('Previous data:', { role: token.role, communityId: token.communityId });
+              // User document doesn't exist and no invite found
+              // This could be:
+              // 1. A new user trying to sign in (should use access code via credentials)
+              // 2. A deleted account that was fully removed
+              
+              // For Google OAuth without invite - create basic account and let middleware handle routing
+              if (account?.provider === 'google') {
+                console.log('⚠️ Google user without invite, creating placeholder account:', token.email);
                 
-                // Store error info in token before nullifying
-                token.error = 'AccountDeleted';
-                token.errorMessage = 'Your account has been deleted by an administrator. Please contact support if you believe this is an error.';
+                // Create minimal account - they'll need community assignment
+                const placeholderData = {
+                  email: token.email,
+                  name: token.name || token.email?.split('@')[0] || '',
+                  role: 'resident',
+                  communityId: null,
+                  authProvider: 'google',
+                  profileCompleted: false,
+                  status: 'pending',
+                  deleted: false,
+                  createdAt: serverTimestamp(),
+                  updatedAt: serverTimestamp(),
+                  lastLogin: serverTimestamp(),
+                };
                 
-                return null as any; // Force sign-out - user was deleted
+                await setDoc(doc(db, 'users', token.email), placeholderData);
+                
+                token.role = 'resident';
+                token.communityId = undefined;
+                token.status = 'pending';
+                
+                console.log('✅ Placeholder account created for Google user');
               } else {
-                // Brand new user without invite - NOT ALLOWED
-                console.error('❌ NEW USER WITHOUT INVITE: No existing account or invite found:', token.email);
+                // For credentials provider, this shouldn't happen because signIn callback creates user
+                // If we're here, something went wrong
+                console.error('❌ CRITICAL: User document missing after credentials sign-in:', token.email);
                 
-                // Store error info in token before nullifying
-                token.error = 'NoAccount';
-                token.errorMessage = 'No account found. Please contact your community administrator to get an invite or access code.';
-                
-                return null as any; // Force sign-out - no account
+                // Try one more time to fetch user (maybe race condition)
+                const retryUserDoc = await getDoc(doc(db, 'users', token.email));
+                if (retryUserDoc.exists()) {
+                  console.log('✅ User found on retry!');
+                  const userData = retryUserDoc.data();
+                  token.role = userData.role;
+                  token.communityId = userData.communityId;
+                  token.status = userData.status || 'active';
+                } else {
+                  console.error('❌ User still not found - blocking access');
+                  token.error = 'NoAccount';
+                  token.errorMessage = 'Account creation failed. Please try signing up again.';
+                  return null as any;
+                }
               }
             }
           }
