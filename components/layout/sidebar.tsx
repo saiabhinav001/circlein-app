@@ -241,7 +241,12 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
 
         {/* Navigation */}
         <nav 
-          className="flex-1 p-3 sm:p-4 space-y-1.5 sm:space-y-2 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-slate-700"
+          className={cn(
+            "flex-1 space-y-1.5 sm:space-y-2 overflow-x-hidden",
+            isCollapsed 
+              ? "flex flex-col items-center justify-start py-4 px-2 overflow-y-hidden" 
+              : "p-3 sm:p-4 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-slate-700"
+          )}
           onMouseMove={(e) => isCollapsed && mouseY.set(e.pageY)}
           onMouseLeave={() => isCollapsed && mouseY.set(Infinity)}
         >
@@ -268,6 +273,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
               whileHover="hover" 
               whileTap="tap"
               style={{ animationDelay: `${index * 0.1}s` }}
+              className={cn(isCollapsed && "w-full flex items-center justify-center")}
             >
               {isCollapsed ? (
                 <DockNavItem
@@ -359,9 +365,15 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
 
           {session?.user?.role === 'admin' && (
             <>
-              <div className="my-4 sm:my-6 relative">
+              <div className={cn(
+                "my-4 sm:my-6 relative",
+                isCollapsed && "my-3 w-full px-2"
+              )}>
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+                  <div className={cn(
+                    "w-full border-t border-slate-200 dark:border-slate-700",
+                    isCollapsed && "border-t-2"
+                  )} />
                 </div>
                 <AnimatePresence>
                   {!isCollapsed && (
@@ -387,6 +399,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   whileHover="hover" 
                   whileTap="tap"
                   style={{ animationDelay: `${(navigation.length + index) * 0.1}s` }}
+                  className={cn(isCollapsed && "w-full flex items-center justify-center")}
                 >
                   {isCollapsed ? (
                     <DockNavItem
@@ -481,7 +494,10 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
 
         {/* Footer */}
         <div 
-          className="p-3 sm:p-4 border-t border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-b from-transparent to-slate-50/50 dark:to-slate-900/50 space-y-1.5 sm:space-y-2 shrink-0"
+          className={cn(
+            "border-t border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-b from-transparent to-slate-50/50 dark:to-slate-900/50 space-y-1.5 sm:space-y-2 shrink-0",
+            isCollapsed ? "flex flex-col items-center justify-center py-3 px-2" : "p-3 sm:p-4"
+          )}
           onMouseMove={(e) => isCollapsed && mouseY.set(e.pageY)}
           onMouseLeave={() => isCollapsed && mouseY.set(Infinity)}
         >
@@ -491,6 +507,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
             initial="initial"
             whileHover="hover"
             whileTap="tap"
+            className={cn(isCollapsed && "w-full flex items-center justify-center")}
           >
             {isCollapsed ? (
               <DockActionButton
@@ -543,6 +560,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
             initial="initial"
             whileHover="hover"
             whileTap="tap"
+            className={cn(isCollapsed && "w-full flex items-center justify-center")}
           >
             {isCollapsed ? (
               <DockActionButton
