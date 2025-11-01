@@ -35,40 +35,40 @@ export function DockNavItem({
     return val - bounds.y - bounds.height / 2;
   });
 
-  // Compact size for perfect fit - all icons visible
+  // Perfect dock sizing - all 10 icons always visible even when magnified
   const heightSync = useTransform(
     distance, 
-    [-180, -90, 0, 90, 180], 
-    [40, 50, 64, 50, 40]
+    [-150, -75, 0, 75, 150], 
+    [52, 60, 68, 60, 52]
   );
   const height = useSpring(heightSync, { 
-    mass: 0.1, 
-    stiffness: 240, 
-    damping: 22,
+    mass: 0.12, 
+    stiffness: 200, 
+    damping: 20,
     restDelta: 0.001
   });
 
   const widthSync = useTransform(
     distance, 
-    [-180, -90, 0, 90, 180], 
-    [40, 50, 64, 50, 40]
+    [-150, -75, 0, 75, 150], 
+    [52, 60, 68, 60, 52]
   );
   const width = useSpring(widthSync, { 
-    mass: 0.1, 
-    stiffness: 240, 
-    damping: 22,
+    mass: 0.12, 
+    stiffness: 200, 
+    damping: 20,
     restDelta: 0.001
   });
 
   const iconSizeSync = useTransform(
     distance, 
-    [-180, -90, 0, 90, 180], 
-    [18, 22, 26, 22, 18]
+    [-150, -75, 0, 75, 150], 
+    [22, 26, 30, 26, 22]
   );
   const iconSize = useSpring(iconSizeSync, { 
-    mass: 0.1, 
-    stiffness: 240, 
-    damping: 22,
+    mass: 0.12, 
+    stiffness: 200, 
+    damping: 20,
     restDelta: 0.001
   });
 
