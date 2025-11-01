@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, memo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -10,7 +10,7 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Clock, 
-  MapPin, 
+  MapPin,
   Users, 
   Plus,
   Filter,
@@ -355,23 +355,24 @@ export default function CalendarPage() {
     });
   };
 
-  const BookingCard = ({ booking, isCompact = false }: { booking: Booking, isCompact?: boolean }) => {
+  // Memoized BookingCard for better performance
+  const BookingCard = memo(function BookingCard({ booking, isCompact = false }: { booking: Booking, isCompact?: boolean }) {
     const StatusIcon = statusIcons[booking.status as keyof typeof statusIcons] || statusIcons.confirmed;
     
-    const formatTimeFromDate = (date: Date) => {
+    const formatTimeFromDate = useCallback((date: Date) => {
       return formatTimeConsistently(date);
-    };
+    }, []);
     
-    const formatDateRange = (startTime: Date, endTime: Date) => {
+    const formatDateRange = useCallback((startTime: Date, endTime: Date) => {
       return `${formatTimeFromDate(startTime)} - ${formatTimeFromDate(endTime)}`;
-    };
+    }, [formatTimeFromDate]);
 
     // Get user display name and flat number - FIXED to show flat number
-    const getUserDisplay = () => {
+    const getUserDisplay = useCallback(() => {
       const userName = (booking as any).userName || (booking as any).userEmail || 'Resident';
       const flatNumber = (booking as any).flatNumber || (booking as any).userFlatNumber;
       return flatNumber ? `${userName} - Flat ${flatNumber}` : userName;
-    };
+    }, [booking]);
     
     return (
       <div
@@ -511,7 +512,12 @@ export default function CalendarPage() {
         </div>
       </div>
     );
-  };
+  }, (prevProps, nextProps) => {
+    // Custom comparison for better performance
+    return prevProps.booking.id === nextProps.booking.id && 
+           prevProps.booking.status === nextProps.booking.status &&
+           prevProps.isCompact === nextProps.isCompact;
+  });
 
   // Prevent hydration issues by not rendering until client-side
   if (!isHydrated) {

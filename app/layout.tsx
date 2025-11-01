@@ -1,18 +1,29 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import dynamic from 'next/dynamic';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { NotificationProvider } from '@/components/notifications/NotificationSystem';
-import { ToastContainer } from '@/components/notifications/ToastNotifications';
-import { Toaster } from '@/components/ui/sonner';
-import LoadingScreen from '@/components/LoadingScreen';
 import { Analytics } from '@vercel/analytics/react';
 
 // Import debug functions to make them available in browser console
 import '@/lib/debug-notifications';
 
-const inter = Inter({ subsets: ['latin'] });
+// Dynamic imports for better performance
+const ToastContainer = dynamic(
+  () => import('@/components/notifications/ToastNotifications').then(mod => ({ default: mod.ToastContainer })),
+  { ssr: false }
+);
+const Toaster = dynamic(() => import('@/components/ui/sonner').then(mod => ({ default: mod.Toaster })), { ssr: false });
+const LoadingScreen = dynamic(() => import('@/components/LoadingScreen'), { ssr: false });
+
+// Optimize font loading
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true,
+});
 
 export const metadata: Metadata = {
   title: 'CircleIn - Community Amenity Booking',
@@ -22,6 +33,15 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.svg',
     apple: '/apple-touch-icon.svg',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
