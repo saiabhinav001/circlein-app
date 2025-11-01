@@ -53,6 +53,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
     }
 
+    const userData = userDoc.data();
+    const userCommunityId = userData.communityId;
+
     // Mark user as deleted (DO NOT remove document)
     await updateDoc(doc(db, 'users', email), {
       deleted: true,
@@ -64,6 +67,32 @@ export async function POST(request: NextRequest) {
     });
 
     console.log('✅ User marked as deleted:', email);
+
+    // IMPORTANT: Release the access code so it can be reused
+    // Find and reset any access code used by this user
+    const { collection, query, where, getDocs } = await import('firebase/firestore');
+    const accessCodesQuery = query(
+      collection(db, 'accessCodes'),
+      where('usedBy', '==', email),
+      where('isUsed', '==', true)
+    );
+    
+    const accessCodeSnapshot = await getDocs(accessCodesQuery);
+    
+    if (!accessCodeSnapshot.empty) {
+      // Reset the access code to unused state
+      for (const accessCodeDoc of accessCodeSnapshot.docs) {
+        await updateDoc(doc(db, 'accessCodes', accessCodeDoc.id), {
+          isUsed: false,
+          usedBy: null,
+          usedAt: null,
+          releasedAt: serverTimestamp(),
+          releasedReason: `User ${email} was deleted`,
+          releasedBy: session.user.email,
+        });
+        console.log('✅ Access code released:', accessCodeDoc.id);
+      }
+    }
 
     return NextResponse.json({
       success: true,

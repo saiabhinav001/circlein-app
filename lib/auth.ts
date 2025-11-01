@@ -73,6 +73,7 @@ export const authOptions: NextAuthOptions = {
                 communityId: accessCodeData.communityId || userData.communityId,
                 role: userData.role || 'resident',
                 password: credentials?.password,
+                accessCode: credentials?.accessCode, // Pass access code to signIn callback
                 isExistingUser: false, // Treat as new signup to trigger password creation
                 isAddingPassword: true, // Flag to indicate adding password to existing account
               };
@@ -186,6 +187,7 @@ export const authOptions: NextAuthOptions = {
             name: credentials.name,
             communityId: communityId,
             password: credentials.password, // Pass password to be saved
+            accessCode: credentials.accessCode, // Pass access code to signIn callback
             isExistingUser: false // Flag to indicate this is a new user
           };
         } catch (error) {
@@ -242,15 +244,29 @@ export const authOptions: NextAuthOptions = {
               await setDoc(doc(db, 'users', user.email), {
                 password: hashedPassword,
                 authProvider: 'hybrid', // Both Google and credentials work now
+                communityId: (user as any).communityId, // Update communityId from access code
                 updatedAt: serverTimestamp(),
                 lastLogin: serverTimestamp(),
                 passwordSetAt: serverTimestamp(),
               }, { merge: true });
               
+              // IMPORTANT: Mark access code as used
+              if ((user as any).accessCode) {
+                await setDoc(doc(db, 'accessCodes', (user as any).accessCode), {
+                  isUsed: true,
+                  usedBy: user.email,
+                  usedAt: serverTimestamp(),
+                  passwordAdded: true
+                }, { merge: true });
+                console.log('✅ Access code marked as used:', (user as any).accessCode);
+              }
+              
               console.log('✅ Password added to Google account:', user.email);
             } else {
               // Create/recreate resident user with communityId and hashed password
               // This will overwrite any previously deleted account
+              const isRestoration = existingUserDoc.exists() && existingUserDoc.data().deleted;
+              
               await setDoc(doc(db, 'users', user.email), {
                 name: user.name || user.email.split('@')[0],
                 email: user.email,
@@ -265,11 +281,24 @@ export const authOptions: NextAuthOptions = {
                 updatedAt: serverTimestamp(),
                 lastLogin: serverTimestamp(),
                 // If previously deleted, keep history
-                ...(existingUserDoc.exists() && existingUserDoc.data().deleted ? {
+                ...(isRestoration ? {
                   restoredAt: serverTimestamp(),
                   restoredViaAccessCode: true,
+                  previouslyDeletedAt: existingUserDoc.data().deletedAt,
+                  previouslyDeletedBy: existingUserDoc.data().deletedBy,
                 } : {}),
               });
+              
+              // IMPORTANT: Mark access code as used
+              if ((user as any).accessCode) {
+                await setDoc(doc(db, 'accessCodes', (user as any).accessCode), {
+                  isUsed: true,
+                  usedBy: user.email,
+                  usedAt: serverTimestamp(),
+                  ...(isRestoration ? { restoredUser: true } : {})
+                }, { merge: true });
+                console.log('✅ Access code marked as used:', (user as any).accessCode);
+              }
               
               console.log('✅ Resident user created/restored:', user.email, 'for community:', (user as any).communityId);
             }
@@ -378,8 +407,10 @@ export const authOptions: NextAuthOptions = {
             console.log('🔐 Layer 3: Checking account status...');
             
             // Check if account is marked as deleted
-            if (userData.deleted === true || userData.status === 'deleted') {
-              console.error('❌ LAYER 3 FAILED: Account marked as deleted:', token.email);
+            // IMPORTANT: Only block if deleted AND not being restored via access code
+            if ((userData.deleted === true || userData.status === 'deleted') && 
+                userData.status !== 'active') {
+              console.error('❌ LAYER 3 FAILED: Account permanently deleted:', token.email);
               return null as any; // Force sign-out
             }
             
