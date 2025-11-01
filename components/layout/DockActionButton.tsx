@@ -33,7 +33,7 @@ export function DockActionButton({
   const heightSync = useTransform(
     distance, 
     [-200, -100, 0, 100, 200], 
-    [52, 64, 88, 64, 52]
+    [44, 56, 76, 56, 44]
   );
   const height = useSpring(heightSync, { 
     mass: 0.1, 
@@ -45,7 +45,7 @@ export function DockActionButton({
   const widthSync = useTransform(
     distance, 
     [-200, -100, 0, 100, 200], 
-    [52, 64, 88, 64, 52]
+    [44, 56, 76, 56, 44]
   );
   const width = useSpring(widthSync, { 
     mass: 0.1, 
@@ -57,7 +57,7 @@ export function DockActionButton({
   const iconSizeSync = useTransform(
     distance, 
     [-200, -100, 0, 100, 200], 
-    [22, 26, 34, 26, 22]
+    [20, 24, 30, 24, 20]
   );
   const iconSize = useSpring(iconSizeSync, { 
     mass: 0.1, 
