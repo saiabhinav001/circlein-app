@@ -281,42 +281,85 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async jwt({ token, user, account, trigger }) {
-      // Persist user data to token
+      // ============================================
+      // 🔒 LAYER 1: INITIAL TOKEN SETUP
+      // ============================================
       if (user) {
         token.email = user.email;
         token.name = user.name;
         token.picture = user.image;
+        console.log('🔐 Layer 1: Initial token created for:', token.email);
       }
       
-      // Always fetch fresh user data from Firestore to ensure token is up-to-date
-      // This ensures communityId, role, and other fields are always current
+      // ============================================
+      // 🔒 LAYER 2: FIRESTORE USER VALIDATION
+      // ============================================
+      // Always fetch fresh user data from Firestore on EVERY request
+      // This ensures deleted users can't access the system
       if (token.email) {
         try {
+          console.log('🔐 Layer 2: Validating user in Firestore:', token.email);
           const userDoc = await getDoc(doc(db, 'users', token.email));
+          
           if (userDoc.exists()) {
             const userData = userDoc.data();
+            
+            // ============================================
+            // 🔒 LAYER 3: ACCOUNT STATUS VALIDATION
+            // ============================================
+            console.log('🔐 Layer 3: Checking account status...');
+            
+            // Check if account is marked as deleted
+            if (userData.deleted === true || userData.status === 'deleted') {
+              console.error('❌ LAYER 3 FAILED: Account marked as deleted:', token.email);
+              return null as any; // Force sign-out
+            }
+            
+            // Check if account is suspended
+            if (userData.status === 'suspended' || userData.suspended === true) {
+              console.error('❌ LAYER 3 FAILED: Account suspended:', token.email);
+              return null as any; // Force sign-out
+            }
+            
+            // Check if account is banned
+            if (userData.status === 'banned' || userData.banned === true) {
+              console.error('❌ LAYER 3 FAILED: Account banned:', token.email);
+              return null as any; // Force sign-out
+            }
+            
+            // Update last activity timestamp
+            await setDoc(doc(db, 'users', token.email), {
+              lastActivity: serverTimestamp(),
+              lastLogin: serverTimestamp(),
+            }, { merge: true });
+            
+            // Update token with validated user data
             token.role = userData.role;
             token.communityId = userData.communityId;
             token.flatNumber = userData.flatNumber;
             token.profileCompleted = userData.profileCompleted;
+            token.status = userData.status || 'active';
             
-            console.log('✅ JWT token updated with user data:', {
-              email: token.email,
+            console.log('✅ All 3 layers passed for:', token.email, {
               role: token.role,
-              communityId: token.communityId
+              communityId: token.communityId,
+              status: token.status
             });
           } else {
-            // User document doesn't exist - check if there's an invite first
+            // ============================================
+            // 🔄 AUTO-RECOVERY: CHECK FOR INVITE
+            // ============================================
             console.log('⚠️ User document not found, checking for invite:', token.email);
             
             const invitesQuery = query(
               collection(db, 'invites'),
-              where('email', '==', token.email)
+              where('email', '==', token.email),
+              where('status', 'in', ['pending', 'accepted'])
             );
             const inviteSnapshot = await getDocs(invitesQuery);
             
             if (!inviteSnapshot.empty) {
-              // Found an invite - auto-create user from invite
+              // Found active invite - auto-create user
               const inviteData = inviteSnapshot.docs[0].data();
               console.log('✅ Found invite, auto-creating user:', inviteData);
               
@@ -327,17 +370,27 @@ export const authOptions: NextAuthOptions = {
                 communityId: inviteData.communityId || 'sunny-meadows',
                 authProvider: account?.provider || 'google',
                 profileCompleted: true,
+                status: 'active',
+                deleted: false,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
                 lastLogin: serverTimestamp(),
+                lastActivity: serverTimestamp(),
               };
               
               await setDoc(doc(db, 'users', token.email), newUserData);
+              
+              // Update invite status
+              await setDoc(inviteSnapshot.docs[0].ref, {
+                status: 'accepted',
+                acceptedAt: serverTimestamp(),
+              }, { merge: true });
               
               // Update token with new user data
               token.role = newUserData.role;
               token.communityId = newUserData.communityId;
               token.profileCompleted = true;
+              token.status = 'active';
               
               console.log('✅ User auto-created from invite:', {
                 email: token.email,
@@ -345,19 +398,26 @@ export const authOptions: NextAuthOptions = {
                 communityId: token.communityId
               });
             } else {
-              // No invite found - check if this is a new user or deleted account
+              // ============================================
+              // 🚫 NO USER, NO INVITE: DELETED OR NEW
+              // ============================================
+              // Check if this was a previously authenticated user
               if (token.role || token.communityId) {
-                // User had data before, account was deleted
-                console.error('❌ User account was deleted:', token.email);
-                return null as any;
+                // User had data before - account was DELETED
+                console.error('❌ DELETED ACCOUNT: User had data but document removed:', token.email);
+                console.error('Previous data:', { role: token.role, communityId: token.communityId });
+                return null as any; // Force sign-out - user was deleted
               } else {
-                // New user without invite - allow through to setup flow
-                console.log('⚠️ New user without invite, allowing through to setup:', token.email);
+                // Brand new user without invite - allow to setup flow
+                console.log('⚠️ New user without invite, allowing to setup:', token.email);
+                token.status = 'new';
               }
             }
           }
         } catch (error) {
-          console.error('❌ Error fetching user data for token:', error);
+          console.error('❌ Error in authentication layers:', error);
+          // On error, force sign-out for security
+          return null as any;
         }
       }
       

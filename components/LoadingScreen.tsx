@@ -9,23 +9,27 @@ export default function LoadingScreen() {
   const [hasShownBefore, setHasShownBefore] = useState(false);
 
   useEffect(() => {
-    // Check if loading screen has been shown in this session
-    const shown = sessionStorage.getItem('circlein-loading-shown');
+    // Always show loading screen, but track if shown recently
+    const lastShown = localStorage.getItem('circlein-last-loading-shown');
+    const now = Date.now();
     
-    if (shown === 'true') {
-      // Skip loading screen if already shown in this session
+    // Show if: never shown OR more than 30 seconds ago OR page refresh
+    const shouldShow = !lastShown || (now - parseInt(lastShown)) > 30000;
+    
+    if (!shouldShow) {
+      // Skip if shown very recently (within 30 seconds)
       setIsLoading(false);
       setHasShownBefore(true);
       return;
     }
 
-    // Mark as shown for this session
-    sessionStorage.setItem('circlein-loading-shown', 'true');
+    // Mark current time
+    localStorage.setItem('circlein-last-loading-shown', now.toString());
 
-    // Show loading screen for 2 seconds on first visit
+    // Show loading screen for 3 seconds to see full animation
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 2000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
