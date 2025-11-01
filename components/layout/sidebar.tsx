@@ -61,14 +61,22 @@ const textVariants = {
 
 interface SidebarProps {
   onClose?: () => void;
+  onCollapseChange?: (collapsed: boolean) => void;
 }
 
-export function Sidebar({ onClose }: SidebarProps = {}) {
+export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { data: session } = useSession();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+
+  // Notify parent when collapse state changes
+  const handleCollapseToggle = () => {
+    const newCollapsed = !isCollapsed;
+    setIsCollapsed(newCollapsed);
+    onCollapseChange?.(newCollapsed);
+  };
 
   // Prevent hydration issues by waiting for client mount
   useEffect(() => {
@@ -147,7 +155,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsCollapsed(!isCollapsed)}
+                onClick={handleCollapseToggle}
                 className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center"
               >
                 <Menu className="w-4 h-4 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
@@ -175,7 +183,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    onClick={handleCollapseToggle}
                     className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center shrink-0"
                   >
                     <motion.div
