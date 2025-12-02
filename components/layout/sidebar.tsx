@@ -575,20 +575,30 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 className="w-full justify-start px-3 py-3 rounded-xl hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30 transition-all duration-300 group"
               >
-              <motion.div
-                animate={{ 
-                  rotate: theme === 'dark' ? 0 : 180,
-                  scale: theme === 'dark' ? 1 : 1.1
-                }}
-                transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                className="relative"
-              >
-                {theme === 'dark' ? (
+              <div className="relative w-5 h-5 flex items-center justify-center">
+                <motion.div
+                  animate={{ 
+                    rotate: theme === 'dark' ? 0 : 180,
+                    scale: theme === 'dark' ? 1 : 0,
+                    opacity: theme === 'dark' ? 1 : 0
+                  }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                  className="absolute"
+                >
                   <Sun className="w-5 h-5 text-amber-500 group-hover:text-amber-600 transition-colors" />
-                ) : (
-                  <Moon className="w-5 h-5 text-black dark:text-slate-400 group-hover:text-black dark:group-hover:text-slate-200 transition-colors" />
-                )}
-              </motion.div>
+                </motion.div>
+                <motion.div
+                  animate={{ 
+                    rotate: theme === 'dark' ? -180 : 0,
+                    scale: theme === 'dark' ? 0 : 1,
+                    opacity: theme === 'dark' ? 0 : 1
+                  }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                  className="absolute"
+                >
+                  <Moon className="w-5 h-5 text-slate-700 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors" />
+                </motion.div>
+              </div>
               
               <AnimatePresence mode="wait">
                 <motion.span
