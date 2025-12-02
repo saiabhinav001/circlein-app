@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Sun, Moon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { CircleInLogo } from '@/components/ui';
+import { useTheme } from '@/components/providers/theme-provider';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -24,6 +25,7 @@ export default function SignIn() {
   const [showRipple, setShowRipple] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { theme, setTheme } = useTheme();
 
   // Check for error parameter
   useEffect(() => {
@@ -146,17 +148,46 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-3 sm:p-4 md:p-6">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-3 sm:p-4 md:p-6 bg-white dark:bg-slate-950 transition-colors duration-300">
+      {/* Theme Toggle Button - Top Right */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.5, duration: 0.4 }}
+        className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50"
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="relative group w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-100/80 dark:bg-slate-800/80 backdrop-blur-md hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-all duration-300 shadow-lg hover:shadow-xl border border-slate-200/50 dark:border-slate-700/50"
+        >
+          <div className="relative w-5 h-5 sm:w-6 sm:h-6">
+            <Sun className="absolute inset-0 w-5 h-5 sm:w-6 sm:h-6 text-amber-500 transition-all duration-300 rotate-0 scale-100 dark:rotate-90 dark:scale-0" />
+            <Moon className="absolute inset-0 w-5 h-5 sm:w-6 sm:h-6 text-slate-700 dark:text-blue-400 transition-all duration-300 rotate-90 scale-0 dark:rotate-0 dark:scale-100" />
+          </div>
+          {/* Tooltip */}
+          <span className="absolute right-full mr-3 px-3 py-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap pointer-events-none shadow-lg">
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </span>
+        </Button>
+      </motion.div>
+
       {/* Animated Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-500">
         <motion.div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-20 dark:opacity-30"
           animate={{
-            background: [
+            background: theme === 'dark' ? [
               'radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%)',
               'radial-gradient(circle at 80% 50%, rgba(168, 85, 247, 0.15) 0%, transparent 50%)',
               'radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%)',
               'radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%)',
+            ] : [
+              'radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%)',
+              'radial-gradient(circle at 80% 50%, rgba(168, 85, 247, 0.08) 0%, transparent 50%)',
+              'radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%)',
+              'radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%)',
             ],
           }}
           transition={{
@@ -167,11 +198,11 @@ export default function SignIn() {
         />
         {/* Subtle Grid Pattern */}
         <div 
-          className="absolute inset-0 opacity-[0.02]"
+          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02]"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)
+              linear-gradient(rgba(100, 100, 100, 0.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(100, 100, 100, 0.3) 1px, transparent 1px)
             `,
             backgroundSize: '50px 50px',
           }}
@@ -234,10 +265,10 @@ export default function SignIn() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
         >
-          <Card className="border-0 shadow-2xl bg-slate-900/50 backdrop-blur-xl ring-1 ring-white/10">
+          <Card className="border-0 shadow-2xl bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl ring-1 ring-slate-200/50 dark:ring-white/10 transition-colors duration-300">
             <CardHeader className="pb-4 sm:pb-6 space-y-1 px-4 sm:px-6 pt-4 sm:pt-6">
-              <CardTitle className="text-xl sm:text-2xl text-white">Sign In</CardTitle>
-              <CardDescription className="text-slate-400 text-xs sm:text-sm">
+              <CardTitle className="text-xl sm:text-2xl text-slate-900 dark:text-white">Sign In</CardTitle>
+              <CardDescription className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
                 Enter your credentials to access your account
               </CardDescription>
             </CardHeader>
@@ -246,7 +277,7 @@ export default function SignIn() {
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                 {/* Email Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-slate-200 text-xs sm:text-sm">Email</Label>
+                  <Label htmlFor="email" className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Email</Label>
                   <div className="relative group">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors duration-200" />
                     <Input
@@ -297,7 +328,7 @@ export default function SignIn() {
                 
                 {/* Password Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-slate-200 text-xs sm:text-sm">Password</Label>
+                  <Label htmlFor="password" className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Password</Label>
                   <div className="relative group">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-focus-within:text-purple-400 transition-colors duration-200" />
                     <Input

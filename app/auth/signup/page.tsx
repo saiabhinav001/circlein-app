@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, User, Key, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, Key, Eye, EyeOff, CheckCircle2, AlertCircle, Sun, Moon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { CircleInLogo } from '@/components/ui';
+import { useTheme } from '@/components/providers/theme-provider';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -30,6 +31,7 @@ export default function SignUp() {
   const [ripplePosition, setRipplePosition] = useState({ x: 0, y: 0 });
   const [showRipple, setShowRipple] = useState(false);
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -115,9 +117,33 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4 bg-white dark:bg-slate-950 transition-colors duration-300">
+      {/* Theme Toggle Button - Top Right */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.5, duration: 0.4 }}
+        className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50"
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="relative group w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-100/80 dark:bg-slate-800/80 backdrop-blur-md hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-all duration-300 shadow-lg hover:shadow-xl border border-slate-200/50 dark:border-slate-700/50"
+        >
+          <div className="relative w-5 h-5 sm:w-6 sm:h-6">
+            <Sun className="absolute inset-0 w-5 h-5 sm:w-6 sm:h-6 text-amber-500 transition-all duration-300 rotate-0 scale-100 dark:rotate-90 dark:scale-0" />
+            <Moon className="absolute inset-0 w-5 h-5 sm:w-6 sm:h-6 text-slate-700 dark:text-blue-400 transition-all duration-300 rotate-90 scale-0 dark:rotate-0 dark:scale-100" />
+          </div>
+          {/* Tooltip */}
+          <span className="absolute right-full mr-3 px-3 py-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap pointer-events-none shadow-lg">
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </span>
+        </Button>
+      </motion.div>
+
       {/* Animated Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-500">
         <motion.div
           className="absolute inset-0 opacity-30"
           animate={{
