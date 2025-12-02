@@ -133,7 +133,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
   }
 
   return (
-    <TooltipProvider delayDuration={300} skipDelayDuration={100}>
+    <TooltipProvider delayDuration={200} skipDelayDuration={0}>
       <motion.div
         variants={sidebarVariants}
         animate={isCollapsed ? 'closed' : 'open'}
@@ -271,7 +271,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
               className={cn(isCollapsed && "w-full flex items-center justify-center")}
             >
               {isCollapsed ? (
-                <Tooltip>
+                <Tooltip delayDuration={200}>
                   <TooltipTrigger asChild>
                     <Link
                       href={item.href}
@@ -418,7 +418,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   className={cn(isCollapsed && "w-full flex items-center justify-center")}
                 >
                   {isCollapsed ? (
-                    <Tooltip>
+                    <Tooltip delayDuration={200}>
                       <TooltipTrigger asChild>
                         <Link
                           href={item.href}
@@ -545,7 +545,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
             className={cn(isCollapsed && "w-full flex items-center justify-center")}
           >
             {isCollapsed ? (
-              <Tooltip>
+              <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
@@ -614,7 +614,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
             className={cn(isCollapsed && "w-full flex items-center justify-center")}
           >
             {isCollapsed ? (
-              <Tooltip>
+              <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
