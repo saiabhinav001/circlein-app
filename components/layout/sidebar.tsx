@@ -539,7 +539,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                   className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-all duration-200"
                 >
-                  <div className="relative w-5 h-5">
+                  <div className="relative w-5 h-5 flex items-center justify-center">
                     <motion.div
                       animate={{ 
                         rotate: theme === 'dark' ? 0 : 180,
@@ -547,7 +547,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                         opacity: theme === 'dark' ? 1 : 0
                       }}
                       transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                      className="absolute inset-0 flex items-center justify-center"
+                      className="absolute"
                     >
                       <Sun className="w-5 h-5 text-amber-500" />
                     </motion.div>
@@ -558,7 +558,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                         opacity: theme === 'dark' ? 0 : 1
                       }}
                       transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                      className="absolute inset-0 flex items-center justify-center"
+                      className="absolute"
                     >
                       <Moon className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                     </motion.div>
