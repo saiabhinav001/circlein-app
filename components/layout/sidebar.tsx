@@ -133,7 +133,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
   }
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={300} skipDelayDuration={100}>
       <motion.div
         variants={sidebarVariants}
         animate={isCollapsed ? 'closed' : 'open'}
@@ -293,7 +293,11 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                       />
                     </Link>
                   </TooltipTrigger>
-                  <TooltipContent side="right" className="font-medium">
+                  <TooltipContent 
+                    side="right" 
+                    sideOffset={12}
+                    className="font-medium bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-2 text-sm rounded-lg shadow-lg border-0"
+                  >
                     {item.name}
                   </TooltipContent>
                 </Tooltip>
@@ -436,7 +440,11 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                           />
                         </Link>
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="font-medium">
+                      <TooltipContent 
+                        side="right" 
+                        sideOffset={12}
+                        className="font-medium bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-2 text-sm rounded-lg shadow-lg border-0"
+                      >
                         {item.name}
                       </TooltipContent>
                     </Tooltip>
@@ -552,7 +560,11 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                     )}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="font-medium">
+                <TooltipContent 
+                  side="right" 
+                  sideOffset={12}
+                  className="font-medium bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-2 text-sm rounded-lg shadow-lg border-0"
+                >
                   {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                 </TooltipContent>
               </Tooltip>
@@ -613,7 +625,11 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                     <LogOut className="w-5 h-5 text-red-500" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="font-medium">
+                <TooltipContent 
+                  side="right" 
+                  sideOffset={12}
+                  className="font-medium bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-2 text-sm rounded-lg shadow-lg border-0"
+                >
                   Sign Out
                 </TooltipContent>
               </Tooltip>
