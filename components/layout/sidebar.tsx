@@ -9,6 +9,7 @@ import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, 
 import { useTheme } from '../providers/theme-provider';
 import { Button } from '@/components/ui/button';
 import { signOut } from 'next-auth/react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { CircleInLogo } from '@/components/ui';
 
@@ -132,12 +133,13 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
   }
 
   return (
-    <motion.div
-      variants={sidebarVariants}
-      animate={isCollapsed ? 'closed' : 'open'}
-      className="h-screen bg-gradient-to-b from-white via-slate-50/50 to-white dark:from-slate-950 dark:via-slate-900/50 dark:to-slate-950 border-r border-slate-200/80 dark:border-slate-800/80 flex flex-col relative shadow-2xl w-full sm:w-[280px] lg:w-auto overflow-hidden"
-      style={{ zIndex: 50 }}
-    >
+    <TooltipProvider>
+      <motion.div
+        variants={sidebarVariants}
+        animate={isCollapsed ? 'closed' : 'open'}
+        className="h-screen bg-gradient-to-b from-white via-slate-50/50 to-white dark:from-slate-950 dark:via-slate-900/50 dark:to-slate-950 border-r border-slate-200/80 dark:border-slate-800/80 flex flex-col relative shadow-2xl w-full sm:w-[280px] lg:w-auto overflow-hidden"
+        style={{ zIndex: 50 }}
+      >
         {/* Enhanced decorative gradient overlay */}
         <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-br from-blue-500/10 via-purple-500/8 to-transparent pointer-events-none" />
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-100/30 dark:from-slate-900/30 to-transparent pointer-events-none" />
@@ -272,30 +274,24 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                 <Link
                   href={item.href}
                   onClick={() => onClose?.()}
-                  className="relative group w-full flex items-center justify-center"
+                  title={item.name}
+                  className={cn(
+                    'relative group flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200',
+                    pathname === item.href
+                      ? 'bg-slate-100 dark:bg-slate-800 shadow-sm'
+                      : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
+                  )}
                 >
-                  <div
+                  <item.icon 
                     className={cn(
-                      'flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200',
-                      pathname === item.href
-                        ? 'bg-slate-100 dark:bg-slate-800 shadow-sm'
-                        : 'group-hover:bg-slate-100/80 dark:group-hover:bg-slate-800/80'
-                    )}
-                  >
-                    <item.icon 
-                      className={cn(
-                        "w-5 h-5 transition-colors duration-200",
-                        pathname === item.href 
-                          ? "text-blue-600 dark:text-blue-400" 
-                          : "text-slate-600 dark:text-slate-400"
-                      )} 
-                    />
-                  </div>
-                  {/* Custom Tooltip */}
-                  <span className="absolute left-full ml-3 px-3 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-medium rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap pointer-events-none z-[100]">
+                      "w-5 h-5 transition-colors duration-200",
+                      pathname === item.href 
+                        ? "text-blue-600 dark:text-blue-400" 
+                        : "text-slate-600 dark:text-slate-400"
+                    )} 
+                  />
+                  <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
                     {item.name}
-                    {/* Arrow */}
-                    <span className="absolute right-full top-1/2 -translate-y-1/2 border-[6px] border-transparent border-r-slate-900 dark:border-r-slate-100"></span>
                   </span>
                 </Link>
               ) : (
@@ -418,30 +414,24 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                     <Link
                       href={item.href}
                       onClick={() => onClose?.()}
-                      className="relative group w-full flex items-center justify-center"
+                      title={item.name}
+                      className={cn(
+                        'relative group flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200',
+                        pathname === item.href
+                          ? 'bg-slate-100 dark:bg-slate-800 shadow-sm'
+                          : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
+                      )}
                     >
-                      <div
+                      <item.icon 
                         className={cn(
-                          'flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200',
-                          pathname === item.href
-                            ? 'bg-slate-100 dark:bg-slate-800 shadow-sm'
-                            : 'group-hover:bg-slate-100/80 dark:group-hover:bg-slate-800/80'
-                        )}
-                      >
-                        <item.icon 
-                          className={cn(
-                            "w-5 h-5 transition-colors duration-200",
-                            pathname === item.href 
-                              ? "text-orange-600 dark:text-orange-400" 
-                              : "text-slate-600 dark:text-slate-400"
-                          )} 
-                        />
-                      </div>
-                      {/* Custom Tooltip */}
-                      <span className="absolute left-full ml-3 px-3 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-medium rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap pointer-events-none z-[100]">
+                          "w-5 h-5 transition-colors duration-200",
+                          pathname === item.href 
+                            ? "text-orange-600 dark:text-orange-400" 
+                            : "text-slate-600 dark:text-slate-400"
+                        )} 
+                      />
+                      <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
                         {item.name}
-                        {/* Arrow */}
-                        <span className="absolute right-full top-1/2 -translate-y-1/2 border-[6px] border-transparent border-r-slate-900 dark:border-r-slate-100"></span>
                       </span>
                     </Link>
                   ) : (
@@ -541,12 +531,13 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
             className={cn(isCollapsed && "w-full flex items-center justify-center")}
           >
             {isCollapsed ? (
-              <div className="relative group w-full flex items-center justify-center">
+              <div className="relative group">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  className="flex items-center justify-center w-12 h-12 rounded-lg group-hover:bg-slate-100/80 dark:group-hover:bg-slate-800/80 transition-all duration-200"
+                  title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                  className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-all duration-200"
                 >
                   {theme === 'dark' ? (
                     <Sun className="w-5 h-5 text-amber-500" />
@@ -554,11 +545,8 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                     <Moon className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                   )}
                 </Button>
-                {/* Custom Tooltip */}
-                <span className="absolute left-full ml-3 px-3 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-medium rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap pointer-events-none z-[100]">
+                <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
                   {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                  {/* Arrow */}
-                  <span className="absolute right-full top-1/2 -translate-y-1/2 border-[6px] border-transparent border-r-slate-900 dark:border-r-slate-100"></span>
                 </span>
               </div>
             ) : (
@@ -607,20 +595,18 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
             className={cn(isCollapsed && "w-full flex items-center justify-center")}
           >
             {isCollapsed ? (
-              <div className="relative group w-full flex items-center justify-center">
+              <div className="relative group">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-                  className="flex items-center justify-center w-12 h-12 rounded-lg group-hover:bg-red-50 dark:group-hover:bg-red-900/20 transition-all duration-200"
+                  title="Sign Out"
+                  className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
                 >
                   <LogOut className="w-5 h-5 text-red-500" />
                 </Button>
-                {/* Custom Tooltip */}
-                <span className="absolute left-full ml-3 px-3 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-medium rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap pointer-events-none z-[100]">
+                <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
                   Sign Out
-                  {/* Arrow */}
-                  <span className="absolute right-full top-1/2 -translate-y-1/2 border-[6px] border-transparent border-r-slate-900 dark:border-r-slate-100"></span>
                 </span>
               </div>
             ) : (
@@ -666,5 +652,6 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
           </AnimatePresence>
         </div>
       </motion.div>
+    </TooltipProvider>
   );
 }
