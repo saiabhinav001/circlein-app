@@ -70,14 +70,8 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                // Clear any cached logo preferences
                 if (typeof window !== 'undefined') {
-                  // Remove any old loading screen cache
-                  localStorage.removeItem('circlein-loading-shown');
-                  localStorage.removeItem('circlein-last-loading-shown');
-                  sessionStorage.removeItem('circlein-loading-shown');
-                  
-                  // Set theme
+                  // Set theme immediately to prevent flash
                   const theme = localStorage.getItem('circlein-theme') || 'dark';
                   document.documentElement.classList.add(theme);
                 }

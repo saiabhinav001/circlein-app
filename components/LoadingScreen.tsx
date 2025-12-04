@@ -2,22 +2,42 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { CircleInLogo } from '@/components/ui';
 
 export default function LoadingScreen() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const { status } = useSession();
 
   useEffect(() => {
-    // ALWAYS show loading screen on EVERY page load/refresh
-    // No caching, no skipping - full animation every time
+    // Only show loading animation during initial authentication
+    // Skip on normal page navigation and refreshes
     
-    // Show loading screen for 3 seconds to see full animation
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
+    if (typeof window === 'undefined') return;
 
-    return () => clearTimeout(timer);
-  }, []);
+    // Check if we've already shown the loading screen in this session
+    const hasShownThisSession = sessionStorage.getItem('circlein-loading-shown');
+    
+    // Show loading screen ONLY if:
+    // 1. Not shown yet in this session
+    // 2. User is authenticating (status === 'loading')
+    if (!hasShownThisSession && status === 'loading') {
+      setIsLoading(true);
+      
+      // Mark as shown in this session
+      sessionStorage.setItem('circlein-loading-shown', 'true');
+      
+      // Show loading screen for 2 seconds (reduced from 3)
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    } else {
+      // Skip loading screen - already authenticated or shown this session
+      setIsLoading(false);
+    }
+  }, [status]);
 
   return (
     <AnimatePresence mode="wait">
