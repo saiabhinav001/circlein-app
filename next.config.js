@@ -18,13 +18,6 @@ const nextConfig = {
     ignoreDuringBuilds: true, // Suppress ESLint warnings
   },
   
-  // Experimental features to suppress warnings
-  experimental: {
-    logging: {
-      level: 'error', // Only show errors, not warnings
-    },
-  },
-  
   // Webpack configuration to suppress warnings
   webpack: (config, { isServer }) => {
     config.infrastructureLogging = {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { AlertCircle, UserX, XCircle, ArrowLeft } from 'lucide-react';
@@ -44,7 +44,7 @@ const errorMessages = {
   }
 };
 
-export default function AuthError() {
+function AuthErrorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [errorType, setErrorType] = useState<string>('Default');
@@ -177,5 +177,17 @@ export default function AuthError() {
         </Card>
       </motion.div>
     </div>
+  );
+}
+
+export default function AuthError() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    }>
+      <AuthErrorContent />
+    </Suspense>
   );
 }
