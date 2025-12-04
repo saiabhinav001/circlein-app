@@ -250,7 +250,9 @@ export default function ProfilePage() {
                   )}
                 </CardTitle>
                 <CardDescription className="text-gray-600 dark:text-gray-400">
-                  Real-time overview of your booking activity
+                  {isAdmin 
+                    ? 'Real-time community-wide statistics and your personal booking activity' 
+                    : 'Real-time overview of your booking activity'}
                 </CardDescription>
               </div>
               {!bookingStats.loading && bookingStats.totalBookings > 0 && (
@@ -299,6 +301,132 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="space-y-6">
+                {/* Admin Overview Stats - Only for Admins */}
+                {isAdmin && bookingStats.isAdmin && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Shield className="h-5 w-5 text-red-600 dark:text-red-400" />
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                        Admin Overview - Community Statistics
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <motion.div 
+                        className="relative overflow-hidden text-center space-y-3 p-6 bg-gradient-to-br from-red-50 via-red-100 to-rose-50 dark:from-red-900/30 dark:via-red-800/30 dark:to-rose-900/30 rounded-xl border-2 border-red-200 dark:border-red-700 shadow-md hover:shadow-xl transition-shadow"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        whileHover={{ scale: 1.03, y: -5 }}
+                      >
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-red-200 dark:bg-red-800 rounded-full blur-3xl opacity-50"></div>
+                        <div className="relative">
+                          <div className="inline-flex items-center justify-center w-12 h-12 mb-2 bg-red-500 dark:bg-red-600 rounded-full">
+                            <BarChart3 className="h-6 w-6 text-white" />
+                          </div>
+                          <div className="text-4xl font-bold text-red-600 dark:text-red-400 mb-1">
+                            {bookingStats.allBookings || 0}
+                          </div>
+                          <div className="text-sm font-semibold text-red-700 dark:text-red-300">
+                            All Bookings
+                          </div>
+                          <div className="text-xs text-red-600 dark:text-red-400 mt-1">
+                            Community-wide
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      <motion.div 
+                        className="relative overflow-hidden text-center space-y-3 p-6 bg-gradient-to-br from-emerald-50 via-emerald-100 to-green-50 dark:from-emerald-900/30 dark:via-emerald-800/30 dark:to-green-900/30 rounded-xl border-2 border-emerald-200 dark:border-emerald-700 shadow-md hover:shadow-xl transition-shadow"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        whileHover={{ scale: 1.03, y: -5 }}
+                      >
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-200 dark:bg-emerald-800 rounded-full blur-3xl opacity-50"></div>
+                        <div className="relative">
+                          <div className="inline-flex items-center justify-center w-12 h-12 mb-2 bg-emerald-500 dark:bg-emerald-600 rounded-full">
+                            <CheckCircle2 className="h-6 w-6 text-white" />
+                          </div>
+                          <div className="text-4xl font-bold text-emerald-600 dark:text-emerald-400 mb-1">
+                            {bookingStats.allConfirmed || 0}
+                          </div>
+                          <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                            All Confirmed
+                          </div>
+                          <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                            Active bookings
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      <motion.div 
+                        className="relative overflow-hidden text-center space-y-3 p-6 bg-gradient-to-br from-amber-50 via-amber-100 to-yellow-50 dark:from-amber-900/30 dark:via-amber-800/30 dark:to-yellow-900/30 rounded-xl border-2 border-amber-200 dark:border-amber-700 shadow-md hover:shadow-xl transition-shadow"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        whileHover={{ scale: 1.03, y: -5 }}
+                      >
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-amber-200 dark:bg-amber-800 rounded-full blur-3xl opacity-50"></div>
+                        <div className="relative">
+                          <div className="inline-flex items-center justify-center w-12 h-12 mb-2 bg-amber-500 dark:bg-amber-600 rounded-full">
+                            <Clock className="h-6 w-6 text-white" />
+                          </div>
+                          <div className="text-4xl font-bold text-amber-600 dark:text-amber-400 mb-1">
+                            {bookingStats.pendingBookings || 0}
+                          </div>
+                          <div className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+                            Pending Review
+                          </div>
+                          <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                            Awaiting action
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+
+                    {/* Most Booked Amenity (Global) */}
+                    {bookingStats.mostBookedAmenityGlobal && (
+                      <motion.div 
+                        className="relative overflow-hidden p-6 bg-gradient-to-r from-indigo-50 via-blue-50 to-cyan-50 dark:from-indigo-900/30 dark:via-blue-900/30 dark:to-cyan-900/30 rounded-xl border-2 border-indigo-200 dark:border-indigo-700 shadow-md"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        whileHover={{ scale: 1.02 }}
+                      >
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-200 dark:bg-indigo-800 rounded-full blur-3xl opacity-30"></div>
+                        <div className="relative flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                              <h4 className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 uppercase tracking-wide">
+                                Most Popular Amenity (Community)
+                              </h4>
+                            </div>
+                            <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">
+                              {bookingStats.mostBookedAmenityGlobal}
+                            </p>
+                            <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                              Community favorite
+                            </p>
+                          </div>
+                          <div className="relative">
+                            <Award className="h-16 w-16 text-indigo-400 dark:text-indigo-500 fill-indigo-300 dark:fill-indigo-600" />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-2 mb-4">
+                        <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                          Your Personal Statistics
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <motion.div 
                     className="relative overflow-hidden text-center space-y-3 p-6 bg-gradient-to-br from-blue-50 via-blue-100 to-blue-50 dark:from-blue-900/30 dark:via-blue-800/30 dark:to-blue-900/30 rounded-xl border-2 border-blue-200 dark:border-blue-700 shadow-md hover:shadow-xl transition-shadow"
