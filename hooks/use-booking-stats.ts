@@ -138,9 +138,19 @@ export function useBookingStats() {
               return dateB.getTime() - dateA.getTime();
             });
 
-            const activePersonal = personal.filter(b => 
-              b.status === 'confirmed' || b.status === 'active'
-            );
+            // Active = bookings that are currently happening (between startTime and endTime)
+            const now = new Date();
+            const activePersonal = personal.filter(b => {
+              if (b.status === 'cancelled' || b.status === 'completed' || b.status === 'archived') {
+                return false;
+              }
+              const startTime = b.startTime ? new Date(b.startTime) : null;
+              const endTime = b.endTime ? new Date(b.endTime) : null;
+              if (startTime && endTime) {
+                return now >= startTime && now <= endTime;
+              }
+              return false;
+            });
 
             const personalAmenityCounts = personal.reduce((acc: Record<string, number>, booking) => {
               const amenityName = booking.amenityName || booking.amenity || 'Unknown';
@@ -159,9 +169,18 @@ export function useBookingStats() {
             ).amenity;
 
             // Global stats (admin overview)
-            const allConfirmed = global.filter(b => 
-              b.status === 'confirmed' || b.status === 'active'
-            ).length;
+            // Active bookings = currently happening across all community
+            const allConfirmed = global.filter(b => {
+              if (b.status === 'cancelled' || b.status === 'completed' || b.status === 'archived') {
+                return false;
+              }
+              const startTime = b.startTime ? new Date(b.startTime) : null;
+              const endTime = b.endTime ? new Date(b.endTime) : null;
+              if (startTime && endTime) {
+                return now >= startTime && now <= endTime;
+              }
+              return false;
+            }).length;
 
             const pendingBookings = global.filter(b => b.status === 'pending').length;
 
@@ -236,10 +255,19 @@ export function useBookingStats() {
                   return dateB.getTime() - dateA.getTime();
                 });
 
-                // Calculate active bookings (status: 'confirmed' or 'active')
-                const activeBookings = bookings.filter(booking => 
-                  booking.status === 'confirmed' || booking.status === 'active'
-                );
+                // Active = bookings that are currently happening (between startTime and endTime)
+                const now = new Date();
+                const activeBookings = bookings.filter(booking => {
+                  if (booking.status === 'cancelled' || booking.status === 'completed' || booking.status === 'archived') {
+                    return false;
+                  }
+                  const startTime = booking.startTime ? new Date(booking.startTime) : null;
+                  const endTime = booking.endTime ? new Date(booking.endTime) : null;
+                  if (startTime && endTime) {
+                    return now >= startTime && now <= endTime;
+                  }
+                  return false;
+                });
 
                 // Calculate favorite amenities (count unique amenities with 2+ bookings)
                 const amenityCounts = bookings.reduce((acc: Record<string, number>, booking) => {
