@@ -56,75 +56,8 @@ export function useBookingStats() {
     topUsers: []
   });
 
-  // Generate test data for development
-  const generateTestData = () => {
-    const testBookings: Booking[] = [
-      {
-        id: 'test-1',
-        status: 'confirmed',
-        amenityName: 'Swimming Pool',
-        date: '2024-01-15',
-        timeSlot: '10:00 AM - 11:00 AM',
-        userEmail: session?.user?.email || '',
-        createdAt: new Date(Date.now() - 86400000) // 1 day ago
-      },
-      {
-        id: 'test-2',
-        status: 'confirmed',
-        amenityName: 'Gym',
-        date: '2024-01-14',
-        timeSlot: '6:00 PM - 7:00 PM',
-        userEmail: session?.user?.email || '',
-        createdAt: new Date(Date.now() - 172800000) // 2 days ago
-      },
-      {
-        id: 'test-3',
-        status: 'pending',
-        amenityName: 'Tennis Court',
-        date: '2024-01-16',
-        timeSlot: '2:00 PM - 3:00 PM',
-        userEmail: session?.user?.email || '',
-        createdAt: new Date(Date.now() - 43200000) // 12 hours ago
-      },
-      {
-        id: 'test-4',
-        status: 'confirmed',
-        amenityName: 'Swimming Pool',
-        date: '2024-01-13',
-        timeSlot: '9:00 AM - 10:00 AM',
-        userEmail: session?.user?.email || '',
-        createdAt: new Date(Date.now() - 259200000) // 3 days ago
-      }
-    ];
-
-    const activeBookings = testBookings.filter(b => b.status === 'confirmed');
-    const amenityCounts = testBookings.reduce((acc: Record<string, number>, booking) => {
-      const amenityName = booking.amenityName || 'Unknown';
-      acc[amenityName] = (acc[amenityName] || 0) + 1;
-      return acc;
-    }, {});
-
-    const favoriteAmenities = Object.values(amenityCounts).filter(count => count >= 2).length;
-    const mostBookedAmenity = Object.entries(amenityCounts).reduce(
-      (max, [amenity, count]: [string, number]) => 
-        count > max.count ? { amenity, count } : max,
-      { amenity: '', count: 0 }
-    ).amenity;
-
-    return {
-      totalBookings: testBookings.length,
-      activeBookings: activeBookings.length,
-      favoriteAmenities,
-      recentBookings: testBookings,
-      mostBookedAmenity,
-      loading: false,
-      error: null
-    };
-  };
-
   useEffect(() => {
     if (!session?.user?.email) {
-      console.log('❌ No user email found in session');
       setStats(prev => ({ 
         ...prev, 
         loading: false, 
@@ -137,60 +70,30 @@ export function useBookingStats() {
     const userRole = (session.user as any)?.role;
     const isAdminUser = userRole === 'admin';
 
-    console.log('🔄 Setting up real-time booking stats for:', userEmail, '| Role:', userRole);
-
     let unsubscribe: (() => void) | null = null;
     let adminUnsubscribe: (() => void) | null = null;
 
     const setupListener = async () => {
       try {
-        // Test Firebase connection first
         if (!db) {
           throw new Error('Firebase database not initialized');
         }
 
-        console.log('✅ Firebase connection established');
-
-        // Try a simple test query first to check if collection exists
-        try {
-          const testQuery = query(collection(db, 'bookings'), limit(1));
-          const testSnapshot = await getDocs(testQuery);
-          console.log('📊 Bookings collection exists, total docs available:', testSnapshot.size);
-        } catch (testError) {
-          console.warn('⚠️ Bookings collection might not exist yet:', testError);
-        }
-
         // For admins, set up TWO listeners: one for their personal bookings, one for all bookings
         if (isAdminUser) {
-          console.log('👨‍💼 Admin detected - setting up dual listeners (personal + global)');
           
           // Listener 1: Admin's personal bookings
-          let personalBookingsQuery;
-          try {
-            personalBookingsQuery = query(
-              collection(db, 'bookings'),
-              where('userEmail', '==', userEmail),
-              orderBy('createdAt', 'desc')
-            );
-          } catch (indexError) {
-            console.warn('⚠️ Index not available for personal bookings, using query without orderBy');
-            personalBookingsQuery = query(
-              collection(db, 'bookings'),
-              where('userEmail', '==', userEmail)
-            );
-          }
+          const personalBookingsQuery = query(
+            collection(db, 'bookings'),
+            where('userEmail', '==', userEmail),
+            orderBy('createdAt', 'desc')
+          );
 
           // Listener 2: All bookings for admin overview
-          let allBookingsQuery;
-          try {
-            allBookingsQuery = query(
-              collection(db, 'bookings'),
-              orderBy('createdAt', 'desc')
-            );
-          } catch (indexError) {
-            console.warn('⚠️ Index not available for all bookings, using query without orderBy');
-            allBookingsQuery = query(collection(db, 'bookings'));
-          }
+          const allBookingsQuery = query(
+            collection(db, 'bookings'),
+            orderBy('createdAt', 'desc')
+          );
 
           // Store personal and global data separately
           let personalBookings: Booking[] = [];
@@ -204,11 +107,10 @@ export function useBookingStats() {
                 id: doc.id,
                 ...doc.data()
               }));
-              console.log('👤 Admin personal bookings updated:', personalBookings.length);
               updateAdminStats(personalBookings, globalBookings);
             },
             (error) => {
-              console.error('❌ Error in admin personal bookings listener:', error);
+              console.error('Error in admin personal bookings listener:', error);
             }
           );
 
@@ -220,11 +122,10 @@ export function useBookingStats() {
                 id: doc.id,
                 ...doc.data()
               }));
-              console.log('🌍 All bookings updated (admin view):', globalBookings.length);
               updateAdminStats(personalBookings, globalBookings);
             },
             (error) => {
-              console.error('❌ Error in admin global bookings listener:', error);
+              console.error('Error in admin global bookings listener:', error);
             }
           );
 
@@ -308,50 +209,25 @@ export function useBookingStats() {
               error: null
             };
 
-            console.log('📈 Admin stats calculated:', {
-              personal: personal.length,
-              global: global.length,
-              confirmed: allConfirmed,
-              pending: pendingBookings
-            });
-
             setStats(newStats);
           };
 
         } else {
           // Regular user - only show their bookings
-          console.log('👤 Regular user - setting up personal listener only');
-          
-          let bookingsQuery;
-          try {
-            bookingsQuery = query(
-              collection(db, 'bookings'),
-              where('userEmail', '==', userEmail),
-              orderBy('createdAt', 'desc')
-            );
-          } catch (indexError) {
-            console.warn('⚠️ Index not available, using query without orderBy');
-            bookingsQuery = query(
-              collection(db, 'bookings'),
-              where('userEmail', '==', userEmail)
-            );
-          }
+          const bookingsQuery = query(
+            collection(db, 'bookings'),
+            where('userEmail', '==', userEmail),
+            orderBy('createdAt', 'desc')
+          );
 
           unsubscribe = onSnapshot(
             bookingsQuery,
             (snapshot) => {
               try {
-                console.log('📊 User bookings snapshot received, docs count:', snapshot.docs.length);
-                
-                const bookings: Booking[] = snapshot.docs.map(doc => {
-                  const data = doc.data();
-                  return {
-                    id: doc.id,
-                    ...data
-                  };
-                });
-
-                console.log('📊 Real-time booking stats update for user:', userEmail, '| Count:', bookings.length);
+                const bookings: Booking[] = snapshot.docs.map(doc => ({
+                  id: doc.id,
+                  ...doc.data()
+                }));
 
                 // Sort bookings by date
                 const sortedBookings = bookings.sort((a, b) => {
@@ -365,16 +241,12 @@ export function useBookingStats() {
                   booking.status === 'confirmed' || booking.status === 'active'
                 );
 
-                console.log('🎯 Active bookings found for user:', activeBookings.length);
-
                 // Calculate favorite amenities (count unique amenities with 2+ bookings)
                 const amenityCounts = bookings.reduce((acc: Record<string, number>, booking) => {
                   const amenityName = booking.amenityName || booking.amenity || 'Unknown';
                   acc[amenityName] = (acc[amenityName] || 0) + 1;
                   return acc;
                 }, {});
-
-                console.log('🏊 Amenity counts for user:', amenityCounts);
 
                 const favoriteAmenities = Object.values(amenityCounts).filter(
                   (count: number) => count >= 2
@@ -401,11 +273,10 @@ export function useBookingStats() {
                   error: null
                 };
 
-                console.log('📈 User stats calculated:', newStats);
                 setStats(newStats);
 
               } catch (error) {
-                console.error('❌ Error processing user booking stats:', error);
+                console.error('Error processing user booking stats:', error);
                 setStats(prev => ({
                   ...prev,
                   loading: false,
@@ -414,13 +285,7 @@ export function useBookingStats() {
               }
             },
             (error) => {
-              console.error('❌ Error setting up user booking stats listener:', error);
-              
-              // Check if it's an index error
-              if (error.code === 'failed-precondition' || error.message.includes('index')) {
-                console.log('📊 Index error detected for user');
-              }
-              
+              console.error('Error setting up user booking stats listener:', error);
               setStats(prev => ({
                 ...prev,
                 loading: false,
@@ -430,9 +295,8 @@ export function useBookingStats() {
           );
         }
 
-
       } catch (error: any) {
-        console.error('❌ Error initializing Firebase connection:', error);
+        console.error('Error initializing Firebase connection:', error);
         setStats(prev => ({
           ...prev,
           loading: false,
@@ -445,13 +309,8 @@ export function useBookingStats() {
 
     // Cleanup listeners on unmount
     return () => {
-      console.log('🔄 Cleaning up booking stats listeners');
-      if (unsubscribe) {
-        unsubscribe();
-      }
-      if (adminUnsubscribe) {
-        adminUnsubscribe();
-      }
+      if (unsubscribe) unsubscribe();
+      if (adminUnsubscribe) adminUnsubscribe();
     };
   }, [session?.user?.email, isAdmin]);
 
