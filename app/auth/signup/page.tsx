@@ -145,13 +145,18 @@ export default function SignUp() {
       {/* Animated Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-500">
         <motion.div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-20 dark:opacity-30"
           animate={{
-            background: [
+            background: theme === 'dark' ? [
               'radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%)',
               'radial-gradient(circle at 80% 50%, rgba(168, 85, 247, 0.15) 0%, transparent 50%)',
               'radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%)',
               'radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%)',
+            ] : [
+              'radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%)',
+              'radial-gradient(circle at 80% 50%, rgba(168, 85, 247, 0.08) 0%, transparent 50%)',
+              'radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%)',
+              'radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%)',
             ],
           }}
           transition={{
@@ -162,11 +167,11 @@ export default function SignUp() {
         />
         {/* Subtle Grid Pattern */}
         <div 
-          className="absolute inset-0 opacity-[0.02]"
+          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02]"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)
+              linear-gradient(rgba(100, 100, 100, 0.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(100, 100, 100, 0.3) 1px, transparent 1px)
             `,
             backgroundSize: '50px 50px',
           }}
@@ -208,7 +213,7 @@ export default function SignUp() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.6 }}
-            className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-purple-500 bg-clip-text text-transparent mb-2 sm:mb-3"
+            className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-purple-700 dark:from-blue-400 dark:via-purple-400 dark:to-purple-500 bg-clip-text text-transparent mb-2 sm:mb-3"
           >
             Join CircleIn
           </motion.h1>
@@ -217,7 +222,7 @@ export default function SignUp() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.6 }}
-            className="text-slate-400 text-sm sm:text-base md:text-lg"
+            className="text-slate-600 dark:text-slate-400 text-sm sm:text-base md:text-lg"
           >
             Create your account to start booking amenities
           </motion.p>
@@ -229,10 +234,10 @@ export default function SignUp() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
         >
-          <Card className="border-0 shadow-2xl bg-slate-900/50 backdrop-blur-xl ring-1 ring-white/10">
+          <Card className="border-0 shadow-2xl bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl ring-1 ring-slate-200/50 dark:ring-white/10 transition-colors duration-300">
             <CardHeader className="pb-4 sm:pb-6 space-y-1 px-4 sm:px-6 pt-4 sm:pt-6">
-              <CardTitle className="text-xl sm:text-2xl text-white">Create Account</CardTitle>
-              <CardDescription className="text-slate-400 text-xs sm:text-sm">
+              <CardTitle className="text-xl sm:text-2xl text-slate-900 dark:text-white">Create Account</CardTitle>
+              <CardDescription className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
                 Fill in your details to get started
               </CardDescription>
             </CardHeader>
@@ -241,7 +246,7 @@ export default function SignUp() {
               <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
                 {/* Access Code Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="accessCode" className="text-slate-200 text-xs sm:text-sm">Access Code *</Label>
+                  <Label htmlFor="accessCode" className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Access Code *</Label>
                   <div className="relative group">
                     <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-focus-within:text-amber-400 transition-colors duration-200" />
                     <Input
@@ -271,7 +276,7 @@ export default function SignUp() {
                 
                 {/* Name Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-slate-200 text-xs sm:text-sm">Full Name</Label>
+                  <Label htmlFor="name" className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Full Name</Label>
                   <div className="relative group">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-focus-within:text-green-400 transition-colors duration-200" />
                     <Input
@@ -298,7 +303,7 @@ export default function SignUp() {
                 
                 {/* Email Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-slate-200 text-xs sm:text-sm">Email</Label>
+                  <Label htmlFor="email" className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Email</Label>
                   <div className="relative group">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors duration-200" />
                     <Input
@@ -350,7 +355,7 @@ export default function SignUp() {
                 
                 {/* Password Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-slate-200 text-xs sm:text-sm">Password</Label>
+                  <Label htmlFor="password" className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Password</Label>
                   <div className="relative group">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-focus-within:text-purple-400 transition-colors duration-200" />
                     <Input
@@ -375,7 +380,7 @@ export default function SignUp() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors focus:outline-none"
                     >
                       {showPassword ? (
                         <EyeOff className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
@@ -388,7 +393,7 @@ export default function SignUp() {
                 
                 {/* Confirm Password Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-slate-200 text-xs sm:text-sm">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword" className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Confirm Password</Label>
                   <div className="relative group">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-focus-within:text-purple-400 transition-colors duration-200" />
                     <Input
@@ -414,7 +419,7 @@ export default function SignUp() {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-11 sm:right-12 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors focus:outline-none z-10"
+                      className="absolute right-11 sm:right-12 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors focus:outline-none z-10"
                     >
                       {showConfirmPassword ? (
                         <EyeOff className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px]" />
@@ -522,11 +527,11 @@ export default function SignUp() {
               
               {/* Sign In Link */}
               <div className="text-center mt-4 sm:mt-6">
-                <p className="text-xs sm:text-sm text-slate-400">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                   Already have an account?{' '}
                   <Link
                     href="/auth/signin"
-                    className="text-blue-400 hover:text-blue-300 font-medium transition-colors duration-200 hover:underline"
+                    className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors duration-200 hover:underline"
                   >
                     Sign in
                   </Link>
