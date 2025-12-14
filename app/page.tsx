@@ -149,41 +149,6 @@ function AnimatedBorderCard({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </Card>
-
-      {/* Animated sparkle effect on corners */}
-      <motion.div
-        className="absolute top-0 left-0 w-24 h-24 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, rgba(59, 130, 246, 0.6) 0%, transparent 70%)',
-          filter: 'blur(20px)',
-        }}
-        animate={{
-          opacity: isHovered ? [0.3, 0.6, 0.3] : 0,
-          scale: isHovered ? [1, 1.2, 1] : 1,
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-      <motion.div
-        className="absolute bottom-0 right-0 w-24 h-24 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, rgba(236, 72, 153, 0.6) 0%, transparent 70%)',
-          filter: 'blur(20px)',
-        }}
-        animate={{
-          opacity: isHovered ? [0.3, 0.6, 0.3] : 0,
-          scale: isHovered ? [1, 1.2, 1] : 1,
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: 1,
-        }}
-      />
     </div>
   );
 }

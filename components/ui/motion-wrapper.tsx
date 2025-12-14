@@ -64,7 +64,7 @@ export function FadeIn({ children, className = '', delay = 0 }: MotionWrapperPro
     <motion.div
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, margin: '-100px', amount: 0.3 }}
+      viewport={{ once: true, margin: '0px', amount: 0.1 }}
       variants={fadeUpVariants}
       transition={{ delay }}
       className={className}
