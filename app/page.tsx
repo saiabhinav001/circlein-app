@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
   Calendar, Users, Shield, Clock, Sparkles, Bell, 
-  Brain, Lock, Zap, Mail, Github, Linkedin, Twitter, Send, User, Building2, MessageSquare 
+  Brain, Lock, Zap, Mail, Github, Linkedin, Twitter, Send, User, Building2, MessageSquare, Menu, X 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { CircleInLogo } from '@/components/ui';
 import { FadeIn, StaggerContainer, StaggerItem, ScaleOnHover } from '@/components/ui/motion-wrapper';
+import Script from 'next/script';
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
@@ -256,6 +257,7 @@ ${formData.message}
 export default function LandingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (status === 'authenticated' && session) {
@@ -290,8 +292,50 @@ export default function LandingPage() {
   // Only unauthenticated users see the landing page
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
-      {/* Animated Background */}
+    <>
+      {/* Structured Data for SEO */}
+      <Script
+        id="structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': [
+              {
+                '@type': 'SoftwareApplication',
+                name: 'CircleIn',
+                applicationCategory: 'BusinessApplication',
+                operatingSystem: 'Web',
+                offers: {
+                  '@type': 'Offer',
+                  price: '0',
+                  priceCurrency: 'USD',
+                },
+                aggregateRating: {
+                  '@type': 'AggregateRating',
+                  ratingValue: '4.9',
+                  ratingCount: '500',
+                },
+                description: 'Enterprise-grade community management platform with AI-powered booking.',
+              },
+              {
+                '@type': 'Organization',
+                name: 'CircleIn',
+                url: 'https://circlein-app.vercel.app',
+                logo: 'https://circlein-app.vercel.app/logo.png',
+                contactPoint: {
+                  '@type': 'ContactPoint',
+                  email: 'abhinav.sadineni@gmail.com',
+                  contactType: 'Customer Service',
+                },
+              },
+            ],
+          }),
+        }}
+      />
+
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
+        {/* Animated Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 opacity-60" />
       <div className="absolute inset-0">
         <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
@@ -302,42 +346,82 @@ export default function LandingPage() {
       <div className="relative z-10">
         {/* Header */}
         <header className="border-b border-slate-200/50 dark:border-slate-800/50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <CircleInLogo className="w-8 h-8" />
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <Link href="/" className="flex items-center space-x-2 sm:space-x-3">
+                <CircleInLogo className="w-7 h-7 sm:w-8 sm:h-8" />
+                <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   CircleIn
                 </span>
-              </div>
-              <div className="flex items-center space-x-4">
+              </Link>
+              
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
                 <Link href="/auth/signin">
-                  <Button variant="ghost">Sign In</Button>
+                  <Button variant="ghost" size="default">
+                    Sign In
+                  </Button>
                 </Link>
                 <Link href="/auth/signup">
-                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all">
+                  <ScaleOnHover scaleAmount={1.05}>
+                    <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
+                      Get Started
+                    </Button>
+                  </ScaleOnHover>
+                </Link>
+              </div>
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? (
+                  <X className="w-6 h-6 text-slate-900 dark:text-slate-100" />
+                ) : (
+                  <Menu className="w-6 h-6 text-slate-900 dark:text-slate-100" />
+                )}
+              </button>
+            </div>
+
+            {/* Mobile Navigation Menu */}
+            {mobileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="md:hidden mt-4 pb-4 space-y-3"
+              >
+                <Link href="/auth/signin" className="block">
+                  <Button variant="ghost" className="w-full justify-start" size="lg">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/auth/signup" className="block">
+                  <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white" size="lg">
                     Get Started
                   </Button>
                 </Link>
-              </div>
-            </div>
+              </motion.div>
+            )}
           </div>
         </header>
 
         {/* Hero Section */}
-        <section className="py-24 px-4">
-          <div className="container mx-auto text-center">
+        <section className="py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6">
+          <div className="container mx-auto text-center max-w-7xl">
             <FadeIn>
-              <div className="inline-flex items-center space-x-2 bg-blue-100 dark:bg-blue-950 px-4 py-2 rounded-full mb-8">
-                <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+              <div className="inline-flex items-center space-x-2 bg-blue-100 dark:bg-blue-950 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-6 sm:mb-8">
+                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400">
                   Enterprise-Grade Community Management
                 </span>
               </div>
             </FadeIn>
               
             <FadeIn delay={0.1}>
-              <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight px-4">
                 Community Living,
                 <br />
                 <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -347,23 +431,23 @@ export default function LandingPage() {
             </FadeIn>
               
             <FadeIn delay={0.2}>
-              <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 mb-12 max-w-4xl mx-auto leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-slate-600 dark:text-slate-400 mb-8 sm:mb-10 md:mb-12 max-w-4xl mx-auto leading-relaxed px-4">
                 Experience the future of community management with AI-powered booking, real-time notifications, and enterprise-grade security. Trusted by 500+ communities worldwide.
               </p>
             </FadeIn>
               
             <FadeIn delay={0.3}>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-                <Link href="/auth/signup">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-10 sm:mb-12 md:mb-16 px-4">
+                <Link href="/auth/signup" className="w-full sm:w-auto">
                   <ScaleOnHover scaleAmount={1.05}>
-                    <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-2xl text-lg px-8 py-6">
+                    <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-2xl text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6">
                       Start Free Trial
                     </Button>
                   </ScaleOnHover>
                 </Link>
-                <Link href="/auth/signin">
+                <Link href="/auth/signin" className="w-full sm:w-auto">
                   <ScaleOnHover scaleAmount={1.05}>
-                    <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2">
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 border-2">
                       View Demo
                     </Button>
                   </ScaleOnHover>
@@ -372,13 +456,13 @@ export default function LandingPage() {
             </FadeIn>
 
               {/* Stats */}
-              <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto" staggerDelay={0.08}>
+              <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 max-w-4xl mx-auto px-4" staggerDelay={0.08}>
                 {stats.map((stat) => (
                   <StaggerItem key={stat.label} className="text-center">
-                    <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                    <div className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1 sm:mb-2">
                       {stat.value}
                     </div>
-                    <div className="text-slate-600 dark:text-slate-400 font-medium">
+                    <div className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-medium">
                       {stat.label}
                     </div>
                   </StaggerItem>
@@ -388,8 +472,8 @@ export default function LandingPage() {
         </section>
 
         {/* Features Section */}
-        <section className="py-24 px-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
-          <div className="container mx-auto">
+        <section className="py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+          <div className="container mx-auto max-w-7xl">
             <FadeIn className="text-center mb-16">
               <h2 className="text-5xl font-bold mb-6">
                 Built for{' '}
@@ -402,16 +486,16 @@ export default function LandingPage() {
               </p>
             </FadeIn>
 
-            <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" staggerDelay={0.1}>
+            <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 px-4" staggerDelay={0.1}>
               {features.map((feature) => (
                 <StaggerItem key={feature.title}>
                   <ScaleOnHover scaleAmount={1.03}>
                     <Card className="h-full shadow-xl border-0 bg-white dark:bg-slate-900 transition-shadow duration-300 hover:shadow-2xl">
                     <CardHeader>
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                        <feature.icon className="w-8 h-8 text-white" />
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg">
+                        <feature.icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                       </div>
-                      <CardTitle className="text-2xl font-bold text-center">
+                      <CardTitle className="text-xl sm:text-2xl font-bold text-center">
                         {feature.title}
                       </CardTitle>
                     </CardHeader>
@@ -429,19 +513,19 @@ export default function LandingPage() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-24 px-4">
-          <div className="container mx-auto">
+        <section className="py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6">
+          <div className="container mx-auto max-w-7xl">
             <FadeIn>
-              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 md:p-16 text-white text-center shadow-2xl">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl sm:rounded-3xl p-8 sm:p-12 md:p-16 text-white text-center shadow-2xl">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
                 Ready to Transform Your Community?
               </h2>
-              <p className="text-xl md:text-2xl mb-10 opacity-95 max-w-3xl mx-auto">
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-8 sm:mb-10 opacity-95 max-w-3xl mx-auto">
                 Join hundreds of communities already using CircleIn to streamline operations and enhance resident experiences.
               </p>
               <Link href="/auth/signup">
                 <ScaleOnHover scaleAmount={1.05}>
-                  <Button size="lg" variant="secondary" className="bg-white text-slate-900 hover:bg-slate-100 shadow-xl text-lg px-8 py-6">
+                  <Button size="lg" variant="secondary" className="bg-white text-slate-900 hover:bg-slate-100 shadow-xl text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6">
                     Start Your Free Trial
                   </Button>
                 </ScaleOnHover>
@@ -452,8 +536,8 @@ export default function LandingPage() {
         </section>
 
         {/* Team Section */}
-        <section className="py-24 px-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
-          <div className="container mx-auto">
+        <section className="py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+          <div className="container mx-auto max-w-7xl">
             <FadeIn className="text-center mb-16">
               <h2 className="text-5xl font-bold mb-6">
                 Meet the{' '}
@@ -466,18 +550,18 @@ export default function LandingPage() {
               </p>
             </FadeIn>
 
-            <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8" staggerDelay={0.15}>
+            <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 px-4" staggerDelay={0.15}>
               {team.map((member) => (
                 <StaggerItem key={member.name}>
                   <ScaleOnHover scaleAmount={1.03}>
                     <Card className="text-center shadow-xl border-0 bg-white dark:bg-slate-900 transition-shadow duration-300 hover:shadow-2xl">
                     <CardHeader>
-                      <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                        <span className="text-3xl font-bold text-white">
+                      <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg">
+                        <span className="text-2xl sm:text-3xl font-bold text-white">
                           {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </span>
                       </div>
-                      <CardTitle className="text-xl font-bold">
+                      <CardTitle className="text-lg sm:text-xl font-bold">
                         {member.name}
                       </CardTitle>
                       <CardDescription className="text-blue-600 dark:text-blue-400 font-semibold">
@@ -509,20 +593,20 @@ export default function LandingPage() {
         </section>
 
         {/* Contact Section */}
-        <section className="py-24 px-4">
+        <section className="py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6">
           <div className="container mx-auto max-w-4xl">
             <FadeIn>
-              <Card className="border-0 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden">
-                <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-1">
+              <Card className="border-0 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden mx-4 sm:mx-0">
+                <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-0.5 sm:p-1">
                   <div className="bg-white dark:bg-slate-900">
-                    <CardHeader className="text-center pb-8">
-                      <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl transform hover:scale-110 transition-transform duration-300">
-                        <Mail className="w-10 h-10 text-white" />
+                    <CardHeader className="text-center pb-6 sm:pb-8 px-4">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-2xl transform hover:scale-110 transition-transform duration-300">
+                        <Mail className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                       </div>
-                      <CardTitle className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      <CardTitle className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                         Get in Touch
                       </CardTitle>
-                      <CardDescription className="text-xl text-slate-600 dark:text-slate-400">
+                      <CardDescription className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-400">
                         Interested in becoming a community admin? We'd love to hear from you!
                       </CardDescription>
                     </CardHeader>
@@ -537,23 +621,23 @@ export default function LandingPage() {
         </section>
 
         {/* Footer */}
-        <footer className="border-t border-slate-200/50 dark:border-slate-800/50 py-12 px-4 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl">
-          <div className="container mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-              <div>
-                <div className="flex items-center space-x-3 mb-4">
-                  <CircleInLogo className="w-8 h-8" />
-                  <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <footer className="border-t border-slate-200/50 dark:border-slate-800/50 py-8 sm:py-10 md:py-12 px-4 sm:px-6 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl">
+          <div className="container mx-auto max-w-7xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
+              <div className="sm:col-span-2 md:col-span-1">
+                <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+                  <CircleInLogo className="w-7 h-7 sm:w-8 sm:h-8" />
+                  <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                     CircleIn
                   </span>
                 </div>
-                <p className="text-slate-600 dark:text-slate-400">
+                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
                   Enterprise-grade community management platform for modern residential communities.
                 </p>
               </div>
               
               <div>
-                <h3 className="font-bold mb-4 text-slate-900 dark:text-white">Product</h3>
+                <h3 className="font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white text-sm sm:text-base">Product</h3>
                 <ul className="space-y-2 text-slate-600 dark:text-slate-400">
                   <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Features</Link></li>
                   <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Pricing</Link></li>
@@ -562,7 +646,7 @@ export default function LandingPage() {
               </div>
               
               <div>
-                <h3 className="font-bold mb-4 text-slate-900 dark:text-white">Company</h3>
+                <h3 className="font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white text-sm sm:text-base">Company</h3>
                 <ul className="space-y-2 text-slate-600 dark:text-slate-400">
                   <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">About</Link></li>
                   <li><Link href="mailto:abhinav.sadineni@gmail.com" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Contact</Link></li>
@@ -571,7 +655,7 @@ export default function LandingPage() {
               </div>
               
               <div>
-                <h3 className="font-bold mb-4 text-slate-900 dark:text-white">Legal</h3>
+                <h3 className="font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white text-sm sm:text-base">Legal</h3>
                 <ul className="space-y-2 text-slate-600 dark:text-slate-400">
                   <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privacy</Link></li>
                   <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Terms</Link></li>
@@ -580,8 +664,8 @@ export default function LandingPage() {
               </div>
             </div>
             
-            <div className="border-t border-slate-200 dark:border-slate-800 pt-8 text-center">
-              <p className="text-slate-600 dark:text-slate-400">
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-6 sm:pt-8 text-center">
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
                 © 2025 CircleIn. All rights reserved. Built with ❤️ for modern communities.
               </p>
             </div>
@@ -589,5 +673,6 @@ export default function LandingPage() {
         </footer>
       </div>
     </div>
+    </>
   );
 }

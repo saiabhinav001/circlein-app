@@ -30,10 +30,59 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'CircleIn - Community Amenity Booking',
-  description: 'Book and manage community amenities with ease',
+  title: {
+    default: 'CircleIn - Enterprise Community Management Platform | Smart Booking & AI-Powered Solutions',
+    template: '%s | CircleIn',
+  },
+  description: 'Transform your community management with CircleIn. Enterprise-grade booking system, AI-powered chatbot, real-time notifications, and bank-level security. Trusted by 500+ communities worldwide.',
+  keywords: ['community management', 'amenity booking', 'residential management', 'HOA software', 'AI chatbot', 'smart reminders', 'enterprise security', 'real-time notifications'],
+  authors: [{ name: 'CircleIn Team', url: 'https://circlein-app.vercel.app' }],
+  creator: 'CircleIn',
+  publisher: 'CircleIn',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   manifest: '/manifest.json',
-  themeColor: '#3B82F6',
+  metadataBase: new URL('https://circlein-app.vercel.app'),
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://circlein-app.vercel.app',
+    title: 'CircleIn - Enterprise Community Management Platform',
+    description: 'Experience the future of community management with AI-powered booking, real-time notifications, and enterprise-grade security.',
+    siteName: 'CircleIn',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'CircleIn - Community Management Platform',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CircleIn - Enterprise Community Management',
+    description: 'Transform your community with AI-powered booking and enterprise-grade security.',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
+  ],
   icons: {
     icon: [
       { url: '/favicon.svg?v=2', type: 'image/svg+xml' },
@@ -47,10 +96,7 @@ export const metadata: Metadata = {
     width: 'device-width',
     initialScale: 1,
     maximumScale: 5,
-  },
-  robots: {
-    index: true,
-    follow: true,
+    userScalable: true,
   },
 };
 
