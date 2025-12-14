@@ -530,10 +530,10 @@ export default function LandingPage() {
               <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 max-w-4xl mx-auto px-4" staggerDelay={0.08}>
                 {stats.map((stat) => (
                   <StaggerItem key={stat.label} className="text-center">
-                    <div className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1 sm:mb-2">
+                    <div className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1 sm:mb-2 break-words hyphens-auto px-1">
                       {stat.value}
                     </div>
-                    <div className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-medium">
+                    <div className="text-xs xs:text-sm sm:text-base text-slate-600 dark:text-slate-400 font-medium break-words">
                       {stat.label}
                     </div>
                   </StaggerItem>

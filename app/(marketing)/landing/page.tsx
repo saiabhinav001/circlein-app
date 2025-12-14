@@ -228,12 +228,12 @@ export default function LandingPage() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
-                className="text-center"
+                className="text-center px-2"
               >
-                <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                <div className="text-3xl xs:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2 break-words hyphens-auto">
                   {stat.value}
                 </div>
-                <div className="text-slate-400 text-sm md:text-base">{stat.label}</div>
+                <div className="text-slate-400 text-xs xs:text-sm md:text-base break-words">{stat.label}</div>
               </motion.div>
             ))}
           </motion.div>
