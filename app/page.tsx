@@ -724,9 +724,9 @@ export default function LandingPage() {
               <div>
                 <h3 className="font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white text-base sm:text-lg">Legal</h3>
                 <ul className="space-y-2 text-slate-600 dark:text-slate-400 text-sm sm:text-base">
-                  <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privacy</Link></li>
-                  <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Terms</Link></li>
-                  <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Security</Link></li>
+                  <li><Link href="/privacy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privacy</Link></li>
+                  <li><Link href="/terms" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Terms</Link></li>
+                  <li><Link href="/security" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Security</Link></li>
                 </ul>
               </div>
             </div>
