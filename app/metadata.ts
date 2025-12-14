@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 
 export const landingMetadata: Metadata = {
   title: 'CircleIn - Enterprise Community Management Platform | Smart Booking & AI-Powered Solutions',
-  description: 'Transform your community management with CircleIn. Enterprise-grade booking system, AI-powered chatbot, real-time notifications, and bank-level security. Trusted by 500+ communities worldwide.',
+  description: 'Transform your community management with CircleIn. Enterprise-grade booking system, AI-powered chatbot, real-time notifications, and bank-level security. Built with cutting-edge technology for modern communities.',
   keywords: [
     'community management',
     'amenity booking',
@@ -35,7 +35,7 @@ export const landingMetadata: Metadata = {
     locale: 'en_US',
     url: 'https://circlein-app.vercel.app',
     title: 'CircleIn - Enterprise Community Management Platform',
-    description: 'Experience the future of community management with AI-powered booking, real-time notifications, and enterprise-grade security. Trusted by 500+ communities.',
+    description: 'Experience the future of community management with AI-powered booking, real-time notifications, and enterprise-grade security. Built for modern communities.',
     siteName: 'CircleIn',
     images: [
       {
@@ -50,7 +50,7 @@ export const landingMetadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'CircleIn - Enterprise Community Management',
-    description: 'Transform your community with AI-powered booking and enterprise-grade security. Join 500+ communities worldwide.',
+    description: 'Transform your community with AI-powered booking and enterprise-grade security. Built with cutting-edge technology.',
     images: ['/og-image.png'],
     creator: '@CircleInApp',
   },

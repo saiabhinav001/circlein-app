@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     default: 'CircleIn - Enterprise Community Management Platform | Smart Booking & AI-Powered Solutions',
     template: '%s | CircleIn',
   },
-  description: 'Transform your community management with CircleIn. Enterprise-grade booking system, AI-powered chatbot, real-time notifications, and bank-level security. Trusted by 500+ communities worldwide.',
+  description: 'Transform your community management with CircleIn. Enterprise-grade booking system, AI-powered chatbot, real-time notifications, and bank-level security. Built with cutting-edge technology for modern communities.',
   keywords: ['community management', 'amenity booking', 'residential management', 'HOA software', 'AI chatbot', 'smart reminders', 'enterprise security', 'real-time notifications'],
   authors: [{ name: 'CircleIn Team', url: 'https://circlein-app.vercel.app' }],
   creator: 'CircleIn',

@@ -22,10 +22,10 @@ import Script from 'next/script';
 export const dynamic = 'force-dynamic';
 
 const stats = [
-  { label: 'Communities', value: '500+' },
-  { label: 'Residents', value: '10K+' },
+  { label: 'Features', value: '20+' },
+  { label: 'Amenities', value: '4+' },
   { label: 'Uptime', value: '99.9%' },
-  { label: 'Support', value: '24/7' },
+  { label: 'Real-time', value: 'Sync' },
 ];
 
 const features = [
@@ -503,7 +503,7 @@ export default function LandingPage() {
               
             <FadeIn delay={0.2}>
               <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-slate-600 dark:text-slate-400 mb-8 sm:mb-10 md:mb-12 max-w-4xl mx-auto leading-relaxed px-4">
-                Experience the future of community management with AI-powered booking, real-time notifications, and enterprise-grade security. Trusted by 500+ communities worldwide.
+                Experience the future of community management with AI-powered booking, real-time notifications, and enterprise-grade security. Built with cutting-edge technology for modern communities.
               </p>
             </FadeIn>
               

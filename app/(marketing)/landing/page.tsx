@@ -64,10 +64,10 @@ const features = [
 ];
 
 const stats = [
-  { value: '500+', label: 'Active Communities' },
-  { value: '10K+', label: 'Happy Residents' },
+  { value: '20+', label: 'Features' },
+  { value: '4+', label: 'Amenities' },
   { value: '99.9%', label: 'Uptime' },
-  { value: '24/7', label: 'Support' }
+  { value: 'Real-time', label: 'Sync' }
 ];
 
 const developers = [
