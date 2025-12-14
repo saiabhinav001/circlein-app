@@ -150,7 +150,7 @@ ${formData.message}
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="John Doe"
-            className="h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 transition-all duration-300 text-base"
+            className="h-12 border-2 border-slate-200 dark:border-slate-700 focus-visible:border-blue-500 dark:focus-visible:border-blue-500 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 text-base"
           />
         </div>
 
@@ -167,7 +167,7 @@ ${formData.message}
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             placeholder="john@company.com"
-            className="h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-purple-500 dark:focus:border-purple-500 transition-all duration-300 text-base"
+            className="h-12 border-2 border-slate-200 dark:border-slate-700 focus-visible:border-purple-500 dark:focus-visible:border-purple-500 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 text-base"
           />
         </div>
       </div>
@@ -184,7 +184,7 @@ ${formData.message}
           value={formData.company}
           onChange={(e) => setFormData({ ...formData, company: e.target.value })}
           placeholder="Your Organization (Optional)"
-          className="h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-pink-500 dark:focus:border-pink-500 transition-all duration-300 text-base"
+          className="h-12 border-2 border-slate-200 dark:border-slate-700 focus-visible:border-pink-500 dark:focus-visible:border-pink-500 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 text-base"
         />
       </div>
 
@@ -201,7 +201,7 @@ ${formData.message}
           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
           placeholder="Tell us about your community and how we can help..."
           rows={6}
-          className="border-2 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 transition-all duration-300 resize-none text-base"
+          className="border-2 border-slate-200 dark:border-slate-700 focus-visible:border-blue-500 dark:focus-visible:border-blue-500 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 resize-none text-base"
         />
       </div>
 
