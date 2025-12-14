@@ -349,8 +349,8 @@ export default function LandingPage() {
           <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-3 md:py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center space-x-2">
-                <CircleInLogo className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10" />
-                <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <CircleInLogo className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9" />
+                <span className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   CircleIn
                 </span>
               </Link>
@@ -625,9 +625,9 @@ export default function LandingPage() {
           <div className="container mx-auto max-w-7xl">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
               <div className="sm:col-span-2 md:col-span-1">
-                <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
-                  <CircleInLogo className="w-7 h-7 sm:w-8 sm:h-8" />
-                  <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <div className="flex items-center space-x-2 mb-3 sm:mb-4">
+                  <CircleInLogo className="w-6 h-6 sm:w-7 sm:h-7" />
+                  <span className="text-base sm:text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                     CircleIn
                   </span>
                 </div>
