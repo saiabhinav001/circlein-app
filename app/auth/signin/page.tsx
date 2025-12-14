@@ -77,13 +77,23 @@ function SignInContent() {
         redirect: false,
       });
 
+      console.log('Credentials sign-in result:', result);
+
       if (result?.error) {
+        console.error('Credentials sign-in error:', result.error);
         toast.error(result.error);
-      } else {
+      } else if (result?.ok) {
+        console.log('Credentials sign-in successful, redirecting to dashboard');
         toast.success('Welcome back!');
-        router.push('/dashboard');
+        // Use window.location for a full page refresh to ensure session is loaded
+        window.location.href = '/dashboard';
+      } else {
+        console.warn('Unexpected sign-in result:', result);
+        toast.error('Sign-in completed but status unclear. Redirecting...');
+        window.location.href = '/dashboard';
       }
     } catch (error) {
+      console.error('Credentials sign-in exception:', error);
       toast.error('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -96,12 +106,14 @@ function SignInContent() {
     try {
       const result = await signIn('google', { 
         callbackUrl: '/dashboard',
-        redirect: false 
+        redirect: true // Changed to true for better OAuth flow
       });
       console.log('Google sign-in result:', result);
       
+      // If redirect is true, this code won't run unless there's an error
       if (result?.error) {
         console.error('Google sign-in error:', result.error);
+        setLoading(false);
         
         // Show specific error messages
         if (result.error === 'AccountDeleted') {
@@ -121,18 +133,13 @@ function SignInContent() {
             description: result.error,
           });
         }
-      } else if (result?.url) {
-        console.log('Redirecting to:', result.url);
-        window.location.href = result.url;
-      } else {
-        toast.success('Signed in successfully!');
-        router.push('/dashboard');
       }
+      // Note: With redirect: true, successful sign-ins will automatically redirect
+      // No need to manually handle the redirect
     } catch (error) {
       console.error('Google sign-in exception:', error);
-      toast.error('Failed to sign in with Google');
-    } finally {
       setLoading(false);
+      toast.error('Failed to sign in with Google');
     }
   };
 
