@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { CircleInLogo } from '@/components/ui';
+import { FadeIn, StaggerContainer, StaggerItem, ScaleOnHover } from '@/components/ui/motion-wrapper';
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
@@ -326,18 +327,16 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section className="py-24 px-4">
           <div className="container mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
+            <FadeIn>
               <div className="inline-flex items-center space-x-2 bg-blue-100 dark:bg-blue-950 px-4 py-2 rounded-full mb-8">
                 <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                   Enterprise-Grade Community Management
                 </span>
               </div>
+            </FadeIn>
               
+            <FadeIn delay={0.1}>
               <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight">
                 Community Living,
                 <br />
@@ -345,56 +344,53 @@ export default function LandingPage() {
                   Revolutionized
                 </span>
               </h1>
+            </FadeIn>
               
+            <FadeIn delay={0.2}>
               <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 mb-12 max-w-4xl mx-auto leading-relaxed">
                 Experience the future of community management with AI-powered booking, real-time notifications, and enterprise-grade security. Trusted by 500+ communities worldwide.
               </p>
+            </FadeIn>
               
+            <FadeIn delay={0.3}>
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
                 <Link href="/auth/signup">
-                  <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all text-lg px-8 py-6">
-                    Start Free Trial
-                  </Button>
+                  <ScaleOnHover scaleAmount={1.05}>
+                    <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-2xl text-lg px-8 py-6">
+                      Start Free Trial
+                    </Button>
+                  </ScaleOnHover>
                 </Link>
                 <Link href="/auth/signin">
-                  <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2">
-                    View Demo
-                  </Button>
+                  <ScaleOnHover scaleAmount={1.05}>
+                    <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2">
+                      View Demo
+                    </Button>
+                  </ScaleOnHover>
                 </Link>
               </div>
+            </FadeIn>
 
               {/* Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-                {stats.map((stat, index) => (
-                  <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.2 + index * 0.1 }}
-                    className="text-center"
-                  >
+              <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto" staggerDelay={0.08}>
+                {stats.map((stat) => (
+                  <StaggerItem key={stat.label} className="text-center">
                     <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
                       {stat.value}
                     </div>
                     <div className="text-slate-600 dark:text-slate-400 font-medium">
                       {stat.label}
                     </div>
-                  </motion.div>
+                  </StaggerItem>
                 ))}
-              </div>
-            </motion.div>
+              </StaggerContainer>
           </div>
         </section>
 
         {/* Features Section */}
         <section className="py-24 px-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
           <div className="container mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-center mb-16"
-            >
+            <FadeIn className="text-center mb-16">
               <h2 className="text-5xl font-bold mb-6">
                 Built for{' '}
                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -404,17 +400,13 @@ export default function LandingPage() {
               <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
                 Everything you need to manage your community efficiently, securely, and intelligently.
               </p>
-            </motion.div>
+            </FadeIn>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.2 + index * 0.1 }}
-                >
-                  <Card className="h-full hover:shadow-2xl transition-all duration-300 border-0 bg-white dark:bg-slate-900 hover:scale-105 transform">
+            <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" staggerDelay={0.1}>
+              {features.map((feature) => (
+                <StaggerItem key={feature.title}>
+                  <ScaleOnHover scaleAmount={1.03}>
+                    <Card className="h-full shadow-xl border-0 bg-white dark:bg-slate-900 transition-shadow duration-300 hover:shadow-2xl">
                     <CardHeader>
                       <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                         <feature.icon className="w-8 h-8 text-white" />
@@ -429,21 +421,18 @@ export default function LandingPage() {
                       </CardDescription>
                     </CardContent>
                   </Card>
-                </motion.div>
+                  </ScaleOnHover>
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerContainer>
           </div>
         </section>
 
         {/* CTA Section */}
         <section className="py-24 px-4">
           <div className="container mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 md:p-16 text-white text-center shadow-2xl"
-            >
+            <FadeIn>
+              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 md:p-16 text-white text-center shadow-2xl">
               <h2 className="text-4xl md:text-5xl font-bold mb-6">
                 Ready to Transform Your Community?
               </h2>
@@ -451,23 +440,21 @@ export default function LandingPage() {
                 Join hundreds of communities already using CircleIn to streamline operations and enhance resident experiences.
               </p>
               <Link href="/auth/signup">
-                <Button size="lg" variant="secondary" className="bg-white text-slate-900 hover:bg-slate-100 shadow-xl text-lg px-8 py-6 transform hover:scale-105 transition-all">
-                  Start Your Free Trial
-                </Button>
+                <ScaleOnHover scaleAmount={1.05}>
+                  <Button size="lg" variant="secondary" className="bg-white text-slate-900 hover:bg-slate-100 shadow-xl text-lg px-8 py-6">
+                    Start Your Free Trial
+                  </Button>
+                </ScaleOnHover>
               </Link>
-            </motion.div>
+              </div>
+            </FadeIn>
           </div>
         </section>
 
         {/* Team Section */}
         <section className="py-24 px-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
           <div className="container mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-center mb-16"
-            >
+            <FadeIn className="text-center mb-16">
               <h2 className="text-5xl font-bold mb-6">
                 Meet the{' '}
                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -477,17 +464,13 @@ export default function LandingPage() {
               <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
                 Built by passionate developers dedicated to creating exceptional community management solutions.
               </p>
-            </motion.div>
+            </FadeIn>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {team.map((member, index) => (
-                <motion.div
-                  key={member.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.2 + index * 0.1 }}
-                >
-                  <Card className="text-center hover:shadow-2xl transition-all duration-300 border-0 bg-white dark:bg-slate-900 hover:scale-105 transform">
+            <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8" staggerDelay={0.15}>
+              {team.map((member) => (
+                <StaggerItem key={member.name}>
+                  <ScaleOnHover scaleAmount={1.03}>
+                    <Card className="text-center shadow-xl border-0 bg-white dark:bg-slate-900 transition-shadow duration-300 hover:shadow-2xl">
                     <CardHeader>
                       <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                         <span className="text-3xl font-bold text-white">
@@ -518,20 +501,17 @@ export default function LandingPage() {
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>
+                  </ScaleOnHover>
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerContainer>
           </div>
         </section>
 
         {/* Contact Section */}
         <section className="py-24 px-4">
           <div className="container mx-auto max-w-4xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
+            <FadeIn>
               <Card className="border-0 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden">
                 <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-1">
                   <div className="bg-white dark:bg-slate-900">
@@ -552,7 +532,7 @@ export default function LandingPage() {
                   </div>
                 </div>
               </Card>
-            </motion.div>
+            </FadeIn>
           </div>
         </section>
 
