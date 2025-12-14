@@ -82,20 +82,44 @@ function SignInContent() {
       if (result?.error) {
         console.error('Credentials sign-in error:', result.error);
         toast.error(result.error);
+        setLoading(false);
       } else if (result?.ok) {
         console.log('Credentials sign-in successful, redirecting to dashboard');
         toast.success('Welcome back!');
-        // Use window.location for a full page refresh to ensure session is loaded
-        window.location.href = '/dashboard';
+        
+        // Cross-browser compatible redirect with multiple fallbacks
+        // This ensures compatibility with Safari Private Mode, iOS browsers, and all mobile browsers
+        try {
+          // Method 1: Try Next.js router first (most compatible with Next.js session)
+          router.push('/dashboard');
+          
+          // Method 2: Fallback to router.replace for stubborn browsers
+          setTimeout(() => {
+            router.replace('/dashboard');
+          }, 100);
+          
+          // Method 3: Final fallback using window.location.assign (more compatible than .href)
+          setTimeout(() => {
+            if (typeof window !== 'undefined') {
+              window.location.assign('/dashboard');
+            }
+          }, 500);
+        } catch (redirectError) {
+          console.error('Redirect error:', redirectError);
+          // Emergency fallback
+          if (typeof window !== 'undefined') {
+            window.location.href = '/dashboard';
+          }
+        }
       } else {
         console.warn('Unexpected sign-in result:', result);
         toast.error('Sign-in completed but status unclear. Redirecting...');
-        window.location.href = '/dashboard';
+        setLoading(false);
+        router.push('/dashboard');
       }
     } catch (error) {
       console.error('Credentials sign-in exception:', error);
       toast.error('Something went wrong. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
@@ -104,42 +128,40 @@ function SignInContent() {
     setLoading(true);
     console.log('Starting Google sign-in...');
     try {
-      const result = await signIn('google', { 
+      // Use redirect: true for maximum browser compatibility
+      // NextAuth handles OAuth redirects properly across all browsers including Safari Private Mode
+      await signIn('google', { 
         callbackUrl: '/dashboard',
-        redirect: true // Changed to true for better OAuth flow
+        redirect: true // Let NextAuth handle the redirect for maximum compatibility
       });
-      console.log('Google sign-in result:', result);
       
-      // If redirect is true, this code won't run unless there's an error
-      if (result?.error) {
-        console.error('Google sign-in error:', result.error);
-        setLoading(false);
-        
-        // Show specific error messages
-        if (result.error === 'AccountDeleted') {
-          toast.error('Account Deleted', {
-            description: 'Your account has been deleted. Contact your administrator.',
-          });
-        } else if (result.error === 'NoAccount') {
-          toast.error('No Account Found', {
-            description: 'No existing account or invite found for this email.',
-          });
-        } else if (result.error === 'OAuthAccountNotLinked') {
-          toast.error('Account Not Linked', {
-            description: 'This email is already registered with another sign-in method.',
-          });
-        } else {
-          toast.error('Sign-In Failed', {
-            description: result.error,
-          });
-        }
-      }
-      // Note: With redirect: true, successful sign-ins will automatically redirect
-      // No need to manually handle the redirect
-    } catch (error) {
+      // Note: Code below only runs if there's an error (redirect: true prevents normal flow)
+      console.log('Google sign-in completed without redirect (error case)');
+      setLoading(false);
+    } catch (error: any) {
       console.error('Google sign-in exception:', error);
       setLoading(false);
-      toast.error('Failed to sign in with Google');
+      
+      // Handle specific OAuth errors for better UX
+      const errorMessage = error?.message || error?.toString() || 'Failed to sign in with Google';
+      
+      if (errorMessage.includes('AccountDeleted')) {
+        toast.error('Account Deleted', {
+          description: 'Your account has been deleted. Contact your administrator.',
+        });
+      } else if (errorMessage.includes('NoAccount')) {
+        toast.error('No Account Found', {
+          description: 'No existing account or invite found for this email.',
+        });
+      } else if (errorMessage.includes('OAuthAccountNotLinked')) {
+        toast.error('Account Not Linked', {
+          description: 'This email is already registered with another sign-in method.',
+        });
+      } else {
+        toast.error('Sign-In Failed', {
+          description: errorMessage,
+        });
+      }
     }
   };
 
