@@ -393,10 +393,10 @@ export default function ContactPage() {
           {mode === 'chatbot' ? (
             <motion.div
               key="chatbot"
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 30 }}
-              transition={{ duration: 0.4, type: 'spring', stiffness: 100 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
             >
               <div className="relative">
                 {/* Outer glow container */}
@@ -553,12 +553,7 @@ export default function ContactPage() {
 
                       <div className="flex gap-4 relative">
                         {/* Enhanced Input Container */}
-                        <div className="flex-1 relative group">
-                          {/* Animated glow effect on focus */}
-                          <motion.div
-                            className="absolute -inset-[2px] bg-gradient-to-r from-cyan-500 via-violet-500 to-fuchsia-500 rounded-2xl blur-md opacity-0 group-focus-within:opacity-50 transition-opacity duration-500"
-                          />
-                          
+                        <div className="flex-1 relative">
                           {/* Main Input */}
                           <div className="relative">
                             <Input
@@ -572,7 +567,7 @@ export default function ContactPage() {
                               }}
                               placeholder="Type your message..."
                               disabled={isLoading}
-                              className="relative text-sm md:text-base pl-12 pr-6 py-7 rounded-2xl bg-slate-900/60 backdrop-blur-xl border-2 border-slate-700/50 focus:border-transparent focus:ring-0 transition-all duration-300 shadow-xl hover:shadow-2xl disabled:opacity-60 disabled:cursor-not-allowed font-semibold placeholder:text-slate-500 text-white focus-visible:ring-0 focus-visible:ring-offset-0"
+                              className="relative text-sm md:text-base pl-12 pr-6 py-6 md:py-7 rounded-2xl bg-slate-900/60 backdrop-blur-xl border-b-2 border-slate-700/50 focus:border-b-cyan-400 transition-all duration-200 shadow-xl hover:shadow-2xl disabled:opacity-60 disabled:cursor-not-allowed font-medium placeholder:text-slate-400 text-white ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 outline-none"
                             />
                             
                             {/* Icon inside input */}
@@ -588,55 +583,21 @@ export default function ContactPage() {
 
                         {/* Enhanced Send Button */}
                         <motion.div
-                          whileHover={{ scale: input.trim() && !isLoading ? 1.08 : 1 }}
-                          whileTap={{ scale: input.trim() && !isLoading ? 0.92 : 1 }}
-                          transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                          className="relative"
+                          whileHover={{ scale: input.trim() && !isLoading ? 1.05 : 1 }}
+                          whileTap={{ scale: input.trim() && !isLoading ? 0.95 : 1 }}
+                          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                         >
-                          {/* Button glow effect when ready */}
-                          {input.trim() && !isLoading && (
-                            <motion.div
-                              animate={{
-                                opacity: [0.4, 0.8, 0.4],
-                              }}
-                              transition={{
-                                duration: 2,
-                                repeat: Infinity,
-                                ease: "easeInOut"
-                              }}
-                              className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-violet-500 to-fuchsia-500 rounded-full blur-lg"
-                            />
-                          )}
-                          
                           <Button
                             onClick={handleSendMessage}
                             disabled={!input.trim() || isLoading}
-                            className="relative h-[56px] w-[56px] md:h-[60px] md:w-[60px] rounded-full bg-gradient-to-br from-cyan-500 via-violet-500 to-fuchsia-500 hover:from-cyan-600 hover:via-violet-600 hover:to-fuchsia-600 transition-all duration-300 shadow-2xl hover:shadow-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-white/20 backdrop-blur-xl overflow-hidden"
+                            className="h-[52px] w-[52px] md:h-[56px] md:w-[56px] rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 hover:from-cyan-600 hover:to-violet-600 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed"
                             size="lg"
                           >
-                            {/* Shimmer effect on hover - only when active */}
-                            {input.trim() && !isLoading && (
-                              <motion.div
-                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                                animate={{
-                                  x: ['-100%', '200%'],
-                                }}
-                                transition={{
-                                  duration: 2,
-                                  repeat: Infinity,
-                                  repeatDelay: 3,
-                                }}
-                              />
+                            {isLoading ? (
+                              <Loader2 className="w-5 h-5 md:w-6 md:h-6 text-white animate-spin" />
+                            ) : (
+                              <Send className="w-5 h-5 md:w-6 md:h-6 text-white" />
                             )}
-                            
-                            {/* Button icon */}
-                            <div className="relative z-10">
-                              {isLoading ? (
-                                <Loader2 className="w-6 h-6 text-white animate-spin" />
-                              ) : (
-                                <Send className="w-6 h-6 text-white drop-shadow-lg" />
-                              )}
-                            </div>
                           </Button>
                         </motion.div>
                       </div>
@@ -654,12 +615,12 @@ export default function ContactPage() {
                               key={hint}
                               initial={{ opacity: 0, scale: 0.8 }}
                               animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: 0.3 + idx * 0.1, type: 'spring', stiffness: 200 }}
-                              whileHover={{ scale: 1.05, y: -2 }}
-                              whileTap={{ scale: 0.95 }}
+                              transition={{ delay: 0.2 + idx * 0.05 }}
+                              whileHover={{ scale: 1.03 }}
+                              whileTap={{ scale: 0.97 }}
                               onClick={() => setInput(hint)}
                               disabled={isLoading}
-                              className="px-4 py-2 text-sm font-bold rounded-full bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 hover:bg-slate-800 hover:border-cyan-500/50 transition-all duration-200 shadow-lg hover:shadow-cyan-500/20 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="px-4 py-2 text-sm font-semibold rounded-full bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 hover:bg-slate-800 hover:border-cyan-500/50 transition-all duration-200 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {hint}
                             </motion.button>
@@ -674,10 +635,10 @@ export default function ContactPage() {
           ) : (
             <motion.div
               key="email"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.4, type: 'spring', stiffness: 100 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
             >
               <div className="relative">
                 {/* Outer glow container */}
