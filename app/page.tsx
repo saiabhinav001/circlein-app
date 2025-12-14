@@ -346,25 +346,25 @@ export default function LandingPage() {
       <div className="relative z-10">
         {/* Header */}
         <header className="border-b border-slate-200/50 dark:border-slate-800/50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-3 md:py-4">
             <div className="flex items-center justify-between">
-              <Link href="/" className="flex items-center space-x-2 sm:space-x-3">
-                <CircleInLogo className="w-7 h-7 sm:w-8 sm:h-8" />
-                <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <Link href="/" className="flex items-center space-x-2">
+                <CircleInLogo className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10" />
+                <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   CircleIn
                 </span>
               </Link>
               
               {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
+              <div className="hidden md:flex items-center space-x-2 md:space-x-3 lg:space-x-4">
                 <Link href="/auth/signin">
-                  <Button variant="ghost" size="lg" className="text-base font-medium">
+                  <Button variant="ghost" size="default" className="text-sm md:text-base font-medium px-4 md:px-6">
                     Sign In
                   </Button>
                 </Link>
                 <Link href="/auth/signup">
                   <ScaleOnHover scaleAmount={1.05}>
-                    <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
+                    <Button size="default" className="text-sm md:text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg px-4 md:px-6">
                       Get Started
                     </Button>
                   </ScaleOnHover>
@@ -374,7 +374,7 @@ export default function LandingPage() {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center"
                 aria-label="Toggle menu"
               >
                 {mobileMenuOpen ? (
