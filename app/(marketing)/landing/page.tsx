@@ -65,7 +65,7 @@ const features = [
 
 const stats = [
   { value: '20+', label: 'Features' },
-  { value: '4+', label: 'Amenities' },
+  { value: 'Unlimited', label: 'Amenities' },
   { value: '99.9%', label: 'Uptime' },
   { value: 'Real-time', label: 'Sync' }
 ];

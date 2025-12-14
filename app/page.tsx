@@ -23,7 +23,7 @@ export const dynamic = 'force-dynamic';
 
 const stats = [
   { label: 'Features', value: '20+' },
-  { label: 'Amenities', value: '4+' },
+  { label: 'Amenities', value: 'Unlimited' },
   { label: 'Uptime', value: '99.9%' },
   { label: 'Real-time', value: 'Sync' },
 ];
