@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -81,6 +81,112 @@ const team = [
     social: { github: '#', linkedin: '#', twitter: '#' }
   },
 ];
+
+// Animated Border Card Component with Mouse Tracking
+function AnimatedBorderCard({ children }: { children: React.ReactNode }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!cardRef.current) return;
+      
+      const rect = cardRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      setMousePosition({ x, y });
+    };
+
+    const card = cardRef.current;
+    if (card) {
+      card.addEventListener('mousemove', handleMouseMove);
+      return () => card.removeEventListener('mousemove', handleMouseMove);
+    }
+  }, []);
+
+  return (
+    <div
+      ref={cardRef}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="relative group mx-4 sm:mx-0"
+      style={{ isolation: 'isolate' }}
+    >
+      {/* Animated gradient border that follows mouse */}
+      <motion.div
+        className="absolute inset-0 rounded-2xl sm:rounded-3xl"
+        style={{
+          background: isHovered
+            ? `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(59, 130, 246, 0.8), rgba(147, 51, 234, 0.6), rgba(236, 72, 153, 0.8))`
+            : 'linear-gradient(90deg, rgba(59, 130, 246, 0.8), rgba(147, 51, 234, 0.6), rgba(236, 72, 153, 0.8))',
+          padding: '2px',
+        }}
+        animate={{
+          opacity: isHovered ? 1 : 0.7,
+        }}
+        transition={{ duration: 0.3 }}
+      />
+
+      {/* Glowing effect on hover */}
+      <motion.div
+        className="absolute inset-0 rounded-2xl sm:rounded-3xl blur-xl"
+        style={{
+          background: isHovered
+            ? `radial-gradient(400px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(59, 130, 246, 0.4), rgba(147, 51, 234, 0.3), rgba(236, 72, 153, 0.4))`
+            : 'transparent',
+        }}
+        animate={{
+          opacity: isHovered ? 0.6 : 0,
+        }}
+        transition={{ duration: 0.3 }}
+      />
+
+      {/* Inner card content */}
+      <Card className="relative border-0 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden rounded-2xl sm:rounded-3xl">
+        <div className="relative bg-white dark:bg-slate-900">
+          {children}
+        </div>
+      </Card>
+
+      {/* Animated sparkle effect on corners */}
+      <motion.div
+        className="absolute top-0 left-0 w-24 h-24 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(59, 130, 246, 0.6) 0%, transparent 70%)',
+          filter: 'blur(20px)',
+        }}
+        animate={{
+          opacity: isHovered ? [0.3, 0.6, 0.3] : 0,
+          scale: isHovered ? [1, 1.2, 1] : 1,
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+      />
+      <motion.div
+        className="absolute bottom-0 right-0 w-24 h-24 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(236, 72, 153, 0.6) 0%, transparent 70%)',
+          filter: 'blur(20px)',
+        }}
+        animate={{
+          opacity: isHovered ? [0.3, 0.6, 0.3] : 0,
+          scale: isHovered ? [1, 1.2, 1] : 1,
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: 'easeInOut',
+          delay: 1,
+        }}
+      />
+    </div>
+  );
+}
 
 // Contact Form Component
 function ContactForm() {
@@ -596,26 +702,22 @@ export default function LandingPage() {
         <section className="py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6">
           <div className="container mx-auto max-w-4xl">
             <FadeIn>
-              <Card className="border-0 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden mx-4 sm:mx-0">
-                <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-0.5 sm:p-1">
-                  <div className="bg-white dark:bg-slate-900">
-                    <CardHeader className="text-center pb-6 sm:pb-8 px-4">
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-2xl transform hover:scale-110 transition-transform duration-300">
-                        <Mail className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
-                      </div>
-                      <CardTitle className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                        Get in Touch
-                      </CardTitle>
-                      <CardDescription className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-400">
-                        Interested in becoming a community admin? We'd love to hear from you!
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ContactForm />
-                    </CardContent>
+              <AnimatedBorderCard>
+                <CardHeader className="text-center pb-6 sm:pb-8 px-4">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-2xl transform hover:scale-110 transition-transform duration-300">
+                    <Mail className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                   </div>
-                </div>
-              </Card>
+                  <CardTitle className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Get in Touch
+                  </CardTitle>
+                  <CardDescription className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-400">
+                    Interested in becoming a community admin? We'd love to hear from you!
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ContactForm />
+                </CardContent>
+              </AnimatedBorderCard>
             </FadeIn>
           </div>
         </section>
