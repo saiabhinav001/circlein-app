@@ -567,7 +567,7 @@ export default function ContactPage() {
                               }}
                               placeholder="Type your message..."
                               disabled={isLoading}
-                              className="relative text-sm md:text-base pl-12 pr-6 py-6 md:py-7 rounded-2xl bg-slate-900/60 backdrop-blur-xl border-b-2 border-slate-700/50 focus:border-b-cyan-400 transition-all duration-200 shadow-xl hover:shadow-2xl disabled:opacity-60 disabled:cursor-not-allowed font-medium placeholder:text-slate-400 text-white ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 outline-none"
+                              className="relative text-sm md:text-base pl-12 pr-6 py-6 md:py-7 rounded-2xl bg-slate-900/60 backdrop-blur-xl border-2 border-slate-700/50 focus:border-cyan-400 transition-all duration-200 shadow-xl hover:shadow-2xl disabled:opacity-60 disabled:cursor-not-allowed font-medium placeholder:text-slate-400 text-white ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 outline-none"
                             />
                             
                             {/* Icon inside input */}
@@ -686,22 +686,18 @@ export default function ContactPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="group"
                       >
                         <Label htmlFor="subject" className="text-base md:text-lg font-bold mb-3 block text-white">
                           Subject *
                         </Label>
                         <div className="relative">
-                          <motion.div
-                            className="absolute -inset-[2px] bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-xl blur-sm opacity-0 group-focus-within:opacity-40 transition-opacity duration-500"
-                          />
                           <Input
                             id="subject"
                             value={emailForm.subject}
                             onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
                             placeholder="Brief description of your inquiry"
                             required
-                            className="relative text-sm md:text-base py-6 border-2 border-slate-700/50 bg-slate-900/60 backdrop-blur-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-500/30 transition-all duration-300 text-white font-semibold placeholder:text-slate-500 rounded-xl"
+                            className="relative text-sm md:text-base py-6 border-2 border-slate-700/50 bg-slate-900/60 backdrop-blur-xl focus:border-cyan-400 transition-all duration-200 text-white font-medium placeholder:text-slate-400 rounded-xl ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 outline-none"
                           />
                         </div>
                       </motion.div>
@@ -710,15 +706,11 @@ export default function ContactPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="group"
                       >
                         <Label htmlFor="message" className="text-base md:text-lg font-bold mb-3 block text-white">
                           Message *
                         </Label>
                         <div className="relative">
-                          <motion.div
-                            className="absolute -inset-[2px] bg-gradient-to-r from-fuchsia-500 to-cyan-500 rounded-xl blur-sm opacity-0 group-focus-within:opacity-40 transition-opacity duration-500"
-                          />
                           <Textarea
                             id="message"
                             value={emailForm.message}
@@ -726,7 +718,7 @@ export default function ContactPage() {
                             placeholder="Describe your issue or question in detail..."
                             required
                             rows={8}
-                            className="relative text-sm md:text-base py-4 border-2 border-slate-700/50 bg-slate-900/60 backdrop-blur-xl focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-500/30 transition-all duration-300 resize-none text-white font-semibold placeholder:text-slate-500 rounded-xl"
+                            className="relative text-sm md:text-base py-4 border-2 border-slate-700/50 bg-slate-900/60 backdrop-blur-xl focus:border-cyan-400 transition-all duration-200 resize-none text-white font-medium placeholder:text-slate-400 rounded-xl ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 outline-none"
                           />
                         </div>
                       </motion.div>
