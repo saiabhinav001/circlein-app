@@ -7,7 +7,7 @@ export interface CircleInLogoProps {
   size?: number;
 }
 
-export const CircleInLogo: React.FC<CircleInLogoProps> = ({ className = '', size = 120 }) => {
+export const CircleInLogo: React.FC<CircleInLogoProps> = ({ className = '', size }) => {
   // Generate unique IDs for gradients to avoid conflicts
   const uniqueId = React.useId();
   const cleanGradientId = `cleanGradient-${uniqueId}`;
@@ -24,11 +24,7 @@ export const CircleInLogo: React.FC<CircleInLogoProps> = ({ className = '', size
       className={className}
       style={{ 
         filter: 'drop-shadow(0 4px 20px rgba(59, 130, 246, 0.3))',
-        maxWidth: '100%',
-        maxHeight: '100%',
-        display: 'block',
-        minWidth: size,
-        minHeight: size
+        display: 'block'
       }}
     >
       <defs>
