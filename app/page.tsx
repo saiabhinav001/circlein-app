@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import CircleInLogo from '@/components/CircleInLogo';
+import { CircleInLogo } from '@/components/ui';
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
