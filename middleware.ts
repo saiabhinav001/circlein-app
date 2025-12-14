@@ -73,8 +73,14 @@ export default withAuth(
           return true;
         }
         
-        // Allow access to public pages (landing page, auth pages)
-        if (pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/landing')) {
+        // Allow access to public pages (landing page, auth pages, legal pages)
+        if (pathname === '/' || 
+            pathname.startsWith('/auth') || 
+            pathname.startsWith('/landing') ||
+            pathname === '/privacy' ||
+            pathname === '/terms' ||
+            pathname === '/security' ||
+            pathname.startsWith('/contact')) {
           return true;
         }
         
