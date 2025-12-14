@@ -572,7 +572,7 @@ export default function ContactPage() {
                               }}
                               placeholder="Type your message..."
                               disabled={isLoading}
-                              className="relative text-sm md:text-base pl-12 pr-20 py-7 rounded-2xl bg-slate-900/60 backdrop-blur-xl border-2 border-slate-700/50 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30 transition-all duration-300 shadow-xl hover:shadow-2xl disabled:opacity-60 disabled:cursor-not-allowed font-semibold placeholder:text-slate-500 text-white"
+                              className="relative text-sm md:text-base pl-12 pr-6 py-7 rounded-2xl bg-slate-900/60 backdrop-blur-xl border-2 border-slate-700/50 focus:border-transparent focus:ring-0 transition-all duration-300 shadow-xl hover:shadow-2xl disabled:opacity-60 disabled:cursor-not-allowed font-semibold placeholder:text-slate-500 text-white focus-visible:ring-0 focus-visible:ring-offset-0"
                             />
                             
                             {/* Icon inside input */}
@@ -583,29 +583,7 @@ export default function ContactPage() {
                                 <MessageCircle className="w-5 h-5 text-slate-500" />
                               )}
                             </div>
-
-                            {/* Character count indicator */}
-                            {input.length > 0 && (
-                              <motion.div
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
-                              >
-                                <span className="text-xs font-bold text-slate-400 bg-slate-800/80 px-2.5 py-1.5 rounded-full border border-slate-700/50">
-                                  {input.length}
-                                </span>
-                              </motion.div>
-                            )}
                           </div>
-
-                          {/* Typing indicator line */}
-                          <motion.div
-                            initial={{ scaleX: 0 }}
-                            animate={{ scaleX: input.length > 0 ? 1 : 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 via-violet-500 to-fuchsia-500 origin-left rounded-full"
-                          />
                         </div>
 
                         {/* Enhanced Send Button */}
@@ -626,14 +604,14 @@ export default function ContactPage() {
                                 repeat: Infinity,
                                 ease: "easeInOut"
                               }}
-                              className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-violet-500 to-fuchsia-500 rounded-2xl blur-lg"
+                              className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-violet-500 to-fuchsia-500 rounded-full blur-lg"
                             />
                           )}
                           
                           <Button
                             onClick={handleSendMessage}
                             disabled={!input.trim() || isLoading}
-                            className="relative h-[56px] w-[56px] md:h-[60px] md:w-[60px] rounded-2xl bg-gradient-to-br from-cyan-500 via-violet-500 to-fuchsia-500 hover:from-cyan-600 hover:via-violet-600 hover:to-fuchsia-600 transition-all duration-300 shadow-2xl hover:shadow-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-white/20 backdrop-blur-xl overflow-hidden"
+                            className="relative h-[56px] w-[56px] md:h-[60px] md:w-[60px] rounded-full bg-gradient-to-br from-cyan-500 via-violet-500 to-fuchsia-500 hover:from-cyan-600 hover:via-violet-600 hover:to-fuchsia-600 transition-all duration-300 shadow-2xl hover:shadow-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-white/20 backdrop-blur-xl overflow-hidden"
                             size="lg"
                           >
                             {/* Shimmer effect on hover - only when active */}
