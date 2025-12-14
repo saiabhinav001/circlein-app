@@ -209,7 +209,7 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 py-6 sm:py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-white dark:bg-slate-950 py-6 sm:py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Animated background mesh gradient */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -406,9 +406,9 @@ export default function ContactPage() {
                     opacity: [0.3, 0.5, 0.3],
                   }}
                   transition={{ duration: 3, repeat: Infinity }}
-                />
+                />  
                 
-                <Card className="relative shadow-2xl border-2 border-slate-700/50 bg-slate-900/40 backdrop-blur-2xl overflow-hidden">
+                <Card className="relative shadow-2xl border-2 border-slate-200 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/40 backdrop-blur-2xl">
                   {/* Animated gradient border top */}
                   <motion.div
                     className="absolute top-0 left-0 right-0 h-[2px]"
@@ -422,8 +422,8 @@ export default function ContactPage() {
                     transition={{ duration: 3, repeat: Infinity }}
                   />
                   
-                  <CardHeader className="border-b border-slate-700/50 bg-slate-800/30 backdrop-blur-xl pb-5">
-                    <CardTitle className="flex items-center gap-3 text-2xl md:text-3xl font-black text-white tracking-tight">
+                  <CardHeader className="border-b border-slate-200 dark:border-slate-700/50 bg-slate-100/50 dark:bg-slate-800/30 backdrop-blur-xl pb-5">
+                    <CardTitle className="flex items-center gap-3 text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                       <motion.div
                         animate={{ rotate: [0, 360] }}
                         transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
@@ -649,7 +649,7 @@ export default function ContactPage() {
                   transition={{ duration: 3, repeat: Infinity }}
                 />
                 
-                <Card className="relative shadow-2xl border-2 border-slate-700/50 bg-slate-900/40 backdrop-blur-2xl">
+                <Card className="relative shadow-2xl border-2 border-slate-200 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/40 backdrop-blur-2xl">
                   {/* Animated gradient border top */}
                   <motion.div
                     className="absolute top-0 left-0 right-0 h-[2px]"
@@ -675,47 +675,53 @@ export default function ContactPage() {
                       </motion.div>
                       Email Support
                     </CardTitle>
-                    <CardDescription className="text-base md:text-lg text-slate-400 font-medium mt-2">
+                    <CardDescription className="text-base md:text-lg text-slate-600 dark:text-slate-400 font-medium mt-2">
                       Send us a detailed message and we'll respond within 24 hours
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="p-6 sm:p-8 md:p-10 bg-slate-900/20">
+                  <CardContent className="p-6 sm:p-8 md:p-10 bg-slate-50/50 dark:bg-slate-900/20">
                     <form onSubmit={handleEmailSubmit} className="space-y-7">
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
+                        className="relative"
                       >
                         <Label htmlFor="subject" className="text-base md:text-lg font-bold mb-3 block text-slate-900 dark:text-white">
                           Subject *
                         </Label>
-                        <Input
-                          id="subject"
-                          value={emailForm.subject}
-                          onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
-                          placeholder="Brief description of your inquiry"
-                          required
-                          className="text-sm md:text-base py-6 border-2 border-slate-300 dark:border-slate-700/50 bg-white dark:bg-slate-900/60 backdrop-blur-xl focus:border-violet-500 transition-all duration-200 text-slate-900 dark:text-white font-medium placeholder:text-slate-500 dark:placeholder:text-slate-400 rounded-xl outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="subject"
+                            value={emailForm.subject}
+                            onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+                            placeholder="Brief description of your inquiry"
+                            required
+                            className="text-sm md:text-base py-6 border-2 border-slate-300 dark:border-slate-700/50 bg-white dark:bg-slate-900/60 backdrop-blur-xl focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.3)] transition-all duration-200 text-slate-900 dark:text-white font-medium placeholder:text-slate-500 dark:placeholder:text-slate-400 rounded-xl outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                          />
+                        </div>
                       </motion.div>
 
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
+                        className="relative"
                       >
                         <Label htmlFor="message" className="text-base md:text-lg font-bold mb-3 block text-slate-900 dark:text-white">
                           Message *
                         </Label>
-                        <Textarea
-                          id="message"
-                          value={emailForm.message}
-                          onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
-                          placeholder="Describe your issue or question in detail..."
-                          required
-                          rows={8}
-                          className="text-sm md:text-base py-4 border-2 border-slate-300 dark:border-slate-700/50 bg-white dark:bg-slate-900/60 backdrop-blur-xl focus:border-fuchsia-500 transition-all duration-200 resize-none text-slate-900 dark:text-white font-medium placeholder:text-slate-500 dark:placeholder:text-slate-400 rounded-xl outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                        />
+                        <div className="relative">
+                          <Textarea
+                            id="message"
+                            value={emailForm.message}
+                            onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
+                            placeholder="Describe your issue or question in detail..."
+                            required
+                            rows={8}
+                            className="text-sm md:text-base py-4 border-2 border-slate-300 dark:border-slate-700/50 bg-white dark:bg-slate-900/60 backdrop-blur-xl focus:border-fuchsia-500 focus:shadow-[0_0_0_3px_rgba(217,70,239,0.3)] transition-all duration-200 resize-none text-slate-900 dark:text-white font-medium placeholder:text-slate-500 dark:placeholder:text-slate-400 rounded-xl outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                          />
+                        </div>
                       </motion.div>
 
                       <motion.div
