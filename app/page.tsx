@@ -358,7 +358,7 @@ export default function LandingPage() {
               {/* Desktop Navigation */}
               <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
                 <Link href="/auth/signin">
-                  <Button variant="ghost" size="default">
+                  <Button variant="ghost" size="lg" className="text-base font-medium">
                     Sign In
                   </Button>
                 </Link>
@@ -394,7 +394,7 @@ export default function LandingPage() {
                 className="md:hidden mt-4 pb-4 space-y-3"
               >
                 <Link href="/auth/signin" className="block">
-                  <Button variant="ghost" className="w-full justify-start" size="lg">
+                  <Button variant="ghost" className="w-full justify-center text-base font-medium" size="lg">
                     Sign In
                   </Button>
                 </Link>
@@ -637,8 +637,8 @@ export default function LandingPage() {
               </div>
               
               <div>
-                <h3 className="font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white text-sm sm:text-base">Product</h3>
-                <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                <h3 className="font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white text-base sm:text-lg">Product</h3>
+                <ul className="space-y-2 text-slate-600 dark:text-slate-400 text-sm sm:text-base">
                   <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Features</Link></li>
                   <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Pricing</Link></li>
                   <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Security</Link></li>
@@ -646,17 +646,17 @@ export default function LandingPage() {
               </div>
               
               <div>
-                <h3 className="font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white text-sm sm:text-base">Company</h3>
-                <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                <h3 className="font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white text-base sm:text-lg">Company</h3>
+                <ul className="space-y-2 text-slate-600 dark:text-slate-400 text-sm sm:text-base">
                   <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">About</Link></li>
-                  <li><Link href="mailto:abhinav.sadineni@gmail.com" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Contact</Link></li>
+                  <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Contact</Link></li>
                   <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Careers</Link></li>
                 </ul>
               </div>
               
               <div>
-                <h3 className="font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white text-sm sm:text-base">Legal</h3>
-                <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                <h3 className="font-bold mb-3 sm:mb-4 text-slate-900 dark:text-white text-base sm:text-lg">Legal</h3>
+                <ul className="space-y-2 text-slate-600 dark:text-slate-400 text-sm sm:text-base">
                   <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privacy</Link></li>
                   <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Terms</Link></li>
                   <li><Link href="/auth/signup" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Security</Link></li>
