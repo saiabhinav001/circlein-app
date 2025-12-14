@@ -587,18 +587,17 @@ export default function ContactPage() {
                           whileTap={{ scale: input.trim() && !isLoading ? 0.95 : 1 }}
                           transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                         >
-                          <Button
+                          <button
                             onClick={handleSendMessage}
                             disabled={!input.trim() || isLoading}
-                            className="relative h-[52px] w-[52px] md:h-[56px] md:w-[56px] rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 hover:from-cyan-600 hover:to-violet-600 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center"
-                            size="lg"
+                            className="h-[52px] w-[52px] md:h-[56px] md:w-[56px] rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 hover:from-cyan-600 hover:to-violet-600 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center"
                           >
                             {isLoading ? (
-                              <Loader2 className="w-5 h-5 md:w-6 md:h-6 text-white animate-spin relative z-10" />
+                              <Loader2 className="w-5 h-5 md:w-6 md:h-6 text-white animate-spin" />
                             ) : (
-                              <Send className="w-5 h-5 md:w-6 md:h-6 text-white relative z-10" />
+                              <Send className="w-5 h-5 md:w-6 md:h-6 text-white" />
                             )}
-                          </Button>
+                          </button>
                         </motion.div>
                       </div>
 
@@ -686,49 +685,37 @@ export default function ContactPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="group"
                       >
-                        <Label htmlFor="subject" className="text-base md:text-lg font-bold mb-3 block text-white">
+                        <Label htmlFor="subject" className="text-base md:text-lg font-bold mb-3 block text-slate-900 dark:text-white">
                           Subject *
                         </Label>
-                        <motion.div className="relative">
-                          <motion.div
-                            className="absolute -inset-0.5 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500 rounded-xl blur opacity-0 group-focus-within:opacity-40 transition-opacity duration-200"
-                          />
-                          <Input
-                            id="subject"
-                            value={emailForm.subject}
-                            onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
-                            placeholder="Brief description of your inquiry"
-                            required
-                            className="relative text-sm md:text-base py-6 border-2 border-slate-700/50 bg-slate-900/60 backdrop-blur-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-500/30 transition-all duration-200 text-white font-medium placeholder:text-slate-400 rounded-xl outline-none"
-                          />
-                        </motion.div>
+                        <Input
+                          id="subject"
+                          value={emailForm.subject}
+                          onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+                          placeholder="Brief description of your inquiry"
+                          required
+                          className="text-sm md:text-base py-6 border-2 border-slate-300 dark:border-slate-700/50 bg-white dark:bg-slate-900/60 backdrop-blur-xl focus:border-violet-500 transition-all duration-200 text-slate-900 dark:text-white font-medium placeholder:text-slate-500 dark:placeholder:text-slate-400 rounded-xl outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                        />
                       </motion.div>
 
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="group"
                       >
-                        <Label htmlFor="message" className="text-base md:text-lg font-bold mb-3 block text-white">
+                        <Label htmlFor="message" className="text-base md:text-lg font-bold mb-3 block text-slate-900 dark:text-white">
                           Message *
                         </Label>
-                        <motion.div className="relative">
-                          <motion.div
-                            className="absolute -inset-0.5 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-violet-500 rounded-xl blur opacity-0 group-focus-within:opacity-40 transition-opacity duration-200"
-                          />
-                          <Textarea
-                            id="message"
-                            value={emailForm.message}
-                            onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
-                            placeholder="Describe your issue or question in detail..."
-                            required
-                            rows={8}
-                            className="relative text-sm md:text-base py-4 border-2 border-slate-700/50 bg-slate-900/60 backdrop-blur-xl focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-500/30 transition-all duration-200 resize-none text-white font-medium placeholder:text-slate-400 rounded-xl outline-none"
-                          />
-                        </motion.div>
+                        <Textarea
+                          id="message"
+                          value={emailForm.message}
+                          onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
+                          placeholder="Describe your issue or question in detail..."
+                          required
+                          rows={8}
+                          className="text-sm md:text-base py-4 border-2 border-slate-300 dark:border-slate-700/50 bg-white dark:bg-slate-900/60 backdrop-blur-xl focus:border-fuchsia-500 transition-all duration-200 resize-none text-slate-900 dark:text-white font-medium placeholder:text-slate-500 dark:placeholder:text-slate-400 rounded-xl outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                        />
                       </motion.div>
 
                       <motion.div
@@ -758,43 +745,13 @@ export default function ContactPage() {
                         transition={{ delay: 0.4 }}
                         whileHover={{ scale: emailSending ? 1 : 1.02 }}
                         whileTap={{ scale: emailSending ? 1 : 0.98 }}
-                        className="relative"
                       >
-                        {/* Button glow effect */}
-                        {!emailSending && (
-                          <motion.div
-                            animate={{
-                              opacity: [0.4, 0.6, 0.4],
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                            }}
-                            className="absolute -inset-1 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 rounded-xl blur-lg"
-                          />
-                        )}
-                        
                         <Button
                           type="submit"
                           disabled={emailSending}
-                          className="relative w-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 hover:from-violet-600 hover:via-fuchsia-600 hover:to-cyan-600 text-lg md:text-xl font-black py-7 md:py-8 rounded-xl shadow-2xl hover:shadow-violet-500/50 transition-all duration-200 disabled:opacity-50 border-0 overflow-hidden"
+                          className="w-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 hover:from-violet-600 hover:via-fuchsia-600 hover:to-cyan-600 text-lg md:text-xl font-black py-7 md:py-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
                         >
-                          {/* Shimmer effect */}
-                          {!emailSending && (
-                            <motion.div
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                              animate={{
-                                x: ['-100%', '200%'],
-                              }}
-                              transition={{
-                                duration: 2,
-                                repeat: Infinity,
-                                repeatDelay: 2,
-                              }}
-                            />
-                          )}
-                          
-                          <span className="relative z-10 flex items-center justify-center gap-3">
+                          <span className="flex items-center justify-center gap-3">
                             {emailSending ? (
                               <>
                                 <Loader2 className="w-6 h-6 animate-spin" />
