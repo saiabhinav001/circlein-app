@@ -1,15 +1,18 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
   Calendar, Users, Shield, Clock, Sparkles, Bell, 
-  Brain, Lock, Zap, Mail, Github, Linkedin, Twitter 
+  Brain, Lock, Zap, Mail, Github, Linkedin, Twitter, Send, User, Building2, MessageSquare 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { CircleInLogo } from '@/components/ui';
 
@@ -76,6 +79,178 @@ const team = [
     social: { github: '#', linkedin: '#', twitter: '#' }
   },
 ];
+
+// Contact Form Component
+function ContactForm() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    company: '',
+    message: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: 'abhinav.sadineni@gmail.com',
+          subject: `New Contact Form Submission from ${formData.name}`,
+          message: `
+Name: ${formData.name}
+Email: ${formData.email}
+Company/Community: ${formData.company || 'Not provided'}
+
+Message:
+${formData.message}
+          `.trim(),
+          senderName: formData.name,
+          senderEmail: formData.email,
+          senderRole: 'admin',
+          communityName: formData.company || 'Landing Page Inquiry',
+        }),
+      });
+
+      if (response.ok) {
+        setSubmitStatus('success');
+        setFormData({ name: '', email: '', company: '', message: '' });
+      } else {
+        setSubmitStatus('error');
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Name Field */}
+        <div className="space-y-2">
+          <Label htmlFor="name" className="text-base font-semibold flex items-center space-x-2">
+            <User className="w-4 h-4 text-blue-600" />
+            <span>Full Name *</span>
+          </Label>
+          <Input
+            id="name"
+            type="text"
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="John Doe"
+            className="h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 transition-all duration-300 text-base"
+          />
+        </div>
+
+        {/* Email Field */}
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-base font-semibold flex items-center space-x-2">
+            <Mail className="w-4 h-4 text-purple-600" />
+            <span>Email Address *</span>
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            placeholder="john@company.com"
+            className="h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-purple-500 dark:focus:border-purple-500 transition-all duration-300 text-base"
+          />
+        </div>
+      </div>
+
+      {/* Company Field */}
+      <div className="space-y-2">
+        <Label htmlFor="company" className="text-base font-semibold flex items-center space-x-2">
+          <Building2 className="w-4 h-4 text-pink-600" />
+          <span>Company / Community Name</span>
+        </Label>
+        <Input
+          id="company"
+          type="text"
+          value={formData.company}
+          onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+          placeholder="Your Organization (Optional)"
+          className="h-12 border-2 border-slate-200 dark:border-slate-700 focus:border-pink-500 dark:focus:border-pink-500 transition-all duration-300 text-base"
+        />
+      </div>
+
+      {/* Message Field */}
+      <div className="space-y-2">
+        <Label htmlFor="message" className="text-base font-semibold flex items-center space-x-2">
+          <MessageSquare className="w-4 h-4 text-blue-600" />
+          <span>Your Message *</span>
+        </Label>
+        <Textarea
+          id="message"
+          required
+          value={formData.message}
+          onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+          placeholder="Tell us about your community and how we can help..."
+          rows={6}
+          className="border-2 border-slate-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 transition-all duration-300 resize-none text-base"
+        />
+      </div>
+
+      {/* Submit Button */}
+      <div className="pt-4">
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full h-14 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white text-lg font-semibold shadow-2xl hover:shadow-3xl transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? (
+            <span className="flex items-center space-x-2">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Sending Message...</span>
+            </span>
+          ) : (
+            <span className="flex items-center space-x-2">
+              <Send className="w-5 h-5" />
+              <span>Send Message</span>
+            </span>
+          )}
+        </Button>
+      </div>
+
+      {/* Status Messages */}
+      {submitStatus === 'success' && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-green-50 dark:bg-green-950 border-2 border-green-500 rounded-xl text-center"
+        >
+          <p className="text-green-700 dark:text-green-300 font-semibold text-lg">
+            ✅ Message sent successfully! We'll get back to you soon.
+          </p>
+        </motion.div>
+      )}
+
+      {submitStatus === 'error' && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-red-50 dark:bg-red-950 border-2 border-red-500 rounded-xl text-center"
+        >
+          <p className="text-red-700 dark:text-red-300 font-semibold text-lg">
+            ❌ Failed to send message. Please try again or email us directly.
+          </p>
+        </motion.div>
+      )}
+    </form>
+  );
+}
 
 export default function LandingPage() {
   const { data: session, status } = useSession();
@@ -357,30 +532,25 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <Card className="border-0 bg-white dark:bg-slate-900 shadow-2xl">
-                <CardHeader className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <Mail className="w-8 h-8 text-white" />
+              <Card className="border-0 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-1">
+                  <div className="bg-white dark:bg-slate-900">
+                    <CardHeader className="text-center pb-8">
+                      <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl transform hover:scale-110 transition-transform duration-300">
+                        <Mail className="w-10 h-10 text-white" />
+                      </div>
+                      <CardTitle className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        Get in Touch
+                      </CardTitle>
+                      <CardDescription className="text-xl text-slate-600 dark:text-slate-400">
+                        Interested in becoming a community admin? We'd love to hear from you!
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ContactForm />
+                    </CardContent>
                   </div>
-                  <CardTitle className="text-4xl font-bold mb-4">
-                    Get in Touch
-                  </CardTitle>
-                  <CardDescription className="text-lg">
-                    Interested in becoming a community admin? Contact us to get started.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-slate-600 dark:text-slate-400 mb-6">
-                    For admin registration and enterprise inquiries:
-                  </p>
-                  <a 
-                    href="mailto:abhinav.sadineni@gmail.com"
-                    className="inline-flex items-center space-x-2 text-2xl font-semibold text-blue-600 dark:text-blue-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                  >
-                    <Mail className="w-6 h-6" />
-                    <span>abhinav.sadineni@gmail.com</span>
-                  </a>
-                </CardContent>
+                </div>
               </Card>
             </motion.div>
           </div>
