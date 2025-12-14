@@ -73,8 +73,8 @@ export default withAuth(
           return true;
         }
         
-        // Allow access to auth pages
-        if (pathname.startsWith('/auth')) {
+        // Allow access to public pages (landing page, auth pages)
+        if (pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/landing')) {
           return true;
         }
         

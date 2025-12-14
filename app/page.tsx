@@ -83,10 +83,11 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (status === 'authenticated' && session) {
-      router.push('/dashboard');
+      router.replace('/dashboard');
     }
   }, [session, status, router]);
 
+  // Show loading state while checking authentication
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
@@ -98,9 +99,19 @@ export default function LandingPage() {
     );
   }
 
+  // Show loading state during redirect for authenticated users
   if (status === 'authenticated') {
-    return null;
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <CircleInLogo className="w-16 h-16 mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400">Redirecting to dashboard...</p>
+        </div>
+      </div>
+    );
   }
+
+  // Only unauthenticated users see the landing page
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
