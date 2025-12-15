@@ -327,7 +327,9 @@ export default function AdminWaitlistManagement() {
                           </div>
                           <div className="flex items-center gap-2">
                             <Users className="w-4 h-4 text-blue-500" />
-                            <span>{entry.userEmail}</span>
+                            <span>
+                              {(entry as any).userFlatNumber ? `Flat ${(entry as any).userFlatNumber}` : 'Resident'}
+                            </span>
                           </div>
                         </div>
                       </div>

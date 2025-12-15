@@ -1221,9 +1221,6 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                                     </span>
                                   )}
                                 </h4>
-                                <p className="text-purple-600 dark:text-purple-400 text-sm truncate">
-                                  {selectedBooking.userEmail}
-                                </p>
                               </div>
                             </div>
                           </motion.div>
