@@ -9,6 +9,8 @@ import { db } from '@/lib/firebase';
  * Access: GET https://circlein-app.vercel.app/api/admin/migrate-amenities
  */
 
+export const dynamic = 'force-dynamic';
+
 const AMENITY_SAMPLES: Record<string, any> = {
   'Swimming Pool': {
     isOutdoor: true,
