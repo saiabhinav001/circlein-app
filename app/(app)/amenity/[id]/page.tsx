@@ -517,7 +517,15 @@ export default function AmenityBooking() {
               </div>
               <div className="flex items-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                 <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                <span>2-hour slots</span>
+                <span>
+                  {amenity.booking?.slotDuration 
+                    ? amenity.booking.slotDuration === 1 
+                      ? '1-hour slots' 
+                      : amenity.booking.slotDuration < 1
+                        ? `${amenity.booking.slotDuration * 60}-minute slots`
+                        : `${amenity.booking.slotDuration}-hour slots`
+                    : '2-hour slots'}
+                </span>
               </div>
               <div className="flex items-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                 <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
