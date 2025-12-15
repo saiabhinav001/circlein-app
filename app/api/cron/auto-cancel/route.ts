@@ -23,6 +23,11 @@ import { db } from '@/lib/firebase';
  */
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  let cancelledCount = 0;
+  let promotedCount = 0;
+  let errors: string[] = [];
+
   try {
     // Verify cron secret (security) - check both formats
     const authHeader = request.headers.get('authorization');
@@ -51,134 +56,177 @@ export async function GET(request: NextRequest) {
       where('startTime', '<=', Timestamp.fromDate(gracePeriodCutoff))
     );
 
-    const snapshot = await getDocs(targetQuery);
-    console.log(`   📊 Found ${snapshot.docs.length} bookings to check`);
+    let snapshot;
+    try {
+      snapshot = await getDocs(targetQuery);
+      console.log(`   📊 Found ${snapshot.docs.length} bookings to check`);
+    } catch (queryError: any) {
+      console.error('   ❌ Query failed:', queryError.message);
+      throw new Error(`Firestore query failed: ${queryError.message}`);
+    }
 
-    let cancelledCount = 0;
-    let promotedCount = 0;
-
+    // Process each booking individually with error isolation
     for (const bookingDoc of snapshot.docs) {
-      const booking = bookingDoc.data();
-      
-      // Skip if already checked in
-      if (booking.checkInTime) {
-        continue;
-      }
-
-      // Auto-cancel this booking
-      await updateDoc(doc(db, 'bookings', bookingDoc.id), {
-        status: 'no_show',
-        autoCancelledAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-
-      cancelledCount++;
-      console.log(`   ❌ Auto-cancelled booking ${bookingDoc.id} (no check-in)`);
-
-      // Increment user's no-show count (simplified with increment)
       try {
-        const userStatsRef = doc(db, 'userBookingStats', booking.userId);
-        const statsDoc = await getDoc(userStatsRef);
+        const booking = bookingDoc.data();
         
-        if (statsDoc.exists()) {
-          // Update existing stats
-          await updateDoc(userStatsRef, {
-            noShowCount: increment(1),
-            updatedAt: serverTimestamp()
-          });
-        } else {
-          // Create new stats document
-          await setDoc(userStatsRef, {
-            userId: booking.userId,
-            noShowCount: 1,
-            totalBookings: 1,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-          });
+        // Skip if already checked in
+        if (booking.checkInTime) {
+          console.log(`   ⏭️  Skipping ${bookingDoc.id} - already checked in`);
+          continue;
         }
-        console.log(`   📊 Updated no-show count for user ${booking.userId}`);
-      } catch (error) {
-        console.error('   ⚠️ Failed to update user stats:', error);
-        // Non-critical - continue processing
-      }
 
-      // Check for waitlist to promote
-      const waitlistQuery = query(
-        bookingsRef,
-        where('amenityId', '==', booking.amenityId),
-        where('startTime', '==', booking.startTime),
-        where('status', '==', 'waitlist')
-      );
-
-      const waitlistSnapshot = await getDocs(waitlistQuery);
-      
-      if (!waitlistSnapshot.empty) {
-        // Sort by waitlist position
-        const waitlistBookings = waitlistSnapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .sort((a: any, b: any) => (a.waitlistPosition || 999) - (b.waitlistPosition || 999));
-
-        const nextInLine = waitlistBookings[0] as any;
-        
-        // Promote to confirmed with 30-min deadline
-        const confirmationDeadline = new Date(now.getTime() + (30 * 60 * 1000));
-        
-        await updateDoc(doc(db, 'bookings', nextInLine.id), {
-          status: 'pending_confirmation',
-          waitlistPromotedAt: serverTimestamp(),
-          confirmationDeadline: Timestamp.fromDate(confirmationDeadline),
-          updatedAt: serverTimestamp()
-        });
-
-        promotedCount++;
-        console.log(`   🎉 Promoted waitlist booking ${nextInLine.id} (30-min to confirm)`);
-
-        // Send promotion notification
+        // Auto-cancel this booking
         try {
-          const { emailTemplates, sendEmail } = await import('@/lib/email-service');
-          
-          const emailTemplate = emailTemplates.waitlistPromotion({
-            userName: nextInLine.userName || 'Resident',
-            amenityName: booking.amenityName,
-            date: booking.startTime.toDate().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            }),
-            timeSlot: nextInLine.selectedSlot || `${booking.startTime.toDate().toLocaleTimeString()} - ${booking.endTime.toDate().toLocaleTimeString()}`,
-            confirmationDeadline: confirmationDeadline.toLocaleString(),
-            bookingId: nextInLine.id,
-            flatNumber: nextInLine.userFlatNumber || ''
+          await updateDoc(doc(db, 'bookings', bookingDoc.id), {
+            status: 'no_show',
+            autoCancelledAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
           });
-
-          await sendEmail({
-            to: nextInLine.userEmail,
-            subject: emailTemplate.subject,
-            html: emailTemplate.html
-          });
-
-          console.log(`   📧 Sent promotion email to ${nextInLine.userEmail}`);
-        } catch (emailError) {
-          console.error('Failed to send promotion email:', emailError);
+          cancelledCount++;
+          console.log(`   ❌ Auto-cancelled booking ${bookingDoc.id}`);
+        } catch (updateError: any) {
+          const errMsg = `Failed to cancel ${bookingDoc.id}: ${updateError.message}`;
+          console.error(`   ⚠️  ${errMsg}`);
+          errors.push(errMsg);
+          continue; // Skip to next booking
         }
+
+        // Increment user's no-show count
+        try {
+          const userStatsRef = doc(db, 'userBookingStats', booking.userId);
+          const statsDoc = await getDoc(userStatsRef);
+          
+          if (statsDoc.exists()) {
+            await updateDoc(userStatsRef, {
+              noShowCount: increment(1),
+              updatedAt: serverTimestamp()
+            });
+          } else {
+            await setDoc(userStatsRef, {
+              userId: booking.userId,
+              noShowCount: 1,
+              totalBookings: 1,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            });
+          }
+          console.log(`   📊 Updated stats for user ${booking.userId}`);
+        } catch (statsError: any) {
+          console.error(`   ⚠️  Stats update failed: ${statsError.message}`);
+          // Non-critical - continue
+        }
+
+        // Check for waitlist to promote
+        try {
+          const waitlistQuery = query(
+            bookingsRef,
+            where('amenityId', '==', booking.amenityId),
+            where('startTime', '==', booking.startTime),
+            where('status', '==', 'waitlist')
+          );
+
+          const waitlistSnapshot = await getDocs(waitlistQuery);
+          
+          if (waitlistSnapshot.empty) {
+            console.log(`   ℹ️  No waitlist for ${booking.amenityName}`);
+            continue;
+          }
+
+          // Sort by waitlist position
+          const waitlistBookings = waitlistSnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .sort((a: any, b: any) => (a.waitlistPosition || 999) - (b.waitlistPosition || 999));
+
+          const nextInLine = waitlistBookings[0] as any;
+          
+          // Promote to pending confirmation
+          const confirmationDeadline = new Date(now.getTime() + (30 * 60 * 1000));
+          
+          await updateDoc(doc(db, 'bookings', nextInLine.id), {
+            status: 'pending_confirmation',
+            waitlistPromotedAt: serverTimestamp(),
+            confirmationDeadline: Timestamp.fromDate(confirmationDeadline),
+            updatedAt: serverTimestamp()
+          });
+
+          promotedCount++;
+          console.log(`   🎉 Promoted ${nextInLine.id} from waitlist`);
+
+          // Send promotion email
+          try {
+            const { emailTemplates, sendEmail } = await import('@/lib/email-service');
+            
+            const emailTemplate = emailTemplates.waitlistPromotion({
+              userName: nextInLine.userName || 'Resident',
+              amenityName: booking.amenityName,
+              date: booking.startTime.toDate().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              }),
+              timeSlot: nextInLine.selectedSlot || `${booking.startTime.toDate().toLocaleTimeString()} - ${booking.endTime.toDate().toLocaleTimeString()}`,
+              confirmationDeadline: confirmationDeadline.toLocaleString(),
+              bookingId: nextInLine.id,
+              flatNumber: nextInLine.userFlatNumber || ''
+            });
+
+            await sendEmail({
+              to: nextInLine.userEmail,
+              subject: emailTemplate.subject,
+              html: emailTemplate.html
+            });
+
+            console.log(`   📧 Sent email to ${nextInLine.userEmail}`);
+          } catch (emailError: any) {
+            console.error(`   ⚠️  Email failed: ${emailError.message}`);
+            // Non-critical - promotion already done
+          }
+        } catch (waitlistError: any) {
+          const errMsg = `Waitlist promotion failed: ${waitlistError.message}`;
+          console.error(`   ⚠️  ${errMsg}`);
+          errors.push(errMsg);
+          // Continue to next booking
+        }
+      } catch (bookingError: any) {
+        const errMsg = `Error processing booking ${bookingDoc.id}: ${bookingError.message}`;
+        console.error(`   ❌ ${errMsg}`);
+        errors.push(errMsg);
+        // Continue to next booking
       }
     }
 
-    console.log(`✅ [AUTO-CANCEL CRON] Complete: ${cancelledCount} cancelled, ${promotedCount} promoted`);
+    const duration = Date.now() - startTime;
+    console.log(`✅ [AUTO-CANCEL CRON] Complete in ${duration}ms`);
+    console.log(`   📊 Results: ${cancelledCount} cancelled, ${promotedCount} promoted`);
+    if (errors.length > 0) {
+      console.log(`   ⚠️  ${errors.length} non-critical errors occurred`);
+    }
 
     return NextResponse.json({ 
       success: true, 
       cancelled: cancelledCount,
       promoted: promotedCount,
+      errors: errors.length > 0 ? errors : undefined,
+      duration: `${duration}ms`,
       timestamp: now.toISOString()
     });
 
   } catch (error: any) {
-    console.error('❌ [AUTO-CANCEL CRON] Error:', error);
+    const duration = Date.now() - startTime;
+    console.error('❌ [AUTO-CANCEL CRON] Critical error:', error);
+    console.error('   Stack:', error.stack);
+    
     return NextResponse.json({ 
+      success: false,
       error: 'Cron job failed', 
-      message: error.message 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      cancelled: cancelledCount,
+      promoted: promotedCount,
+      errors,
+      duration: `${duration}ms`
     }, { status: 500 });
   }
 }
