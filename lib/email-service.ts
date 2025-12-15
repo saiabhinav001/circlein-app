@@ -980,6 +980,243 @@ export const emailTemplates = {
     `,
   }),
 
+  amenityUnblocked: (data: {
+    userName: string;
+    amenityName: string;
+    communityName: string;
+    bookingUrl: string;
+    flatNumber?: string;
+  }) => ({
+    subject: `✅ Good News! ${data.amenityName} is Now Available`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+              line-height: 1.6; 
+              color: #1a202c;
+              background: #f7fafc;
+            }
+            .email-wrapper { 
+              max-width: 600px; 
+              margin: 0 auto; 
+              background: #ffffff;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            .header { 
+              background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+              color: white; 
+              padding: 40px 30px; 
+              text-align: center;
+            }
+            .header h1 { 
+              font-size: 32px; 
+              margin-bottom: 10px; 
+              font-weight: 700;
+            }
+            .header p { 
+              font-size: 16px; 
+              opacity: 0.95;
+            }
+            .content { 
+              background: #ffffff; 
+              padding: 40px 30px;
+            }
+            .greeting { 
+              font-size: 18px; 
+              color: #2d3748; 
+              margin-bottom: 20px;
+            }
+            .message { 
+              font-size: 16px; 
+              color: #4a5568; 
+              margin-bottom: 30px;
+              line-height: 1.8;
+            }
+            .success-box {
+              background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+              padding: 30px;
+              border-radius: 12px;
+              text-align: center;
+              margin: 25px 0;
+              border: 2px solid #10b981;
+            }
+            .success-icon {
+              font-size: 64px;
+              margin-bottom: 15px;
+            }
+            .success-title {
+              font-size: 28px;
+              color: #065f46;
+              font-weight: 700;
+              margin-bottom: 10px;
+            }
+            .success-subtitle {
+              font-size: 16px;
+              color: #047857;
+            }
+            .amenity-details {
+              background: linear-gradient(to bottom, #f0fdf4, #dcfce7);
+              padding: 25px;
+              border-radius: 12px;
+              margin: 25px 0;
+              border: 2px solid #86efac;
+            }
+            .detail-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 15px 0;
+              border-bottom: 1px solid #bbf7d0;
+            }
+            .detail-row:last-child {
+              border-bottom: none;
+            }
+            .detail-label {
+              font-weight: 600;
+              color: #166534;
+              font-size: 15px;
+            }
+            .detail-value {
+              font-weight: 500;
+              color: #15803d;
+              font-size: 15px;
+              text-align: right;
+            }
+            .info-box {
+              background: #eff6ff;
+              border-left: 4px solid #3b82f6;
+              padding: 20px;
+              border-radius: 8px;
+              margin: 25px 0;
+            }
+            .info-title {
+              color: #1e40af;
+              font-weight: 600;
+              font-size: 16px;
+              margin-bottom: 10px;
+            }
+            .info-text {
+              color: #1e3a8a;
+              font-size: 14px;
+              line-height: 1.6;
+            }
+            .button {
+              display: inline-block;
+              padding: 16px 40px;
+              background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+              color: white !important; color: #ffffff !important;
+              text-decoration: none;
+              border-radius: 8px;
+              margin: 25px 0;
+              font-weight: 700;
+              font-size: 18px;
+              box-shadow: 0 4px 6px rgba(16, 185, 129, 0.4);
+              transition: all 0.3s;
+            }
+            .cta-box {
+              text-align: center;
+              padding: 30px;
+              background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+              border-radius: 12px;
+              margin: 25px 0;
+            }
+            .cta-text {
+              font-size: 18px;
+              color: #065f46;
+              margin-bottom: 20px;
+              font-weight: 600;
+            }
+            .footer {
+              text-align: center;
+              padding: 30px;
+              background: #f7fafc;
+              color: #718096;
+              font-size: 13px;
+              border-top: 1px solid #e2e8f0;
+            }
+            .footer-brand {
+              color: #10b981;
+              font-weight: 600;
+              font-size: 16px;
+              margin-bottom: 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="email-wrapper">
+            <div class="header">
+              <h1>✅ Amenity Now Available</h1>
+              <p>Great news for our community!</p>
+            </div>
+            <div class="content">
+              <p class="greeting">Hello ${data.userName}! 👋</p>
+              <p class="message">We're excited to inform you that an amenity you may be interested in is now available for booking!</p>
+
+              <div class="success-box">
+                <div class="success-icon">🎉</div>
+                <div class="success-title">${data.amenityName}</div>
+                <div class="success-subtitle">Ready to book now!</div>
+              </div>
+
+              <div class="amenity-details">
+                ${data.flatNumber ? `
+                <div class="detail-row">
+                  <span class="detail-label">Resident:</span>
+                  <span class="detail-value">${data.userName} (${data.flatNumber})</span>
+                </div>
+                ` : ''}
+                <div class="detail-row">
+                  <span class="detail-label">Amenity:</span>
+                  <span class="detail-value">${data.amenityName}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Community:</span>
+                  <span class="detail-value">${data.communityName}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Status:</span>
+                  <span class="detail-value" style="color: #10b981; font-weight: 700;">🟢 Available Now</span>
+                </div>
+              </div>
+
+              <div class="info-box">
+                <div class="info-title">📅 What You Can Do Now</div>
+                <div class="info-text">
+                  • Book your preferred time slots immediately<br>
+                  • View available dates on the calendar<br>
+                  • Check real-time slot availability<br>
+                  • Receive instant booking confirmation
+                </div>
+              </div>
+
+              <div class="cta-box">
+                <p class="cta-text">Don't miss out! Book your slot before they're all taken.</p>
+                <center>
+                  <a href="${data.bookingUrl}" class="button">📅 Book Now</a>
+                </center>
+              </div>
+
+              <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
+                Thank you for being part of our wonderful community! 💚
+              </p>
+            </div>
+            <div class="footer">
+              <div class="footer-brand">CircleIn</div>
+              <p>Your Community Management Platform</p>
+              <p style="margin-top: 10px;">This is an automated message. Please do not reply to this email.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  }),
+
   // 🆕 Waitlist Notification Template
   bookingWaitlist: (data: {
     userName: string;

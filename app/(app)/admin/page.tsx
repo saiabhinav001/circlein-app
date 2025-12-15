@@ -293,6 +293,23 @@ export default function AdminPanel() {
           autoHide: true,
           duration: 6000
         });
+        
+        // Send email notification for unblock
+        try {
+          await fetch('/api/notifications/amenity-unblock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amenityName: name,
+              communityId: session?.user?.communityId,
+              communityName: (session?.user as any)?.communityName || 'Your Community',
+            }),
+          });
+          console.log('✅ Amenity unblock emails sent to all residents');
+        } catch (emailError) {
+          console.error('⚠️ Failed to send unblock emails:', emailError);
+          // Don't fail the unblock if email fails
+        }
       }
 
       toast.success(`Amenity ${action}ed successfully`);

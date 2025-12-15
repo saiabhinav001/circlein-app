@@ -22,6 +22,8 @@ interface Amenity {
   description: string;
   imageUrl: string;
   category?: string;
+  isBlocked?: boolean;
+  blockReason?: string;
   timeSlots?: string[]; // Dynamic time slots from Firestore
   weekdaySlots?: string[]; // Specific slots for Monday-Friday
   weekendSlots?: string[]; // Specific slots for Saturday-Sunday
@@ -499,8 +501,8 @@ export default function AmenityBooking() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
             <div className="absolute bottom-4 left-4">
               <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{amenity.name}</h1>
-              <Badge className="bg-white/20 text-white border-white/30 text-xs sm:text-sm">
-                Available Now
+              <Badge className={amenity.isBlocked ? "bg-red-500/90 text-white border-red-400 text-xs sm:text-sm" : "bg-white/20 text-white border-white/30 text-xs sm:text-sm"}>
+                {amenity.isBlocked ? 'Temporarily Blocked' : 'Available Now'}
               </Badge>
             </div>
           </div>
@@ -509,6 +511,22 @@ export default function AmenityBooking() {
             <CardDescription className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">
               {amenity.description}
             </CardDescription>
+            
+            {amenity.isBlocked && amenity.blockReason && (
+              <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Info className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-red-800 dark:text-red-300 text-sm sm:text-base">
+                      Booking Temporarily Unavailable
+                    </p>
+                    <p className="text-red-700 dark:text-red-400 text-xs sm:text-sm mt-1">
+                      {amenity.blockReason}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="flex flex-wrap gap-3 sm:gap-4 pt-4">
               <div className="flex items-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
@@ -535,17 +553,46 @@ export default function AmenityBooking() {
           </CardHeader>
         </Card>
 
-        {/* Booking Calendar */}
-        <Card className="border-0 bg-white dark:bg-slate-900">
-          <CardHeader>
-            <CardTitle className="flex items-center text-base sm:text-lg">
-              <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Select Date & Time
-            </CardTitle>
-            <CardDescription className="text-sm">
-              Choose your preferred date and time slot
-            </CardDescription>
-          </CardHeader>
+        {/* Booking Calendar - Show blocked message or calendar */}
+        {amenity.isBlocked ? (
+          <Card className="border-0 bg-white dark:bg-slate-900">
+            <CardHeader>
+              <CardTitle className="flex items-center text-base sm:text-lg text-red-600 dark:text-red-400">
+                <Info className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                Booking Unavailable
+              </CardTitle>
+              <CardDescription className="text-sm">
+                This amenity is temporarily blocked
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <div className="text-center max-w-md">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <Info className="w-10 h-10 text-red-600 dark:text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">
+                  Currently Unavailable
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">
+                  {amenity.blockReason || 'This amenity has been temporarily blocked by administration.'}
+                </p>
+                <p className="text-slate-500 dark:text-slate-500 text-xs">
+                  Please check back later or contact your community administrator for more information.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-0 bg-white dark:bg-slate-900">
+            <CardHeader>
+              <CardTitle className="flex items-center text-base sm:text-lg">
+                <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                Select Date & Time
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Choose your preferred date and time slot
+              </CardDescription>
+            </CardHeader>
           <CardContent className="p-4 sm:p-6">
             <div className="flex justify-center w-full overflow-x-auto">
               <Calendar
@@ -817,6 +864,7 @@ export default function AmenityBooking() {
             )}
           </CardContent>
         </Card>
+        )}
       </div>
     </motion.div>
   );
