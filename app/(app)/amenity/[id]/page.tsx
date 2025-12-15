@@ -79,6 +79,36 @@ export default function AmenityBooking() {
   const [isBooking, setIsBooking] = useState(false); // Prevent double booking
   const [timeSlots, setTimeSlots] = useState<string[]>(DEFAULT_TIME_SLOTS); // Dynamic time slots
 
+  // Generate time slots dynamically based on operating hours and duration
+  const generateTimeSlots = (startHour: string, endHour: string, durationHours: number): string[] => {
+    const slots: string[] = [];
+    const [startH, startM] = startHour.split(':').map(Number);
+    const [endH, endM] = endHour.split(':').map(Number);
+    
+    // Convert to minutes for accurate calculation
+    let currentMinutes = startH * 60 + (startM || 0);
+    const endMinutes = endH * 60 + (endM || 0);
+    const slotDurationMinutes = Math.round(durationHours * 60);
+    
+    while (currentMinutes + slotDurationMinutes <= endMinutes) {
+      const startHourCalc = Math.floor(currentMinutes / 60);
+      const startMinuteCalc = currentMinutes % 60;
+      const slotStart = `${String(startHourCalc).padStart(2, '0')}:${String(startMinuteCalc).padStart(2, '0')}`;
+      
+      const endMinutesCalc = currentMinutes + slotDurationMinutes;
+      const endHourCalc = Math.floor(endMinutesCalc / 60);
+      const endMinuteCalc = endMinutesCalc % 60;
+      const slotEnd = `${String(endHourCalc).padStart(2, '0')}:${String(endMinuteCalc).padStart(2, '0')}`;
+      
+      slots.push(`${slotStart}-${slotEnd}`);
+      
+      // Move to next slot
+      currentMinutes += slotDurationMinutes;
+    }
+    
+    return slots;
+  };
+
   useEffect(() => {
     if (params.id && session?.user?.communityId) {
       // Set up real-time listener for amenity changes
@@ -101,8 +131,43 @@ export default function AmenityBooking() {
           
           setAmenity(fetchedAmenity);
           
-          // Update time slots dynamically in real-time based on day of week
-          updateTimeSlotsForDate(fetchedAmenity, selectedDate || new Date());
+          // CRITICAL: Update time slots IMMEDIATELY when Firestore data changes
+          // This runs every time booking.slotDuration or operating hours change
+          const currentDate = selectedDate || new Date();
+          const dayOfWeek = currentDate.getDay();
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+          
+          // Generate slots based on current data
+          if (isWeekend && fetchedAmenity.weekendSlots && fetchedAmenity.weekendSlots.length > 0) {
+            setTimeSlots(fetchedAmenity.weekendSlots);
+          } else if (!isWeekend && fetchedAmenity.weekdaySlots && fetchedAmenity.weekdaySlots.length > 0) {
+            setTimeSlots(fetchedAmenity.weekdaySlots);
+          } else if (fetchedAmenity.timeSlots && fetchedAmenity.timeSlots.length > 0) {
+            setTimeSlots(fetchedAmenity.timeSlots);
+          } else if (isWeekend && fetchedAmenity.weekendHours && fetchedAmenity.booking?.slotDuration) {
+            const slots = generateTimeSlots(
+              fetchedAmenity.weekendHours.start,
+              fetchedAmenity.weekendHours.end,
+              fetchedAmenity.booking.slotDuration
+            );
+            setTimeSlots(slots);
+          } else if (!isWeekend && fetchedAmenity.weekdayHours && fetchedAmenity.booking?.slotDuration) {
+            const slots = generateTimeSlots(
+              fetchedAmenity.weekdayHours.start,
+              fetchedAmenity.weekdayHours.end,
+              fetchedAmenity.booking.slotDuration
+            );
+            setTimeSlots(slots);
+          } else if (fetchedAmenity.operatingHours && fetchedAmenity.booking?.slotDuration) {
+            const slots = generateTimeSlots(
+              fetchedAmenity.operatingHours.start,
+              fetchedAmenity.operatingHours.end,
+              fetchedAmenity.booking.slotDuration
+            );
+            setTimeSlots(slots);
+          } else {
+            setTimeSlots(DEFAULT_TIME_SLOTS);
+          }
           
           setLoading(false);
         }
@@ -118,13 +183,15 @@ export default function AmenityBooking() {
   }, [params.id, session?.user?.communityId]);
 
   useEffect(() => {
-    if (selectedDate && params.id && amenity) {
+    if (selectedDate && params.id) {
       fetchBookings(params.id as string, selectedDate);
       
-      // Update time slots when date changes (weekday vs weekend) or slot duration changes
-      updateTimeSlotsForDate(amenity, selectedDate);
+      // Update time slots when date changes (weekday vs weekend)
+      if (amenity) {
+        updateTimeSlotsForDate(amenity, selectedDate);
+      }
     }
-  }, [selectedDate, params.id, amenity?.booking?.slotDuration, amenity?.weekdayHours, amenity?.weekendHours, amenity?.operatingHours, amenity?.timeSlots]);
+  }, [selectedDate, params.id]);
 
   // Update time slots based on selected date (weekday vs weekend)
   const updateTimeSlotsForDate = (amenityData: Amenity, date: Date) => {
@@ -189,36 +256,6 @@ export default function AmenityBooking() {
     // Priority 5: Use default time slots
     console.log('📅 [Real-time] Using default time slots');
     setTimeSlots(DEFAULT_TIME_SLOTS);
-  };
-
-  // Generate time slots dynamically based on operating hours and duration
-  const generateTimeSlots = (startHour: string, endHour: string, durationHours: number): string[] => {
-    const slots: string[] = [];
-    const [startH, startM] = startHour.split(':').map(Number);
-    const [endH, endM] = endHour.split(':').map(Number);
-    
-    // Convert to minutes for accurate calculation
-    let currentMinutes = startH * 60 + (startM || 0);
-    const endMinutes = endH * 60 + (endM || 0);
-    const slotDurationMinutes = Math.round(durationHours * 60);
-    
-    while (currentMinutes + slotDurationMinutes <= endMinutes) {
-      const startHourCalc = Math.floor(currentMinutes / 60);
-      const startMinuteCalc = currentMinutes % 60;
-      const slotStart = `${String(startHourCalc).padStart(2, '0')}:${String(startMinuteCalc).padStart(2, '0')}`;
-      
-      const endMinutesCalc = currentMinutes + slotDurationMinutes;
-      const endHourCalc = Math.floor(endMinutesCalc / 60);
-      const endMinuteCalc = endMinutesCalc % 60;
-      const slotEnd = `${String(endHourCalc).padStart(2, '0')}:${String(endMinuteCalc).padStart(2, '0')}`;
-      
-      slots.push(`${slotStart}-${slotEnd}`);
-      
-      // Move to next slot
-      currentMinutes += slotDurationMinutes;
-    }
-    
-    return slots;
   };
 
   const fetchBookings = async (amenityId: string, date: Date) => {
