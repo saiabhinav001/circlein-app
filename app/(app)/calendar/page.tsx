@@ -173,8 +173,11 @@ export default function CalendarPage() {
           status: data.status || 'confirmed',
           qrId: data.qrId,
           userId: data.userId,
-          communityId: data.communityId
-        });
+          communityId: data.communityId,
+          userName: data.userName,
+          userFlatNumber: data.userFlatNumber,
+          userEmail: data.userEmail
+        } as any);
       });
 
       setBookings(bookingList);
