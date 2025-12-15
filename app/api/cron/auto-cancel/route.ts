@@ -21,9 +21,17 @@ import { db } from '@/lib/firebase';
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify cron secret (security)
+    // Verify cron secret (security) - check both formats
     const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const cronHeader = request.headers.get('x-cron-secret');
+    
+    const expectedSecret = process.env.CRON_SECRET;
+    const isValid = 
+      authHeader === `Bearer ${expectedSecret}` || 
+      cronHeader === expectedSecret;
+    
+    if (!isValid) {
+      console.error('❌ [AUTO-CANCEL] Unauthorized access attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
