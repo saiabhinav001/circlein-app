@@ -17,6 +17,7 @@ export interface SimpleBooking {
   userId: string;
   userEmail: string;
   userName?: string;
+  userFlatNumber?: string;
   communityId: string;
   amenityId: string;
   amenityName: string;
@@ -322,6 +323,7 @@ export function useSimpleBookings() {
           userId: bookingData.userId || bookingData.userEmail || activeUserEmail,
           userEmail: bookingData.userEmail || bookingData.userId || activeUserEmail,
           userName: bookingData.userName || activeUserEmail?.split('@')[0] || 'User',
+          userFlatNumber: bookingData.userFlatNumber || '',
           communityId: bookingData.communityId || activeCommunityId,
           amenityId: bookingData.amenityId || 'unknown',
           amenityName: amenityDetails.name,

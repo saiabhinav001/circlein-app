@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
       const emailData = {
         userName: userName || session.user.name || 'Resident',
         amenityName,
-        date: new Date(selectedDate).toLocaleDateString('en-US', { 
+        date: bookingStart.toLocaleDateString('en-US', { 
           weekday: 'long', 
           year: 'numeric', 
           month: 'long', 
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
         timeSlot: selectedSlot,
         bookingId: result.bookingId,
         communityName: (session.user as any).communityName || 'Your Community',
-        flatNumber: (session.user as any).flatNumber,
+        flatNumber: userFlatNumber || (session.user as any).flatNumber || '',
       };
 
       let template;

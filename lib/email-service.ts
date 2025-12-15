@@ -127,7 +127,7 @@ export const emailTemplates = {
               display: flex; 
               justify-content: space-between; 
               align-items: center;
-              padding: 15px 0; 
+              padding: 16px 0; 
               border-bottom: 1px solid #e2e8f0;
             }
             .detail-row:last-child { 
@@ -135,14 +135,25 @@ export const emailTemplates = {
             }
             .detail-label { 
               font-weight: 600; 
-              color: #667eea;
+              color: #4f46e5;
               font-size: 15px;
             }
             .detail-value {
-              font-weight: 500;
-              color: #2d3748;
+              font-weight: 600;
+              color: #1e293b;
               font-size: 15px;
               text-align: right;
+            }
+            .flat-badge {
+              display: inline-block;
+              margin-left: 8px;
+              padding: 4px 12px;
+              background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+              color: white;
+              border-radius: 12px;
+              font-size: 13px;
+              font-weight: 700;
+              box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
             }
             .button { 
               display: inline-block; 
@@ -207,7 +218,10 @@ export const emailTemplates = {
               <div class="details-card">
                 <div class="detail-row">
                   <span class="detail-label">🏠 Resident:</span>
-                  <span class="detail-value">${data.userName}${data.flatNumber ? ` - Flat ${data.flatNumber}` : ''}</span>
+                  <span class="detail-value">
+                    ${data.userName}
+                    ${data.flatNumber ? `<span class="flat-badge">Flat ${data.flatNumber}</span>` : ''}
+                  </span>
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">🏊 Amenity:</span>
