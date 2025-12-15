@@ -65,13 +65,12 @@ export default function ContactPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: [...messages, userMessage].map(m => ({
+          message: input,
+          userRole: session?.user?.role || 'resident',
+          conversationHistory: messages.map(m => ({
             role: m.role,
             content: m.content
-          })),
-          userId: session?.user?.id,
-          userName: session?.user?.name || 'Guest',
-          userRole: session?.user?.role || 'resident'
+          }))
         }),
       });
 
@@ -115,27 +114,33 @@ export default function ContactPage() {
     setEmailSending(true);
 
     try {
-      const response = await fetch('/api/contact', {
+      const response = await fetch('/api/send-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...emailForm,
-          userName: session?.user?.name || 'Anonymous',
-          userEmail: session?.user?.email || 'no-email@provided.com'
+          to: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'circleinapp1@gmail.com',
+          subject: emailForm.subject,
+          message: emailForm.message,
+          senderName: session?.user?.name || 'Anonymous',
+          senderEmail: session?.user?.email || 'no-email@provided.com',
+          senderRole: session?.user?.role || 'resident',
+          communityName: (session?.user as any)?.communityName || 'Unknown Community'
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to send email');
+        throw new Error(data.error || 'Failed to send email');
       }
 
       toast.success('Message sent successfully! We\'ll get back to you soon.');
       setEmailForm({ subject: '', message: '' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending email:', error);
-      toast.error('Failed to send message. Please try again.');
+      toast.error(error.message || 'Failed to send message. Please try again.');
     } finally {
       setEmailSending(false);
     }
@@ -145,21 +150,21 @@ export default function ContactPage() {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-indigo-950 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8 px-4">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full text-sm font-medium mb-4"
+            className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full text-xs sm:text-sm font-medium mb-3 sm:mb-4"
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
             24/7 SUPPORT AVAILABLE
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.5 }}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent mb-4"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent mb-3 sm:mb-4"
           >
             Contact Us
           </motion.h1>
@@ -167,7 +172,7 @@ export default function ContactPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"
+            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"
           >
             Get instant help with our AI-powered assistant or reach out via email
           </motion.p>
@@ -178,36 +183,34 @@ export default function ContactPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="flex gap-4 justify-center mb-8"
+          className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 sm:mb-8 px-4"
         >
           <Button
             onClick={() => setMode('chatbot')}
             variant={mode === 'chatbot' ? 'default' : 'outline'}
-            size="lg"
             className={cn(
-              "flex items-center gap-2 px-6 py-6 text-base font-semibold transition-all",
+              "flex items-center justify-center gap-2 px-4 sm:px-6 py-4 sm:py-6 text-sm sm:text-base font-semibold transition-all w-full sm:w-auto",
               mode === 'chatbot'
                 ? "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
                 : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border-2"
             )}
           >
-            <Bot className="w-5 h-5" />
-            AI Chatbot
-            {mode === 'chatbot' && <Zap className="w-4 h-4" />}
+            <Bot className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>AI Chatbot</span>
+            {mode === 'chatbot' && <Zap className="w-3 h-3 sm:w-4 sm:h-4" />}
           </Button>
           <Button
             onClick={() => setMode('email')}
             variant={mode === 'email' ? 'default' : 'outline'}
-            size="lg"
             className={cn(
-              "flex items-center gap-2 px-6 py-6 text-base font-semibold transition-all",
+              "flex items-center justify-center gap-2 px-4 sm:px-6 py-4 sm:py-6 text-sm sm:text-base font-semibold transition-all w-full sm:w-auto",
               mode === 'email'
                 ? "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
                 : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border-2"
             )}
           >
-            <Mail className="w-5 h-5" />
-            Email Support
+            <Mail className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>Email Support</span>
           </Button>
         </motion.div>
 
@@ -237,19 +240,26 @@ export default function ContactPage() {
                 </CardHeader>
                 <CardContent className="p-0">
                   {/* Messages Container */}
-                  <div className="h-[500px] overflow-y-auto p-6 space-y-4">
+                  <div className="h-[400px] sm:h-[500px] overflow-y-auto p-4 sm:p-6 space-y-4">
                     {messages.length === 0 ? (
-                      <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                        <div className="p-4 bg-indigo-100 dark:bg-indigo-900/30 rounded-full mb-4">
+                      <div className="h-full flex flex-col items-center justify-center text-center p-4 sm:p-8">
+                        <motion.div
+                          className="p-4 bg-indigo-100 dark:bg-indigo-900/30 rounded-full mb-4 cursor-pointer"
+                          whileHover={{
+                            scale: 1.05,
+                            boxShadow: '0 0 20px rgba(99, 102, 241, 0.4)'
+                          }}
+                          transition={{ duration: 0.3 }}
+                        >
                           <MessageCircle className="w-12 h-12 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        </motion.div>
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">
                           Welcome to CircleIn Support!
                         </h3>
-                        <p className="text-gray-600 dark:text-gray-400 max-w-md mb-6">
+                        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 max-w-md mb-6 px-2">
                           I'm your AI assistant, here to help with bookings, facilities, community questions, and more.
                         </p>
-                        <div className="grid gap-2 w-full max-w-md">
+                        <div className="grid gap-2 w-full max-w-md px-2">
                           {[
                             'How do I book a facility?',
                             'What amenities are available?',
@@ -346,17 +356,17 @@ export default function ContactPage() {
                         onChange={(e) => setInput(e.target.value)}
                         placeholder="Type your message..."
                         disabled={isLoading}
-                        className="flex-1 bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800"
+                        className="flex-1 bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-0 transition-colors text-sm sm:text-base"
                       />
                       <Button
                         type="submit"
                         disabled={isLoading || !input.trim()}
-                        className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6"
+                        className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 sm:px-6"
                       >
                         {isLoading ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                         ) : (
-                          <Send className="w-5 h-5" />
+                          <Send className="w-4 h-4 sm:w-5 sm:h-5" />
                         )}
                       </Button>
                     </form>
@@ -398,7 +408,7 @@ export default function ContactPage() {
                         onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
                         placeholder="What can we help you with?"
                         required
-                        className="bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800"
+                        className="bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-0 transition-colors"
                       />
                     </div>
 
@@ -413,7 +423,7 @@ export default function ContactPage() {
                         placeholder="Please describe your issue or question in detail..."
                         required
                         rows={8}
-                        className="bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 resize-none"
+                        className="bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-0 transition-colors resize-none"
                       />
                     </div>
 
@@ -429,16 +439,16 @@ export default function ContactPage() {
                     <Button
                       type="submit"
                       disabled={emailSending}
-                      className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-6 text-lg"
+                      className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-4 sm:py-6 text-base sm:text-lg"
                     >
                       {emailSending ? (
                         <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
                           Sending...
                         </>
                       ) : (
                         <>
-                          <Send className="w-5 h-5 mr-2" />
+                          <Send className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                           Send Message
                         </>
                       )}
