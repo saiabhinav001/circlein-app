@@ -196,10 +196,19 @@ export default function AdminPanel() {
             endTime: data.weekendEndTime,
           },
         },
+        // Also update operatingHours for backward compatibility
+        operatingHours: {
+          start: data.weekdayStartTime,
+          end: data.weekdayEndTime,
+        },
         rules: {
           maxSlotsPerFamily: data.maxPeople,
           blackoutDates: [],
         },
+        // CRITICAL: Clear custom time slots so they regenerate
+        timeSlots: [],
+        weekdaySlots: [],
+        weekendSlots: [],
         updatedAt: new Date(),
       });
 
