@@ -75,13 +75,14 @@ export async function checkUserBookingEligibility(
       const now = new Date();
       
       if (suspendedUntil > now) {
+        const daysRemaining = Math.ceil((suspendedUntil.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         return {
           canBook: false,
           requiresDeposit: false,
           priorityScore: 0,
           isSuspended: true,
           suspendedUntil,
-          reason: `Account suspended until ${suspendedUntil.toLocaleDateString()} due to ${userStats.noShowCount} no-shows`
+          reason: `Account suspended for ${daysRemaining} more days due to ${userStats.noShowCount} no-shows`
         };
       }
     }
@@ -208,10 +209,10 @@ export async function chargeDeposit(userId: string, bookingId: string, amount: n
 
 export async function applySuspension(userId: string, noShowCount: number) {
   try {
-    // Suspend for 30 days if 3+ no-shows
+    // Suspend for 7 days if 3+ no-shows
     if (noShowCount >= 3) {
       const suspensionDate = new Date();
-      suspensionDate.setDate(suspensionDate.getDate() + 30); // 30 days from now
+      suspensionDate.setDate(suspensionDate.getDate() + 7); // 7 days from now
 
       const statsQuery = query(
         collection(db, 'userBookingStats'),

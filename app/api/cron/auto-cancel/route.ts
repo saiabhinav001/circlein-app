@@ -155,12 +155,12 @@ export async function GET(request: NextRequest) {
           }
           logs.push(`  📊 Stats updated (no-shows: ${newNoShowCount})`);
           
-          // Apply 30-day suspension if 3+ no-shows
+          // Apply 7-day suspension if 3+ no-shows
           if (newNoShowCount >= 3) {
             const { applySuspension } = await import('@/lib/booking-service');
             const suspended = await applySuspension(booking.userId, newNoShowCount);
             if (suspended) {
-              logs.push(`  🚫 User suspended for 30 days (${newNoShowCount} no-shows)`);
+              logs.push(`  🚫 User suspended for 7 days (${newNoShowCount} no-shows)`);
             }
           }
         } catch (statsError: any) {
