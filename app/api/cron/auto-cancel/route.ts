@@ -7,7 +7,10 @@ import {
   updateDoc, 
   doc, 
   Timestamp,
-  serverTimestamp 
+  serverTimestamp,
+  getDoc,
+  setDoc,
+  increment
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -72,20 +75,31 @@ export async function GET(request: NextRequest) {
       cancelledCount++;
       console.log(`   ❌ Auto-cancelled booking ${bookingDoc.id} (no check-in)`);
 
-      // Increment user's no-show count
+      // Increment user's no-show count (simplified with increment)
       try {
         const userStatsRef = doc(db, 'userBookingStats', booking.userId);
-        const statsSnap = await getDocs(query(collection(db, 'userBookingStats'), where('userId', '==', booking.userId)));
+        const statsDoc = await getDoc(userStatsRef);
         
-        if (!statsSnap.empty) {
-          const currentStats = statsSnap.docs[0].data();
-          await updateDoc(statsSnap.docs[0].ref, {
-            noShowCount: (currentStats.noShowCount || 0) + 1,
+        if (statsDoc.exists()) {
+          // Update existing stats
+          await updateDoc(userStatsRef, {
+            noShowCount: increment(1),
+            updatedAt: serverTimestamp()
+          });
+        } else {
+          // Create new stats document
+          await setDoc(userStatsRef, {
+            userId: booking.userId,
+            noShowCount: 1,
+            totalBookings: 1,
+            createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           });
         }
+        console.log(`   📊 Updated no-show count for user ${booking.userId}`);
       } catch (error) {
-        console.error('Failed to update user stats:', error);
+        console.error('   ⚠️ Failed to update user stats:', error);
+        // Non-critical - continue processing
       }
 
       // Check for waitlist to promote
