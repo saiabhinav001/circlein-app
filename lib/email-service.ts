@@ -2183,28 +2183,21 @@ export async function sendBatchEmails(
     errors: [] as string[],
   };
 
-  // Send emails in batches of 10 with 1 second delay between batches
-  const batchSize = 10;
-  for (let i = 0; i < emails.length; i += batchSize) {
-    const batch = emails.slice(i, i + batchSize);
-    
-    await Promise.all(
-      batch.map(async (email) => {
-        try {
-          await sendEmail(email);
-          results.sent++;
-        } catch (error) {
-          results.failed++;
-          results.errors.push(`Failed to send to ${email.to}: ${error}`);
-        }
-      })
-    );
+  // Send ALL emails simultaneously - maximum speed!
+  console.log(`📧 Sending ${emails.length} emails simultaneously...`);
+  
+  await Promise.all(
+    emails.map(async (email) => {
+      try {
+        await sendEmail(email);
+        results.sent++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push(`Failed to send to ${email.to}: ${error}`);
+      }
+    })
+  );
 
-    // Wait 1 second between batches to avoid rate limits
-    if (i + batchSize < emails.length) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-  }
-
+  console.log(`✅ Completed: ${results.sent} sent, ${results.failed} failed`);
   return results;
 }
