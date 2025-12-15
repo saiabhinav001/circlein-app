@@ -115,15 +115,13 @@ export default function AmenityBooking() {
   }, [params.id, session?.user?.communityId]);
 
   useEffect(() => {
-    if (selectedDate && params.id) {
+    if (selectedDate && params.id && amenity) {
       fetchBookings(params.id as string, selectedDate);
       
-      // Update time slots when date changes (weekday vs weekend)
-      if (amenity) {
-        updateTimeSlotsForDate(amenity, selectedDate);
-      }
+      // Update time slots when date changes (weekday vs weekend) or slot duration changes
+      updateTimeSlotsForDate(amenity, selectedDate);
     }
-  }, [selectedDate, params.id, amenity]);
+  }, [selectedDate, params.id, amenity?.slotDuration, amenity?.weekdayHours, amenity?.weekendHours, amenity?.operatingHours, amenity?.timeSlots]);
 
   // Update time slots based on selected date (weekday vs weekend)
   const updateTimeSlotsForDate = (amenityData: Amenity, date: Date) => {
