@@ -71,33 +71,25 @@ export default function AdminTimeSlotsPage() {
     const [startH, startM] = start.split(':').map(Number);
     const [endH, endM] = end.split(':').map(Number);
     
-    let currentHour = startH;
-    let currentMinute = startM || 0;
+    // Convert to minutes for accurate calculation
+    let currentMinutes = startH * 60 + (startM || 0);
+    const endMinutes = endH * 60 + (endM || 0);
+    const slotDurationMinutes = Math.round(duration * 60);
     
-    while (currentHour < endH || (currentHour === endH && currentMinute < (endM || 0))) {
-      const slotStart = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+    while (currentMinutes + slotDurationMinutes <= endMinutes) {
+      const startHourCalc = Math.floor(currentMinutes / 60);
+      const startMinuteCalc = currentMinutes % 60;
+      const slotStart = `${String(startHourCalc).padStart(2, '0')}:${String(startMinuteCalc).padStart(2, '0')}`;
       
-      let slotEndHour = currentHour + duration;
-      let slotEndMinute = currentMinute;
+      const endMinutesCalc = currentMinutes + slotDurationMinutes;
+      const endHourCalc = Math.floor(endMinutesCalc / 60);
+      const endMinuteCalc = endMinutesCalc % 60;
+      const slotEnd = `${String(endHourCalc).padStart(2, '0')}:${String(endMinuteCalc).padStart(2, '0')}`;
       
-      if (slotEndMinute >= 60) {
-        slotEndHour += Math.floor(slotEndMinute / 60);
-        slotEndMinute = slotEndMinute % 60;
-      }
+      slots.push(`${slotStart}-${slotEnd}`);
       
-      const slotEnd = `${String(slotEndHour).padStart(2, '0')}:${String(slotEndMinute).padStart(2, '0')}`;
-      
-      if (slotEndHour < endH || (slotEndHour === endH && slotEndMinute <= (endM || 0))) {
-        slots.push(`${slotStart}-${slotEnd}`);
-      }
-      
-      currentHour += duration;
-      currentMinute += (duration % 1) * 60;
-      
-      if (currentMinute >= 60) {
-        currentHour += Math.floor(currentMinute / 60);
-        currentMinute = currentMinute % 60;
-      }
+      // Move to next slot
+      currentMinutes += slotDurationMinutes;
     }
     
     return slots;
