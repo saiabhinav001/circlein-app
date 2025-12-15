@@ -1438,6 +1438,222 @@ export const emailTemplates = {
       </html>
     `,
   }),
+
+  // Waitlist Promotion Email Template
+  waitlistPromotion: (data: {
+    userName: string;
+    amenityName: string;
+    date: string;
+    timeSlot: string;
+    confirmationDeadline: string;
+    bookingId: string;
+    flatNumber?: string;
+  }) => ({
+    subject: `🎉 Good News! Spot Available - ${data.amenityName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+              line-height: 1.6; 
+              color: #1a202c;
+              background: #f7fafc;
+            }
+            .email-wrapper { 
+              max-width: 600px; 
+              margin: 0 auto; 
+              background: #ffffff;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            .header { 
+              background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+              color: white; 
+              padding: 40px 30px; 
+              text-align: center;
+            }
+            .header h1 { 
+              font-size: 32px; 
+              margin-bottom: 10px; 
+              font-weight: 700;
+            }
+            .header p { 
+              font-size: 16px; 
+              opacity: 0.95;
+            }
+            .content { 
+              background: #ffffff; 
+              padding: 40px 30px;
+            }
+            .urgent-box {
+              background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+              border-left: 4px solid #f59e0b;
+              padding: 20px;
+              border-radius: 12px;
+              margin: 25px 0;
+              box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+            }
+            .urgent-title {
+              color: #92400e;
+              font-weight: 700;
+              font-size: 18px;
+              margin-bottom: 10px;
+            }
+            .urgent-text {
+              color: #78350f;
+              font-size: 15px;
+              line-height: 1.6;
+            }
+            .countdown {
+              display: inline-block;
+              background: #dc2626;
+              color: white;
+              padding: 8px 16px;
+              border-radius: 8px;
+              font-weight: 700;
+              font-size: 16px;
+              margin-top: 10px;
+            }
+            .details-card { 
+              background: linear-gradient(to bottom, #f7fafc, #edf2f7); 
+              padding: 25px; 
+              border-radius: 12px; 
+              margin: 25px 0;
+              border: 2px solid #e2e8f0;
+            }
+            .detail-row { 
+              display: flex; 
+              justify-content: space-between; 
+              align-items: center;
+              padding: 16px 0; 
+              border-bottom: 1px solid #e2e8f0;
+            }
+            .detail-row:last-child { 
+              border-bottom: none;
+            }
+            .detail-label { 
+              font-weight: 600; 
+              color: #10b981;
+              font-size: 15px;
+            }
+            .detail-value {
+              font-weight: 600;
+              color: #1e293b;
+              font-size: 15px;
+              text-align: right;
+            }
+            .flat-badge {
+              display: inline-block;
+              margin-left: 8px;
+              padding: 4px 12px;
+              background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+              color: white;
+              border-radius: 12px;
+              font-size: 13px;
+              font-weight: 700;
+              box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+            }
+            .button { 
+              display: inline-block; 
+              padding: 16px 40px; 
+              background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+              color: white; 
+              text-decoration: none; 
+              border-radius: 12px; 
+              margin: 25px 0;
+              font-weight: 700;
+              font-size: 18px;
+              box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+              text-align: center;
+            }
+            .footer { 
+              text-align: center; 
+              padding: 30px; 
+              background: #f7fafc;
+              color: #718096; 
+              font-size: 13px;
+              border-top: 1px solid #e2e8f0;
+            }
+            .footer-brand {
+              color: #10b981;
+              font-weight: 600;
+              font-size: 16px;
+              margin-bottom: 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="email-wrapper">
+            <div class="header">
+              <h1>🎉 Spot Available!</h1>
+              <p>You've been promoted from the waitlist</p>
+            </div>
+            <div class="content">
+              <p style="font-size: 18px; color: #2d3748; margin-bottom: 20px;">
+                Hi <strong>${data.userName}</strong>,
+              </p>
+              <p style="font-size: 16px; color: #4a5568; margin-bottom: 30px; line-height: 1.8;">
+                Great news! A spot has opened up for your waitlisted booking. <strong>You have 30 minutes to confirm</strong> or the spot will go to the next person in line.
+              </p>
+              
+              <div class="urgent-box">
+                <div class="urgent-title">⏰ Action Required - Time Sensitive!</div>
+                <div class="urgent-text">
+                  Please confirm your booking before: <br/>
+                  <span class="countdown">${data.confirmationDeadline}</span>
+                </div>
+              </div>
+
+              <div class="details-card">
+                <div class="detail-row">
+                  <span class="detail-label">🏠 Resident:</span>
+                  <span class="detail-value">
+                    ${data.userName}
+                    ${data.flatNumber ? `<span class="flat-badge">Flat ${data.flatNumber}</span>` : ''}
+                  </span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">🏊 Amenity:</span>
+                  <span class="detail-value">${data.amenityName}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">📅 Date:</span>
+                  <span class="detail-value">${data.date}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">⏰ Time Slot:</span>
+                  <span class="detail-value">${data.timeSlot}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">🎫 Booking ID:</span>
+                  <span class="detail-value">#${data.bookingId.substring(0, 8).toUpperCase()}</span>
+                </div>
+              </div>
+
+              <center>
+                <a href="https://circlein-app.vercel.app/bookings?action=confirm&id=${data.bookingId}" class="button">
+                  ✓ Confirm Booking Now
+                </a>
+              </center>
+
+              <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
+                If you don't confirm within 30 minutes, this spot will automatically go to the next person on the waitlist.
+              </p>
+            </div>
+            <div class="footer">
+              <div class="footer-brand">CircleIn</div>
+              <p>Your Community Management Platform</p>
+              <p style="margin-top: 10px;">This is an automated message. Please do not reply to this email.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  }),
 };
 
 // Send a single email
