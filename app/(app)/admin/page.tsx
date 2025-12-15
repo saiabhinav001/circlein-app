@@ -294,9 +294,9 @@ export default function AdminPanel() {
           duration: 6000
         });
         
-        // Send email notification for unblock
+        // Send email notification for unblock - IMMEDIATE parallel sending
         try {
-          await fetch('/api/notifications/amenity-unblock', {
+          const response = await fetch('/api/notifications/amenity-unblock', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -305,7 +305,13 @@ export default function AdminPanel() {
               communityName: (session?.user as any)?.communityName || 'Your Community',
             }),
           });
-          console.log('✅ Amenity unblock emails sent to all residents');
+          
+          const result = await response.json();
+          console.log(`✅ Amenity unblock emails sent: ${result.sent}/${result.total} residents`);
+          
+          if (result.failed > 0) {
+            console.warn(`⚠️ ${result.failed} emails failed to send`);
+          }
         } catch (emailError) {
           console.error('⚠️ Failed to send unblock emails:', emailError);
           // Don't fail the unblock if email fails

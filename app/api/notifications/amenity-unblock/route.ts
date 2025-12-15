@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
-import { emailTemplates, sendEmail } from '@/lib/email-service';
+import { emailTemplates, sendBatchEmails } from '@/lib/email-service';
 
 /**
  * API endpoint to send amenity unblock notification emails to all community residents
+ * Uses batch processing for immediate parallel email delivery
  */
 export async function POST(req: NextRequest) {
   try {
@@ -30,65 +31,59 @@ export async function POST(req: NextRequest) {
 
     console.log(`📧 Sending amenity unblock emails for: ${amenityName} in ${communityName}`);
 
-    // Get all users in this community
+    // Get all RESIDENTS in this community (exclude admins)
     const usersSnapshot = await adminDb
       .collection('users')
       .where('communityId', '==', communityId)
+      .where('role', '==', 'resident')
       .get();
 
     if (usersSnapshot.empty) {
-      console.log('⚠️ No users found in this community');
-      return NextResponse.json({ message: 'No users found', sent: 0 }, { status: 200 });
+      console.log('⚠️ No residents found in this community');
+      return NextResponse.json({ 
+        success: true,
+        message: 'No residents to notify',
+        sent: 0,
+        failed: 0,
+        total: 0
+      }, { status: 200 });
     }
 
-    const users = usersSnapshot.docs.map(doc => ({
-      email: doc.data().email,
-      name: doc.data().name || doc.data().email?.split('@')[0] || 'Resident',
-      flatNumber: doc.data().flatNumber,
-    }));
-
-    console.log(`📬 Found ${users.length} users to notify`);
-
-    // Send emails to all users
-    let successCount = 0;
-    let failCount = 0;
-
-    for (const user of users) {
-      try {
+    // Prepare all emails for batch sending
+    const emails: Array<{ to: string; subject: string; html: string }> = [];
+    
+    usersSnapshot.forEach((doc: any) => {
+      const userData = doc.data();
+      if (userData.email) {
         const template = emailTemplates.amenityUnblocked({
-          userName: user.name,
+          userName: userData.name || userData.email?.split('@')[0] || 'Resident',
           amenityName: amenityName,
           communityName: communityName || 'Your Community',
           bookingUrl: `${process.env.NEXTAUTH_URL}/amenity`,
-          flatNumber: user.flatNumber,
+          flatNumber: userData.flatNumber,
         });
 
-        const result = await sendEmail({
-          to: user.email,
+        emails.push({
+          to: userData.email,
           subject: template.subject,
           html: template.html,
         });
-
-        if (result.success) {
-          successCount++;
-        } else {
-          failCount++;
-          console.error(`❌ Failed to send to ${user.email}:`, result.error);
-        }
-      } catch (error) {
-        failCount++;
-        console.error(`❌ Error sending to ${user.email}:`, error);
       }
-    }
+    });
 
-    console.log(`✅ Sent ${successCount}/${users.length} amenity unblock emails`);
+    console.log(`📬 Sending to ${emails.length} residents in parallel batches`);
+
+    // Send all emails in parallel batches (10 at a time) - MUCH FASTER!
+    const results = await sendBatchEmails(emails, 'amenityUnblocked');
+
+    console.log(`✅ Sent ${results.sent}/${emails.length} amenity unblock emails (${results.failed} failed)`);
 
     return NextResponse.json({
       success: true,
       message: `Amenity unblock notifications sent`,
-      sent: successCount,
-      failed: failCount,
-      total: users.length,
+      sent: results.sent,
+      failed: results.failed,
+      total: emails.length,
     });
 
   } catch (error) {
