@@ -215,7 +215,6 @@ export async function POST(request: NextRequest) {
     // Import email service and enhancements
     const { emailTemplates, sendEmail } = await import('@/lib/email-service');
     const { generateEnhancedEmailSections } = await import('@/lib/email-enhancements');
-    const { getWeatherForecast, generateWeatherHTML } = await import('@/lib/weather-service');
     const { getRelatedAmenities, generateRecommendationsHTML } = await import('@/lib/amenity-recommendations');
     
     // Fetch amenity data for enhancements
@@ -240,27 +239,9 @@ export async function POST(request: NextRequest) {
         flatNumber: userFlatNumber || (session.user as any).flatNumber || '',
       };
       
-      // Generate enhanced sections (weather, directions, manager, recommendations)
+      // Generate enhanced sections (only recommendations)
       let enhancedSections = '';
       if (result.status === 'confirmed' && amenityData) {
-        // Fetch weather for outdoor amenities
-        let weatherHTML = '';
-        if (amenityData.isOutdoor && amenityData.latitude && amenityData.longitude) {
-          try {
-            const weather = await getWeatherForecast(
-              bookingStart,
-              amenityData.latitude,
-              amenityData.longitude
-            );
-            if (weather) {
-              weatherHTML = generateWeatherHTML(weather);
-              console.log('   🌤️ Weather forecast added to email');
-            }
-          } catch (err) {
-            console.log('   ⚠️ Weather fetch failed (non-critical)');
-          }
-        }
-        
         // Get amenity recommendations
         let recommendationsHTML = '';
         try {
@@ -278,9 +259,8 @@ export async function POST(request: NextRequest) {
           console.log('   ⚠️ Recommendations fetch failed (non-critical)');
         }
         
-        // Generate enhanced sections (only weather and recommendations)
+        // Generate enhanced sections (only recommendations)
         enhancedSections = generateEnhancedEmailSections({
-          weatherHTML,
           recommendationsHTML,
         });
       }
