@@ -1,7 +1,7 @@
 /**
  * WEATHER SERVICE
  * Fetch weather forecast for outdoor amenities
- * Using OpenWeatherMap API
+ * Using Open-Meteo API (FREE, NO API KEY REQUIRED)
  */
 
 interface WeatherForecast {
@@ -21,15 +21,8 @@ export async function getWeatherForecast(
   longitude: number
 ): Promise<WeatherForecast | null> {
   try {
-    const apiKey = process.env.OPENWEATHER_API_KEY;
-    
-    if (!apiKey) {
-      console.warn('OpenWeather API key not configured');
-      return null;
-    }
-
-    // Use 5-day forecast API
-    const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
+    // Open-Meteo API - FREE, no API key needed!
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m&timezone=auto`;
     
     const response = await fetch(url);
     
@@ -41,32 +34,63 @@ export async function getWeatherForecast(
     const data = await response.json();
     
     // Find forecast closest to booking date
-    const targetTimestamp = Math.floor(date.getTime() / 1000);
-    let closestForecast = data.list[0];
-    let minDiff = Math.abs(data.list[0].dt - targetTimestamp);
+    const targetTime = date.getTime();
+    let closestIndex = 0;
+    let minDiff = Math.abs(new Date(data.hourly.time[0]).getTime() - targetTime);
 
-    for (const forecast of data.list) {
-      const diff = Math.abs(forecast.dt - targetTimestamp);
+    for (let i = 0; i < data.hourly.time.length; i++) {
+      const forecastTime = new Date(data.hourly.time[i]).getTime();
+      const diff = Math.abs(forecastTime - targetTime);
+      
       if (diff < minDiff) {
         minDiff = diff;
-        closestForecast = forecast;
+        closestIndex = i;
       }
     }
 
+    const weatherCode = data.hourly.weather_code[closestIndex];
+    const { condition, description } = getWeatherCondition(weatherCode);
+
     return {
-      temp: Math.round(closestForecast.main.temp),
-      feelsLike: Math.round(closestForecast.main.feels_like),
-      condition: closestForecast.weather[0].main,
-      description: closestForecast.weather[0].description,
-      icon: closestForecast.weather[0].icon,
-      humidity: closestForecast.main.humidity,
-      windSpeed: Math.round(closestForecast.wind.speed * 3.6), // Convert m/s to km/h
-      precipitation: Math.round((closestForecast.pop || 0) * 100) // Probability of precipitation
+      temp: Math.round(data.hourly.temperature_2m[closestIndex]),
+      feelsLike: Math.round(data.hourly.apparent_temperature[closestIndex]),
+      condition,
+      description,
+      icon: getWeatherIcon(weatherCode),
+      humidity: Math.round(data.hourly.relative_humidity_2m[closestIndex]),
+      windSpeed: Math.round(data.hourly.wind_speed_10m[closestIndex]),
+      precipitation: Math.round(data.hourly.precipitation_probability[closestIndex] || 0)
     };
   } catch (error) {
     console.error('Error fetching weather:', error);
     return null;
   }
+}
+
+// Convert Open-Meteo weather codes to conditions
+function getWeatherCondition(code: number): { condition: string; description: string } {
+  if (code === 0) return { condition: 'Clear', description: 'Clear sky' };
+  if (code <= 3) return { condition: 'Clouds', description: 'Partly cloudy' };
+  if (code <= 48) return { condition: 'Fog', description: 'Foggy' };
+  if (code <= 67) return { condition: 'Rain', description: 'Rainy' };
+  if (code <= 77) return { condition: 'Snow', description: 'Snowy' };
+  if (code <= 82) return { condition: 'Rain', description: 'Rain showers' };
+  if (code <= 86) return { condition: 'Snow', description: 'Snow showers' };
+  if (code <= 99) return { condition: 'Thunderstorm', description: 'Thunderstorm' };
+  return { condition: 'Unknown', description: 'Weather unavailable' };
+}
+
+// Get weather icon based on code
+function getWeatherIcon(code: number): string {
+  if (code === 0) return '01d';
+  if (code <= 3) return '02d';
+  if (code <= 48) return '50d';
+  if (code <= 67) return '10d';
+  if (code <= 77) return '13d';
+  if (code <= 82) return '09d';
+  if (code <= 86) return '13d';
+  if (code <= 99) return '11d';
+  return '01d';
 }
 
 export function isOutdoorAmenity(amenityType: string): boolean {
