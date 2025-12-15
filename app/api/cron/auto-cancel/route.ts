@@ -134,7 +134,12 @@ export async function GET(request: NextRequest) {
           const userStatsRef = doc(db, 'userBookingStats', booking.userId);
           const statsDoc = await getDoc(userStatsRef);
           
+          let newNoShowCount = 1;
+          
           if (statsDoc.exists()) {
+            const currentStats = statsDoc.data();
+            newNoShowCount = (currentStats.noShowCount || 0) + 1;
+            
             await updateDoc(userStatsRef, {
               noShowCount: increment(1),
               updatedAt: serverTimestamp()
@@ -148,7 +153,16 @@ export async function GET(request: NextRequest) {
               updatedAt: serverTimestamp()
             });
           }
-          logs.push(`  📊 Stats updated`);
+          logs.push(`  📊 Stats updated (no-shows: ${newNoShowCount})`);
+          
+          // Apply 30-day suspension if 3+ no-shows
+          if (newNoShowCount >= 3) {
+            const { applySuspension } = await import('@/lib/booking-service');
+            const suspended = await applySuspension(booking.userId, newNoShowCount);
+            if (suspended) {
+              logs.push(`  🚫 User suspended for 30 days (${newNoShowCount} no-shows)`);
+            }
+          }
         } catch (statsError: any) {
           logs.push(`  ⚠️ Stats failed: ${statsError.message}`);
         }
@@ -171,9 +185,15 @@ export async function GET(request: NextRequest) {
 
           const waitlistBookings = waitlistSnapshot.docs
             .map(d => ({ id: d.id, ...d.data() }))
-            .sort((a: any, b: any) => (a.waitlistPosition || 999) - (b.waitlistPosition || 999));
+            .sort((a: any, b: any) => {
+              // Sort by priority score (higher first), then by waitlist position (lower first)
+              const priorityDiff = (b.priorityScore || 50) - (a.priorityScore || 50);
+              if (priorityDiff !== 0) return priorityDiff;
+              return (a.waitlistPosition || 999) - (b.waitlistPosition || 999);
+            });
 
           const nextInLine = waitlistBookings[0] as any;
+          logs.push(`  👤 Next: Priority=${nextInLine.priorityScore || 50}, Pos=${nextInLine.waitlistPosition}`);
           const confirmationDeadline = new Date(now.getTime() + (30 * 60 * 1000));
           
           await updateDoc(doc(db, 'bookings', nextInLine.id), {

@@ -23,6 +23,8 @@ export interface BookingEnhancementResult {
   requiresDeposit: boolean;
   depositAmount?: number;
   priorityScore: number;
+  isSuspended?: boolean;
+  suspendedUntil?: Date;
   reason?: string;
 }
 
@@ -43,7 +45,8 @@ export async function checkUserBookingEligibility(
       totalBookings: 0,
       noShowCount: 0,
       cancellationCount: 0,
-      averageUsage: 100
+      averageUsage: 100,
+      suspendedUntil: null
     };
 
     if (!statsSnap.empty) {
@@ -59,8 +62,28 @@ export async function checkUserBookingEligibility(
         averageUsage: 100,
         priorityScore: 50,
         depositRequired: false,
+        suspendedUntil: null,
         createdAt: serverTimestamp()
       });
+    }
+
+    // Check if user is currently suspended
+    if (userStats.suspendedUntil) {
+      const suspendedUntil = (userStats.suspendedUntil as any).toDate 
+        ? (userStats.suspendedUntil as any).toDate() 
+        : new Date(userStats.suspendedUntil as any);
+      const now = new Date();
+      
+      if (suspendedUntil > now) {
+        return {
+          canBook: false,
+          requiresDeposit: false,
+          priorityScore: 0,
+          isSuspended: true,
+          suspendedUntil,
+          reason: `Account suspended until ${suspendedUntil.toLocaleDateString()} due to ${userStats.noShowCount} no-shows`
+        };
+      }
     }
 
     const priorityScore = calculatePriorityScore(userStats);
@@ -72,6 +95,7 @@ export async function checkUserBookingEligibility(
       requiresDeposit: needsDeposit,
       depositAmount: depositAmt,
       priorityScore,
+      isSuspended: false,
       reason: needsDeposit ? `Deposit required due to ${userStats.noShowCount} no-shows` : undefined
     };
 
@@ -80,7 +104,8 @@ export async function checkUserBookingEligibility(
     return {
       canBook: true,
       requiresDeposit: false,
-      priorityScore: 50
+      priorityScore: 50,
+      isSuspended: false
     };
   }
 }
@@ -177,6 +202,38 @@ export async function chargeDeposit(userId: string, bookingId: string, amount: n
     return true;
   } catch (error) {
     console.error('Error charging deposit:', error);
+    return false;
+  }
+}
+
+export async function applySuspension(userId: string, noShowCount: number) {
+  try {
+    // Suspend for 30 days if 3+ no-shows
+    if (noShowCount >= 3) {
+      const suspensionDate = new Date();
+      suspensionDate.setDate(suspensionDate.getDate() + 30); // 30 days from now
+
+      const statsQuery = query(
+        collection(db, 'userBookingStats'),
+        where('userId', '==', userId)
+      );
+      
+      const statsSnap = await getDocs(statsQuery);
+      
+      if (!statsSnap.empty) {
+        await updateDoc(statsSnap.docs[0].ref, {
+          suspendedUntil: Timestamp.fromDate(suspensionDate),
+          suspensionReason: `${noShowCount} no-shows`,
+          updatedAt: serverTimestamp()
+        });
+        
+        console.log(`🚫 Suspended user ${userId} until ${suspensionDate.toLocaleDateString()}`);
+        return true;
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error('Error applying suspension:', error);
     return false;
   }
 }

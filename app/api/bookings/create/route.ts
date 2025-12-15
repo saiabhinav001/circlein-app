@@ -67,6 +67,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 3.5. Check booking eligibility (suspension + deposit check)
+    const { checkUserBookingEligibility } = await import('@/lib/booking-service');
+    const eligibility = await checkUserBookingEligibility(session.user.email, amenityName);
+    
+    if (!eligibility.canBook) {
+      if (eligibility.isSuspended) {
+        return NextResponse.json({
+          error: 'Account suspended',
+          message: eligibility.reason,
+          suspendedUntil: eligibility.suspendedUntil?.toISOString(),
+          canBook: false
+        }, { status: 403 });
+      }
+    }
+
+    // Log eligibility check
+    console.log(`   🎯 Eligibility: Priority=${eligibility.priorityScore}, Deposit=${eligibility.requiresDeposit}`);
+
     // 4. Convert dates
     const bookingStart = new Date(startTime);
     const bookingEnd = new Date(endTime);
@@ -175,16 +193,18 @@ export async function POST(request: NextRequest) {
           status: 'waitlist',
           waitlistPosition,
           waitlistAddedAt: serverTimestamp(),
+          priorityScore: eligibility.priorityScore, // Store priority score for future sorting
         });
 
-        console.log(`   📋 WAITLIST: Added to position ${waitlistPosition}`);
+        console.log(`   📋 WAITLIST: Added to position ${waitlistPosition} (Priority: ${eligibility.priorityScore})`);
 
         return {
           status: 'waitlist',
           bookingId: newBookingRef.id,
           message: `Added to waitlist (Position #${waitlistPosition})`,
           position: waitlistPosition,
-          capacity: maxCapacity
+          capacity: maxCapacity,
+          priorityScore: eligibility.priorityScore
         };
       }
     });
