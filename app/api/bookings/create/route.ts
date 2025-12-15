@@ -192,8 +192,16 @@ export async function POST(request: NextRequest) {
     // 6. Send email notification based on status
     console.log(`   📧 Preparing email notification (${result.status})...`);
     
-    // Import email service directly instead of API call
+    // Import email service and enhancements
     const { emailTemplates, sendEmail } = await import('@/lib/email-service');
+    const { generateEnhancedEmailSections } = await import('@/lib/email-enhancements');
+    const { getWeatherForecast, generateWeatherHTML } = await import('@/lib/weather-service');
+    const { getRelatedAmenities, generateRecommendationsHTML } = await import('@/lib/amenity-recommendations');
+    
+    // Fetch amenity data for enhancements
+    const amenityRef = doc(db, 'amenities', amenityId);
+    const amenitySnapshot = await getDocs(query(collection(db, 'amenities'), where('__name__', '==', amenityId)));
+    const amenityData = amenitySnapshot.docs[0]?.data();
     
     try {
       // Prepare email template based on status
@@ -211,10 +219,70 @@ export async function POST(request: NextRequest) {
         communityName: (session.user as any).communityName || 'Your Community',
         flatNumber: userFlatNumber || (session.user as any).flatNumber || '',
       };
+      
+      // Generate enhanced sections (weather, directions, manager, recommendations)
+      let enhancedSections = '';
+      if (result.status === 'confirmed' && amenityData) {
+        // Fetch weather for outdoor amenities
+        let weatherHTML = '';
+        if (amenityData.isOutdoor && amenityData.latitude && amenityData.longitude) {
+          try {
+            const weather = await getWeatherForecast(
+              bookingStart,
+              amenityData.latitude,
+              amenityData.longitude
+            );
+            if (weather) {
+              weatherHTML = generateWeatherHTML(weather);
+              console.log('   🌤️ Weather forecast added to email');
+            }
+          } catch (err) {
+            console.log('   ⚠️ Weather fetch failed (non-critical)');
+          }
+        }
+        
+        // Get amenity recommendations
+        let recommendationsHTML = '';
+        try {
+          const recommendations = await getRelatedAmenities(
+            amenityData.type || amenityName,
+            session.user.email,
+            (session.user as any).communityId || 'default-community',
+            3
+          );
+          if (recommendations.length > 0) {
+            recommendationsHTML = generateRecommendationsHTML(recommendations);
+            console.log(`   💡 ${recommendations.length} recommendations added`);
+          }
+        } catch (err) {
+          console.log('   ⚠️ Recommendations fetch failed (non-critical)');
+        }
+        
+        // Generate all enhanced sections
+        enhancedSections = generateEnhancedEmailSections({
+          manager: amenityData.managerName ? {
+            name: amenityData.managerName,
+            phone: amenityData.managerPhone,
+            email: amenityData.managerEmail,
+          } : undefined,
+          amenityDetails: {
+            buildingName: amenityData.buildingName,
+            floorNumber: amenityData.floorNumber,
+            directions: amenityData.directions,
+            latitude: amenityData.latitude,
+            longitude: amenityData.longitude,
+          },
+          weatherHTML,
+          recommendationsHTML,
+        });
+      }
 
       let template;
       if (result.status === 'confirmed') {
-        template = emailTemplates.bookingConfirmation(emailData);
+        template = emailTemplates.bookingConfirmation({
+          ...emailData,
+          enhancedSections,
+        });
       } else {
         template = emailTemplates.bookingWaitlist({
           ...emailData,

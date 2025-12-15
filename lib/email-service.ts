@@ -60,6 +60,7 @@ export const emailTemplates = {
     bookingId: string;
     communityName: string;
     flatNumber?: string;
+    enhancedSections?: string;
   }) => ({
     subject: `✅ Booking Confirmed - ${data.amenityName}`,
     html: `
@@ -248,11 +249,14 @@ export const emailTemplates = {
               <div class="reminder-box">
                 <div class="reminder-title">📌 Important Reminders</div>
                 <ul class="reminder-list">
-                  <li>✓ You'll receive a reminder 1 hour before your booking</li>
-                  <li>✓ Please arrive on time to make the most of your slot</li>
-                  <li>✓ To cancel, please do so at least 2 hours in advance</li>
+                  <li>☑ You'll receive a reminder 1 hour before your booking</li>
+                  <li>☑ Please arrive on time to make the most of your slot</li>
+                  <li>☑ Check the weather if needed</li>
+                  <li>☑ To cancel, please do so at least 2 hours in advance</li>
                 </ul>
               </div>
+
+              ${data.enhancedSections || ''}
 
               <center>
                 <a href="https://circlein-app.vercel.app/bookings" class="button">View My Bookings</a>
