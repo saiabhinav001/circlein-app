@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { SearchProvider } from '@/components/providers/search-provider';
 import { EnhancedNotificationListener } from '@/components/notifications/EnhancedNotificationListener';
+import { RealtimeNotificationListener } from '@/components/notifications/RealtimeNotificationListener';
 import { FirebaseAuthSync } from '@/components/firebase-auth-sync';
 import { UserValidationGuard } from '@/components/auth/UserValidationGuard';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -81,6 +82,7 @@ export default function AppLayout({
             </div>
             
             <EnhancedNotificationListener />
+            <RealtimeNotificationListener />
           </div>
         </SidebarContext.Provider>
       </SearchProvider>

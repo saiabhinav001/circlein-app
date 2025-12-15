@@ -87,8 +87,48 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       });
     }
 
-    // 3. FIND NEXT PERSON IN WAITLIST
-    console.log('   🔍 Finding next waitlist person...');
+    // 2.6. CHECK AMENITY CAPACITY AND CURRENT BOOKINGS
+    console.log('   📊 Checking capacity limits...');
+    
+    const amenityDoc = await adminDb.collection('amenities').doc(amenityId).get();
+    if (!amenityDoc.exists) {
+      return NextResponse.json(
+        { error: 'Amenity not found' },
+        { status: 404 }
+      );
+    }
+    
+    const amenityData = amenityDoc.data();
+    const maxPeople = amenityData?.booking?.maxPeople || amenityData?.rules?.maxSlotsPerFamily || 30;
+    console.log(`   📏 Max capacity: ${maxPeople} people`);
+    
+    // Count current confirmed bookings for this slot
+    const confirmedBookingsQuery = adminDb
+      .collection('bookings')
+      .where('communityId', '==', communityId)
+      .where('amenityId', '==', amenityId)
+      .where('startTime', '==', startTimestamp)
+      .where('status', '==', 'confirmed');
+    
+    const confirmedSnapshot = await confirmedBookingsQuery.get();
+    const currentConfirmed = confirmedSnapshot.size;
+    const availableSlots = maxPeople - currentConfirmed;
+    
+    console.log(`   ✅ Current confirmed: ${currentConfirmed}`);
+    console.log(`   🎯 Available slots: ${availableSlots}`);
+    
+    if (availableSlots <= 0) {
+      console.log('   ⚠️  No available slots - capacity full');
+      return NextResponse.json({
+        success: true,
+        message: 'No available slots. Capacity is full.',
+        promoted: false,
+        reason: 'capacity_full',
+      });
+    }
+
+    // 3. FIND NEXT PERSON(S) IN WAITLIST
+    console.log(`   🔍 Finding next ${availableSlots} waitlist person(s)...`);
 
     const waitlistQuery = adminDb
       .collection('bookings')
@@ -96,8 +136,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       .where('amenityId', '==', amenityId)
       .where('startTime', '==', startTimestamp)
       .where('status', '==', 'waitlist')
-      .orderBy('waitlistPosition', 'asc')
-      .limit(1);
+      .orderBy('priorityScore', 'asc') // Use priorityScore for fairness
+      .orderBy('waitlistPosition', 'asc') // Then by position
+      .limit(availableSlots); // Promote multiple people if space available
 
     const waitlistSnapshot = await waitlistQuery.get();
 
@@ -110,82 +151,112 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       });
     }
 
-    const nextBookingDoc = waitlistSnapshot.docs[0];
-    const nextBooking = nextBookingDoc.data();
+    const promotedUsers: any[] = [];
+    const amenityName = amenityData?.name || 'Unknown Amenity';
 
-    console.log(`   🎯 Next person: ${nextBooking.userEmail} (Position #${nextBooking.waitlistPosition})`);
+    console.log(`   🎯 Found ${waitlistSnapshot.size} person(s) to promote`);
 
-    // 4. SET CONFIRMATION DEADLINE (48 hours from now)
-    const confirmationDeadline = Timestamp.fromMillis(
-      now.toMillis() + (48 * 60 * 60 * 1000) // 48 hours
-    );
+    // 4-6. LOOP THROUGH AND PROMOTE ALL ELIGIBLE WAITLIST USERS
+    for (const waitlistDoc of waitlistSnapshot.docs) {
+      const nextBooking = waitlistDoc.data();
+      
+      console.log(`   👤 Promoting: ${nextBooking.userEmail} (Priority: ${nextBooking.priorityScore || 'N/A'})`);
 
-    console.log(`   ⏰ Deadline: ${confirmationDeadline.toDate().toLocaleString()}`);
-
-    // 5. UPDATE BOOKING STATUS
-    await nextBookingDoc.ref.update({
-      status: 'pending_confirmation',
-      promotedAt: now,
-      confirmationDeadline: confirmationDeadline,
-      promotionReason: reason,
-      updatedAt: now,
-    });
-
-    console.log('   ✅ Status updated to pending_confirmation');
-
-    // 6. SEND PROMOTION EMAIL
-    try {
-      console.log('   📧 Sending promotion email...');
-
-      const amenityDoc = await adminDb.collection('amenities').doc(amenityId).get();
-      const amenityName = amenityDoc.exists 
-        ? amenityDoc.data()?.name 
-        : 'Unknown Amenity';
-
-      const confirmationUrl = `${process.env.NEXTAUTH_URL}/bookings/confirm/${nextBookingDoc.id}`;
-
-      const emailResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/notifications/email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: nextBooking.userEmail,
-          type: 'waitlist_promoted',
-          data: {
-            amenityName: amenityName,
-            startTime: nextBooking.startTime.toDate().toLocaleString(),
-            endTime: nextBooking.endTime.toDate().toLocaleString(),
-            confirmationUrl: confirmationUrl,
-            deadline: confirmationDeadline.toDate().toLocaleString(),
-            waitlistPosition: nextBooking.waitlistPosition,
-            userName: nextBooking.userName || 'Resident',
-            flatNumber: nextBooking.flatNumber,
-          },
-        }),
+      // 4. AUTO-CONFIRM - No need for manual confirmation, instant promotion
+      await waitlistDoc.ref.update({
+        status: 'confirmed',
+        promotedAt: now,
+        promotionReason: reason,
+        waitlistPosition: null, // Remove waitlist position
+        updatedAt: now,
       });
 
-      if (!emailResponse.ok) {
-        console.log('   ⚠️  Email send failed (non-critical)');
-      } else {
-        console.log('   ✅ Promotion email sent!');
+      console.log(`   ✅ ${nextBooking.userEmail} confirmed`);
+
+      // 5. SEND EMAIL & CREATE IN-APP NOTIFICATION
+      try {
+        const startDate = nextBooking.startTime.toDate();
+        const endDate = nextBooking.endTime.toDate();
+        const bookingUrl = `${process.env.NEXTAUTH_URL}/bookings`;
+
+        // Send email notification
+        await fetch(`${process.env.NEXTAUTH_URL}/api/notifications/email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: nextBooking.userEmail,
+            type: 'waitlist_auto_promoted',
+            data: {
+              amenityName: amenityName,
+              date: startDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              }),
+              timeSlot: `${startDate.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit' 
+              })} - ${endDate.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit' 
+              })}`,
+              bookingUrl: bookingUrl,
+              userName: nextBooking.userName || 'Resident',
+              flatNumber: nextBooking.flatNumber,
+            },
+          }),
+        });
+
+        // Create in-app notification
+        await adminDb.collection('notifications').add({
+          userId: nextBooking.userId,
+          userEmail: nextBooking.userEmail,
+          communityId: communityId,
+          type: 'waitlist_promoted',
+          title: '🎉 Great News! You\'re Confirmed',
+          message: `A slot opened up for ${amenityName} on ${startDate.toLocaleDateString()} at ${startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}. You've been automatically confirmed!`,
+          data: {
+            bookingId: waitlistDoc.id,
+            amenityId: amenityId,
+            amenityName: amenityName,
+            startTime: startDate.toISOString(),
+            endTime: endDate.toISOString(),
+            bookingUrl: bookingUrl,
+          },
+          read: false,
+          createdAt: now,
+          expiresAt: Timestamp.fromMillis(now.toMillis() + (7 * 24 * 60 * 60 * 1000)), // 7 days
+        });
+
+        console.log(`   ✅ Notifications sent to ${nextBooking.userEmail}`);
+      } catch (error) {
+        console.error(`   ⚠️  Notification error for ${nextBooking.userEmail}:`, error);
       }
-    } catch (emailError) {
-      console.log('   ⚠️  Email error (non-critical):', emailError);
+
+      promotedUsers.push({
+        id: waitlistDoc.id,
+        userEmail: nextBooking.userEmail,
+        userName: nextBooking.userName,
+        priorityScore: nextBooking.priorityScore,
+      });
     }
+
+    console.log(`   🎊 Successfully promoted ${promotedUsers.length} user(s)!`);
 
     // 7. SUCCESS RESPONSE
     return NextResponse.json({
       success: true,
-      message: `Successfully promoted ${nextBooking.userEmail} from waitlist.`,
+      message: `Successfully auto-promoted and confirmed ${promotedUsers.length} user(s) from waitlist.`,
       promoted: true,
-      booking: {
-        id: nextBookingDoc.id,
-        userEmail: nextBooking.userEmail,
-        amenityName: nextBooking.amenityName,
-        startTime: nextBooking.startTime,
-        status: 'pending_confirmation',
-        confirmationDeadline: confirmationDeadline.toDate().toISOString(),
-        waitlistPosition: nextBooking.waitlistPosition,
-      },
+      count: promotedUsers.length,
+      users: promotedUsers,
+      booking: promotedUsers.length > 0 ? {
+        amenityName: amenityName,
+        startTime: startTimestamp.toDate().toISOString(),
+        status: 'confirmed',
+        promotedAt: now.toDate().toISOString(),
+      } : undefined,
     });
 
   } catch (error) {

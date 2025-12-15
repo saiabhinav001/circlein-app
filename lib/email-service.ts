@@ -1443,6 +1443,194 @@ export const emailTemplates = {
     `,
   }),
 
+  // 🆕 AUTO-PROMOTION EMAIL - No confirmation needed, instant booking
+  waitlistAutoPromoted: (data: {
+    userName: string;
+    amenityName: string;
+    date: string;
+    timeSlot: string;
+    bookingUrl: string;
+    flatNumber?: string;
+  }) => ({
+    subject: `🎉 Great News! You're Automatically Confirmed for ${data.amenityName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+              line-height: 1.6; 
+              color: #1a202c;
+              background: #f7fafc;
+            }
+            .email-wrapper { 
+              max-width: 600px; 
+              margin: 0 auto; 
+              background: #ffffff;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            .header { 
+              background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+              color: white; 
+              padding: 40px 30px; 
+              text-align: center;
+            }
+            .header h1 { font-size: 32px; margin-bottom: 10px; font-weight: 700; }
+            .header p { font-size: 16px; opacity: 0.95; }
+            .content { background: #ffffff; padding: 40px 30px; }
+            .greeting { font-size: 18px; color: #2d3748; margin-bottom: 20px; }
+            .greeting strong { color: #059669; font-weight: 600; }
+            .message { font-size: 16px; color: #4a5568; margin-bottom: 30px; line-height: 1.8; }
+            .celebrate-banner {
+              background: linear-gradient(135deg, #10b981, #059669);
+              color: white;
+              padding: 35px;
+              border-radius: 12px;
+              text-align: center;
+              margin: 25px 0;
+              box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+            }
+            .celebrate-icon { font-size: 64px; margin-bottom: 15px; animation: bounce 2s infinite; }
+            @keyframes bounce {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-20px); }
+            }
+            .celebrate-text { font-size: 28px; font-weight: 700; }
+            .details-card { 
+              background: linear-gradient(to bottom, #d1fae5, #a7f3d0); 
+              padding: 25px; 
+              border-radius: 12px; 
+              margin: 25px 0;
+              border: 2px solid #10b981;
+            }
+            .detail-row { 
+              display: flex; 
+              justify-content: space-between; 
+              padding: 14px 0; 
+              border-bottom: 1px solid #10b981;
+            }
+            .detail-row:last-child { border-bottom: none; }
+            .detail-label { font-weight: 600; color: #065f46; font-size: 15px; }
+            .detail-value { color: #047857; font-weight: 600; font-size: 15px; text-align: right; }
+            .flat-badge {
+              display: inline-block;
+              padding: 4px 12px;
+              background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+              color: white;
+              border-radius: 12px;
+              font-size: 13px;
+              font-weight: 700;
+              box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+              margin-left: 8px;
+            }
+            .button {
+              display: inline-block;
+              background: linear-gradient(135deg, #10b981, #059669);
+              color: white;
+              padding: 16px 40px;
+              text-decoration: none;
+              border-radius: 12px;
+              font-weight: 600;
+              font-size: 18px;
+              box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+              transition: all 0.3s;
+            }
+            .button:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
+            }
+            .info-box {
+              background: #eff6ff;
+              padding: 20px;
+              border-radius: 8px;
+              margin: 25px 0;
+              border-left: 4px solid #3b82f6;
+            }
+            .info-title { color: #1e40af; font-weight: 600; font-size: 16px; margin-bottom: 10px; }
+            .info-text { color: #1e3a8a; font-size: 14px; line-height: 1.6; }
+            .footer { 
+              text-align: center; 
+              padding: 30px; 
+              background: #f7fafc;
+              color: #718096; 
+              font-size: 13px;
+              border-top: 1px solid #e2e8f0;
+            }
+            .footer-brand { color: #6366f1; font-weight: 600; font-size: 16px; margin-bottom: 10px; }
+          </style>
+        </head>
+        <body>
+          <div class="email-wrapper">
+            <div class="header">
+              <h1>🎉 You're Confirmed!</h1>
+              <p>A spot opened up and you're automatically booked</p>
+            </div>
+            <div class="content">
+              <p class="greeting">Hi <strong>${data.userName}</strong>${data.flatNumber ? `<span class="flat-badge">Flat ${data.flatNumber}</span>` : ''},</p>
+              
+              <div class="celebrate-banner">
+                <div class="celebrate-icon">🎊</div>
+                <div class="celebrate-text">You're Automatically Confirmed!</div>
+              </div>
+
+              <p class="message">
+                <strong>Great news!</strong> A slot has opened up for <strong>${data.amenityName}</strong>, 
+                and since you were waiting in line, you've been <strong>automatically confirmed</strong>. 
+                No action needed from your side!
+              </p>
+
+              <div class="details-card">
+                <div class="detail-row">
+                  <span class="detail-label">🎯 Amenity</span>
+                  <span class="detail-value">${data.amenityName}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">📅 Date</span>
+                  <span class="detail-value">${data.date}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">⏰ Time Slot</span>
+                  <span class="detail-value">${data.timeSlot}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">✅ Status</span>
+                  <span class="detail-value" style="color: #10b981; font-weight: 700;">CONFIRMED</span>
+                </div>
+              </div>
+
+              <center>
+                <a href="${data.bookingUrl}" class="button">📋 View My Bookings</a>
+              </center>
+
+              <div class="info-box">
+                <div class="info-title">📌 What Happens Next?</div>
+                <div class="info-text">
+                  • Your booking is fully confirmed - no further action needed<br>
+                  • We'll send you a reminder 24 hours before<br>
+                  • If you can't make it, please cancel early so others can use the slot<br>
+                  • Remember to bring any required items (towels, equipment, etc.)
+                </div>
+              </div>
+
+              <p class="message" style="color: #059669; font-weight: 600; text-align: center;">
+                🎉 We're excited to see you there!
+              </p>
+            </div>
+            <div class="footer">
+              <div class="footer-brand">CircleIn</div>
+              <p>Your Community Management Platform</p>
+              <p style="margin-top: 10px;">This is an automated message. Please do not reply to this email.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  }),
+
   // Waitlist Promotion Email Template
   waitlistPromotion: (data: {
     userName: string;

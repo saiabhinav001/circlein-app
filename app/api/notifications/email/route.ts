@@ -88,6 +88,18 @@ export async function POST(request: NextRequest) {
         });
         break;
 
+      case 'waitlistAutoPromoted':
+      case 'waitlist_auto_promoted': // Auto-promotion without confirmation
+        template = emailTemplates.waitlistAutoPromoted({
+          userName: data.userName,
+          amenityName: data.amenityName,
+          date: data.date,
+          timeSlot: data.timeSlot,
+          bookingUrl: data.bookingUrl,
+          flatNumber: data.flatNumber,
+        });
+        break;
+
       case 'confirmationReminder':
       case 'confirmation_reminder': // Support both naming conventions
         template = emailTemplates.confirmationReminder({
