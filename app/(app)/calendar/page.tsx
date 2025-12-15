@@ -395,7 +395,7 @@ export default function CalendarPage() {
 
     // Get user display name and flat number - FIXED to show flat number
     const getUserDisplay = useCallback(() => {
-      const userName = (booking as any).userName || (booking as any).userEmail || 'Resident';
+      const userName = (booking as any).userName || 'Resident';
       const flatNumber = (booking as any).flatNumber || (booking as any).userFlatNumber;
       return flatNumber ? `${userName} - Flat ${flatNumber}` : userName;
     }, [booking]);
@@ -1261,7 +1261,12 @@ export default function CalendarPage() {
                         <div className="min-w-0">
                           <div className="font-medium text-sm sm:text-base">{selectedBooking.attendees?.length || 1} Attendees</div>
                           <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
-                            Booked by {selectedBooking.userId}
+                            Booked by {(selectedBooking as any).userName || 'Resident'}
+                            {(selectedBooking as any).userFlatNumber && (
+                              <span className="ml-2 inline-block px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-md text-xs font-semibold">
+                                Flat {(selectedBooking as any).userFlatNumber}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
