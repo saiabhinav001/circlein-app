@@ -160,7 +160,7 @@ export const emailTemplates = {
               display: inline-block; 
               padding: 14px 35px; 
               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white; 
+              color: white !important; color: #ffffff !important; 
               text-decoration: none; 
               border-radius: 8px; 
               margin: 25px 0;
@@ -390,7 +390,7 @@ export const emailTemplates = {
               display: inline-block; 
               padding: 14px 35px; 
               background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-              color: white; 
+              color: white !important; color: #ffffff !important; 
               text-decoration: none; 
               border-radius: 8px; 
               margin: 25px 0;
@@ -619,7 +619,7 @@ export const emailTemplates = {
               display: inline-block; 
               padding: 14px 35px; 
               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white; 
+              color: white !important; color: #ffffff !important; 
               text-decoration: none; 
               border-radius: 8px; 
               margin: 25px 0;
@@ -868,7 +868,7 @@ export const emailTemplates = {
               display: inline-block; 
               padding: 14px 35px; 
               background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-              color: white; 
+              color: white !important; color: #ffffff !important; 
               text-decoration: none; 
               border-radius: 8px; 
               margin: 25px 0;
@@ -1211,7 +1211,7 @@ export const emailTemplates = {
             .button {
               display: inline-block;
               background: linear-gradient(135deg, #10b981, #059669);
-              color: white;
+              color: white !important; color: #ffffff !important;
               padding: 16px 40px;
               text-decoration: none;
               border-radius: 12px;
@@ -1295,10 +1295,10 @@ export const emailTemplates = {
                   Do you want to confirm this booking?
                 </p>
                 <div style="display: inline-block;">
-                  <a href="${data.confirmationUrl}?action=confirm" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 18px; margin: 0 10px; box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);">
+                  <a href="${data.confirmationUrl}?action=confirm" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: #ffffff !important; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 18px; margin: 0 10px; box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);">
                     ✅ YES, Confirm
                   </a>
-                  <a href="${data.confirmationUrl}?action=decline" style="display: inline-block; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 18px; margin: 0 10px; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);">
+                  <a href="${data.confirmationUrl}?action=decline" style="display: inline-block; background: linear-gradient(135deg, #ef4444, #dc2626); color: #ffffff !important; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 18px; margin: 0 10px; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);">
                     ❌ NO, Decline
                   </a>
                 </div>
@@ -1376,7 +1376,7 @@ export const emailTemplates = {
             .button {
               display: inline-block;
               background: linear-gradient(135deg, #dc2626, #b91c1c);
-              color: white;
+              color: white !important; color: #ffffff !important;
               padding: 18px 50px;
               text-decoration: none;
               border-radius: 12px;
@@ -1530,7 +1530,7 @@ export const emailTemplates = {
             .button {
               display: inline-block;
               background: linear-gradient(135deg, #10b981, #059669);
-              color: white;
+              color: white !important; color: #ffffff !important;
               padding: 16px 40px;
               text-decoration: none;
               border-radius: 12px;
@@ -1753,7 +1753,7 @@ export const emailTemplates = {
               display: inline-block; 
               padding: 16px 40px; 
               background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-              color: white; 
+              color: white !important; color: #ffffff !important; 
               text-decoration: none; 
               border-radius: 12px; 
               margin: 25px 0;

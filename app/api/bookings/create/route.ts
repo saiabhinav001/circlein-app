@@ -278,20 +278,8 @@ export async function POST(request: NextRequest) {
           console.log('   ⚠️ Recommendations fetch failed (non-critical)');
         }
         
-        // Generate all enhanced sections
+        // Generate enhanced sections (only weather and recommendations)
         enhancedSections = generateEnhancedEmailSections({
-          manager: amenityData.managerName ? {
-            name: amenityData.managerName,
-            phone: amenityData.managerPhone,
-            email: amenityData.managerEmail,
-          } : undefined,
-          amenityDetails: {
-            buildingName: amenityData.buildingName,
-            floorNumber: amenityData.floorNumber,
-            directions: amenityData.directions,
-            latitude: amenityData.latitude,
-            longitude: amenityData.longitude,
-          },
           weatherHTML,
           recommendationsHTML,
         });
