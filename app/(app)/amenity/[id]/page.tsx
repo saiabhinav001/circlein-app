@@ -25,7 +25,10 @@ interface Amenity {
   timeSlots?: string[]; // Dynamic time slots from Firestore
   weekdaySlots?: string[]; // Specific slots for Monday-Friday
   weekendSlots?: string[]; // Specific slots for Saturday-Sunday
-  slotDuration?: number; // Duration in hours (e.g., 2 for 2-hour slots)
+  booking?: {
+    slotDuration?: number; // Duration in hours (e.g., 2 for 2-hour slots)
+    maxPeople?: number;
+  };
   operatingHours?: {
     start: string; // e.g., "09:00"
     end: string;   // e.g., "21:00"
@@ -121,7 +124,7 @@ export default function AmenityBooking() {
       // Update time slots when date changes (weekday vs weekend) or slot duration changes
       updateTimeSlotsForDate(amenity, selectedDate);
     }
-  }, [selectedDate, params.id, amenity?.slotDuration, amenity?.weekdayHours, amenity?.weekendHours, amenity?.operatingHours, amenity?.timeSlots]);
+  }, [selectedDate, params.id, amenity?.booking?.slotDuration, amenity?.weekdayHours, amenity?.weekendHours, amenity?.operatingHours, amenity?.timeSlots]);
 
   // Update time slots based on selected date (weekday vs weekend)
   const updateTimeSlotsForDate = (amenityData: Amenity, date: Date) => {
@@ -149,22 +152,22 @@ export default function AmenityBooking() {
     }
     
     // Priority 3: Generate from weekday/weekend operating hours
-    if (isWeekend && amenityData.weekendHours && amenityData.slotDuration) {
+    if (isWeekend && amenityData.weekendHours && amenityData.booking?.slotDuration) {
       const generatedSlots = generateTimeSlots(
         amenityData.weekendHours.start,
         amenityData.weekendHours.end,
-        amenityData.slotDuration
+        amenityData.booking.slotDuration
       );
       console.log('📅 [Real-time] Generated weekend slots:', generatedSlots);
       setTimeSlots(generatedSlots);
       return;
     }
     
-    if (!isWeekend && amenityData.weekdayHours && amenityData.slotDuration) {
+    if (!isWeekend && amenityData.weekdayHours && amenityData.booking?.slotDuration) {
       const generatedSlots = generateTimeSlots(
         amenityData.weekdayHours.start,
         amenityData.weekdayHours.end,
-        amenityData.slotDuration
+        amenityData.booking.slotDuration
       );
       console.log('📅 [Real-time] Generated weekday slots:', generatedSlots);
       setTimeSlots(generatedSlots);
@@ -172,11 +175,11 @@ export default function AmenityBooking() {
     }
     
     // Priority 4: Generate from general operating hours
-    if (amenityData.operatingHours && amenityData.slotDuration) {
+    if (amenityData.operatingHours && amenityData.booking?.slotDuration) {
       const generatedSlots = generateTimeSlots(
         amenityData.operatingHours.start,
         amenityData.operatingHours.end,
-        amenityData.slotDuration
+        amenityData.booking.slotDuration
       );
       console.log('📅 [Real-time] Generated time slots:', generatedSlots);
       setTimeSlots(generatedSlots);
