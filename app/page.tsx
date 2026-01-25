@@ -734,25 +734,15 @@ export default function LandingPage() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Link href="/auth/signup">
-                    <motion.button
-                      className="w-full sm:w-auto bg-white text-indigo-700 px-6 h-12 rounded-xl font-semibold hover:bg-indigo-50 transition-colors duration-200"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <span className="flex items-center justify-center gap-2">
-                        Get started free
-                        <ArrowRight className="w-4 h-4" />
-                      </span>
-                    </motion.button>
+                    <button className="w-full sm:w-auto bg-white text-indigo-700 px-6 h-12 rounded-xl font-semibold hover:bg-indigo-50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
+                      Get started free
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
                   </Link>
                   <Link href="/auth/signin">
-                    <motion.button
-                      className="w-full sm:w-auto text-white border border-white/30 px-6 h-12 rounded-xl font-semibold hover:bg-white/10 transition-colors duration-200"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
+                    <button className="w-full sm:w-auto text-white border border-white/30 px-6 h-12 rounded-xl font-semibold hover:bg-white/10 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
                       Learn more
-                    </motion.button>
+                    </button>
                   </Link>
                 </div>
               </div>
