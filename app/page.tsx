@@ -434,26 +434,53 @@ function FeatureCard({ feature, index }: { feature: typeof features[0], index: n
       onMouseLeave={() => setIsHovered(false)}
       className="group relative"
     >
+      {/* Glow effect on hover */}
+      <div className={`absolute -inset-px rounded-2xl bg-gradient-to-b ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm`} />
+      
       <motion.div 
         className="relative h-full"
-        animate={{ y: isHovered ? -2 : 0 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        animate={{ y: isHovered ? -3 : 0 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       >
         {/* Card */}
-        <div className="relative h-full p-6 rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 transition-all duration-200 hover:border-indigo-200 dark:hover:border-indigo-900/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/5">
+        <div className="relative h-full p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 transition-all duration-300 group-hover:border-transparent group-hover:shadow-xl group-hover:shadow-slate-200/50 dark:group-hover:shadow-black/30">
           
-          {/* Icon */}
-          <div className={`w-11 h-11 rounded-xl ${feature.iconBg} flex items-center justify-center mb-4`}>
-            <feature.icon className={`w-5 h-5 ${feature.iconColor}`} strokeWidth={2} />
+          {/* Subtle inner gradient on hover */}
+          <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-[0.03] dark:group-hover:opacity-[0.08] transition-opacity duration-300`} />
+          
+          {/* Icon with glow */}
+          <div className="relative mb-5">
+            <div className={`absolute inset-0 w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300`} />
+            <div className={`relative w-12 h-12 rounded-xl ${feature.iconBg} flex items-center justify-center border border-slate-200/50 dark:border-slate-700/50`}>
+              <feature.icon className={`w-6 h-6 ${feature.iconColor}`} strokeWidth={1.75} />
+            </div>
           </div>
           
           {/* Content */}
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-2">
+          <h3 className="relative text-lg font-semibold text-slate-900 dark:text-white mb-2">
             {feature.title}
           </h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+          <p className="relative text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
             {feature.description}
           </p>
+          
+          {/* Subtle arrow indicator */}
+          <motion.div 
+            className="relative mt-4 flex items-center gap-1 text-sm font-medium"
+            animate={{ 
+              x: isHovered ? 4 : 0,
+              color: isHovered ? (feature.iconColor.includes('blue') ? '#3b82f6' : 
+                                  feature.iconColor.includes('violet') ? '#8b5cf6' :
+                                  feature.iconColor.includes('fuchsia') ? '#d946ef' :
+                                  feature.iconColor.includes('emerald') ? '#10b981' :
+                                  feature.iconColor.includes('amber') ? '#f59e0b' :
+                                  '#f43f5e') : '#94a3b8'
+            }}
+            transition={{ duration: 0.2 }}
+          >
+            <span>Explore</span>
+            <ArrowRight className="w-4 h-4" />
+          </motion.div>
         </div>
       </motion.div>
     </motion.div>
