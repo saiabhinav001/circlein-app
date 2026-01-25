@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, User, Key, Eye, EyeOff, CheckCircle2, AlertCircle, Sun, Moon } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Mail, Lock, User, Key, Eye, EyeOff, CheckCircle2, AlertCircle, Sun, Moon, ArrowRight, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,8 +27,6 @@ export default function SignUp() {
   const [emailValid, setEmailValid] = useState<boolean | null>(null);
   const [passwordsMatch, setPasswordsMatch] = useState<boolean | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [ripplePosition, setRipplePosition] = useState({ x: 0, y: 0 });
-  const [showRipple, setShowRipple] = useState(false);
   const router = useRouter();
   const { theme, setTheme } = useTheme();
 
@@ -66,16 +63,6 @@ export default function SignUp() {
     }
   };
 
-  const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setRipplePosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-    setShowRipple(true);
-    setTimeout(() => setShowRipple(false), 600);
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -94,7 +81,6 @@ export default function SignUp() {
     }
 
     try {
-      // First, try to sign up with credentials provider
       const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
@@ -117,430 +103,451 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4 bg-white dark:bg-slate-950 transition-colors duration-300">
-      {/* Theme Toggle Button - Top Right */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5, duration: 0.4 }}
-        className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50"
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="relative group w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-100/80 dark:bg-slate-800/80 backdrop-blur-md hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-all duration-300 shadow-lg hover:shadow-xl border border-slate-200/50 dark:border-slate-700/50"
-        >
-          <div className="relative w-5 h-5 sm:w-6 sm:h-6">
-            <Sun className="absolute inset-0 w-5 h-5 sm:w-6 sm:h-6 text-amber-500 transition-all duration-300 rotate-0 scale-100 dark:rotate-90 dark:scale-0" />
-            <Moon className="absolute inset-0 w-5 h-5 sm:w-6 sm:h-6 text-slate-700 dark:text-blue-400 transition-all duration-300 rotate-90 scale-0 dark:rotate-0 dark:scale-100" />
-          </div>
-          {/* Tooltip */}
-          <span className="absolute right-full mr-3 px-3 py-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap pointer-events-none shadow-lg">
-            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-          </span>
-        </Button>
-      </motion.div>
-
-      {/* Animated Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-500">
-        <motion.div
-          className="absolute inset-0 opacity-20 dark:opacity-30"
-          animate={{
-            background: theme === 'dark' ? [
-              'radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%)',
-              'radial-gradient(circle at 80% 50%, rgba(168, 85, 247, 0.15) 0%, transparent 50%)',
-              'radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%)',
-              'radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%)',
-            ] : [
-              'radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%)',
-              'radial-gradient(circle at 80% 50%, rgba(168, 85, 247, 0.08) 0%, transparent 50%)',
-              'radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%)',
-              'radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%)',
-            ],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-        {/* Subtle Grid Pattern */}
+    <div className="min-h-screen flex">
+      {/* Left Panel - Branding (hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 dark:from-emerald-900 dark:via-teal-900 dark:to-cyan-950">
+        {/* Subtle pattern overlay */}
         <div 
-          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.02]"
+          className="absolute inset-0 opacity-10"
           style={{
-            backgroundImage: `
-              linear-gradient(rgba(100, 100, 100, 0.3) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(100, 100, 100, 0.3) 1px, transparent 1px)
-            `,
-            backgroundSize: '50px 50px',
+            backgroundImage: 'radial-gradient(rgba(255,255,255,0.3) 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
           }}
         />
-      </div>
-
-      {/* Main Content */}
-      <motion.div
-        initial={{ opacity: 0, y: 40, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ 
-          duration: 0.6,
-          ease: [0.16, 1, 0.3, 1]
-        }}
-        className="w-full max-w-[90vw] sm:max-w-md md:max-w-lg lg:max-w-md relative z-10"
-      >
-        {/* Logo and Title */}
-        <motion.div 
-          className="text-center mb-6 sm:mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-        >
+        
+        {/* Floating gradient orbs */}
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-emerald-300/10 rounded-full blur-3xl" />
+        
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-center px-12 xl:px-16">
           <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ 
-              delay: 0.3,
-              type: 'spring',
-              stiffness: 200,
-              damping: 15
-            }}
-            className="flex items-center justify-center mx-auto mb-4 sm:mb-6"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
           >
-            <CircleInLogo size={64} className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16" />
+            <div className="flex items-center gap-3 mb-8">
+              <CircleInLogo className="w-12 h-12" />
+              <span className="text-2xl font-bold text-white">CircleIn</span>
+            </div>
+            
+            <h1 className="text-4xl xl:text-5xl font-bold text-white mb-6 leading-tight">
+              Join your<br />
+              <span className="text-emerald-200">community today</span>
+            </h1>
+            
+            <p className="text-lg text-emerald-100/80 max-w-md leading-relaxed">
+              Get your access code from your community administrator and start booking amenities in minutes.
+            </p>
           </motion.div>
           
-          <motion.h1
+          {/* Trust badges */}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-purple-700 dark:from-blue-400 dark:via-purple-400 dark:to-purple-500 bg-clip-text text-transparent mb-2 sm:mb-3"
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="mt-12 space-y-3"
           >
-            Join CircleIn
-          </motion.h1>
-          
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="text-slate-600 dark:text-slate-400 text-sm sm:text-base md:text-lg"
-          >
-            Create your account to start booking amenities
-          </motion.p>
-        </motion.div>
+            <div className="flex items-center gap-3 text-sm text-emerald-200/70">
+              <Shield className="w-4 h-4" />
+              <span>Invite-only communities</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-emerald-200/70">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Quick setup process</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-emerald-200/70">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Secure &amp; private</span>
+            </div>
+          </motion.div>
+        </div>
+      </div>
 
-        {/* Card with elevated shadow */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-        >
-          <Card className="border-0 shadow-2xl bg-white/80 dark:bg-slate-900/50 backdrop-blur-xl ring-1 ring-slate-200/50 dark:ring-white/10 transition-colors duration-300">
-            <CardHeader className="pb-4 sm:pb-6 space-y-1 px-4 sm:px-6 pt-4 sm:pt-6">
-              <CardTitle className="text-xl sm:text-2xl text-slate-900 dark:text-white">Create Account</CardTitle>
-              <CardDescription className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
+      {/* Right Panel - Form */}
+      <div className="flex-1 flex flex-col bg-white dark:bg-slate-950 transition-colors duration-300">
+        {/* Header with theme toggle */}
+        <div className="flex items-center justify-between p-4 sm:p-6">
+          <Link href="/" className="flex items-center gap-2 lg:hidden">
+            <CircleInLogo className="w-8 h-8" />
+            <span className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              CircleIn
+            </span>
+          </Link>
+          
+          <div className="lg:ml-auto">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              aria-label="Toggle theme"
+            >
+              <Sun className="w-5 h-5 text-amber-500 rotate-0 scale-100 transition-all dark:rotate-90 dark:scale-0" />
+              <Moon className="absolute w-5 h-5 text-indigo-400 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" style={{ marginTop: '-20px' }} />
+            </button>
+          </div>
+        </div>
+
+        {/* Form Container */}
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-8 overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full max-w-[400px]"
+          >
+            {/* Mobile heading */}
+            <div className="text-center mb-6 lg:hidden">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                Create account
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
+                Join your community
+              </p>
+            </div>
+
+            {/* Desktop heading */}
+            <div className="hidden lg:block mb-6">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                Create your account
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400">
                 Fill in your details to get started
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-              <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-                {/* Access Code Field */}
-                <div className="space-y-2">
-                  <Label htmlFor="accessCode" className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Access Code *</Label>
-                  <div className="relative group">
-                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-focus-within:text-amber-400 transition-colors duration-200" />
-                    <Input
-                      id="accessCode"
-                      name="accessCode"
-                      type="text"
-                      value={formData.accessCode}
-                      onChange={handleChange}
-                      onFocus={() => setFocusedField('accessCode')}
-                      onBlur={() => setFocusedField(null)}
-                      placeholder="Enter your unique access code"
-                      className={`
-                        pl-9 sm:pl-10 h-10 sm:h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 text-sm sm:text-base
-                        transition-all duration-300 ease-out
-                        ${focusedField === 'accessCode' 
-                          ? 'ring-2 ring-amber-500/50 border-transparent shadow-lg shadow-amber-500/20' 
-                          : 'hover:border-slate-600'
-                        }
-                      `}
-                      required
-                    />
+              </p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Access Code Field */}
+              <div className="space-y-2">
+                <Label htmlFor="accessCode" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Access Code <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Key className={`w-[18px] h-[18px] transition-colors duration-200 ${
+                      focusedField === 'accessCode' 
+                        ? 'text-amber-500 dark:text-amber-400' 
+                        : 'text-slate-400 dark:text-slate-500'
+                    }`} />
                   </div>
-                  <p className="text-[10px] sm:text-xs text-slate-500">
-                    This code was provided by your community administrator
-                  </p>
-                </div>
-                
-                {/* Name Field */}
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Full Name</Label>
-                  <div className="relative group">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-focus-within:text-green-400 transition-colors duration-200" />
-                    <Input
-                      id="name"
-                      name="name"
-                      type="text"
-                      value={formData.name}
-                      onChange={handleChange}
-                      onFocus={() => setFocusedField('name')}
-                      onBlur={() => setFocusedField(null)}
-                      placeholder="Enter your full name"
-                      className={`
-                        pl-9 sm:pl-10 h-10 sm:h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 text-sm sm:text-base
-                        transition-all duration-300 ease-out
-                        ${focusedField === 'name' 
-                          ? 'ring-2 ring-green-500/50 border-transparent shadow-lg shadow-green-500/20' 
-                          : 'hover:border-slate-600'
-                        }
-                      `}
-                      required
-                    />
-                  </div>
-                </div>
-                
-                {/* Email Field */}
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Email</Label>
-                  <div className="relative group">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors duration-200" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleEmailChange}
-                      onFocus={() => setFocusedField('email')}
-                      onBlur={() => setFocusedField(null)}
-                      placeholder="Enter your email"
-                      className={`
-                        pl-9 sm:pl-10 pr-9 sm:pr-10 h-10 sm:h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 text-sm sm:text-base
-                        transition-all duration-300 ease-out
-                        ${focusedField === 'email' 
-                          ? 'ring-2 ring-blue-500/50 border-transparent shadow-lg shadow-blue-500/20' 
-                          : 'hover:border-slate-600'
-                        }
-                      `}
-                      required
-                    />
-                    {/* Validation Icon */}
-                    <AnimatePresence>
-                      {emailValid === true && (
-                        <motion.div
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 z-10"
-                        >
-                          <CheckCircle2 className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] text-green-400" />
-                        </motion.div>
-                      )}
-                      {emailValid === false && (
-                        <motion.div
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 z-10"
-                        >
-                          <AlertCircle className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] text-red-400" />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-                
-                {/* Password Field */}
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Password</Label>
-                  <div className="relative group">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-focus-within:text-purple-400 transition-colors duration-200" />
-                    <Input
-                      id="password"
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={formData.password}
-                      onChange={handlePasswordChange}
-                      onFocus={() => setFocusedField('password')}
-                      onBlur={() => setFocusedField(null)}
-                      placeholder="Create a password"
-                      className={`
-                        pl-9 sm:pl-10 pr-11 sm:pr-12 h-10 sm:h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 text-sm sm:text-base
-                        transition-all duration-300 ease-out
-                        ${focusedField === 'password' 
-                          ? 'ring-2 ring-purple-500/50 border-transparent shadow-lg shadow-purple-500/20' 
-                          : 'hover:border-slate-600'
-                        }
-                      `}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors focus:outline-none"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-                      ) : (
-                        <Eye className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Confirm Password Field */}
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm">Confirm Password</Label>
-                  <div className="relative group">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 group-focus-within:text-purple-400 transition-colors duration-200" />
-                    <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      value={formData.confirmPassword}
-                      onChange={handleConfirmPasswordChange}
-                      onFocus={() => setFocusedField('confirmPassword')}
-                      onBlur={() => setFocusedField(null)}
-                      placeholder="Confirm your password"
-                      className={`
-                        pl-9 sm:pl-10 pr-[4.25rem] sm:pr-[4.75rem] h-10 sm:h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 text-sm sm:text-base
-                        transition-all duration-300 ease-out
-                        ${focusedField === 'confirmPassword' 
-                          ? 'ring-2 ring-purple-500/50 border-transparent shadow-lg shadow-purple-500/20' 
-                          : 'hover:border-slate-600'
-                        }
-                      `}
-                      required
-                    />
-                    {/* Eye Icon - Positioned to the left of validation icon */}
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-11 sm:right-12 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors focus:outline-none z-10"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px]" />
-                      ) : (
-                        <Eye className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px]" />
-                      )}
-                    </button>
-                    {/* Password Match Indicator - Far right position */}
-                    <AnimatePresence>
-                      {passwordsMatch === true && (
-                        <motion.div
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 z-20"
-                        >
-                          <CheckCircle2 className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] text-green-400" />
-                        </motion.div>
-                      )}
-                      {passwordsMatch === false && (
-                        <motion.div
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 z-20"
-                        >
-                          <AlertCircle className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] text-red-400" />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-                
-                {/* Submit Button with Ripple Effect */}
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  onClick={handleButtonClick}
-                  className="
-                    w-full h-10 sm:h-12 relative overflow-hidden mt-4 sm:mt-6
-                    bg-gradient-to-r from-blue-500 via-purple-500 to-purple-600
-                    hover:from-blue-600 hover:via-purple-600 hover:to-purple-700
-                    text-white font-semibold text-sm sm:text-base
-                    shadow-lg shadow-purple-500/25
-                    transition-all duration-300
-                    hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02]
-                    active:scale-[0.98]
-                    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
-                  "
-                >
-                  {/* Ripple Effect */}
-                  <AnimatePresence>
-                    {showRipple && (
-                      <motion.span
-                        className="absolute inset-0 bg-white"
-                        initial={{
-                          scale: 0,
-                          opacity: 0.6,
-                        }}
-                        animate={{
-                          scale: 4,
-                          opacity: 0,
-                        }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.6, ease: 'easeOut' }}
-                        style={{
-                          borderRadius: '50%',
-                          left: ripplePosition.x,
-                          top: ripplePosition.y,
-                          width: '20px',
-                          height: '20px',
-                          marginLeft: '-10px',
-                          marginTop: '-10px',
-                        }}
-                      />
-                    )}
-                  </AnimatePresence>
-                  
-                  {/* Button glow on hover */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-white/20 to-purple-400/0"
-                    initial={{ x: '-100%' }}
-                    whileHover={{ x: '100%' }}
-                    transition={{ duration: 0.6 }}
+                  <Input
+                    id="accessCode"
+                    name="accessCode"
+                    type="text"
+                    value={formData.accessCode}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField('accessCode')}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="Enter your access code"
+                    className={`
+                      h-12 pl-11 pr-4 text-base
+                      bg-slate-50 dark:bg-slate-900
+                      border-slate-200 dark:border-slate-800
+                      text-slate-900 dark:text-white
+                      placeholder:text-slate-400 dark:placeholder:text-slate-500
+                      rounded-xl
+                      transition-all duration-200
+                      focus:bg-white dark:focus:bg-slate-900
+                      focus:border-amber-500 dark:focus:border-amber-500
+                      focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-500/20
+                      hover:border-slate-300 dark:hover:border-slate-700
+                    `}
+                    required
                   />
-                  
-                  <span className="relative z-10">
-                    {loading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <motion.span
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                          className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white/30 border-t-white rounded-full"
-                        />
-                        <span className="text-sm sm:text-base">Creating Account...</span>
-                      </span>
-                    ) : (
-                      'Create Account'
-                    )}
-                  </span>
-                </Button>
-              </form>
-              
-              {/* Sign In Link */}
-              <div className="text-center mt-4 sm:mt-6">
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                  Already have an account?{' '}
-                  <Link
-                    href="/auth/signin"
-                    className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors duration-200 hover:underline"
-                  >
-                    Sign in
-                  </Link>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-500">
+                  Provided by your community administrator
                 </p>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </motion.div>
+
+              {/* Name Field */}
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Full Name
+                </Label>
+                <div className="relative">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <User className={`w-[18px] h-[18px] transition-colors duration-200 ${
+                      focusedField === 'name' 
+                        ? 'text-emerald-500 dark:text-emerald-400' 
+                        : 'text-slate-400 dark:text-slate-500'
+                    }`} />
+                  </div>
+                  <Input
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField('name')}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="Enter your full name"
+                    className={`
+                      h-12 pl-11 pr-4 text-base
+                      bg-slate-50 dark:bg-slate-900
+                      border-slate-200 dark:border-slate-800
+                      text-slate-900 dark:text-white
+                      placeholder:text-slate-400 dark:placeholder:text-slate-500
+                      rounded-xl
+                      transition-all duration-200
+                      focus:bg-white dark:focus:bg-slate-900
+                      focus:border-emerald-500 dark:focus:border-emerald-500
+                      focus:ring-2 focus:ring-emerald-500/20 dark:focus:ring-emerald-500/20
+                      hover:border-slate-300 dark:hover:border-slate-700
+                    `}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Email Field */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Email address
+                </Label>
+                <div className="relative">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Mail className={`w-[18px] h-[18px] transition-colors duration-200 ${
+                      focusedField === 'email' 
+                        ? 'text-blue-500 dark:text-blue-400' 
+                        : 'text-slate-400 dark:text-slate-500'
+                    }`} />
+                  </div>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleEmailChange}
+                    onFocus={() => setFocusedField('email')}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="name@example.com"
+                    className={`
+                      h-12 pl-11 pr-11 text-base
+                      bg-slate-50 dark:bg-slate-900
+                      border-slate-200 dark:border-slate-800
+                      text-slate-900 dark:text-white
+                      placeholder:text-slate-400 dark:placeholder:text-slate-500
+                      rounded-xl
+                      transition-all duration-200
+                      focus:bg-white dark:focus:bg-slate-900
+                      focus:border-blue-500 dark:focus:border-blue-500
+                      focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-500/20
+                      hover:border-slate-300 dark:hover:border-slate-700
+                    `}
+                    required
+                  />
+                  <AnimatePresence>
+                    {emailValid === true && (
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2"
+                      >
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                      </motion.div>
+                    )}
+                    {emailValid === false && (
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2"
+                      >
+                        <AlertCircle className="w-5 h-5 text-red-500" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Password Field */}
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Password
+                </Label>
+                <div className="relative">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Lock className={`w-[18px] h-[18px] transition-colors duration-200 ${
+                      focusedField === 'password' 
+                        ? 'text-violet-500 dark:text-violet-400' 
+                        : 'text-slate-400 dark:text-slate-500'
+                    }`} />
+                  </div>
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={handlePasswordChange}
+                    onFocus={() => setFocusedField('password')}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="Create a password"
+                    className={`
+                      h-12 pl-11 pr-11 text-base
+                      bg-slate-50 dark:bg-slate-900
+                      border-slate-200 dark:border-slate-800
+                      text-slate-900 dark:text-white
+                      placeholder:text-slate-400 dark:placeholder:text-slate-500
+                      rounded-xl
+                      transition-all duration-200
+                      focus:bg-white dark:focus:bg-slate-900
+                      focus:border-violet-500 dark:focus:border-violet-500
+                      focus:ring-2 focus:ring-violet-500/20 dark:focus:ring-violet-500/20
+                      hover:border-slate-300 dark:hover:border-slate-700
+                    `}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-[18px] h-[18px]" />
+                    ) : (
+                      <Eye className="w-[18px] h-[18px]" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password Field */}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Confirm Password
+                </Label>
+                <div className="relative">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <Lock className={`w-[18px] h-[18px] transition-colors duration-200 ${
+                      focusedField === 'confirmPassword' 
+                        ? 'text-violet-500 dark:text-violet-400' 
+                        : 'text-slate-400 dark:text-slate-500'
+                    }`} />
+                  </div>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={formData.confirmPassword}
+                    onChange={handleConfirmPasswordChange}
+                    onFocus={() => setFocusedField('confirmPassword')}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="Confirm your password"
+                    className={`
+                      h-12 pl-11 pr-20 text-base
+                      bg-slate-50 dark:bg-slate-900
+                      border-slate-200 dark:border-slate-800
+                      text-slate-900 dark:text-white
+                      placeholder:text-slate-400 dark:placeholder:text-slate-500
+                      rounded-xl
+                      transition-all duration-200
+                      focus:bg-white dark:focus:bg-slate-900
+                      focus:border-violet-500 dark:focus:border-violet-500
+                      focus:ring-2 focus:ring-violet-500/20 dark:focus:ring-violet-500/20
+                      hover:border-slate-300 dark:hover:border-slate-700
+                    `}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1"
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-[18px] h-[18px]" />
+                    ) : (
+                      <Eye className="w-[18px] h-[18px]" />
+                    )}
+                  </button>
+                  <AnimatePresence>
+                    {passwordsMatch === true && (
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2"
+                      >
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                      </motion.div>
+                    )}
+                    {passwordsMatch === false && (
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2"
+                      >
+                        <AlertCircle className="w-5 h-5 text-red-500" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                disabled={loading}
+                className="
+                  w-full h-12 text-base font-semibold rounded-xl mt-2
+                  bg-slate-900 dark:bg-white
+                  text-white dark:text-slate-900
+                  hover:bg-slate-800 dark:hover:bg-slate-100
+                  transition-all duration-200
+                  hover:scale-[1.02] active:scale-[0.98]
+                  disabled:opacity-50 disabled:hover:scale-100
+                  shadow-lg shadow-slate-900/10 dark:shadow-white/10
+                "
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <motion.span
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      className="w-5 h-5 border-2 border-white/30 dark:border-slate-900/30 border-t-white dark:border-t-slate-900 rounded-full"
+                    />
+                    Creating account...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    Create account
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                )}
+              </Button>
+            </form>
+
+            {/* Sign In Link */}
+            <p className="text-center mt-6 text-sm text-slate-600 dark:text-slate-400">
+              Already have an account?{' '}
+              <Link
+                href="/auth/signin"
+                className="font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 transition-colors"
+              >
+                Sign in
+              </Link>
+            </p>
+          </motion.div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 sm:p-6 text-center">
+          <p className="text-xs text-slate-500 dark:text-slate-500">
+            By creating an account, you agree to our{' '}
+            <Link href="/terms" className="underline hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+              Terms
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" className="underline hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+              Privacy Policy
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
