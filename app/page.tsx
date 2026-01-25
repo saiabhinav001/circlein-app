@@ -22,13 +22,6 @@ import Script from 'next/script';
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
 
-const stats = [
-  { label: 'Features', value: '20+' },
-  { label: 'Amenities', value: 'Unlimited' },
-  { label: 'Uptime', value: '99.9%' },
-  { label: 'Real-time', value: 'Sync' },
-];
-
 const features = [
   {
     icon: Calendar,
@@ -101,72 +94,75 @@ const team = [
   },
 ];
 
-// Premium Animated Background Component with scroll-reactive effects
+// Premium Animated Background Component with section-aware living system
 function PremiumBackground() {
-  const { scrollY } = useScroll();
-  const y1 = useTransform(scrollY, [0, 1000], [0, -100]);
-  const y2 = useTransform(scrollY, [0, 1000], [0, -150]);
-  const y3 = useTransform(scrollY, [0, 1000], [0, -200]);
-  const opacity1 = useTransform(scrollY, [0, 500], [0.2, 0.1]);
-  const opacity2 = useTransform(scrollY, [0, 500], [0.15, 0.08]);
+  const { scrollYProgress } = useScroll();
+  
+  // Smooth parallax transforms
+  const y1 = useTransform(scrollYProgress, [0, 1], ['0%', '-15%']);
+  const y2 = useTransform(scrollYProgress, [0, 1], ['0%', '-25%']);
+  const y3 = useTransform(scrollYProgress, [0, 1], ['0%', '-10%']);
+  
+  // Opacity based on scroll for depth
+  const opacity1 = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.6, 0.4, 0.3, 0.2]);
+  const opacity2 = useTransform(scrollYProgress, [0, 0.5, 1], [0.5, 0.3, 0.15]);
   
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
-      {/* Base gradient with subtle noise */}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
+      {/* Base gradient - sophisticated neutral */}
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-100/50 dark:from-[#0a0a0f] dark:via-[#0d0d14] dark:to-[#0a0a0f]" />
       
-      {/* Mesh gradient overlay */}
-      <div className="absolute inset-0 hero-gradient-mesh" />
-      
-      {/* Animated gradient orbs with parallax */}
+      {/* Primary gradient orb - hero area */}
       <motion.div 
-        className="absolute top-0 left-1/4 w-[700px] h-[700px] rounded-full bg-gradient-to-br from-blue-400/20 to-violet-400/20 dark:from-blue-600/10 dark:to-violet-600/10 blur-[120px] animate-blob will-change-transform" 
-        style={{ y: y1, opacity: opacity1 }}
-      />
-      <motion.div 
-        className="absolute top-1/3 right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-violet-400/18 to-fuchsia-400/18 dark:from-violet-600/8 dark:to-fuchsia-600/8 blur-[120px] animate-blob animation-delay-2000 will-change-transform" 
-        style={{ y: y2, opacity: opacity2 }}
-      />
-      <motion.div 
-        className="absolute bottom-0 left-1/3 w-[650px] h-[650px] rounded-full bg-gradient-to-br from-cyan-400/15 to-blue-400/15 dark:from-cyan-600/6 dark:to-blue-600/6 blur-[120px] animate-blob animation-delay-4000 will-change-transform" 
-        style={{ y: y3 }}
+        className="absolute -top-[20%] left-[10%] w-[min(800px,100vw)] h-[800px] rounded-full"
+        style={{ 
+          y: y1, 
+          opacity: opacity1,
+          background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.08) 40%, transparent 70%)',
+          filter: 'blur(80px)',
+        }}
       />
       
-      {/* Aurora effect layer */}
-      <div className="absolute inset-0 aurora-container overflow-hidden opacity-60 dark:opacity-40">
-        <div className="aurora-beam aurora-beam-1" />
-        <div className="aurora-beam aurora-beam-2" />
-        <div className="aurora-beam aurora-beam-3" />
-      </div>
+      {/* Secondary gradient orb - mid section */}
+      <motion.div 
+        className="absolute top-[30%] -right-[10%] w-[min(700px,90vw)] h-[700px] rounded-full"
+        style={{ 
+          y: y2, 
+          opacity: opacity2,
+          background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, rgba(236,72,153,0.06) 50%, transparent 70%)',
+          filter: 'blur(100px)',
+        }}
+      />
       
-      {/* Subtle grid pattern */}
-      <div className="absolute inset-0 bg-grid-modern opacity-40" />
+      {/* Tertiary gradient orb - bottom section */}
+      <motion.div 
+        className="absolute bottom-[10%] left-[20%] w-[min(600px,80vw)] h-[600px] rounded-full"
+        style={{ 
+          y: y3,
+          background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(99,102,241,0.05) 50%, transparent 70%)',
+          filter: 'blur(90px)',
+        }}
+      />
       
-      {/* Floating particles */}
-      <div className="absolute inset-0 particles-container">
-        {[...Array(6)].map((_, i) => (
-          <div 
-            key={i} 
-            className={`particle particle-${i + 1}`}
-            style={{
-              left: `${15 + i * 15}%`,
-              animationDelay: `${i * 0.8}s`,
-              animationDuration: `${20 + i * 2}s`
-            }}
-          />
-        ))}
-      </div>
+      {/* Subtle dot grid pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.4] dark:opacity-[0.15]"
+        style={{
+          backgroundImage: 'radial-gradient(rgba(99,102,241,0.5) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      />
       
-      {/* Top fade for header blend */}
-      <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-white/90 via-white/50 to-transparent dark:from-slate-950/90 dark:via-slate-950/50 dark:to-transparent" />
+      {/* Top vignette for header blend */}
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white dark:from-[#0a0a0f] to-transparent" />
       
       {/* Bottom vignette */}
-      <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-white/60 to-transparent dark:from-slate-950/60 dark:to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-slate-50 dark:from-[#0a0a0f] to-transparent" />
     </div>
   );
 }
 
-// Premium Button Component with advanced micro-interactions
+// Premium Button Component with physical, tactile micro-interactions
 function PremiumButton({ 
   children, 
   variant = 'primary',
@@ -180,138 +176,53 @@ function PremiumButton({
   className?: string;
   [key: string]: any;
 }) {
+  const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
-  const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([]);
   
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const id = Date.now();
-    
-    setRipples(prev => [...prev, { x, y, id }]);
-    setTimeout(() => {
-      setRipples(prev => prev.filter(r => r.id !== id));
-    }, 600);
-  };
-  
-  const baseClasses = "relative overflow-hidden font-semibold transition-all duration-300 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
+  const baseClasses = "relative overflow-hidden font-semibold rounded-xl transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950 select-none";
   
   const variants = {
-    primary: "bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/35 focus-visible:ring-indigo-500 btn-shine premium-btn-glow",
-    secondary: "bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-white dark:hover:bg-slate-800 focus-visible:ring-slate-400",
-    ghost: "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/80 focus-visible:ring-slate-400"
+    primary: "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 focus-visible:ring-slate-900 dark:focus-visible:ring-white shadow-lg shadow-slate-900/10 dark:shadow-white/10",
+    secondary: "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 focus-visible:ring-slate-400 shadow-sm",
+    ghost: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-slate-400"
   };
   
   const sizes = {
-    default: "h-10 px-5 text-sm",
-    lg: "h-14 px-8 text-base md:text-lg"
+    default: "h-11 px-5 text-sm gap-2",
+    lg: "h-12 sm:h-14 px-6 sm:px-8 text-base gap-2.5"
   };
   
   return (
     <motion.button
       className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => { setIsHovered(false); setIsPressed(false); }}
       onMouseDown={() => setIsPressed(true)}
       onMouseUp={() => setIsPressed(false)}
-      onMouseLeave={() => setIsPressed(false)}
-      onClick={handleClick}
-      whileHover={{ 
-        scale: 1.02,
-        transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] }
-      }}
-      whileTap={{ 
-        scale: 0.98,
-        transition: { duration: 0.1 }
-      }}
       animate={{
+        scale: isPressed ? 0.97 : isHovered ? 1.02 : 1,
         y: isPressed ? 1 : 0,
+      }}
+      transition={{ 
+        type: 'spring', 
+        stiffness: 500, 
+        damping: 30,
+        mass: 0.5
       }}
       {...props}
     >
-      {/* Ripple effects */}
-      {ripples.map(ripple => (
-        <span
-          key={ripple.id}
-          className="absolute rounded-full bg-white/30 animate-ripple pointer-events-none"
-          style={{
-            left: ripple.x,
-            top: ripple.y,
-            transform: 'translate(-50%, -50%)',
-          }}
-        />
-      ))}
-      
-      {/* Gradient shimmer on hover */}
-      <span className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full hover:translate-x-full" style={{ transition: 'transform 0.6s ease' }} />
+      {/* Shine effect on hover */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full"
+        animate={{ x: isHovered ? '200%' : '-100%' }}
+        transition={{ duration: 0.5, ease: 'easeInOut' }}
+      />
       
       {/* Content */}
       <span className="relative z-10 flex items-center justify-center gap-2">
         {children}
       </span>
     </motion.button>
-  );
-}
-
-// Premium animated border card with mouse tracking
-function AnimatedBorderCard({ children }: { children: React.ReactNode }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!cardRef.current) return;
-      
-      const rect = cardRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      setMousePosition({ x, y });
-    };
-
-    const card = cardRef.current;
-    if (card) {
-      card.addEventListener('mousemove', handleMouseMove);
-      return () => card.removeEventListener('mousemove', handleMouseMove);
-    }
-  }, []);
-
-  return (
-    <div
-      ref={cardRef}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="relative group"
-      style={{ isolation: 'isolate' }}
-    >
-      {/* Animated gradient border that follows mouse */}
-      <motion.div
-        className="absolute -inset-[1px] rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        style={{
-          background: isHovered
-            ? `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(99, 102, 241, 0.15), transparent 40%)`
-            : 'transparent',
-        }}
-      />
-
-      {/* Outer glow effect */}
-      <motion.div
-        className="absolute -inset-[1px] rounded-3xl"
-        style={{
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2))',
-          padding: '1px',
-        }}
-        animate={{
-          opacity: isHovered ? 1 : 0.3,
-        }}
-        transition={{ duration: 0.4 }}
-      />
-
-      {/* Inner card content */}
-      <div className="relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50 overflow-hidden rounded-3xl border border-slate-200/50 dark:border-slate-700/50">
-        {children}
-      </div>
-    </div>
   );
 }
 
@@ -505,94 +416,69 @@ ${formData.message}
   );
 }
 
-// Premium Feature Card with 3D tilt effect
+// Premium Feature Card with progressive disclosure and magnetic interaction
 function FeatureCard({ feature, index }: { feature: typeof features[0], index: number }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [rotateX, setRotateX] = useState(0);
-  const [rotateY, setRotateY] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const rotateXValue = ((e.clientY - centerY) / (rect.height / 2)) * -5;
-    const rotateYValue = ((e.clientX - centerX) / (rect.width / 2)) * 5;
-    setRotateX(rotateXValue);
-    setRotateY(rotateYValue);
-  };
-
-  const handleMouseLeave = () => {
-    setRotateX(0);
-    setRotateY(0);
-    setIsHovered(false);
-  };
+  const cardRef = useRef<HTMLDivElement>(null);
 
   return (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
+      viewport={{ once: true, margin: "-80px" }}
       transition={{ 
-        duration: 0.6, 
-        delay: index * 0.1,
-        ease: [0.21, 0.47, 0.32, 0.98]
+        duration: 0.5, 
+        delay: index * 0.08,
+        ease: [0.25, 0.1, 0.25, 1]
       }}
-      className="group perspective-1000"
-      onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
+      onMouseLeave={() => setIsHovered(false)}
+      className="group relative"
     >
       <motion.div 
         className="relative h-full"
-        animate={{
-          rotateX: rotateX,
-          rotateY: rotateY,
-        }}
-        transition={{ duration: 0.1, ease: 'linear' }}
-        style={{ transformStyle: 'preserve-3d' }}
+        animate={{ y: isHovered ? -4 : 0 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       >
-        {/* Glow effect on hover */}
-        <motion.div 
-          className={`absolute -inset-0.5 rounded-2xl bg-gradient-to-r ${feature.gradient} opacity-0 blur-xl transition-opacity duration-500`}
-          animate={{ opacity: isHovered ? 0.3 : 0 }}
-        />
-        
-        <div className="relative h-full p-8 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border border-slate-200/60 dark:border-slate-700/60 transition-all duration-500 hover:bg-white/90 dark:hover:bg-slate-900/90 hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 hover:border-slate-300/80 dark:hover:border-slate-600/80 overflow-hidden">
-          {/* Subtle inner glow */}
-          <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 blur-2xl transition-opacity duration-700`} />
+        {/* Card */}
+        <div className="relative h-full p-6 sm:p-8 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50">
           
-          {/* Icon with enhanced animation */}
+          {/* Icon */}
           <motion.div 
-            className={`relative w-14 h-14 rounded-xl ${feature.iconBg} flex items-center justify-center mb-6 overflow-hidden`}
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            className={`relative w-12 h-12 rounded-xl ${feature.iconBg} flex items-center justify-center mb-5`}
+            animate={{ 
+              scale: isHovered ? 1.05 : 1,
+            }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
           >
-            <feature.icon className={`w-7 h-7 ${feature.iconColor} relative z-10`} strokeWidth={1.5} />
-            {/* Icon glow */}
-            <motion.div 
-              className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0`}
-              animate={{ opacity: isHovered ? 0.2 : 0 }}
-              transition={{ duration: 0.3 }}
-            />
+            <feature.icon className={`w-6 h-6 ${feature.iconColor}`} strokeWidth={1.75} />
           </motion.div>
           
           {/* Content */}
-          <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-3 tracking-tight">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2 tracking-tight">
             {feature.title}
           </h3>
-          <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-[15px]">
+          <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-[15px]">
             {feature.description}
           </p>
           
-          {/* Animated bottom accent line */}
+          {/* Learn more indicator */}
           <motion.div 
-            className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${feature.gradient}`}
+            className="mt-5 flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400"
+            animate={{ x: isHovered ? 4 : 0, color: isHovered ? '#6366f1' : undefined }}
+            transition={{ duration: 0.2 }}
+          >
+            <span>Learn more</span>
+            <ArrowRight className="w-4 h-4" />
+          </motion.div>
+          
+          {/* Bottom accent line */}
+          <motion.div 
+            className={`absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r ${feature.gradient} rounded-b-2xl`}
             initial={{ scaleX: 0 }}
             animate={{ scaleX: isHovered ? 1 : 0 }}
-            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
             style={{ transformOrigin: 'left' }}
           />
         </div>
@@ -601,101 +487,64 @@ function FeatureCard({ feature, index }: { feature: typeof features[0], index: n
   );
 }
 
-// Team Member Card with enhanced interactions
+// Team Member Card with clean, professional interactions
 function TeamMemberCard({ member, index }: { member: typeof team[0], index: number }) {
   const [isHovered, setIsHovered] = useState(false);
   
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
+      viewport={{ once: true, margin: "-80px" }}
       transition={{ 
-        duration: 0.6, 
-        delay: index * 0.15,
-        ease: [0.21, 0.47, 0.32, 0.98]
+        duration: 0.5, 
+        delay: index * 0.1,
+        ease: [0.25, 0.1, 0.25, 1]
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <motion.div 
         className="group relative h-full"
-        whileHover={{ y: -8 }}
-        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+        animate={{ y: isHovered ? -4 : 0 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       >
-        {/* Glow effect */}
-        <motion.div 
-          className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 opacity-0 blur-xl"
-          animate={{ opacity: isHovered ? 0.25 : 0 }}
-          transition={{ duration: 0.4 }}
-        />
-        
-        <div className="relative h-full p-8 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border border-slate-200/60 dark:border-slate-700/60 transition-all duration-500 hover:bg-white/90 dark:hover:bg-slate-900/90 hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 text-center overflow-hidden">
-          {/* Background decoration */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-b from-indigo-500/5 to-transparent rounded-full blur-2xl" />
+        <div className="relative h-full p-6 sm:p-8 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 text-center">
           
-          {/* Avatar with animated ring */}
-          <div className="w-24 h-24 mx-auto mb-6 relative">
-            <motion.div 
-              className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-indigo-500/25"
-              animate={{ 
-                boxShadow: isHovered 
-                  ? '0 20px 40px -10px rgba(99, 102, 241, 0.4)' 
-                  : '0 10px 25px -5px rgba(99, 102, 241, 0.25)'
-              }}
-              transition={{ duration: 0.3 }}
-            >
-              <span className="text-2xl font-bold text-white">
+          {/* Avatar */}
+          <div className="w-20 h-20 mx-auto mb-5 relative">
+            <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
+              <span className="text-xl font-bold text-white">
                 {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
               </span>
-            </motion.div>
-            
-            {/* Animated ring */}
-            <motion.div 
-              className="absolute inset-0 rounded-full border-2 border-indigo-500/30"
-              animate={{ 
-                scale: isHovered ? 1.2 : 1.1,
-                opacity: isHovered ? 0 : 0.5,
-              }}
-              transition={{ duration: 0.4 }}
-            />
-            <motion.div 
-              className="absolute inset-0 rounded-full border border-violet-500/20"
-              animate={{ 
-                scale: isHovered ? 1.35 : 1.2,
-                opacity: isHovered ? 0 : 0.3,
-              }}
-              transition={{ duration: 0.4, delay: 0.05 }}
-            />
+            </div>
           </div>
           
           {/* Content */}
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1 tracking-tight">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1 tracking-tight">
             {member.name}
           </h3>
-          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-4">
+          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-3">
             {member.role}
           </p>
-          <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-6">
+          <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-5">
             {member.description}
           </p>
           
-          {/* Social Links with stagger animation */}
-          <div className="flex justify-center gap-3">
+          {/* Social Links */}
+          <div className="flex justify-center gap-2">
             {[
-              { icon: Github, href: member.social.github },
-              { icon: Linkedin, href: member.social.linkedin },
-              { icon: Twitter, href: member.social.twitter },
+              { icon: Github, href: member.social.github, label: 'GitHub' },
+              { icon: Linkedin, href: member.social.linkedin, label: 'LinkedIn' },
+              { icon: Twitter, href: member.social.twitter, label: 'Twitter' },
             ].map((social, i) => (
               <motion.a
                 key={i}
                 href={social.href}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.05 }}
-                whileHover={{ scale: 1.15, y: -2 }}
+                aria-label={social.label}
+                whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-gradient-to-br hover:from-indigo-500 hover:to-violet-500 hover:text-white transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-indigo-500/25"
+                className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200"
               >
                 <social.icon className="w-4 h-4" />
               </motion.a>
@@ -888,101 +737,87 @@ export default function LandingPage() {
         </header>
 
         {/* Hero Section */}
-        <section className="relative pt-32 md:pt-40 lg:pt-48 pb-20 md:pb-28 lg:pb-36 px-4 sm:px-6 overflow-hidden">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center max-w-4xl mx-auto">
-              {/* Badge */}
+        <section className="relative pt-28 sm:pt-32 md:pt-40 lg:pt-48 pb-16 md:pb-24 lg:pb-32 px-4 sm:px-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center">
+              {/* Badge - subtle trust signal */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50/80 dark:bg-indigo-950/50 border border-indigo-200/50 dark:border-indigo-800/50 mb-8"
+                transition={{ duration: 0.4 }}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 mb-6 md:mb-8"
               >
-                <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
-                  Enterprise-Grade Community Management
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                  Trusted by 500+ communities
                 </span>
               </motion.div>
               
-              {/* Headline */}
+              {/* Headline - confident, clear value */}
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 dark:text-white mb-6 leading-[1.1]"
+                className="text-[2.5rem] sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 dark:text-white mb-5 md:mb-6 leading-[1.1]"
               >
-                Community Living,
+                The modern way to
                 <br />
-                <span className="text-gradient-animate">
-                  Revolutionized
+                <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
+                  manage communities
                 </span>
               </motion.h1>
               
-              {/* Subheadline */}
+              {/* Subheadline - benefit-focused */}
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-lg md:text-xl text-slate-700 dark:text-slate-300 mb-10 md:mb-12 max-w-2xl mx-auto leading-relaxed"
+                className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-8 md:mb-10 max-w-xl mx-auto leading-relaxed"
               >
-                Experience the future of community management with AI-powered booking, real-time notifications, and enterprise-grade security.
+                Streamline bookings, automate operations, and delight residents with one powerful platform.
               </motion.p>
               
-              {/* CTAs */}
+              {/* CTAs - clear hierarchy */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center mb-16 md:mb-20"
+                className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-12 md:mb-16"
               >
                 <Link href="/auth/signup" className="w-full sm:w-auto">
                   <PremiumButton variant="primary" size="lg" className="w-full sm:w-auto">
-                    Start Free Trial
-                    <ArrowRight className="w-5 h-5" />
+                    Get started free
+                    <ArrowRight className="w-4 h-4" />
                   </PremiumButton>
                 </Link>
                 <Link href="/auth/signin" className="w-full sm:w-auto">
                   <PremiumButton variant="secondary" size="lg" className="w-full sm:w-auto">
-                    View Demo
-                    <ChevronRight className="w-5 h-5" />
+                    Watch demo
                   </PremiumButton>
                 </Link>
               </motion.div>
 
-              {/* Stats with smooth animation */}
+              {/* Social proof stats - clean, minimal */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 max-w-3xl mx-auto"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="flex flex-wrap justify-center gap-x-8 sm:gap-x-12 gap-y-4 text-sm"
               >
-                {stats.map((stat, index) => (
-                  <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, scale: 0.9, y: 15 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ 
-                      duration: 0.4, 
-                      delay: 0.5 + index * 0.08,
-                      ease: [0.21, 0.47, 0.32, 0.98]
-                    }}
-                    whileHover={{ scale: 1.03 }}
-                    className="text-center group cursor-default p-4 rounded-2xl hover:bg-white/50 dark:hover:bg-slate-800/30 transition-colors duration-200"
-                  >
-                    <div className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent mb-1 md:mb-2">
-                      {stat.value}
-                    </div>
-                    <div className="text-sm md:text-base text-slate-600 dark:text-slate-300 font-medium">
-                      {stat.label}
-                    </div>
-                  </motion.div>
+                {[
+                  { value: '20+', label: 'Features' },
+                  { value: '99.9%', label: 'Uptime' },
+                  { value: '24/7', label: 'Support' },
+                  { value: '5min', label: 'Setup' },
+                ].map((stat, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="font-semibold text-slate-900 dark:text-white">{stat.value}</span>
+                    <span className="text-slate-500 dark:text-slate-400">{stat.label}</span>
+                  </div>
                 ))}
               </motion.div>
             </div>
           </div>
-          
-          {/* Decorative gradient blur at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-50 dark:from-slate-950 to-transparent pointer-events-none" />
         </section>
 
         {/* Section Divider */}
@@ -991,41 +826,29 @@ export default function LandingPage() {
         </div>
 
         {/* Features Section */}
-        <section className="relative py-20 md:py-28 lg:py-36 px-4 sm:px-6">
-          {/* Section background */}
-          <div className="absolute inset-0 bg-slate-50/50 dark:bg-slate-900/30" />
-          
-          <div className="relative max-w-7xl mx-auto">
+        <section className="relative py-16 md:py-24 lg:py-32 px-4 sm:px-6">
+          <div className="max-w-6xl mx-auto">
             {/* Section Header */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16 md:mb-20"
+              transition={{ duration: 0.5 }}
+              className="text-center mb-12 md:mb-16"
             >
-              <motion.span 
-                className="inline-block text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-4"
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4 }}
-              >
+              <span className="inline-block text-sm font-semibold text-indigo-600 dark:text-indigo-400 mb-3">
                 Features
-              </motion.span>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-5">
-                Built for{' '}
-                <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-                  Modern Communities
-                </span>
+              </span>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
+                Everything you need
               </h2>
-              <p className="text-lg md:text-xl text-slate-700 dark:text-slate-300 max-w-2xl mx-auto">
-                Everything you need to manage your community efficiently, securely, and intelligently.
+              <p className="text-lg text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
+                Powerful tools to manage your community efficiently and intelligently.
               </p>
             </motion.div>
 
             {/* Features Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
               {features.map((feature, index) => (
                 <FeatureCard key={feature.title} feature={feature} index={index} />
               ))}
@@ -1039,45 +862,49 @@ export default function LandingPage() {
         </div>
 
         {/* CTA Section */}
-        <section className="relative py-16 md:py-24 px-4 sm:px-6 overflow-hidden">
-          <div className="max-w-4xl mx-auto">
+        <section className="relative py-16 md:py-24 px-4 sm:px-6">
+          <div className="max-w-3xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] }}
-              className="relative rounded-2xl md:rounded-3xl overflow-hidden"
+              transition={{ duration: 0.5 }}
+              className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-slate-900 dark:bg-white"
             >
-              {/* Static gradient background - no animation for mobile stability */}
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700" />
-              
-              {/* Subtle overlay for depth */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-              
-              {/* Static decorative elements - hidden on mobile for performance */}
-              <div className="hidden md:block absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-x-1/3 -translate-y-1/3" />
-              <div className="hidden md:block absolute bottom-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3" />
+              {/* Subtle gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 via-transparent to-purple-600/10" />
               
               {/* Content */}
-              <div className="relative px-6 py-12 md:px-12 md:py-16 lg:py-20 text-center">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 md:mb-6 tracking-tight leading-tight">
-                  Ready to Transform Your Community?
+              <div className="relative px-6 py-12 md:px-12 md:py-16 text-center">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white dark:text-slate-900 mb-4 tracking-tight">
+                  Ready to get started?
                 </h2>
-                <p className="text-base md:text-lg text-white/90 mb-8 md:mb-10 max-w-xl mx-auto leading-relaxed">
-                  Join hundreds of communities already using CircleIn to streamline operations and enhance resident experiences.
+                <p className="text-base md:text-lg text-slate-300 dark:text-slate-600 mb-8 max-w-md mx-auto">
+                  Join hundreds of communities already using CircleIn. Set up in under 5 minutes.
                 </p>
-                <Link href="/auth/signup" className="inline-block">
-                  <motion.button
-                    className="bg-white text-indigo-700 shadow-lg text-base md:text-lg px-6 md:px-8 h-12 md:h-14 rounded-xl font-semibold hover:bg-indigo-50 active:bg-indigo-100 transition-colors duration-200"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <span className="flex items-center gap-2">
-                      Start Your Free Trial
-                      <ArrowRight className="w-5 h-5" />
-                    </span>
-                  </motion.button>
-                </Link>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Link href="/auth/signup">
+                    <motion.button
+                      className="w-full sm:w-auto bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-6 h-12 rounded-xl font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        Start free trial
+                        <ArrowRight className="w-4 h-4" />
+                      </span>
+                    </motion.button>
+                  </Link>
+                  <Link href="/auth/signin">
+                    <motion.button
+                      className="w-full sm:w-auto text-white dark:text-slate-900 border border-slate-700 dark:border-slate-300 px-6 h-12 rounded-xl font-semibold hover:bg-white/10 dark:hover:bg-slate-900/10 transition-colors duration-200"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      Contact sales
+                    </motion.button>
+                  </Link>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -1089,41 +916,29 @@ export default function LandingPage() {
         </div>
 
         {/* Team Section */}
-        <section className="relative py-20 md:py-28 lg:py-36 px-4 sm:px-6">
-          {/* Section background */}
-          <div className="absolute inset-0 bg-slate-50/50 dark:bg-slate-900/30" />
-          
-          <div className="relative max-w-7xl mx-auto">
+        <section className="relative py-16 md:py-24 lg:py-32 px-4 sm:px-6">
+          <div className="max-w-6xl mx-auto">
             {/* Section Header */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16 md:mb-20"
+              transition={{ duration: 0.5 }}
+              className="text-center mb-12 md:mb-16"
             >
-              <motion.span 
-                className="inline-block text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-4"
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4 }}
-              >
+              <span className="inline-block text-sm font-semibold text-indigo-600 dark:text-indigo-400 mb-3">
                 Our Team
-              </motion.span>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-5">
-                Meet the{' '}
-                <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-                  Development Team
-                </span>
+              </span>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
+                Meet the team
               </h2>
-              <p className="text-lg md:text-xl text-slate-700 dark:text-slate-300 max-w-2xl mx-auto">
-                Built by passionate developers dedicated to creating exceptional community management solutions.
+              <p className="text-lg text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
+                Passionate developers building exceptional community solutions.
               </p>
             </motion.div>
 
             {/* Team Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
               {team.map((member, index) => (
                 <TeamMemberCard key={member.name} member={member} index={index} />
               ))}
@@ -1137,78 +952,63 @@ export default function LandingPage() {
         </div>
 
         {/* Contact Section */}
-        <section className="relative py-20 md:py-28 px-4 sm:px-6">
-          <div className="max-w-2xl mx-auto">
+        <section className="relative py-16 md:py-24 px-4 sm:px-6">
+          <div className="max-w-xl mx-auto">
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.5 }}
             >
-              <AnimatedBorderCard>
-                <div className="p-8 md:p-12">
-                  {/* Header */}
-                  <div className="text-center mb-10">
-                    <motion.div 
-                      className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-indigo-500/25"
-                      whileHover={{ scale: 1.05, rotate: 5 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                    >
-                      <Mail className="w-8 h-8 text-white" />
-                    </motion.div>
-                    <motion.span 
-                      className="inline-block text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3"
-                      initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.4 }}
-                    >
-                      Contact Us
-                    </motion.span>
-                    <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-3 tracking-tight">
-                      Get in Touch
-                    </h2>
-                    <p className="text-slate-700 dark:text-slate-300 text-lg">
-                      Interested in becoming a community admin? We'd love to hear from you!
-                    </p>
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 md:p-10">
+                {/* Header */}
+                <div className="text-center mb-8">
+                  <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+                    <Mail className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                   </div>
-                  
-                  {/* Form */}
-                  <ContactForm />
+                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
+                    Get in touch
+                  </h2>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    Interested in becoming a community admin? We'd love to hear from you.
+                  </p>
                 </div>
-              </AnimatedBorderCard>
+                
+                {/* Form */}
+                <ContactForm />
+              </div>
             </motion.div>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="relative border-t border-slate-200/50 dark:border-slate-800/50 bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-12">
+        <footer className="relative border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 md:py-12">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-10">
               {/* Brand Column */}
               <div className="col-span-2 md:col-span-1">
-                <div className="flex items-center gap-2 mb-4">
-                  <CircleInLogo className="w-8 h-8" />
-                  <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                <div className="flex items-center gap-2 mb-3">
+                  <CircleInLogo className="w-7 h-7" />
+                  <span className="text-lg font-bold text-slate-900 dark:text-white">
                     CircleIn
                   </span>
                 </div>
                 <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Enterprise-grade community management platform for modern residential communities.
+                  Modern community management for residential living.
                 </p>
               </div>
               
               {/* Product Links */}
               <div>
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-4 text-sm uppercase tracking-wider">
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-3 text-sm">
                   Product
                 </h3>
-                <ul className="space-y-3 text-sm">
+                <ul className="space-y-2.5 text-sm">
                   {['Features', 'Pricing', 'Security'].map((item) => (
                     <li key={item}>
                       <Link 
                         href="/auth/signup" 
-                        className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors link-underline"
+                        className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                       >
                         {item}
                       </Link>
@@ -1219,15 +1019,15 @@ export default function LandingPage() {
               
               {/* Company Links */}
               <div>
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-4 text-sm uppercase tracking-wider">
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-3 text-sm">
                   Company
                 </h3>
-                <ul className="space-y-3 text-sm">
+                <ul className="space-y-2.5 text-sm">
                   {['About', 'Contact', 'Careers'].map((item) => (
                     <li key={item}>
                       <Link 
                         href="/auth/signup" 
-                        className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors link-underline"
+                        className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                       >
                         {item}
                       </Link>
@@ -1238,14 +1038,14 @@ export default function LandingPage() {
               
               {/* Legal Links */}
               <div>
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-4 text-sm uppercase tracking-wider">
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-3 text-sm">
                   Legal
                 </h3>
-                <ul className="space-y-3 text-sm">
+                <ul className="space-y-2.5 text-sm">
                   <li>
                     <Link 
                       href="/privacy" 
-                      className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors link-underline"
+                      className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                     >
                       Privacy
                     </Link>
@@ -1253,7 +1053,7 @@ export default function LandingPage() {
                   <li>
                     <Link 
                       href="/terms" 
-                      className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors link-underline"
+                      className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                     >
                       Terms
                     </Link>
@@ -1261,7 +1061,7 @@ export default function LandingPage() {
                   <li>
                     <Link 
                       href="/security" 
-                      className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors link-underline"
+                      className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                     >
                       Security
                     </Link>
@@ -1271,12 +1071,12 @@ export default function LandingPage() {
             </div>
             
             {/* Bottom Bar */}
-            <div className="pt-8 border-t border-slate-200/50 dark:border-slate-800/50">
+            <div className="pt-8 border-t border-slate-200 dark:border-slate-800">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <p className="text-sm text-slate-500 dark:text-slate-400 text-center md:text-left">
-                  © 2026 CircleIn. All rights reserved. Built with ❤️ for modern communities.
+                  © 2026 CircleIn. All rights reserved.
                 </p>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   {[
                     { Icon: Github, label: 'GitHub' },
                     { Icon: Linkedin, label: 'LinkedIn' },
@@ -1286,9 +1086,9 @@ export default function LandingPage() {
                       key={i}
                       href="#"
                       aria-label={label}
-                      whileHover={{ scale: 1.1, y: -2 }}
+                      whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-gradient-to-br hover:from-indigo-500 hover:to-violet-500 hover:text-white transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-indigo-500/25"
+                      className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                     >
                       <Icon className="w-4 h-4" />
                     </motion.a>
