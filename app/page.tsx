@@ -740,16 +740,16 @@ export default function LandingPage() {
         <section className="relative pt-28 sm:pt-32 md:pt-40 lg:pt-48 pb-16 md:pb-24 lg:pb-32 px-4 sm:px-6">
           <div className="max-w-6xl mx-auto">
             <div className="text-center">
-              {/* Badge - subtle trust signal */}
+              {/* Badge - honest status */}
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 mb-6 md:mb-8"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/50 dark:border-indigo-800/50 mb-6 md:mb-8"
               >
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                  Trusted by 500+ communities
+                <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                  Now available for communities
                 </span>
               </motion.div>
               
@@ -869,39 +869,39 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5 }}
-              className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-slate-900 dark:bg-white"
+              className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700"
             >
-              {/* Subtle gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 via-transparent to-purple-600/10" />
+              {/* Subtle overlay for depth */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
               
               {/* Content */}
               <div className="relative px-6 py-12 md:px-12 md:py-16 text-center">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white dark:text-slate-900 mb-4 tracking-tight">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">
                   Ready to get started?
                 </h2>
-                <p className="text-base md:text-lg text-slate-300 dark:text-slate-600 mb-8 max-w-md mx-auto">
-                  Join hundreds of communities already using CircleIn. Set up in under 5 minutes.
+                <p className="text-base md:text-lg text-white/90 mb-8 max-w-md mx-auto">
+                  Transform how your community manages amenities. Free to try, easy to set up.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Link href="/auth/signup">
                     <motion.button
-                      className="w-full sm:w-auto bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-6 h-12 rounded-xl font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200"
+                      className="w-full sm:w-auto bg-white text-indigo-700 px-6 h-12 rounded-xl font-semibold hover:bg-indigo-50 transition-colors duration-200"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
                       <span className="flex items-center justify-center gap-2">
-                        Start free trial
+                        Get started free
                         <ArrowRight className="w-4 h-4" />
                       </span>
                     </motion.button>
                   </Link>
                   <Link href="/auth/signin">
                     <motion.button
-                      className="w-full sm:w-auto text-white dark:text-slate-900 border border-slate-700 dark:border-slate-300 px-6 h-12 rounded-xl font-semibold hover:bg-white/10 dark:hover:bg-slate-900/10 transition-colors duration-200"
+                      className="w-full sm:w-auto text-white border border-white/30 px-6 h-12 rounded-xl font-semibold hover:bg-white/10 transition-colors duration-200"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      Contact sales
+                      Learn more
                     </motion.button>
                   </Link>
                 </div>
@@ -960,17 +960,17 @@ export default function LandingPage() {
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.5 }}
             >
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 md:p-10">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 p-6 md:p-10">
                 {/* Header */}
                 <div className="text-center mb-8">
-                  <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
-                    <Mail className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                  <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
+                    <Mail className="w-6 h-6 text-white" />
                   </div>
                   <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
                     Get in touch
                   </h2>
                   <p className="text-slate-600 dark:text-slate-400">
-                    Interested in becoming a community admin? We'd love to hear from you.
+                    Interested in using CircleIn for your community? Let us know.
                   </p>
                 </div>
                 
