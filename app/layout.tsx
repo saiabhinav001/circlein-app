@@ -83,15 +83,6 @@ export const metadata: Metadata = {
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
   ],
-  icons: {
-    icon: [
-      { url: '/favicon.svg?v=2', type: 'image/svg+xml' },
-      { url: '/icon-192x192.svg?v=2', sizes: '192x192', type: 'image/svg+xml' },
-    ],
-    apple: [
-      { url: '/apple-touch-icon.svg?v=2', type: 'image/svg+xml' },
-    ],
-  },
   viewport: {
     width: 'device-width',
     initialScale: 1,
@@ -108,9 +99,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
-        <link rel="icon" sizes="192x192" href="/icon-192x192.svg?v=2" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=2" />
         <meta name="theme-color" content="#3B82F6" />
         <script
           dangerouslySetInnerHTML={{
