@@ -583,7 +583,7 @@ function FeatureCard({ feature, index }: { feature: typeof features[0], index: n
           <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-3 tracking-tight">
             {feature.title}
           </h3>
-          <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-[15px]">
+          <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-[15px]">
             {feature.description}
           </p>
           
@@ -676,7 +676,7 @@ function TeamMemberCard({ member, index }: { member: typeof team[0], index: numb
           <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-4">
             {member.role}
           </p>
-          <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">
+          <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-6">
             {member.description}
           </p>
           
@@ -923,7 +923,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-10 md:mb-12 max-w-2xl mx-auto leading-relaxed"
+                className="text-lg md:text-xl text-slate-700 dark:text-slate-300 mb-10 md:mb-12 max-w-2xl mx-auto leading-relaxed"
               >
                 Experience the future of community management with AI-powered booking, real-time notifications, and enterprise-grade security.
               </motion.p>
@@ -949,7 +949,7 @@ export default function LandingPage() {
                 </Link>
               </motion.div>
 
-              {/* Stats with enhanced animation */}
+              {/* Stats with smooth animation */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -959,26 +959,20 @@ export default function LandingPage() {
                 {stats.map((stat, index) => (
                   <motion.div
                     key={stat.label}
-                    initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                    initial={{ opacity: 0, scale: 0.9, y: 15 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ 
-                      duration: 0.5, 
-                      delay: 0.5 + index * 0.1,
+                      duration: 0.4, 
+                      delay: 0.5 + index * 0.08,
                       ease: [0.21, 0.47, 0.32, 0.98]
                     }}
-                    whileHover={{ scale: 1.05, y: -4 }}
-                    className="text-center group cursor-default"
+                    whileHover={{ scale: 1.03 }}
+                    className="text-center group cursor-default p-4 rounded-2xl hover:bg-white/50 dark:hover:bg-slate-800/30 transition-colors duration-200"
                   >
-                    <motion.div 
-                      className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent mb-1 md:mb-2"
-                      animate={{ 
-                        textShadow: ['0 0 20px rgba(99, 102, 241, 0.3)', '0 0 40px rgba(139, 92, 246, 0.4)', '0 0 20px rgba(99, 102, 241, 0.3)']
-                      }}
-                      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                    >
+                    <div className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent mb-1 md:mb-2">
                       {stat.value}
-                    </motion.div>
-                    <div className="text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors duration-300">
+                    </div>
+                    <div className="text-sm md:text-base text-slate-600 dark:text-slate-300 font-medium">
                       {stat.label}
                     </div>
                   </motion.div>
@@ -1025,7 +1019,7 @@ export default function LandingPage() {
                   Modern Communities
                 </span>
               </h2>
-              <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              <p className="text-lg md:text-xl text-slate-700 dark:text-slate-300 max-w-2xl mx-auto">
                 Everything you need to manage your community efficiently, securely, and intelligently.
               </p>
             </motion.div>
@@ -1045,92 +1039,45 @@ export default function LandingPage() {
         </div>
 
         {/* CTA Section */}
-        <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
-          <div className="max-w-5xl mx-auto">
+        <section className="relative py-16 md:py-24 px-4 sm:px-6 overflow-hidden">
+          <div className="max-w-4xl mx-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 30 }}
-              whileInView={{ opacity: 1, scale: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.7, ease: [0.21, 0.47, 0.32, 0.98] }}
-              className="relative rounded-3xl overflow-hidden cta-card-glow"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] }}
+              className="relative rounded-2xl md:rounded-3xl overflow-hidden"
             >
-              {/* Animated background gradient */}
-              <motion.div 
-                className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600"
-                animate={{ 
-                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
-                }}
-                transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
-                style={{ backgroundSize: '200% 200%' }}
-              />
+              {/* Static gradient background - no animation for mobile stability */}
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700" />
               
-              {/* Animated mesh overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/5" />
+              {/* Subtle overlay for depth */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
               
-              {/* Animated decorative orbs */}
-              <motion.div 
-                className="absolute top-0 left-0 w-96 h-96 bg-white/15 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  opacity: [0.15, 0.25, 0.15]
-                }}
-                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-              />
-              <motion.div 
-                className="absolute bottom-0 right-0 w-96 h-96 bg-white/15 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"
-                animate={{ 
-                  scale: [1.2, 1, 1.2],
-                  opacity: [0.25, 0.15, 0.25]
-                }}
-                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-              />
-              <motion.div 
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-white/10 rounded-full blur-2xl"
-                animate={{ 
-                  scale: [0.8, 1.1, 0.8],
-                  rotate: [0, 180, 360]
-                }}
-                transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-              />
-              
-              {/* Grid pattern overlay */}
-              <div className="absolute inset-0 cta-grid-pattern opacity-10" />
+              {/* Static decorative elements - hidden on mobile for performance */}
+              <div className="hidden md:block absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-x-1/3 -translate-y-1/3" />
+              <div className="hidden md:block absolute bottom-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl translate-x-1/3 translate-y-1/3" />
               
               {/* Content */}
-              <div className="relative px-8 py-16 md:px-16 md:py-24 text-center">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                >
-                  <motion.h2 
-                    className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight"
-                    animate={{ 
-                      textShadow: ['0 0 30px rgba(255,255,255,0.3)', '0 0 50px rgba(255,255,255,0.5)', '0 0 30px rgba(255,255,255,0.3)']
-                    }}
-                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              <div className="relative px-6 py-12 md:px-12 md:py-16 lg:py-20 text-center">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 md:mb-6 tracking-tight leading-tight">
+                  Ready to Transform Your Community?
+                </h2>
+                <p className="text-base md:text-lg text-white/90 mb-8 md:mb-10 max-w-xl mx-auto leading-relaxed">
+                  Join hundreds of communities already using CircleIn to streamline operations and enhance resident experiences.
+                </p>
+                <Link href="/auth/signup" className="inline-block">
+                  <motion.button
+                    className="bg-white text-indigo-700 shadow-lg text-base md:text-lg px-6 md:px-8 h-12 md:h-14 rounded-xl font-semibold hover:bg-indigo-50 active:bg-indigo-100 transition-colors duration-200"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    Ready to Transform Your Community?
-                  </motion.h2>
-                  <p className="text-lg md:text-xl text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed">
-                    Join hundreds of communities already using CircleIn to streamline operations and enhance resident experiences.
-                  </p>
-                  <Link href="/auth/signup" className="inline-block">
-                    <motion.button
-                      className="relative bg-white text-indigo-600 shadow-xl shadow-black/20 text-base md:text-lg px-8 h-14 rounded-xl font-semibold overflow-hidden group"
-                      whileHover={{ scale: 1.03, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)' }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      {/* Shimmer effect */}
-                      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-100 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
-                      <span className="relative z-10 flex items-center gap-2">
-                        Start Your Free Trial
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                      </span>
-                    </motion.button>
-                  </Link>
-                </motion.div>
+                    <span className="flex items-center gap-2">
+                      Start Your Free Trial
+                      <ArrowRight className="w-5 h-5" />
+                    </span>
+                  </motion.button>
+                </Link>
               </div>
             </motion.div>
           </div>
@@ -1170,7 +1117,7 @@ export default function LandingPage() {
                   Development Team
                 </span>
               </h2>
-              <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              <p className="text-lg md:text-xl text-slate-700 dark:text-slate-300 max-w-2xl mx-auto">
                 Built by passionate developers dedicated to creating exceptional community management solutions.
               </p>
             </motion.div>
@@ -1221,7 +1168,7 @@ export default function LandingPage() {
                     <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-3 tracking-tight">
                       Get in Touch
                     </h2>
-                    <p className="text-slate-600 dark:text-slate-400 text-lg">
+                    <p className="text-slate-700 dark:text-slate-300 text-lg">
                       Interested in becoming a community admin? We'd love to hear from you!
                     </p>
                   </div>
