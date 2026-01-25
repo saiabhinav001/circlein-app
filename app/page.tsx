@@ -797,22 +797,21 @@ export default function LandingPage() {
                 </Link>
               </motion.div>
 
-              {/* Social proof stats - clean, minimal */}
+              {/* Quick facts - honest, verifiable */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.5 }}
-                className="flex flex-wrap justify-center gap-x-8 sm:gap-x-12 gap-y-4 text-sm"
+                className="flex flex-wrap justify-center gap-x-6 sm:gap-x-10 gap-y-3 text-sm"
               >
                 {[
-                  { value: '20+', label: 'Features' },
-                  { value: '99.9%', label: 'Uptime' },
-                  { value: '24/7', label: 'Support' },
-                  { value: '5min', label: 'Setup' },
-                ].map((stat, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="font-semibold text-slate-900 dark:text-white">{stat.value}</span>
-                    <span className="text-slate-500 dark:text-slate-400">{stat.label}</span>
+                  { icon: '✓', label: 'Free to start' },
+                  { icon: '✓', label: 'No credit card required' },
+                  { icon: '✓', label: 'Setup in minutes' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <span className="text-emerald-500 font-medium">{item.icon}</span>
+                    <span>{item.label}</span>
                   </div>
                 ))}
               </motion.div>
@@ -836,13 +835,13 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="text-center mb-12 md:mb-16"
             >
-              <span className="inline-block text-sm font-semibold text-indigo-600 dark:text-indigo-400 mb-3">
+              <span className="inline-block text-sm font-semibold not-italic text-indigo-600 dark:text-indigo-400 mb-3 tracking-wide uppercase">
                 Features
               </span>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold not-italic tracking-tight text-slate-900 dark:text-white mb-4">
                 Everything you need
               </h2>
-              <p className="text-lg text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
+              <p className="text-lg not-italic text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
                 Powerful tools to manage your community efficiently and intelligently.
               </p>
             </motion.div>
