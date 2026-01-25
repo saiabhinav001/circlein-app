@@ -898,13 +898,13 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="text-center mb-12 md:mb-16"
             >
-              <span className="inline-block text-sm font-semibold text-indigo-600 dark:text-indigo-400 mb-3">
+              <span className="inline-block text-sm font-semibold not-italic text-indigo-600 dark:text-indigo-400 mb-3 tracking-wide uppercase">
                 Our Team
               </span>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold not-italic tracking-tight text-slate-900 dark:text-white mb-4">
                 Meet the team
               </h2>
-              <p className="text-lg text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
+              <p className="text-lg not-italic text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
                 Passionate developers building exceptional community solutions.
               </p>
             </motion.div>
