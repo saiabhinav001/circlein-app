@@ -678,7 +678,7 @@ export default function LandingPage() {
               <motion.button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 whileTap={{ scale: 0.95 }}
-                className="md:hidden p-2.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-colors"
+                className="md:hidden relative z-50 p-2.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-colors"
                 aria-label="Toggle menu"
               >
                 <AnimatePresence mode="wait">
@@ -706,35 +706,48 @@ export default function LandingPage() {
                 </AnimatePresence>
               </motion.button>
             </div>
-
-            {/* Mobile Navigation Menu */}
-            <AnimatePresence>
-              {mobileMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="md:hidden overflow-hidden"
-                >
-                  <div className="py-4 space-y-2">
-                    <Link href="/auth/signin" className="block">
-                      <Button variant="ghost" className="w-full justify-center text-base font-medium h-12 rounded-xl">
-                        Sign In
-                      </Button>
-                    </Link>
-                    <Link href="/auth/signup" className="block">
-                      <Button className="w-full bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:from-indigo-500 hover:via-violet-500 hover:to-fuchsia-500 text-white h-12 rounded-xl">
-                        Get Started
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </Link>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </header>
+
+        {/* Mobile Navigation Overlay - Full Screen */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              
+              {/* Menu Panel */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                className="md:hidden fixed top-20 left-4 right-4 z-50 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl shadow-black/20 border border-slate-200 dark:border-slate-800 overflow-hidden"
+              >
+                <div className="p-4 space-y-3">
+                  <Link href="/auth/signin" className="block" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-center text-base font-medium h-12 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/auth/signup" className="block" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="w-full bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:from-indigo-500 hover:via-violet-500 hover:to-fuchsia-500 text-white h-12 rounded-xl font-medium">
+                      Get Started
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Hero Section */}
         <section className="relative pt-28 sm:pt-32 md:pt-40 lg:pt-48 pb-16 md:pb-24 lg:pb-32 px-4 sm:px-6">
