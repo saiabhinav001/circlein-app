@@ -103,7 +103,7 @@ const generateFaviconICO = (): Buffer => {
 export async function GET() {
   const favicon = generateFaviconICO();
   
-  return new NextResponse(favicon, {
+  return new NextResponse(new Uint8Array(favicon), {
     headers: {
       'Content-Type': 'image/x-icon',
       'Cache-Control': 'public, max-age=31536000, immutable',

@@ -466,7 +466,7 @@ export default function LandingPage() {
 
           <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-slate-400 text-sm">
-              © 2025 CircleIn. All rights reserved.
+              © 2026 CircleIn. All rights reserved.
             </p>
             <div className="flex gap-4">
               <a href="#" className="text-slate-400 hover:text-white transition-colors">

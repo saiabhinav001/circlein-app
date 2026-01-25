@@ -733,7 +733,7 @@ export default function LandingPage() {
             
             <div className="border-t border-slate-200 dark:border-slate-800 pt-6 sm:pt-8 text-center">
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
-                © 2025 CircleIn. All rights reserved. Built with ❤️ for modern communities.
+                © 2026 CircleIn. All rights reserved. Built with ❤️ for modern communities.
               </p>
             </div>
           </div>
