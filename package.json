@@ -96,6 +96,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/nodemailer": "^7.0.2",
     "dotenv": "^17.2.3",
-    "firebase": "^12.5.0"
+    "firebase": "^12.5.0",
+    "sharp": "^0.34.5"
   }
 }
