@@ -336,28 +336,14 @@ export default function LandingPage() {
     }
   }, [session, status, router]);
 
-  // Show loading state while checking authentication
+  // Show loading state while checking authentication - return null to let LoadingScreen handle it
   if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <CircleInLogo className="w-16 h-16 mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400">Loading...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   // Show loading state during redirect for authenticated users
   if (status === 'authenticated') {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <CircleInLogo className="w-16 h-16 mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400">Redirecting to dashboard...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   // Only unauthenticated users see the landing page

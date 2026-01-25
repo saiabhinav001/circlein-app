@@ -255,16 +255,7 @@ export default function AdminOnboarding() {
   const progress = (currentStep / steps.length) * 100;
 
   if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <Building2 className="w-8 h-8 text-white" />
-          </div>
-          <p className="text-slate-600 dark:text-slate-400">Loading...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
