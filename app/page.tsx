@@ -101,27 +101,154 @@ const team = [
   },
 ];
 
-// Premium Animated Background Component
+// Premium Animated Background Component with scroll-reactive effects
 function PremiumBackground() {
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 1000], [0, -100]);
+  const y2 = useTransform(scrollY, [0, 1000], [0, -150]);
+  const y3 = useTransform(scrollY, [0, 1000], [0, -200]);
+  const opacity1 = useTransform(scrollY, [0, 500], [0.2, 0.1]);
+  const opacity2 = useTransform(scrollY, [0, 500], [0.15, 0.08]);
+  
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
-      {/* Base gradient */}
+      {/* Base gradient with subtle noise */}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
       
       {/* Mesh gradient overlay */}
       <div className="absolute inset-0 hero-gradient-mesh" />
       
-      {/* Animated gradient orbs */}
-      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-blue-400/20 to-violet-400/20 dark:from-blue-600/10 dark:to-violet-600/10 blur-[100px] animate-blob" />
-      <div className="absolute top-1/3 right-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-violet-400/20 to-fuchsia-400/20 dark:from-violet-600/10 dark:to-fuchsia-600/10 blur-[100px] animate-blob animation-delay-2000" />
-      <div className="absolute bottom-0 left-1/3 w-[550px] h-[550px] rounded-full bg-gradient-to-br from-cyan-400/15 to-blue-400/15 dark:from-cyan-600/8 dark:to-blue-600/8 blur-[100px] animate-blob animation-delay-4000" />
+      {/* Animated gradient orbs with parallax */}
+      <motion.div 
+        className="absolute top-0 left-1/4 w-[700px] h-[700px] rounded-full bg-gradient-to-br from-blue-400/20 to-violet-400/20 dark:from-blue-600/10 dark:to-violet-600/10 blur-[120px] animate-blob will-change-transform" 
+        style={{ y: y1, opacity: opacity1 }}
+      />
+      <motion.div 
+        className="absolute top-1/3 right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-violet-400/18 to-fuchsia-400/18 dark:from-violet-600/8 dark:to-fuchsia-600/8 blur-[120px] animate-blob animation-delay-2000 will-change-transform" 
+        style={{ y: y2, opacity: opacity2 }}
+      />
+      <motion.div 
+        className="absolute bottom-0 left-1/3 w-[650px] h-[650px] rounded-full bg-gradient-to-br from-cyan-400/15 to-blue-400/15 dark:from-cyan-600/6 dark:to-blue-600/6 blur-[120px] animate-blob animation-delay-4000 will-change-transform" 
+        style={{ y: y3 }}
+      />
+      
+      {/* Aurora effect layer */}
+      <div className="absolute inset-0 aurora-container overflow-hidden opacity-60 dark:opacity-40">
+        <div className="aurora-beam aurora-beam-1" />
+        <div className="aurora-beam aurora-beam-2" />
+        <div className="aurora-beam aurora-beam-3" />
+      </div>
       
       {/* Subtle grid pattern */}
-      <div className="absolute inset-0 bg-grid-modern opacity-50" />
+      <div className="absolute inset-0 bg-grid-modern opacity-40" />
+      
+      {/* Floating particles */}
+      <div className="absolute inset-0 particles-container">
+        {[...Array(6)].map((_, i) => (
+          <div 
+            key={i} 
+            className={`particle particle-${i + 1}`}
+            style={{
+              left: `${15 + i * 15}%`,
+              animationDelay: `${i * 0.8}s`,
+              animationDuration: `${20 + i * 2}s`
+            }}
+          />
+        ))}
+      </div>
       
       {/* Top fade for header blend */}
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/80 to-transparent dark:from-slate-950/80 dark:to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-white/90 via-white/50 to-transparent dark:from-slate-950/90 dark:via-slate-950/50 dark:to-transparent" />
+      
+      {/* Bottom vignette */}
+      <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-white/60 to-transparent dark:from-slate-950/60 dark:to-transparent pointer-events-none" />
     </div>
+  );
+}
+
+// Premium Button Component with advanced micro-interactions
+function PremiumButton({ 
+  children, 
+  variant = 'primary',
+  size = 'default',
+  className = '',
+  ...props 
+}: { 
+  children: React.ReactNode; 
+  variant?: 'primary' | 'secondary' | 'ghost';
+  size?: 'default' | 'lg';
+  className?: string;
+  [key: string]: any;
+}) {
+  const [isPressed, setIsPressed] = useState(false);
+  const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([]);
+  
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const id = Date.now();
+    
+    setRipples(prev => [...prev, { x, y, id }]);
+    setTimeout(() => {
+      setRipples(prev => prev.filter(r => r.id !== id));
+    }, 600);
+  };
+  
+  const baseClasses = "relative overflow-hidden font-semibold transition-all duration-300 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
+  
+  const variants = {
+    primary: "bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/35 focus-visible:ring-indigo-500 btn-shine premium-btn-glow",
+    secondary: "bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-white dark:hover:bg-slate-800 focus-visible:ring-slate-400",
+    ghost: "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/80 focus-visible:ring-slate-400"
+  };
+  
+  const sizes = {
+    default: "h-10 px-5 text-sm",
+    lg: "h-14 px-8 text-base md:text-lg"
+  };
+  
+  return (
+    <motion.button
+      className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`}
+      onMouseDown={() => setIsPressed(true)}
+      onMouseUp={() => setIsPressed(false)}
+      onMouseLeave={() => setIsPressed(false)}
+      onClick={handleClick}
+      whileHover={{ 
+        scale: 1.02,
+        transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] }
+      }}
+      whileTap={{ 
+        scale: 0.98,
+        transition: { duration: 0.1 }
+      }}
+      animate={{
+        y: isPressed ? 1 : 0,
+      }}
+      {...props}
+    >
+      {/* Ripple effects */}
+      {ripples.map(ripple => (
+        <span
+          key={ripple.id}
+          className="absolute rounded-full bg-white/30 animate-ripple pointer-events-none"
+          style={{
+            left: ripple.x,
+            top: ripple.y,
+            transform: 'translate(-50%, -50%)',
+          }}
+        />
+      ))}
+      
+      {/* Gradient shimmer on hover */}
+      <span className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full hover:translate-x-full" style={{ transition: 'transform 0.6s ease' }} />
+      
+      {/* Content */}
+      <span className="relative z-10 flex items-center justify-center gap-2">
+        {children}
+      </span>
+    </motion.button>
   );
 }
 
@@ -240,7 +367,7 @@ ${formData.message}
     }
   };
 
-  const inputClasses = "h-14 bg-slate-50/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:border-indigo-500 dark:focus-visible:border-indigo-400 focus-visible:ring-2 focus-visible:ring-indigo-500/20 transition-all duration-300 text-base rounded-xl placeholder:text-slate-400";
+  const inputClasses = "h-14 bg-slate-50/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:border-indigo-500 dark:focus-visible:border-indigo-400 focus-visible:ring-2 focus-visible:ring-indigo-500/20 transition-all duration-300 text-base rounded-xl placeholder:text-slate-400 premium-input hover:border-slate-300 dark:hover:border-slate-600";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -315,28 +442,29 @@ ${formData.message}
 
       {/* Submit Button */}
       <div className="pt-2">
-        <motion.div
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
+        <motion.button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full h-14 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:from-indigo-500 hover:via-violet-500 hover:to-fuchsia-500 text-white text-base font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/35 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl btn-shine premium-btn-glow relative overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          whileHover={{ scale: 1.01, y: -1 }}
+          whileTap={{ scale: 0.99, y: 0 }}
         >
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full h-14 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:from-indigo-500 hover:via-violet-500 hover:to-fuchsia-500 text-white text-base font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl btn-shine"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center gap-3">
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Sending...</span>
-              </span>
-            ) : (
-              <span className="flex items-center gap-3">
-                <Send className="w-5 h-5" />
-                <span>Send Message</span>
-              </span>
-            )}
-          </Button>
-        </motion.div>
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-3 relative z-10">
+              <motion.div 
+                className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+              />
+              <span>Sending...</span>
+            </span>
+          ) : (
+            <span className="flex items-center justify-center gap-3 relative z-10">
+              <Send className="w-5 h-5" />
+              <span>Send Message</span>
+            </span>
+          )}
+        </motion.button>
       </div>
 
       {/* Status Messages */}
@@ -377,96 +505,204 @@ ${formData.message}
   );
 }
 
-// Premium Feature Card
+// Premium Feature Card with 3D tilt effect
 function FeatureCard({ feature, index }: { feature: typeof features[0], index: number }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [rotateX, setRotateX] = useState(0);
+  const [rotateY, setRotateY] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const rotateXValue = ((e.clientY - centerY) / (rect.height / 2)) * -5;
+    const rotateYValue = ((e.clientX - centerX) / (rect.width / 2)) * 5;
+    setRotateX(rotateXValue);
+    setRotateY(rotateYValue);
+  };
+
+  const handleMouseLeave = () => {
+    setRotateX(0);
+    setRotateY(0);
+    setIsHovered(false);
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      ref={cardRef}
+      initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ 
-        duration: 0.5, 
+        duration: 0.6, 
         delay: index * 0.1,
         ease: [0.21, 0.47, 0.32, 0.98]
       }}
-      className="group"
+      className="group perspective-1000"
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
     >
-      <div className="relative h-full p-8 rounded-2xl bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/60 dark:border-slate-700/60 transition-all duration-500 hover:bg-white/80 dark:hover:bg-slate-900/80 hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 hover:border-slate-300/80 dark:hover:border-slate-600/80 hover:-translate-y-1">
-        {/* Icon */}
-        <div className={`w-14 h-14 rounded-xl ${feature.iconBg} flex items-center justify-center mb-6 feature-icon-container group-hover:scale-110 transition-transform duration-500`}>
-          <feature.icon className={`w-7 h-7 ${feature.iconColor}`} strokeWidth={1.5} />
+      <motion.div 
+        className="relative h-full"
+        animate={{
+          rotateX: rotateX,
+          rotateY: rotateY,
+        }}
+        transition={{ duration: 0.1, ease: 'linear' }}
+        style={{ transformStyle: 'preserve-3d' }}
+      >
+        {/* Glow effect on hover */}
+        <motion.div 
+          className={`absolute -inset-0.5 rounded-2xl bg-gradient-to-r ${feature.gradient} opacity-0 blur-xl transition-opacity duration-500`}
+          animate={{ opacity: isHovered ? 0.3 : 0 }}
+        />
+        
+        <div className="relative h-full p-8 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border border-slate-200/60 dark:border-slate-700/60 transition-all duration-500 hover:bg-white/90 dark:hover:bg-slate-900/90 hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 hover:border-slate-300/80 dark:hover:border-slate-600/80 overflow-hidden">
+          {/* Subtle inner glow */}
+          <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 blur-2xl transition-opacity duration-700`} />
+          
+          {/* Icon with enhanced animation */}
+          <motion.div 
+            className={`relative w-14 h-14 rounded-xl ${feature.iconBg} flex items-center justify-center mb-6 overflow-hidden`}
+            whileHover={{ scale: 1.1, rotate: 5 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
+            <feature.icon className={`w-7 h-7 ${feature.iconColor} relative z-10`} strokeWidth={1.5} />
+            {/* Icon glow */}
+            <motion.div 
+              className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0`}
+              animate={{ opacity: isHovered ? 0.2 : 0 }}
+              transition={{ duration: 0.3 }}
+            />
+          </motion.div>
+          
+          {/* Content */}
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-3 tracking-tight">
+            {feature.title}
+          </h3>
+          <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-[15px]">
+            {feature.description}
+          </p>
+          
+          {/* Animated bottom accent line */}
+          <motion.div 
+            className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${feature.gradient}`}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: isHovered ? 1 : 0 }}
+            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+            style={{ transformOrigin: 'left' }}
+          />
         </div>
-        
-        {/* Content */}
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-3 tracking-tight">
-          {feature.title}
-        </h3>
-        <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-[15px]">
-          {feature.description}
-        </p>
-        
-        {/* Hover accent line */}
-        <div className={`absolute bottom-0 left-8 right-8 h-0.5 bg-gradient-to-r ${feature.gradient} rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
 
-// Team Member Card
+// Team Member Card with enhanced interactions
 function TeamMemberCard({ member, index }: { member: typeof team[0], index: number }) {
+  const [isHovered, setIsHovered] = useState(false);
+  
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ 
-        duration: 0.5, 
+        duration: 0.6, 
         delay: index * 0.15,
         ease: [0.21, 0.47, 0.32, 0.98]
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="group relative h-full p-8 rounded-2xl bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/60 dark:border-slate-700/60 transition-all duration-500 hover:bg-white/80 dark:hover:bg-slate-900/80 hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 hover:-translate-y-1 text-center">
-        {/* Avatar */}
-        <div className="w-24 h-24 mx-auto mb-6 relative">
-          <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:shadow-xl group-hover:shadow-indigo-500/30 transition-all duration-500">
-            <span className="text-2xl font-bold text-white">
-              {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-            </span>
-          </div>
-          {/* Ring decoration */}
-          <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20 scale-110 group-hover:scale-125 group-hover:border-indigo-500/10 transition-all duration-500" />
-        </div>
+      <motion.div 
+        className="group relative h-full"
+        whileHover={{ y: -8 }}
+        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+      >
+        {/* Glow effect */}
+        <motion.div 
+          className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 opacity-0 blur-xl"
+          animate={{ opacity: isHovered ? 0.25 : 0 }}
+          transition={{ duration: 0.4 }}
+        />
         
-        {/* Content */}
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1 tracking-tight">
-          {member.name}
-        </h3>
-        <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-4">
-          {member.role}
-        </p>
-        <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">
-          {member.description}
-        </p>
-        
-        {/* Social Links */}
-        <div className="flex justify-center gap-4">
-          {[
-            { icon: Github, href: member.social.github },
-            { icon: Linkedin, href: member.social.linkedin },
-            { icon: Twitter, href: member.social.twitter },
-          ].map((social, i) => (
-            <motion.a
-              key={i}
-              href={social.href}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-300"
+        <div className="relative h-full p-8 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border border-slate-200/60 dark:border-slate-700/60 transition-all duration-500 hover:bg-white/90 dark:hover:bg-slate-900/90 hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 text-center overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-b from-indigo-500/5 to-transparent rounded-full blur-2xl" />
+          
+          {/* Avatar with animated ring */}
+          <div className="w-24 h-24 mx-auto mb-6 relative">
+            <motion.div 
+              className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-indigo-500/25"
+              animate={{ 
+                boxShadow: isHovered 
+                  ? '0 20px 40px -10px rgba(99, 102, 241, 0.4)' 
+                  : '0 10px 25px -5px rgba(99, 102, 241, 0.25)'
+              }}
+              transition={{ duration: 0.3 }}
             >
-              <social.icon className="w-4 h-4" />
-            </motion.a>
-          ))}
+              <span className="text-2xl font-bold text-white">
+                {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              </span>
+            </motion.div>
+            
+            {/* Animated ring */}
+            <motion.div 
+              className="absolute inset-0 rounded-full border-2 border-indigo-500/30"
+              animate={{ 
+                scale: isHovered ? 1.2 : 1.1,
+                opacity: isHovered ? 0 : 0.5,
+              }}
+              transition={{ duration: 0.4 }}
+            />
+            <motion.div 
+              className="absolute inset-0 rounded-full border border-violet-500/20"
+              animate={{ 
+                scale: isHovered ? 1.35 : 1.2,
+                opacity: isHovered ? 0 : 0.3,
+              }}
+              transition={{ duration: 0.4, delay: 0.05 }}
+            />
+          </div>
+          
+          {/* Content */}
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1 tracking-tight">
+            {member.name}
+          </h3>
+          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-4">
+            {member.role}
+          </p>
+          <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">
+            {member.description}
+          </p>
+          
+          {/* Social Links with stagger animation */}
+          <div className="flex justify-center gap-3">
+            {[
+              { icon: Github, href: member.social.github },
+              { icon: Linkedin, href: member.social.linkedin },
+              { icon: Twitter, href: member.social.twitter },
+            ].map((social, i) => (
+              <motion.a
+                key={i}
+                href={social.href}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.05 }}
+                whileHover={{ scale: 1.15, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-gradient-to-br hover:from-indigo-500 hover:to-violet-500 hover:text-white transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-indigo-500/25"
+              >
+                <social.icon className="w-4 h-4" />
+              </motion.a>
+            ))}
+          </div>
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -699,30 +935,21 @@ export default function LandingPage() {
                 transition={{ duration: 0.5, delay: 0.3 }}
                 className="flex flex-col sm:flex-row gap-4 justify-center mb-16 md:mb-20"
               >
-                <Link href="/auth/signup">
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:from-indigo-500 hover:via-violet-500 hover:to-fuchsia-500 text-white shadow-xl shadow-indigo-500/25 hover:shadow-2xl hover:shadow-indigo-500/30 text-base md:text-lg px-8 h-14 rounded-xl font-semibold btn-shine">
-                      Start Free Trial
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                  </motion.div>
+                <Link href="/auth/signup" className="w-full sm:w-auto">
+                  <PremiumButton variant="primary" size="lg" className="w-full sm:w-auto">
+                    Start Free Trial
+                    <ArrowRight className="w-5 h-5" />
+                  </PremiumButton>
                 </Link>
-                <Link href="/auth/signin">
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button size="lg" variant="outline" className="w-full sm:w-auto text-base md:text-lg px-8 h-14 rounded-xl font-semibold border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm hover:bg-white/80 dark:hover:bg-slate-900/80 transition-all duration-300">
-                      View Demo
-                    </Button>
-                  </motion.div>
+                <Link href="/auth/signin" className="w-full sm:w-auto">
+                  <PremiumButton variant="secondary" size="lg" className="w-full sm:w-auto">
+                    View Demo
+                    <ChevronRight className="w-5 h-5" />
+                  </PremiumButton>
                 </Link>
               </motion.div>
 
-              {/* Stats */}
+              {/* Stats with enhanced animation */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -732,15 +959,26 @@ export default function LandingPage() {
                 {stats.map((stat, index) => (
                   <motion.div
                     key={stat.label}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
-                    className="text-center group"
+                    initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ 
+                      duration: 0.5, 
+                      delay: 0.5 + index * 0.1,
+                      ease: [0.21, 0.47, 0.32, 0.98]
+                    }}
+                    whileHover={{ scale: 1.05, y: -4 }}
+                    className="text-center group cursor-default"
                   >
-                    <div className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent stat-glow mb-1 md:mb-2 group-hover:scale-110 transition-transform duration-300">
+                    <motion.div 
+                      className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent mb-1 md:mb-2"
+                      animate={{ 
+                        textShadow: ['0 0 20px rgba(99, 102, 241, 0.3)', '0 0 40px rgba(139, 92, 246, 0.4)', '0 0 20px rgba(99, 102, 241, 0.3)']
+                      }}
+                      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    >
                       {stat.value}
-                    </div>
-                    <div className="text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium">
+                    </motion.div>
+                    <div className="text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors duration-300">
                       {stat.label}
                     </div>
                   </motion.div>
@@ -752,6 +990,11 @@ export default function LandingPage() {
           {/* Decorative gradient blur at bottom */}
           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-50 dark:from-slate-950 to-transparent pointer-events-none" />
         </section>
+
+        {/* Section Divider */}
+        <div className="relative h-px max-w-4xl mx-auto">
+          <div className="section-divider w-full" />
+        </div>
 
         {/* Features Section */}
         <section className="relative py-20 md:py-28 lg:py-36 px-4 sm:px-6">
@@ -767,6 +1010,15 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16 md:mb-20"
             >
+              <motion.span 
+                className="inline-block text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-4"
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4 }}
+              >
+                Features
+              </motion.span>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-5">
                 Built for{' '}
                 <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
@@ -787,57 +1039,107 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Section Divider */}
+        <div className="relative h-px max-w-4xl mx-auto">
+          <div className="section-divider w-full" />
+        </div>
+
         {/* CTA Section */}
         <section className="relative py-20 md:py-28 px-4 sm:px-6 overflow-hidden">
           <div className="max-w-5xl mx-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, scale: 0.95, y: 30 }}
+              whileInView={{ opacity: 1, scale: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6 }}
-              className="relative rounded-3xl overflow-hidden"
+              transition={{ duration: 0.7, ease: [0.21, 0.47, 0.32, 0.98] }}
+              className="relative rounded-3xl overflow-hidden cta-card-glow"
             >
-              {/* Background gradient */}
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600" />
+              {/* Animated background gradient */}
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600"
+                animate={{ 
+                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
+                }}
+                transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+                style={{ backgroundSize: '200% 200%' }}
+              />
               
-              {/* Animated gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              {/* Animated mesh overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/5" />
               
-              {/* Decorative elements */}
-              <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-              <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+              {/* Animated decorative orbs */}
+              <motion.div 
+                className="absolute top-0 left-0 w-96 h-96 bg-white/15 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  opacity: [0.15, 0.25, 0.15]
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <motion.div 
+                className="absolute bottom-0 right-0 w-96 h-96 bg-white/15 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"
+                animate={{ 
+                  scale: [1.2, 1, 1.2],
+                  opacity: [0.25, 0.15, 0.25]
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <motion.div 
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-white/10 rounded-full blur-2xl"
+                animate={{ 
+                  scale: [0.8, 1.1, 0.8],
+                  rotate: [0, 180, 360]
+                }}
+                transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+              />
+              
+              {/* Grid pattern overlay */}
+              <div className="absolute inset-0 cta-grid-pattern opacity-10" />
               
               {/* Content */}
-              <div className="relative px-8 py-16 md:px-16 md:py-20 text-center">
+              <div className="relative px-8 py-16 md:px-16 md:py-24 text-center">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-5 tracking-tight">
+                  <motion.h2 
+                    className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight"
+                    animate={{ 
+                      textShadow: ['0 0 30px rgba(255,255,255,0.3)', '0 0 50px rgba(255,255,255,0.5)', '0 0 30px rgba(255,255,255,0.3)']
+                    }}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  >
                     Ready to Transform Your Community?
-                  </h2>
-                  <p className="text-lg md:text-xl text-white/85 mb-10 max-w-2xl mx-auto">
+                  </motion.h2>
+                  <p className="text-lg md:text-xl text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed">
                     Join hundreds of communities already using CircleIn to streamline operations and enhance resident experiences.
                   </p>
-                  <Link href="/auth/signup">
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
+                  <Link href="/auth/signup" className="inline-block">
+                    <motion.button
+                      className="relative bg-white text-indigo-600 shadow-xl shadow-black/20 text-base md:text-lg px-8 h-14 rounded-xl font-semibold overflow-hidden group"
+                      whileHover={{ scale: 1.03, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)' }}
                       whileTap={{ scale: 0.98 }}
-                      className="inline-block"
                     >
-                      <Button size="lg" className="bg-white text-indigo-600 hover:bg-slate-100 shadow-xl shadow-black/20 hover:shadow-2xl text-base md:text-lg px-8 h-14 rounded-xl font-semibold transition-all duration-300">
+                      {/* Shimmer effect */}
+                      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-100 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer" />
+                      <span className="relative z-10 flex items-center gap-2">
                         Start Your Free Trial
-                        <ArrowRight className="w-5 h-5 ml-2" />
-                      </Button>
-                    </motion.div>
+                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                      </span>
+                    </motion.button>
                   </Link>
                 </motion.div>
               </div>
             </motion.div>
           </div>
         </section>
+
+        {/* Section Divider */}
+        <div className="relative h-px max-w-4xl mx-auto">
+          <div className="section-divider w-full" />
+        </div>
 
         {/* Team Section */}
         <section className="relative py-20 md:py-28 lg:py-36 px-4 sm:px-6">
@@ -853,6 +1155,15 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16 md:mb-20"
             >
+              <motion.span 
+                className="inline-block text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-4"
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4 }}
+              >
+                Our Team
+              </motion.span>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-5">
                 Meet the{' '}
                 <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
@@ -873,6 +1184,11 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Section Divider */}
+        <div className="relative h-px max-w-4xl mx-auto">
+          <div className="section-divider w-full" />
+        </div>
+
         {/* Contact Section */}
         <section className="relative py-20 md:py-28 px-4 sm:px-6">
           <div className="max-w-2xl mx-auto">
@@ -886,9 +1202,22 @@ export default function LandingPage() {
                 <div className="p-8 md:p-12">
                   {/* Header */}
                   <div className="text-center mb-10">
-                    <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                    <motion.div 
+                      className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-indigo-500/25"
+                      whileHover={{ scale: 1.05, rotate: 5 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    >
                       <Mail className="w-8 h-8 text-white" />
-                    </div>
+                    </motion.div>
+                    <motion.span 
+                      className="inline-block text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3"
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      Contact Us
+                    </motion.span>
                     <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-3 tracking-tight">
                       Get in Touch
                     </h2>
@@ -1000,14 +1329,19 @@ export default function LandingPage() {
                 <p className="text-sm text-slate-500 dark:text-slate-400 text-center md:text-left">
                   © 2026 CircleIn. All rights reserved. Built with ❤️ for modern communities.
                 </p>
-                <div className="flex items-center gap-4">
-                  {[Github, Linkedin, Twitter].map((Icon, i) => (
+                <div className="flex items-center gap-3">
+                  {[
+                    { Icon: Github, label: 'GitHub' },
+                    { Icon: Linkedin, label: 'LinkedIn' },
+                    { Icon: Twitter, label: 'Twitter' }
+                  ].map(({ Icon, label }, i) => (
                     <motion.a
                       key={i}
                       href="#"
-                      whileHover={{ scale: 1.1 }}
+                      aria-label={label}
+                      whileHover={{ scale: 1.1, y: -2 }}
                       whileTap={{ scale: 0.95 }}
-                      className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-300"
+                      className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-gradient-to-br hover:from-indigo-500 hover:to-violet-500 hover:text-white transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-indigo-500/25"
                     >
                       <Icon className="w-4 h-4" />
                     </motion.a>
