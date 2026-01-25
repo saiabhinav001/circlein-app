@@ -1,21 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { 
-  Calendar, Users, Bell, 
-  Brain, Lock, Zap, Mail, Github, Linkedin, Twitter, Send, User, Building2, Menu, X,
-  ArrowRight, Sparkles, MessageSquare, Check
+  Calendar, Users, Shield, Clock, Sparkles, Bell, 
+  Brain, Lock, Zap, Mail, Github, Linkedin, Twitter, Send, User, Building2, MessageSquare, Menu, X,
+  ArrowRight, Check, ChevronRight, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import Script from 'next/script';
 import { CircleInLogo } from '@/components/ui';
+import { FadeIn, StaggerContainer, StaggerItem, ScaleOnHover } from '@/components/ui/motion-wrapper';
+import Script from 'next/script';
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
@@ -92,44 +94,75 @@ const team = [
   },
 ];
 
-// Simple, performant background
+// Premium Animated Background Component with section-aware living system
 function PremiumBackground() {
+  const { scrollYProgress } = useScroll();
+  
+  // Smooth parallax transforms
+  const y1 = useTransform(scrollYProgress, [0, 1], ['0%', '-15%']);
+  const y2 = useTransform(scrollYProgress, [0, 1], ['0%', '-25%']);
+  const y3 = useTransform(scrollYProgress, [0, 1], ['0%', '-10%']);
+  
+  // Opacity based on scroll for depth
+  const opacity1 = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.6, 0.4, 0.3, 0.2]);
+  const opacity2 = useTransform(scrollYProgress, [0, 0.5, 1], [0.5, 0.3, 0.15]);
+  
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-      {/* Base gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
+    <div className="fixed inset-0 -z-10 overflow-hidden">
+      {/* Base gradient - sophisticated neutral */}
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-100/50 dark:from-[#0a0a0f] dark:via-[#0d0d14] dark:to-[#0a0a0f]" />
       
-      {/* Primary gradient orb */}
-      <div 
-        className="absolute -top-[30%] -left-[10%] w-[60vw] max-w-[600px] aspect-square rounded-full opacity-60 dark:opacity-30"
+      {/* Primary gradient orb - hero area */}
+      <motion.div 
+        className="absolute -top-[20%] left-[10%] w-[min(800px,100vw)] h-[800px] rounded-full will-change-transform"
         style={{ 
-          background: 'radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%)',
-          filter: 'blur(60px)',
-        }}
-      />
-      
-      {/* Secondary gradient orb */}
-      <div 
-        className="absolute top-[40%] -right-[10%] w-[50vw] max-w-[500px] aspect-square rounded-full opacity-50 dark:opacity-20"
-        style={{ 
-          background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)',
+          y: y1, 
+          opacity: opacity1,
+          background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.08) 40%, transparent 70%)',
           filter: 'blur(80px)',
         }}
       />
       
-      {/* Dot grid */}
-      <div 
-        className="absolute inset-0 opacity-30 dark:opacity-10"
-        style={{
-          backgroundImage: 'radial-gradient(circle, rgba(100,100,100,0.3) 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
+      {/* Secondary gradient orb - mid section */}
+      <motion.div 
+        className="absolute top-[30%] -right-[10%] w-[min(700px,90vw)] h-[700px] rounded-full will-change-transform"
+        style={{ 
+          y: y2, 
+          opacity: opacity2,
+          background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, rgba(236,72,153,0.06) 50%, transparent 70%)',
+          filter: 'blur(100px)',
         }}
       />
+      
+      {/* Tertiary gradient orb - bottom section */}
+      <motion.div 
+        className="absolute bottom-[10%] left-[20%] w-[min(600px,80vw)] h-[600px] rounded-full will-change-transform"
+        style={{ 
+          y: y3,
+          background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(99,102,241,0.05) 50%, transparent 70%)',
+          filter: 'blur(90px)',
+        }}
+      />
+      
+      {/* Subtle dot grid pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.4] dark:opacity-[0.15]"
+        style={{
+          backgroundImage: 'radial-gradient(rgba(99,102,241,0.5) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      />
+      
+      {/* Top vignette for header blend */}
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white dark:from-[#0a0a0f] to-transparent" />
+      
+      {/* Bottom vignette */}
+      <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-slate-50 dark:from-[#0a0a0f] to-transparent" />
     </div>
   );
 }
 
-// Simple, performant button
+// Premium Button Component with physical, tactile micro-interactions
 function PremiumButton({ 
   children, 
   variant = 'primary',
@@ -143,26 +176,53 @@ function PremiumButton({
   className?: string;
   [key: string]: any;
 }) {
-  const baseClasses = "font-semibold rounded-xl transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:scale-[0.98]";
+  const [isHovered, setIsHovered] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
+  
+  const baseClasses = "relative overflow-hidden font-semibold rounded-xl transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950 select-none";
   
   const variants = {
-    primary: "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 shadow-sm",
-    secondary: "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700",
-    ghost: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+    primary: "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 focus-visible:ring-slate-900 dark:focus-visible:ring-white shadow-lg shadow-slate-900/10 dark:shadow-white/10",
+    secondary: "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 focus-visible:ring-slate-400 shadow-sm",
+    ghost: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-slate-400"
   };
   
   const sizes = {
-    default: "h-11 px-5 text-sm",
-    lg: "h-12 px-6 text-base"
+    default: "h-11 px-5 text-sm gap-2",
+    lg: "h-12 sm:h-14 px-6 sm:px-8 text-base gap-2.5"
   };
   
   return (
-    <button
-      className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className} flex items-center justify-center gap-2`}
+    <motion.button
+      className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => { setIsHovered(false); setIsPressed(false); }}
+      onMouseDown={() => setIsPressed(true)}
+      onMouseUp={() => setIsPressed(false)}
+      animate={{
+        scale: isPressed ? 0.97 : isHovered ? 1.02 : 1,
+        y: isPressed ? 1 : 0,
+      }}
+      transition={{ 
+        type: 'spring', 
+        stiffness: 500, 
+        damping: 30,
+        mass: 0.5
+      }}
       {...props}
     >
-      {children}
-    </button>
+      {/* Shine effect on hover */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full"
+        animate={{ x: isHovered ? '200%' : '-100%' }}
+        transition={{ duration: 0.5, ease: 'easeInOut' }}
+      />
+      
+      {/* Content */}
+      <span className="relative z-10 flex items-center justify-center gap-2">
+        {children}
+      </span>
+    </motion.button>
   );
 }
 
@@ -391,54 +451,71 @@ function FeatureCard({ feature, index }: { feature: typeof features[0], index: n
   );
 }
 
-// Team Member Card - simplified
+// Team Member Card with clean, professional interactions
 function TeamMemberCard({ member, index }: { member: typeof team[0], index: number }) {
+  const [isHovered, setIsHovered] = useState(false);
+  
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.4, delay: index * 0.08 }}
-      className="group"
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ 
+        duration: 0.5, 
+        delay: index * 0.1,
+        ease: [0.25, 0.1, 0.25, 1]
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="h-full p-6 rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 transition-all duration-200 hover:shadow-lg hover:shadow-slate-900/5 dark:hover:shadow-black/20 hover:-translate-y-1 text-center">
-        
-        {/* Avatar */}
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-          <span className="text-lg font-bold text-white">
-            {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-          </span>
+      <motion.div 
+        className="group relative h-full"
+        animate={{ y: isHovered ? -4 : 0 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      >
+        <div className="relative h-full p-6 sm:p-8 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 text-center">
+          
+          {/* Avatar */}
+          <div className="w-20 h-20 mx-auto mb-5 relative">
+            <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
+              <span className="text-xl font-bold text-white">
+                {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              </span>
+            </div>
+          </div>
+          
+          {/* Content */}
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1 tracking-tight">
+            {member.name}
+          </h3>
+          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-3">
+            {member.role}
+          </p>
+          <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-5">
+            {member.description}
+          </p>
+          
+          {/* Social Links */}
+          <div className="flex justify-center gap-2">
+            {[
+              { icon: Github, href: member.social.github, label: 'GitHub' },
+              { icon: Linkedin, href: member.social.linkedin, label: 'LinkedIn' },
+              { icon: Twitter, href: member.social.twitter, label: 'Twitter' },
+            ].map((social, i) => (
+              <motion.a
+                key={i}
+                href={social.href}
+                aria-label={social.label}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200"
+              >
+                <social.icon className="w-4 h-4" />
+              </motion.a>
+            ))}
+          </div>
         </div>
-        
-        {/* Content */}
-        <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1">
-          {member.name}
-        </h3>
-        <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-2">
-          {member.role}
-        </p>
-        <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-4">
-          {member.description}
-        </p>
-        
-        {/* Social Links */}
-        <div className="flex justify-center gap-2">
-          {[
-            { icon: Github, href: member.social.github, label: 'GitHub' },
-            { icon: Linkedin, href: member.social.linkedin, label: 'LinkedIn' },
-            { icon: Twitter, href: member.social.twitter, label: 'Twitter' },
-          ].map((social, i) => (
-            <a
-              key={i}
-              href={social.href}
-              aria-label={social.label}
-              className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-700 dark:hover:text-white transition-colors"
-            >
-              <social.icon className="w-4 h-4" />
-            </a>
-          ))}
-        </div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -447,20 +524,14 @@ export default function LandingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const { scrollY } = useScroll();
+  const headerOpacity = useTransform(scrollY, [0, 100], [0, 1]);
 
   useEffect(() => {
     if (status === 'authenticated' && session) {
       router.replace('/dashboard');
     }
   }, [session, status, router]);
-
-  // Simple scroll detection for header
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // Show loading state while checking authentication - return null to let LoadingScreen handle it
   if (status === 'loading') {
@@ -476,23 +547,38 @@ export default function LandingPage() {
 
   return (
     <>
-      {/* Structured Data for SEO - honest, no fake ratings */}
+      {/* Structured Data for SEO */}
       <Script
         id="structured-data"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             '@context': 'https://schema.org',
-            '@type': 'SoftwareApplication',
-            name: 'CircleIn',
-            applicationCategory: 'BusinessApplication',
-            operatingSystem: 'Web',
-            offers: {
-              '@type': 'Offer',
-              price: '0',
-              priceCurrency: 'USD',
-            },
-            description: 'Community management platform with smart booking and real-time notifications.',
+            '@graph': [
+              {
+                '@type': 'SoftwareApplication',
+                name: 'CircleIn',
+                applicationCategory: 'BusinessApplication',
+                operatingSystem: 'Web',
+                offers: {
+                  '@type': 'Offer',
+                  price: '0',
+                  priceCurrency: 'USD',
+                },
+                description: 'Modern community management platform with smart booking and AI assistance.',
+              },
+              {
+                '@type': 'Organization',
+                name: 'CircleIn',
+                url: 'https://circlein-app.vercel.app',
+                logo: 'https://circlein-app.vercel.app/logo.png',
+                contactPoint: {
+                  '@type': 'ContactPoint',
+                  email: 'abhinav.sadineni@gmail.com',
+                  contactType: 'Customer Service',
+                },
+              },
+            ],
           }),
         }}
       />
@@ -502,52 +588,87 @@ export default function LandingPage() {
         <PremiumBackground />
 
         {/* Header */}
-        <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${scrolled ? 'bg-white/80 dark:bg-slate-950/80 backdrop-blur-lg border-b border-slate-200/50 dark:border-slate-800/50' : ''}`}>
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="flex items-center justify-between h-16">
+        <header className="fixed top-0 left-0 right-0 z-50">
+          {/* Backdrop blur layer */}
+          <motion.div 
+            className="absolute inset-0 bg-white/70 dark:bg-slate-950/70 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50"
+            style={{ opacity: headerOpacity }}
+          />
+          
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16 md:h-20">
               {/* Logo */}
-              <Link href="/" className="flex items-center gap-2">
-                <CircleInLogo className="w-8 h-8" />
-                <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+              <Link href="/" className="flex items-center gap-3 group">
+                <motion.div
+                  whileHover={{ rotate: 10 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
+                  <CircleInLogo className="w-9 h-9 md:w-10 md:h-10" />
+                </motion.div>
+                <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
                   CircleIn
                 </span>
               </Link>
               
               {/* Desktop Navigation */}
-              <nav className="hidden md:flex items-center gap-3">
+              <nav className="hidden md:flex items-center gap-2">
                 <Link href="/auth/signin">
                   <Button 
                     variant="ghost" 
-                    className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-medium px-4 h-10 rounded-lg"
+                    className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/80 font-medium px-5 h-10 rounded-xl transition-all duration-300"
                   >
                     Sign In
                   </Button>
                 </Link>
                 <Link href="/auth/signup">
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 h-10 rounded-lg">
-                    Get Started
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button className="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:from-indigo-500 hover:via-violet-500 hover:to-fuchsia-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 font-medium px-6 h-10 rounded-xl transition-all duration-300 btn-shine">
+                      Get Started
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </motion.div>
                 </Link>
               </nav>
 
               {/* Mobile Menu Button */}
-              <button
+              <motion.button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                whileTap={{ scale: 0.95 }}
+                className="md:hidden relative z-50 p-2.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-colors"
                 aria-label="Toggle menu"
               >
-                {mobileMenuOpen ? (
-                  <X className="w-5 h-5 text-slate-700 dark:text-slate-200" />
-                ) : (
-                  <Menu className="w-5 h-5 text-slate-700 dark:text-slate-200" />
-                )}
-              </button>
+                <AnimatePresence mode="wait">
+                  {mobileMenuOpen ? (
+                    <motion.div
+                      key="close"
+                      initial={{ rotate: -90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: 90, opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <X className="w-5 h-5 text-slate-700 dark:text-slate-200" />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="menu"
+                      initial={{ rotate: 90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: -90, opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <Menu className="w-5 h-5 text-slate-700 dark:text-slate-200" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.button>
             </div>
           </div>
         </header>
 
-        {/* Mobile Navigation Overlay */}
+        {/* Mobile Navigation Overlay - Full Screen */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <>
@@ -734,15 +855,25 @@ export default function LandingPage() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Link href="/auth/signup">
-                    <button className="w-full sm:w-auto bg-white text-indigo-700 px-6 h-12 rounded-xl font-semibold hover:bg-indigo-50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
-                      Get started free
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
+                    <motion.button
+                      className="w-full sm:w-auto bg-white text-indigo-700 px-6 h-12 rounded-xl font-semibold hover:bg-indigo-50 transition-colors duration-200"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        Get started free
+                        <ArrowRight className="w-4 h-4" />
+                      </span>
+                    </motion.button>
                   </Link>
                   <Link href="/auth/signin">
-                    <button className="w-full sm:w-auto text-white border border-white/30 px-6 h-12 rounded-xl font-semibold hover:bg-white/10 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                    <motion.button
+                      className="w-full sm:w-auto text-white border border-white/30 px-6 h-12 rounded-xl font-semibold hover:bg-white/10 transition-colors duration-200"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
                       Learn more
-                    </button>
+                    </motion.button>
                   </Link>
                 </div>
               </div>
