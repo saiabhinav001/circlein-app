@@ -419,17 +419,15 @@ ${formData.message}
 // Premium Feature Card with progressive disclosure and magnetic interaction
 function FeatureCard({ feature, index }: { feature: typeof features[0], index: number }) {
   const [isHovered, setIsHovered] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
 
   return (
     <motion.div
-      ref={cardRef}
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
+      viewport={{ once: true, margin: "-50px" }}
       transition={{ 
-        duration: 0.5, 
-        delay: index * 0.08,
+        duration: 0.4, 
+        delay: index * 0.06,
         ease: [0.25, 0.1, 0.25, 1]
       }}
       onMouseEnter={() => setIsHovered(true)}
@@ -438,49 +436,24 @@ function FeatureCard({ feature, index }: { feature: typeof features[0], index: n
     >
       <motion.div 
         className="relative h-full"
-        animate={{ y: isHovered ? -4 : 0 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+        animate={{ y: isHovered ? -2 : 0 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
       >
         {/* Card */}
-        <div className="relative h-full p-6 sm:p-8 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50">
+        <div className="relative h-full p-6 rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 transition-all duration-200 hover:border-indigo-200 dark:hover:border-indigo-900/50 hover:shadow-lg hover:shadow-indigo-500/5 dark:hover:shadow-indigo-500/5">
           
           {/* Icon */}
-          <motion.div 
-            className={`relative w-12 h-12 rounded-xl ${feature.iconBg} flex items-center justify-center mb-5`}
-            animate={{ 
-              scale: isHovered ? 1.05 : 1,
-            }}
-            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-          >
-            <feature.icon className={`w-6 h-6 ${feature.iconColor}`} strokeWidth={1.75} />
-          </motion.div>
+          <div className={`w-11 h-11 rounded-xl ${feature.iconBg} flex items-center justify-center mb-4`}>
+            <feature.icon className={`w-5 h-5 ${feature.iconColor}`} strokeWidth={2} />
+          </div>
           
           {/* Content */}
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2 tracking-tight">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-2">
             {feature.title}
           </h3>
-          <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-[15px]">
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
             {feature.description}
           </p>
-          
-          {/* Learn more indicator */}
-          <motion.div 
-            className="mt-5 flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400"
-            animate={{ x: isHovered ? 4 : 0, color: isHovered ? '#6366f1' : undefined }}
-            transition={{ duration: 0.2 }}
-          >
-            <span>Learn more</span>
-            <ArrowRight className="w-4 h-4" />
-          </motion.div>
-          
-          {/* Bottom accent line */}
-          <motion.div 
-            className={`absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r ${feature.gradient} rounded-b-2xl`}
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: isHovered ? 1 : 0 }}
-            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-            style={{ transformOrigin: 'left' }}
-          />
         </div>
       </motion.div>
     </motion.div>
