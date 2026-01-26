@@ -32,12 +32,19 @@ export async function GET() {
 
     // Get ALL access codes
     const codesSnapshot = await getDocs(collection(db, 'accessCodes'));
-    const accessCodes = codesSnapshot.docs.map(doc => ({
-      docId: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || doc.data().createdAt,
-      usedAt: doc.data().usedAt?.toDate?.()?.toISOString() || doc.data().usedAt,
-    }));
+    const accessCodes = codesSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        docId: doc.id,
+        code: data.code,
+        communityId: data.communityId,
+        isUsed: data.isUsed,
+        usedBy: data.usedBy,
+        invalidated: data.invalidated,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+        usedAt: data.usedAt?.toDate?.()?.toISOString() || data.usedAt,
+      };
+    });
 
     // Get ALL users
     const usersSnapshot = await getDocs(collection(db, 'users'));
