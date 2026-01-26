@@ -51,58 +51,12 @@ export const authOptions: NextAuthOptions = {
             const isDeleted = userData.deleted === true || userData.status === 'deleted';
             
             if (isDeleted) {
-              console.log('⚠️ User document exists but is marked as DELETED:', credentials?.email);
-              
-              // If they have an access code, they can re-register (account restoration)
-              if (credentials?.accessCode) {
-                console.log('🔄 Deleted user attempting to re-register with access code');
-                
-                // Validate access code
-                const accessCodeDoc = await getDoc(doc(db, 'accessCodes', credentials.accessCode));
-                
-                if (!accessCodeDoc.exists()) {
-                  console.log('❌ Access code not found');
-                  throw new Error('Invalid or expired access code');
-                }
-
-                const accessCodeData = accessCodeDoc.data();
-                
-                if (accessCodeData.isUsed) {
-                  console.log('❌ Access code already used');
-                  throw new Error('This access code has already been used');
-                }
-
-                if (!credentials?.password) {
-                  console.log('❌ Password required for re-registration');
-                  throw new Error('Password is required for signup');
-                }
-
-                // Mark access code as used
-                console.log('✅ Marking access code as used for re-registration');
-                await setDoc(doc(db, 'accessCodes', credentials.accessCode), {
-                  isUsed: true,
-                  usedBy: credentials.email,
-                  usedAt: serverTimestamp(),
-                  reRegistration: true
-                }, { merge: true });
-
-                // Return as new user (will trigger account recreation in signIn callback)
-                return {
-                  id: credentials?.email || '',
-                  email: credentials?.email || '',
-                  name: credentials?.name || '',
-                  communityId: accessCodeData.communityId,
-                  role: 'resident',
-                  password: credentials?.password,
-                  accessCode: credentials?.accessCode,
-                  isExistingUser: false, // Treat as new signup
-                  isReRegistration: true, // Flag for re-registration
-                };
-              }
-              
-              // No access code - block deleted user from signing in
-              console.log('❌ Deleted user trying to sign in without access code');
-              throw new Error('This account has been deleted. Contact your administrator for access.');
+              console.log('❌ BLOCKED: User account is DELETED:', credentials?.email);
+              // Deleted users CANNOT sign in or re-register with same/any access code
+              // They must contact admin who can either:
+              // 1. Restore their account via restore-user API
+              // 2. Generate a completely NEW access code for a NEW email
+              throw new Error('This account has been deleted. Please contact your administrator to restore access.');
             }
             
             // Check if user is trying to add password via access code

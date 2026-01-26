@@ -68,8 +68,9 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ User marked as deleted:', email);
 
-    // IMPORTANT: Release the access code so it can be reused
-    // Find and reset any access code used by this user
+    // IMPORTANT: DO NOT release the access code - INVALIDATE it instead
+    // This prevents the deleted user from re-registering with the same code
+    // Admin should generate a NEW code if they want to add someone else
     const { collection, query, where, getDocs } = await import('firebase/firestore');
     const accessCodesQuery = query(
       collection(db, 'accessCodes'),
@@ -80,17 +81,17 @@ export async function POST(request: NextRequest) {
     const accessCodeSnapshot = await getDocs(accessCodesQuery);
     
     if (!accessCodeSnapshot.empty) {
-      // Reset the access code to unused state
+      // Mark access code as INVALIDATED (not released)
+      // The code stays marked as used but is also invalidated
       for (const accessCodeDoc of accessCodeSnapshot.docs) {
         await updateDoc(doc(db, 'accessCodes', accessCodeDoc.id), {
-          isUsed: false,
-          usedBy: null,
-          usedAt: null,
-          releasedAt: serverTimestamp(),
-          releasedReason: `User ${email} was deleted`,
-          releasedBy: session.user.email,
+          isUsed: true, // Keep as used
+          invalidated: true, // Mark as invalidated
+          invalidatedAt: serverTimestamp(),
+          invalidatedReason: `User ${email} was deleted`,
+          invalidatedBy: session.user.email,
         });
-        console.log('✅ Access code released:', accessCodeDoc.id);
+        console.log('✅ Access code invalidated (not released):', accessCodeDoc.id);
       }
     }
 
