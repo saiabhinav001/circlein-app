@@ -119,31 +119,63 @@ export async function POST(request: NextRequest) {
     console.log('✅ User document DELETED from database:', email);
 
     // ============================================
-    // STEP 3: Invalidate their access code
+    // STEP 3: COMPLETELY DELETE their access code
+    // This ensures the same code can NEVER be reused
     // ============================================
+    
+    // Search by usedBy field
     const accessCodesQuery = query(
       collection(db, 'accessCodes'),
       where('usedBy', '==', email)
     );
-    
     const accessCodeSnapshot = await getDocs(accessCodesQuery);
-    let newAccessCode: string | null = null;
-    let invalidatedCodeId: string | null = null;
     
-    if (!accessCodeSnapshot.empty) {
-      // Mark access code as PERMANENTLY INVALIDATED
-      for (const accessCodeDoc of accessCodeSnapshot.docs) {
-        invalidatedCodeId = accessCodeDoc.id;
-        await updateDoc(doc(db, 'accessCodes', accessCodeDoc.id), {
-          isUsed: true,
-          invalidated: true,
-          invalidatedAt: serverTimestamp(),
-          invalidatedReason: `User ${email} was permanently deleted`,
-          invalidatedBy: session.user.email,
+    let deletedCodeIds: string[] = [];
+    let newAccessCode: string | null = null;
+    
+    // Delete ALL access codes associated with this user
+    for (const accessCodeDoc of accessCodeSnapshot.docs) {
+      const codeId = accessCodeDoc.id;
+      const codeData = accessCodeDoc.data();
+      
+      // Store deleted code info in audit log
+      await setDoc(doc(collection(db, 'deletedAccessCodesAudit')), {
+        code: codeData.code || codeId,
+        originalDocId: codeId,
+        usedBy: email,
+        communityId: codeData.communityId,
+        deletedAt: serverTimestamp(),
+        deletedBy: session.user.email,
+        deletedReason: `User ${email} was permanently deleted`,
+      });
+      
+      // HARD DELETE the access code document
+      await deleteDoc(doc(db, 'accessCodes', codeId));
+      deletedCodeIds.push(codeId);
+      console.log('✅ Access code DELETED:', codeId);
+    }
+    
+    // Also search by code field (for codes where document ID doesn't match)
+    const allCodesSnapshot = await getDocs(collection(db, 'accessCodes'));
+    for (const codeDoc of allCodesSnapshot.docs) {
+      const data = codeDoc.data();
+      if (data.usedBy === email && !deletedCodeIds.includes(codeDoc.id)) {
+        await setDoc(doc(collection(db, 'deletedAccessCodesAudit')), {
+          code: data.code || codeDoc.id,
+          originalDocId: codeDoc.id,
+          usedBy: email,
+          communityId: data.communityId,
+          deletedAt: serverTimestamp(),
+          deletedBy: session.user.email,
+          deletedReason: `User ${email} was permanently deleted (found by scan)`,
         });
-        console.log('✅ Access code permanently invalidated:', accessCodeDoc.id);
+        await deleteDoc(doc(db, 'accessCodes', codeDoc.id));
+        deletedCodeIds.push(codeDoc.id);
+        console.log('✅ Access code DELETED (found by scan):', codeDoc.id);
       }
     }
+    
+    console.log(`✅ Total access codes deleted: ${deletedCodeIds.length}`);
     
     // ============================================
     // STEP 4: Generate a NEW access code
@@ -207,10 +239,10 @@ export async function POST(request: NextRequest) {
         email: email,
         deletedAt: new Date().toISOString(),
         deletedBy: session.user.email,
-        invalidatedAccessCode: invalidatedCodeId,
+        deletedAccessCodes: deletedCodeIds,
         newAccessCode: newAccessCode,
         cancelledBookings: cancelledBookings,
-        note: 'User has been permanently deleted. Their data is stored in audit log for compliance. A new access code has been generated.'
+        note: 'User and their access codes have been permanently deleted. A new access code has been generated.'
       }
     });
 
