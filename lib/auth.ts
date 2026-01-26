@@ -63,8 +63,22 @@ export const authOptions: NextAuthOptions = {
             if (credentials?.accessCode && (!userData.password || userData.password === '')) {
               console.log('🔑 User has access code and no password - allowing password setup');
               // This is signup with access code to add password to existing account
-              // Validate access code first
-              const accessCodeDoc = await getDoc(doc(db, 'accessCodes', credentials.accessCode));
+              // Validate access code first - try by ID, then by code field
+              let accessCodeDoc = await getDoc(doc(db, 'accessCodes', credentials.accessCode));
+              let accessCodeDocId = credentials.accessCode;
+              
+              // If not found by ID, search by code field
+              if (!accessCodeDoc.exists()) {
+                const codeQuery = query(
+                  collection(db, 'accessCodes'),
+                  where('code', '==', credentials.accessCode)
+                );
+                const codeSnapshot = await getDocs(codeQuery);
+                if (!codeSnapshot.empty) {
+                  accessCodeDoc = codeSnapshot.docs[0] as any;
+                  accessCodeDocId = codeSnapshot.docs[0].id;
+                }
+              }
               
               if (!accessCodeDoc.exists()) {
                 console.log('❌ Access code not found');
@@ -92,7 +106,8 @@ export const authOptions: NextAuthOptions = {
                 communityId: accessCodeData.communityId || userData.communityId,
                 role: userData.role || 'resident',
                 password: credentials?.password,
-                accessCode: credentials?.accessCode, // Pass access code to signIn callback
+                accessCode: credentials?.accessCode,
+                accessCodeDocId: accessCodeDocId, // IMPORTANT: Actual document ID
                 isExistingUser: false, // Treat as new signup to trigger password creation
                 isAddingPassword: true, // Flag to indicate adding password to existing account
               };
@@ -231,7 +246,8 @@ export const authOptions: NextAuthOptions = {
             name: credentials.name,
             communityId: communityId,
             password: credentials.password, // Pass password to be saved
-            accessCode: accessCodeDocId, // Pass the correct document ID
+            accessCode: credentials.accessCode, // Original code entered by user
+            accessCodeDocId: accessCodeDocId, // IMPORTANT: Actual document ID in Firestore
             isExistingUser: false // Flag to indicate this is a new user
           };
         } catch (error) {
@@ -305,14 +321,16 @@ export const authOptions: NextAuthOptions = {
               }, { merge: true });
               
               // IMPORTANT: Mark access code as used
-              if ((user as any).accessCode) {
-                await setDoc(doc(db, 'accessCodes', (user as any).accessCode), {
+              // Use accessCodeDocId which is the actual Firestore document ID
+              const codeDocId = (user as any).accessCodeDocId || (user as any).accessCode;
+              if (codeDocId) {
+                await setDoc(doc(db, 'accessCodes', codeDocId), {
                   isUsed: true,
                   usedBy: user.email,
                   usedAt: serverTimestamp(),
                   passwordAdded: true
                 }, { merge: true });
-                console.log('✅ Access code marked as used:', (user as any).accessCode);
+                console.log('✅ Access code marked as used, doc ID:', codeDocId);
               }
               
               console.log('✅ Password added to Google account:', user.email);
@@ -337,13 +355,15 @@ export const authOptions: NextAuthOptions = {
               });
               
               // IMPORTANT: Mark access code as used
-              if ((user as any).accessCode) {
-                await setDoc(doc(db, 'accessCodes', (user as any).accessCode), {
+              // Use accessCodeDocId which is the actual Firestore document ID
+              const codeDocId = (user as any).accessCodeDocId || (user as any).accessCode;
+              if (codeDocId) {
+                await setDoc(doc(db, 'accessCodes', codeDocId), {
                   isUsed: true,
                   usedBy: user.email,
                   usedAt: serverTimestamp(),
                 }, { merge: true });
-                console.log('✅ Access code marked as used:', (user as any).accessCode);
+                console.log('✅ Access code marked as used, doc ID:', codeDocId);
               }
               
               console.log('✅ Resident user created:', user.email, 'for community:', (user as any).communityId);
