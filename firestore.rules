@@ -56,6 +56,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
+    // Notifications collection (user notifications)
+    match /notifications/{notificationId} {
+      allow read, write: if true;
+    }
+    
     // Mail collection (for Firebase Email Extension)
     match /mail/{emailId} {
       allow create: if true; // Allow anyone to create emails
