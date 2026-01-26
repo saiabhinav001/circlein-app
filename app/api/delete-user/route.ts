@@ -3,10 +3,15 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 /**
- * 🔥 DELETE USER API
- * Properly deletes a user by marking as deleted, NOT removing the document
- * This prevents deleted users from signing in again
- * Also generates a NEW access code to replace the invalidated one
+ * 🔥 DELETE USER API - INDUSTRY STANDARD IMPLEMENTATION
+ * 
+ * This API performs a HARD DELETE:
+ * 1. Completely removes the user document from Firestore
+ * 2. Invalidates their access code (marks as used + invalidated)
+ * 3. Generates a NEW access code for the community
+ * 4. Stores deletion in audit log for compliance
+ * 
+ * This ensures deleted users cannot bypass authentication in any way.
  */
 
 // Generate a random access code
@@ -32,7 +37,19 @@ export async function POST(request: NextRequest) {
     }
 
     const { initializeApp, getApps } = await import('firebase/app');
-    const { getFirestore, doc, updateDoc, serverTimestamp, getDoc, setDoc } = await import('firebase/firestore');
+    const { 
+      getFirestore, 
+      doc, 
+      getDoc, 
+      setDoc, 
+      deleteDoc,
+      updateDoc,
+      collection, 
+      query, 
+      where, 
+      getDocs,
+      serverTimestamp 
+    } = await import('firebase/firestore');
 
     const firebaseConfig = {
       apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -53,7 +70,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user exists
-    const userDoc = await getDoc(doc(db, 'users', email));
+    const userDocRef = doc(db, 'users', email);
+    const userDoc = await getDoc(userDocRef);
     
     if (!userDoc.exists()) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -66,49 +84,76 @@ export async function POST(request: NextRequest) {
 
     const userData = userDoc.data();
     const userCommunityId = userData.communityId;
+    const userName = userData.name;
+    const userRole = userData.role;
 
-    // Mark user as deleted (DO NOT remove document)
-    await updateDoc(doc(db, 'users', email), {
-      deleted: true,
-      status: 'deleted',
+    // ============================================
+    // STEP 1: Store deletion in audit log (for compliance)
+    // ============================================
+    const auditLogRef = doc(collection(db, 'deletedUsersAudit'));
+    await setDoc(auditLogRef, {
+      email: email,
+      name: userName,
+      role: userRole,
+      communityId: userCommunityId,
       deletedAt: serverTimestamp(),
       deletedBy: session.user.email,
       deletionReason: reason || 'No reason provided',
-      // Keep all original data for audit trail
+      originalData: {
+        // Store essential data for audit trail (without password)
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        communityId: userData.communityId,
+        flatNumber: userData.flatNumber,
+        createdAt: userData.createdAt,
+        lastLogin: userData.lastLogin,
+      }
     });
+    console.log('✅ Audit log created for deleted user:', email);
 
-    console.log('✅ User marked as deleted:', email);
+    // ============================================
+    // STEP 2: HARD DELETE the user document
+    // ============================================
+    await deleteDoc(userDocRef);
+    console.log('✅ User document DELETED from database:', email);
 
-    // IMPORTANT: Invalidate old access code AND generate a new one
-    const { collection, query, where, getDocs } = await import('firebase/firestore');
+    // ============================================
+    // STEP 3: Invalidate their access code
+    // ============================================
     const accessCodesQuery = query(
       collection(db, 'accessCodes'),
-      where('usedBy', '==', email),
-      where('isUsed', '==', true)
+      where('usedBy', '==', email)
     );
     
     const accessCodeSnapshot = await getDocs(accessCodesQuery);
     let newAccessCode: string | null = null;
+    let invalidatedCodeId: string | null = null;
     
     if (!accessCodeSnapshot.empty) {
-      // Mark access code as INVALIDATED
+      // Mark access code as PERMANENTLY INVALIDATED
       for (const accessCodeDoc of accessCodeSnapshot.docs) {
+        invalidatedCodeId = accessCodeDoc.id;
         await updateDoc(doc(db, 'accessCodes', accessCodeDoc.id), {
-          isUsed: true, // Keep as used
-          invalidated: true, // Mark as invalidated
+          isUsed: true,
+          invalidated: true,
           invalidatedAt: serverTimestamp(),
-          invalidatedReason: `User ${email} was deleted`,
+          invalidatedReason: `User ${email} was permanently deleted`,
           invalidatedBy: session.user.email,
         });
-        console.log('✅ Access code invalidated:', accessCodeDoc.id);
+        console.log('✅ Access code permanently invalidated:', accessCodeDoc.id);
       }
-      
-      // Generate a NEW access code to replace the invalidated one
+    }
+    
+    // ============================================
+    // STEP 4: Generate a NEW access code
+    // ============================================
+    if (userCommunityId) {
       let attempts = 0;
       do {
         newAccessCode = generateAccessCode();
         attempts++;
-        // Check if code already exists
+        // Ensure uniqueness
         const existingCode = await getDoc(doc(db, 'accessCodes', newAccessCode));
         if (!existingCode.exists()) {
           break;
@@ -116,7 +161,7 @@ export async function POST(request: NextRequest) {
         newAccessCode = null;
       } while (attempts < 100);
       
-      if (newAccessCode && userCommunityId) {
+      if (newAccessCode) {
         await setDoc(doc(db, 'accessCodes', newAccessCode), {
           code: newAccessCode,
           communityId: userCommunityId,
@@ -126,22 +171,46 @@ export async function POST(request: NextRequest) {
           invalidated: false,
           createdAt: serverTimestamp(),
           createdBy: session.user.email,
-          createdReason: `Replacement for deleted user ${email}`,
+          createdReason: `Replacement code after deleting user: ${email}`,
           expiresAt: null,
         });
         console.log('✅ New access code generated:', newAccessCode);
       }
     }
 
+    // ============================================
+    // STEP 5: Delete user's bookings (optional - cancel future bookings)
+    // ============================================
+    const futureBookingsQuery = query(
+      collection(db, 'bookings'),
+      where('userEmail', '==', email),
+      where('status', '==', 'confirmed')
+    );
+    const bookingsSnapshot = await getDocs(futureBookingsQuery);
+    
+    let cancelledBookings = 0;
+    for (const bookingDoc of bookingsSnapshot.docs) {
+      await updateDoc(doc(db, 'bookings', bookingDoc.id), {
+        status: 'cancelled',
+        cancelledAt: serverTimestamp(),
+        cancellationReason: 'User account deleted',
+        cancelledBy: session.user.email,
+      });
+      cancelledBookings++;
+    }
+    console.log(`✅ Cancelled ${cancelledBookings} future bookings`);
+
     return NextResponse.json({
       success: true,
-      message: 'User deleted successfully',
+      message: 'User permanently deleted',
       data: {
         email: email,
         deletedAt: new Date().toISOString(),
         deletedBy: session.user.email,
-        newAccessCode: newAccessCode, // Return the new code to the admin
-        note: 'User marked as deleted. A new access code has been generated.'
+        invalidatedAccessCode: invalidatedCodeId,
+        newAccessCode: newAccessCode,
+        cancelledBookings: cancelledBookings,
+        note: 'User has been permanently deleted. Their data is stored in audit log for compliance. A new access code has been generated.'
       }
     });
 
@@ -157,10 +226,15 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    message: 'Delete User API',
+    message: 'Delete User API - Industry Standard Implementation',
     usage: 'POST with { "email": "user@example.com", "reason": "Optional reason" }',
     security: 'Requires admin authentication',
-    behavior: 'Marks user as deleted. User will be signed out and cannot sign in again.',
-    note: 'User document is NOT removed - only marked as deleted for audit trail.'
+    behavior: [
+      '1. Stores deletion in audit log (compliance)',
+      '2. HARD DELETES user document from database',
+      '3. Permanently invalidates their access code',
+      '4. Generates a new access code for the community',
+      '5. Cancels all future bookings'
+    ]
   });
 }

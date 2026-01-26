@@ -61,6 +61,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
+    // Deleted Users Audit Log (for compliance)
+    match /deletedUsersAudit/{auditId} {
+      allow read, write: if true;
+    }
+    
     // Mail collection (for Firebase Email Extension)
     match /mail/{emailId} {
       allow create: if true; // Allow anyone to create emails

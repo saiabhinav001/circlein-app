@@ -329,7 +329,8 @@ export const authOptions: NextAuthOptions = {
                 authProvider: 'credentials',
                 status: 'active',
                 deleted: false,
-                profileCompleted: true,
+                profileCompleted: false, // IMPORTANT: Must complete flat number setup
+                flatNumber: null, // Will be set during onboarding
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
                 lastLogin: serverTimestamp(),
