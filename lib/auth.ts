@@ -77,6 +77,11 @@ export const authOptions: NextAuthOptions = {
                 console.log('❌ Access code already used');
                 throw new Error('This access code has already been used');
               }
+              
+              if (accessCodeData.invalidated) {
+                console.log('❌ Access code has been invalidated');
+                throw new Error('This access code has been invalidated. Please contact your administrator for a new code.');
+              }
 
               // Access code is valid, allow user to set password
               console.log('✅ Access code valid, allowing password setup');
@@ -173,9 +178,15 @@ export const authOptions: NextAuthOptions = {
           const accessCodeData = accessCodeDoc.data();
           console.log('📊 Access code data:', accessCodeData);
           
+          // Check if access code is used OR invalidated
           if (accessCodeData.isUsed) {
             console.log('❌ Access code already used');
-            throw new Error('Invalid or expired access code');
+            throw new Error('This access code has already been used');
+          }
+          
+          if (accessCodeData.invalidated) {
+            console.log('❌ Access code has been invalidated');
+            throw new Error('This access code has been invalidated. Please contact your administrator for a new code.');
           }
 
           const communityId = accessCodeData.communityId;
@@ -247,6 +258,16 @@ export const authOptions: NextAuthOptions = {
             
             // Check if user exists (might be Google user adding password)
             const existingUserDoc = await getDoc(doc(db, 'users', user.email));
+            
+            // 🔒 CRITICAL: Block deleted users from being restored via signup
+            if (existingUserDoc.exists()) {
+              const existingData = existingUserDoc.data();
+              if (existingData.deleted === true || existingData.status === 'deleted') {
+                console.log('❌ BLOCKED in signIn: Cannot restore deleted user:', user.email);
+                return false; // Block sign-in
+              }
+            }
+            
             const isAddingPassword = (user as any).isAddingPassword;
             
             // Hash the password before storing
@@ -277,9 +298,8 @@ export const authOptions: NextAuthOptions = {
               
               console.log('✅ Password added to Google account:', user.email);
             } else {
-              // Create/recreate resident user with communityId and hashed password
-              // This will overwrite any previously deleted account
-              const isRestoration = existingUserDoc.exists() && existingUserDoc.data().deleted;
+              // Create new resident user with communityId and hashed password
+              // NOTE: Deleted users are blocked earlier, so this only creates truly new accounts
               
               await setDoc(doc(db, 'users', user.email), {
                 name: user.name || user.email.split('@')[0],
@@ -288,19 +308,12 @@ export const authOptions: NextAuthOptions = {
                 communityId: (user as any).communityId,
                 password: hashedPassword,
                 authProvider: 'credentials',
-                status: 'active', // IMPORTANT: Set status to active
-                deleted: false, // IMPORTANT: Mark as NOT deleted
+                status: 'active',
+                deleted: false,
                 profileCompleted: true,
-                createdAt: existingUserDoc.exists() ? existingUserDoc.data().createdAt : serverTimestamp(),
+                createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
                 lastLogin: serverTimestamp(),
-                // If previously deleted, keep history
-                ...(isRestoration ? {
-                  restoredAt: serverTimestamp(),
-                  restoredViaAccessCode: true,
-                  previouslyDeletedAt: existingUserDoc.data().deletedAt,
-                  previouslyDeletedBy: existingUserDoc.data().deletedBy,
-                } : {}),
               });
               
               // IMPORTANT: Mark access code as used
@@ -309,12 +322,11 @@ export const authOptions: NextAuthOptions = {
                   isUsed: true,
                   usedBy: user.email,
                   usedAt: serverTimestamp(),
-                  ...(isRestoration ? { restoredUser: true } : {})
                 }, { merge: true });
                 console.log('✅ Access code marked as used:', (user as any).accessCode);
               }
               
-              console.log('✅ Resident user created/restored:', user.email, 'for community:', (user as any).communityId);
+              console.log('✅ Resident user created:', user.email, 'for community:', (user as any).communityId);
             }
           }
         } catch (error) {
@@ -329,7 +341,20 @@ export const authOptions: NextAuthOptions = {
           // Check if user exists in users collection
           const userDoc = await getDoc(doc(db, 'users', user.email));
           
-          if (!userDoc.exists()) {
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // 🔒 CRITICAL: Block deleted users from signing in via Google
+            if (userData.deleted === true || userData.status === 'deleted') {
+              console.log('❌ BLOCKED: Deleted user trying to sign in via Google:', user.email);
+              return false; // Block sign-in
+            }
+            
+            // User exists and is not deleted, update last login
+            await setDoc(doc(db, 'users', user.email), {
+              lastLogin: serverTimestamp(),
+            }, { merge: true });
+          } else {
             // User doesn't exist, check if they have an admin invite
             const inviteQuery = await getDocs(
               query(collection(db, 'invites'), where('email', '==', user.email))
@@ -378,11 +403,6 @@ export const authOptions: NextAuthOptions = {
               
               console.log('✅ Basic Google user created (no community):', user.email);
             }
-          } else {
-            // User exists, update last login
-            await setDoc(doc(db, 'users', user.email), {
-              lastLogin: serverTimestamp(),
-            }, { merge: true });
           }
         } catch (error) {
           console.error('Error in signIn callback:', error);
