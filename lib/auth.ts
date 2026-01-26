@@ -338,6 +338,9 @@ export const authOptions: NextAuthOptions = {
               // Create new resident user with communityId and hashed password
               // NOTE: Deleted users are blocked earlier, so this only creates truly new accounts
               
+              // Get the correct access code document ID
+              const codeDocId = (user as any).accessCodeDocId || (user as any).accessCode;
+              
               await setDoc(doc(db, 'users', user.email), {
                 name: user.name || user.email.split('@')[0],
                 email: user.email,
@@ -348,15 +351,14 @@ export const authOptions: NextAuthOptions = {
                 status: 'active',
                 deleted: false,
                 profileCompleted: false, // IMPORTANT: Must complete flat number setup
-                flatNumber: null, // Will be set during onboarding
+                flatNumber: null,
+                accessCodeUsed: codeDocId, // IMPORTANT: Store access code ID for deletion later
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
                 lastLogin: serverTimestamp(),
               });
               
               // IMPORTANT: Mark access code as used
-              // Use accessCodeDocId which is the actual Firestore document ID
-              const codeDocId = (user as any).accessCodeDocId || (user as any).accessCode;
               if (codeDocId) {
                 await setDoc(doc(db, 'accessCodes', codeDocId), {
                   isUsed: true,

@@ -3,18 +3,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 /**
- * 🔥 DELETE USER API - INDUSTRY STANDARD IMPLEMENTATION
+ * DELETE USER API
  * 
- * This API performs a HARD DELETE:
- * 1. Completely removes the user document from Firestore
- * 2. Invalidates their access code (marks as used + invalidated)
- * 3. Generates a NEW access code for the community
- * 4. Stores deletion in audit log for compliance
- * 
- * This ensures deleted users cannot bypass authentication in any way.
+ * 1. Gets user's accessCodeUsed field
+ * 2. DELETES that access code document immediately
+ * 3. Generates new access code
+ * 4. DELETES user document
  */
 
-// Generate a random access code
 function generateAccessCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
@@ -26,29 +22,16 @@ function generateAccessCode(): string {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if user is admin
     const session = await getServerSession(authOptions);
     
     if (!session || session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const { initializeApp, getApps } = await import('firebase/app');
     const { 
-      getFirestore, 
-      doc, 
-      getDoc, 
-      setDoc, 
-      deleteDoc,
-      updateDoc,
-      collection, 
-      query, 
-      where, 
-      getDocs,
-      serverTimestamp 
+      getFirestore, doc, getDoc, setDoc, deleteDoc, 
+      collection, getDocs, serverTimestamp 
     } = await import('firebase/firestore');
 
     const firebaseConfig = {
@@ -69,204 +52,99 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    // Check if user exists
-    const userDocRef = doc(db, 'users', email);
-    const userDoc = await getDoc(userDocRef);
+    // Get user document
+    const userRef = doc(db, 'users', email);
+    const userDoc = await getDoc(userRef);
     
     if (!userDoc.exists()) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Prevent admin from deleting themselves
     if (email === session.user.email) {
-      return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
+      return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 });
     }
 
     const userData = userDoc.data();
-    const userCommunityId = userData.communityId;
-    const userName = userData.name;
-    const userRole = userData.role;
-
-    // ============================================
-    // STEP 1: Store deletion in audit log (for compliance)
-    // ============================================
-    const auditLogRef = doc(collection(db, 'deletedUsersAudit'));
-    await setDoc(auditLogRef, {
-      email: email,
-      name: userName,
-      role: userRole,
-      communityId: userCommunityId,
-      deletedAt: serverTimestamp(),
-      deletedBy: session.user.email,
-      deletionReason: reason || 'No reason provided',
-      originalData: {
-        // Store essential data for audit trail (without password)
-        name: userData.name,
-        email: userData.email,
-        role: userData.role,
-        communityId: userData.communityId,
-        flatNumber: userData.flatNumber,
-        createdAt: userData.createdAt,
-        lastLogin: userData.lastLogin,
+    const communityId = userData.communityId;
+    const accessCodeUsed = userData.accessCodeUsed;
+    
+    console.log('🗑️ Deleting user:', email);
+    console.log('📝 Access code used:', accessCodeUsed);
+    
+    // STEP 1: DELETE the access code FIRST
+    let deletedAccessCode: string | null = null;
+    
+    if (accessCodeUsed) {
+      // Direct delete using stored access code ID
+      const codeRef = doc(db, 'accessCodes', accessCodeUsed);
+      const codeDoc = await getDoc(codeRef);
+      
+      if (codeDoc.exists()) {
+        await deleteDoc(codeRef);
+        deletedAccessCode = accessCodeUsed;
+        console.log('✅ Access code DELETED:', accessCodeUsed);
       }
-    });
-    console.log('✅ Audit log created for deleted user:', email);
-
-    // ============================================
-    // STEP 2: HARD DELETE the user document
-    // ============================================
-    await deleteDoc(userDocRef);
-    console.log('✅ User document DELETED from database:', email);
-
-    // ============================================
-    // STEP 3: COMPLETELY DELETE their access code
-    // This ensures the same code can NEVER be reused
-    // ============================================
-    
-    // Search by usedBy field
-    const accessCodesQuery = query(
-      collection(db, 'accessCodes'),
-      where('usedBy', '==', email)
-    );
-    const accessCodeSnapshot = await getDocs(accessCodesQuery);
-    
-    let deletedCodeIds: string[] = [];
-    let newAccessCode: string | null = null;
-    
-    // Delete ALL access codes associated with this user
-    for (const accessCodeDoc of accessCodeSnapshot.docs) {
-      const codeId = accessCodeDoc.id;
-      const codeData = accessCodeDoc.data();
-      
-      // Store deleted code info in audit log
-      await setDoc(doc(collection(db, 'deletedAccessCodesAudit')), {
-        code: codeData.code || codeId,
-        originalDocId: codeId,
-        usedBy: email,
-        communityId: codeData.communityId,
-        deletedAt: serverTimestamp(),
-        deletedBy: session.user.email,
-        deletedReason: `User ${email} was permanently deleted`,
-      });
-      
-      // HARD DELETE the access code document
-      await deleteDoc(doc(db, 'accessCodes', codeId));
-      deletedCodeIds.push(codeId);
-      console.log('✅ Access code DELETED:', codeId);
     }
     
-    // Also search by code field (for codes where document ID doesn't match)
+    // Also scan ALL access codes for any with usedBy = email (catch any missed)
     const allCodesSnapshot = await getDocs(collection(db, 'accessCodes'));
     for (const codeDoc of allCodesSnapshot.docs) {
       const data = codeDoc.data();
-      if (data.usedBy === email && !deletedCodeIds.includes(codeDoc.id)) {
-        await setDoc(doc(collection(db, 'deletedAccessCodesAudit')), {
-          code: data.code || codeDoc.id,
-          originalDocId: codeDoc.id,
-          usedBy: email,
-          communityId: data.communityId,
-          deletedAt: serverTimestamp(),
-          deletedBy: session.user.email,
-          deletedReason: `User ${email} was permanently deleted (found by scan)`,
-        });
+      if (data.usedBy === email) {
         await deleteDoc(doc(db, 'accessCodes', codeDoc.id));
-        deletedCodeIds.push(codeDoc.id);
-        console.log('✅ Access code DELETED (found by scan):', codeDoc.id);
+        console.log('✅ Additional access code DELETED:', codeDoc.id);
+        if (!deletedAccessCode) deletedAccessCode = codeDoc.id;
       }
     }
     
-    console.log(`✅ Total access codes deleted: ${deletedCodeIds.length}`);
-    
-    // ============================================
-    // STEP 4: Generate a NEW access code
-    // ============================================
-    if (userCommunityId) {
+    // STEP 2: Generate NEW access code
+    let newAccessCode: string | null = null;
+    if (communityId) {
       let attempts = 0;
       do {
         newAccessCode = generateAccessCode();
         attempts++;
-        // Ensure uniqueness
-        const existingCode = await getDoc(doc(db, 'accessCodes', newAccessCode));
-        if (!existingCode.exists()) {
-          break;
-        }
+        const existing = await getDoc(doc(db, 'accessCodes', newAccessCode));
+        if (!existing.exists()) break;
         newAccessCode = null;
       } while (attempts < 100);
       
       if (newAccessCode) {
         await setDoc(doc(db, 'accessCodes', newAccessCode), {
           code: newAccessCode,
-          communityId: userCommunityId,
+          communityId: communityId,
           isUsed: false,
           usedBy: null,
-          usedAt: null,
-          invalidated: false,
           createdAt: serverTimestamp(),
           createdBy: session.user.email,
-          createdReason: `Replacement code after deleting user: ${email}`,
-          expiresAt: null,
         });
-        console.log('✅ New access code generated:', newAccessCode);
+        console.log('✅ New access code created:', newAccessCode);
       }
     }
-
-    // ============================================
-    // STEP 5: Delete user's bookings (optional - cancel future bookings)
-    // ============================================
-    const futureBookingsQuery = query(
-      collection(db, 'bookings'),
-      where('userEmail', '==', email),
-      where('status', '==', 'confirmed')
-    );
-    const bookingsSnapshot = await getDocs(futureBookingsQuery);
     
-    let cancelledBookings = 0;
-    for (const bookingDoc of bookingsSnapshot.docs) {
-      await updateDoc(doc(db, 'bookings', bookingDoc.id), {
-        status: 'cancelled',
-        cancelledAt: serverTimestamp(),
-        cancellationReason: 'User account deleted',
-        cancelledBy: session.user.email,
-      });
-      cancelledBookings++;
-    }
-    console.log(`✅ Cancelled ${cancelledBookings} future bookings`);
+    // STEP 3: DELETE user document
+    await deleteDoc(userRef);
+    console.log('✅ User DELETED:', email);
 
     return NextResponse.json({
       success: true,
-      message: 'User permanently deleted',
-      data: {
-        email: email,
-        deletedAt: new Date().toISOString(),
-        deletedBy: session.user.email,
-        deletedAccessCodes: deletedCodeIds,
-        newAccessCode: newAccessCode,
-        cancelledBookings: cancelledBookings,
-        note: 'User and their access codes have been permanently deleted. A new access code has been generated.'
-      }
+      message: 'User and access code deleted',
+      deletedAccessCode,
+      newAccessCode,
     });
 
   } catch (error) {
-    console.error('Delete user error:', error);
+    console.error('Delete error:', error);
     return NextResponse.json({
-      success: false,
       error: 'Failed to delete user',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown'
     }, { status: 500 });
   }
 }
 
 export async function GET() {
   return NextResponse.json({
-    message: 'Delete User API - Industry Standard Implementation',
-    usage: 'POST with { "email": "user@example.com", "reason": "Optional reason" }',
-    security: 'Requires admin authentication',
-    behavior: [
-      '1. Stores deletion in audit log (compliance)',
-      '2. HARD DELETES user document from database',
-      '3. Permanently invalidates their access code',
-      '4. Generates a new access code for the community',
-      '5. Cancels all future bookings'
-    ]
+    message: 'Delete User API',
+    usage: 'POST { email, reason }',
   });
 }
