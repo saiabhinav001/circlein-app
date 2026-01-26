@@ -3,12 +3,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 /**
- * DELETE USER API
+ * DELETE USER API - BULLETPROOF VERSION
  * 
- * 1. Gets user's accessCodeUsed field
- * 2. DELETES that access code document immediately
- * 3. Generates new access code
- * 4. DELETES user document
+ * 1. Find ALL access codes where usedBy === user's email
+ * 2. DELETE every single one of them
+ * 3. Generate NEW access code for the community
+ * 4. DELETE user document
+ * 
+ * The old access code will be GONE. User CANNOT reuse it.
  */
 
 function generateAccessCode(): string {
@@ -66,50 +68,66 @@ export async function POST(request: NextRequest) {
 
     const userData = userDoc.data();
     const communityId = userData.communityId;
-    const accessCodeUsed = userData.accessCodeUsed;
     
-    console.log('🗑️ Deleting user:', email);
-    console.log('📝 Access code used:', accessCodeUsed);
+    console.log('🗑️ === DELETING USER ===');
+    console.log('📧 Email:', email);
+    console.log('🏘️ Community:', communityId);
     
-    // STEP 1: DELETE the access code FIRST
-    let deletedAccessCode: string | null = null;
+    // ============================================
+    // STEP 1: FIND AND DELETE ALL ACCESS CODES
+    // ============================================
+    const deletedCodes: string[] = [];
     
-    if (accessCodeUsed) {
-      // Direct delete using stored access code ID
-      const codeRef = doc(db, 'accessCodes', accessCodeUsed);
-      const codeDoc = await getDoc(codeRef);
-      
-      if (codeDoc.exists()) {
-        await deleteDoc(codeRef);
-        deletedAccessCode = accessCodeUsed;
-        console.log('✅ Access code DELETED:', accessCodeUsed);
-      }
-    }
-    
-    // Also scan ALL access codes for any with usedBy = email (catch any missed)
+    // Get ALL access codes from database
     const allCodesSnapshot = await getDocs(collection(db, 'accessCodes'));
+    console.log('📊 Total access codes in DB:', allCodesSnapshot.size);
+    
+    // Find and delete EVERY code associated with this user
     for (const codeDoc of allCodesSnapshot.docs) {
-      const data = codeDoc.data();
-      if (data.usedBy === email) {
-        await deleteDoc(doc(db, 'accessCodes', codeDoc.id));
-        console.log('✅ Additional access code DELETED:', codeDoc.id);
-        if (!deletedAccessCode) deletedAccessCode = codeDoc.id;
+      const codeData = codeDoc.data();
+      const codeId = codeDoc.id;
+      
+      // Check if this code was used by this user
+      if (codeData.usedBy === email) {
+        console.log('🎯 Found code used by user:', codeId, '- DELETING');
+        await deleteDoc(doc(db, 'accessCodes', codeId));
+        deletedCodes.push(codeId);
       }
     }
     
-    // STEP 2: Generate NEW access code
+    // Also check if user has accessCodeUsed field and delete that too
+    if (userData.accessCodeUsed && !deletedCodes.includes(userData.accessCodeUsed)) {
+      const codeRef = doc(db, 'accessCodes', userData.accessCodeUsed);
+      const codeExists = await getDoc(codeRef);
+      if (codeExists.exists()) {
+        console.log('🎯 Found code in user record:', userData.accessCodeUsed, '- DELETING');
+        await deleteDoc(codeRef);
+        deletedCodes.push(userData.accessCodeUsed);
+      }
+    }
+    
+    console.log('✅ Total codes DELETED:', deletedCodes.length, deletedCodes);
+    
+    // ============================================
+    // STEP 2: GENERATE NEW ACCESS CODE
+    // ============================================
     let newAccessCode: string | null = null;
+    
     if (communityId) {
+      // Generate unique code
       let attempts = 0;
-      do {
-        newAccessCode = generateAccessCode();
+      while (attempts < 100) {
+        const candidate = generateAccessCode();
+        const existing = await getDoc(doc(db, 'accessCodes', candidate));
+        if (!existing.exists()) {
+          newAccessCode = candidate;
+          break;
+        }
         attempts++;
-        const existing = await getDoc(doc(db, 'accessCodes', newAccessCode));
-        if (!existing.exists()) break;
-        newAccessCode = null;
-      } while (attempts < 100);
+      }
       
       if (newAccessCode) {
+        // Create new access code with code as document ID
         await setDoc(doc(db, 'accessCodes', newAccessCode), {
           code: newAccessCode,
           communityId: communityId,
@@ -117,24 +135,32 @@ export async function POST(request: NextRequest) {
           usedBy: null,
           createdAt: serverTimestamp(),
           createdBy: session.user.email,
+          replacedCode: deletedCodes[0] || null,
+          reason: reason || 'User deleted',
         });
-        console.log('✅ New access code created:', newAccessCode);
+        console.log('✅ NEW access code created:', newAccessCode);
       }
     }
     
-    // STEP 3: DELETE user document
+    // ============================================
+    // STEP 3: DELETE USER DOCUMENT
+    // ============================================
     await deleteDoc(userRef);
-    console.log('✅ User DELETED:', email);
+    console.log('✅ User document DELETED:', email);
+    
+    console.log('🗑️ === DELETION COMPLETE ===');
 
     return NextResponse.json({
       success: true,
-      message: 'User and access code deleted',
-      deletedAccessCode,
-      newAccessCode,
+      message: `User deleted. ${deletedCodes.length} access code(s) removed. New code generated.`,
+      deletedUser: email,
+      deletedAccessCodes: deletedCodes,
+      newAccessCode: newAccessCode,
+      communityId: communityId,
     });
 
   } catch (error) {
-    console.error('Delete error:', error);
+    console.error('💥 Delete error:', error);
     return NextResponse.json({
       error: 'Failed to delete user',
       details: error instanceof Error ? error.message : 'Unknown'
@@ -144,7 +170,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    message: 'Delete User API',
+    message: 'Delete User API - Deletes user AND their access code',
     usage: 'POST { email, reason }',
   });
 }
