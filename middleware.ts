@@ -22,8 +22,22 @@ export default withAuth(
       hasToken: !!token
     });
 
-    // Allow access to setup pages
+    // Allow access to setup pages (but not for admins on flat-number setup)
     if (pathname.startsWith('/setup/')) {
+      // Admins should not access flat-number setup - redirect to dashboard
+      if (pathname === '/setup/flat-number' && token?.role === 'admin') {
+        console.log('Admin tried to access flat-number setup, redirecting to dashboard');
+        return NextResponse.redirect(new URL('/dashboard', req.url));
+      }
+      return NextResponse.next();
+    }
+
+    // Admin onboarding route - only for admins
+    if (pathname === '/admin/onboarding') {
+      if (token?.role !== 'admin') {
+        console.log('Non-admin tried to access admin onboarding, redirecting to dashboard');
+        return NextResponse.redirect(new URL('/dashboard', req.url));
+      }
       return NextResponse.next();
     }
 

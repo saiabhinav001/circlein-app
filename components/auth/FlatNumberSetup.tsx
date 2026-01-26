@@ -28,12 +28,23 @@ export default function FlatNumberSetup({ userEmail, onComplete }: FlatNumberSet
 
   // Use provided email or get from session
   const email = userEmail || session?.user?.email;
+  const userRole = (session?.user as any)?.role;
   const userFlatNumber = (session?.user as any)?.flatNumber;
   const profileCompleted = (session?.user as any)?.profileCompleted;
 
-  // Auto-redirect if user has already completed setup
+  // Auto-redirect based on role and profile status
   useEffect(() => {
-    if (session && profileCompleted) {
+    if (!session) return;
+
+    // Admins should never see this page - redirect to dashboard (which handles admin onboarding)
+    if (userRole === 'admin') {
+      console.log('Admin user detected, redirecting to dashboard');
+      window.location.href = '/dashboard';
+      return;
+    }
+
+    // Regular users: redirect if profile already completed
+    if (profileCompleted) {
       toast.success('Setup already completed!', {
         description: 'Redirecting to dashboard...'
       });
@@ -41,7 +52,7 @@ export default function FlatNumberSetup({ userEmail, onComplete }: FlatNumberSet
         window.location.href = '/dashboard';
       }, 1000);
     }
-  }, [session, profileCompleted]);
+  }, [session, profileCompleted, userRole]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,8 +156,8 @@ export default function FlatNumberSetup({ userEmail, onComplete }: FlatNumberSet
     }
   };
 
-  // Loading state
-  if (!session) {
+  // Loading state or redirecting admin
+  if (!session || userRole === 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
         <motion.div
@@ -156,7 +167,9 @@ export default function FlatNumberSetup({ userEmail, onComplete }: FlatNumberSet
         >
           <CircleInLogo className="w-16 h-16 mx-auto mb-4" />
           <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400">Loading your profile...</p>
+          <p className="text-slate-600 dark:text-slate-400">
+            {userRole === 'admin' ? 'Redirecting to admin dashboard...' : 'Loading your profile...'}
+          </p>
         </motion.div>
       </div>
     );
