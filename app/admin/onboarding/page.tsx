@@ -27,11 +27,9 @@ import {
   Moon,
   Clock,
   Copy,
-  Shield,
   Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
-import CancellationPolicySettings from '@/components/admin/CancellationPolicySettings';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { CircleInLogo } from '@/components/ui';
@@ -71,8 +69,7 @@ const steps = [
   { id: 1, title: 'Community', icon: Home, description: 'Name your community' },
   { id: 2, title: 'Amenities', icon: Sparkles, description: 'Add facilities' },
   { id: 3, title: 'Access', icon: Key, description: 'Generate codes' },
-  { id: 4, title: 'Policies', icon: Shield, description: 'Set rules' },
-  { id: 5, title: 'Complete', icon: Zap, description: 'Go live!' },
+  { id: 4, title: 'Complete', icon: Zap, description: 'Go live!' },
 ];
 
 export default function AdminOnboarding() {
@@ -683,56 +680,10 @@ export default function AdminOnboarding() {
             </motion.div>
           )}
 
-          {/* Step 4: Cancellation Policy */}
+          {/* Step 4: Complete */}
           {currentStep === 4 && (
             <motion.div
               key="step4"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                <div className="p-6 sm:p-8 border-b border-slate-200 dark:border-slate-800">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-500/10">
-                      <Shield className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                    </div>
-                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Cancellation Policy</h2>
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400">Configure booking cancellation rules for your community</p>
-                </div>
-                
-                <div className="p-6 sm:p-8">
-                  <CancellationPolicySettings />
-                  
-                  <div className="flex justify-between pt-6 mt-6 border-t border-slate-200 dark:border-slate-800">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => setCurrentStep(3)}
-                      className="text-slate-600 dark:text-slate-400"
-                    >
-                      <ArrowLeft className="w-4 h-4 mr-2" />
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={() => setCurrentStep(5)}
-                      className="h-11 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 rounded-xl font-medium"
-                    >
-                      Continue
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Step 5: Complete */}
-          {currentStep === 5 && (
-            <motion.div
-              key="step5"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
