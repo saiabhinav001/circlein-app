@@ -136,7 +136,10 @@ export async function POST(request: NextRequest) {
       // Continue even if this fails
     }
 
-    // 9. Mark access code as unused if it was used by this user
+    // 9. DELETE access codes used by this user and CREATE NEW ONES
+    let deletedAccessCodes: string[] = [];
+    let newAccessCode: string | null = null;
+    
     try {
       const accessCodesQuery = adminDb.collection('accessCodes')
         .where('usedBy', '==', userEmail);
@@ -144,19 +147,52 @@ export async function POST(request: NextRequest) {
       const accessCodesSnapshot = await accessCodesQuery.get();
       
       if (!accessCodesSnapshot.empty) {
-        const batch = adminDb.batch();
-        accessCodesSnapshot.docs.forEach((doc: any) => {
-          batch.update(doc.ref, {
+        // DELETE each access code used by this user
+        for (const codeDoc of accessCodesSnapshot.docs) {
+          const codeId = codeDoc.id;
+          await adminDb.collection('accessCodes').doc(codeId).delete();
+          deletedAccessCodes.push(codeId);
+          console.log(`✅ DELETED access code: ${codeId}`);
+        }
+        
+        // Generate ONE new replacement code for the community
+        const generateCode = (): string => {
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+          let result = '';
+          for (let i = 0; i < 8; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+          }
+          return result;
+        };
+        
+        // Generate unique code
+        let attempts = 0;
+        while (attempts < 100) {
+          const candidate = generateCode();
+          const existing = await adminDb.collection('accessCodes').doc(candidate).get();
+          if (!existing.exists) {
+            newAccessCode = candidate;
+            break;
+          }
+          attempts++;
+        }
+        
+        if (newAccessCode && userCommunityId) {
+          await adminDb.collection('accessCodes').doc(newAccessCode).set({
+            code: newAccessCode,
+            communityId: userCommunityId,
             isUsed: false,
-            usedBy: FieldValue.delete(),
-            usedAt: FieldValue.delete()
+            usedBy: null,
+            createdAt: FieldValue.serverTimestamp(),
+            createdBy: session.user.email,
+            replacedCode: deletedAccessCodes[0] || null,
+            reason: 'User deleted - replacement code',
           });
-        });
-        await batch.commit();
-        console.log(`✅ Released access code(s) used by ${userEmail}`);
+          console.log(`✅ Created NEW access code: ${newAccessCode}`);
+        }
       }
     } catch (error) {
-      console.error('❌ Error releasing access codes:', error);
+      console.error('❌ Error handling access codes:', error);
       // Continue even if this fails
     }
 
@@ -181,7 +217,9 @@ export async function POST(request: NextRequest) {
       deletedData: {
         bookings: deletedBookings,
         notifications: deletedNotifications,
-        userDocument: true
+        userDocument: true,
+        accessCodesDeleted: deletedAccessCodes,
+        newAccessCode: newAccessCode
       }
     });
 
