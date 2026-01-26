@@ -6,7 +6,18 @@ import { authOptions } from '@/lib/auth';
  * 🔥 DELETE USER API
  * Properly deletes a user by marking as deleted, NOT removing the document
  * This prevents deleted users from signing in again
+ * Also generates a NEW access code to replace the invalidated one
  */
+
+// Generate a random access code
+function generateAccessCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { initializeApp, getApps } = await import('firebase/app');
-    const { getFirestore, doc, updateDoc, serverTimestamp, getDoc } = await import('firebase/firestore');
+    const { getFirestore, doc, updateDoc, serverTimestamp, getDoc, setDoc } = await import('firebase/firestore');
 
     const firebaseConfig = {
       apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -68,9 +79,7 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ User marked as deleted:', email);
 
-    // IMPORTANT: DO NOT release the access code - INVALIDATE it instead
-    // This prevents the deleted user from re-registering with the same code
-    // Admin should generate a NEW code if they want to add someone else
+    // IMPORTANT: Invalidate old access code AND generate a new one
     const { collection, query, where, getDocs } = await import('firebase/firestore');
     const accessCodesQuery = query(
       collection(db, 'accessCodes'),
@@ -79,10 +88,10 @@ export async function POST(request: NextRequest) {
     );
     
     const accessCodeSnapshot = await getDocs(accessCodesQuery);
+    let newAccessCode: string | null = null;
     
     if (!accessCodeSnapshot.empty) {
-      // Mark access code as INVALIDATED (not released)
-      // The code stays marked as used but is also invalidated
+      // Mark access code as INVALIDATED
       for (const accessCodeDoc of accessCodeSnapshot.docs) {
         await updateDoc(doc(db, 'accessCodes', accessCodeDoc.id), {
           isUsed: true, // Keep as used
@@ -91,7 +100,36 @@ export async function POST(request: NextRequest) {
           invalidatedReason: `User ${email} was deleted`,
           invalidatedBy: session.user.email,
         });
-        console.log('✅ Access code invalidated (not released):', accessCodeDoc.id);
+        console.log('✅ Access code invalidated:', accessCodeDoc.id);
+      }
+      
+      // Generate a NEW access code to replace the invalidated one
+      let attempts = 0;
+      do {
+        newAccessCode = generateAccessCode();
+        attempts++;
+        // Check if code already exists
+        const existingCode = await getDoc(doc(db, 'accessCodes', newAccessCode));
+        if (!existingCode.exists()) {
+          break;
+        }
+        newAccessCode = null;
+      } while (attempts < 100);
+      
+      if (newAccessCode && userCommunityId) {
+        await setDoc(doc(db, 'accessCodes', newAccessCode), {
+          code: newAccessCode,
+          communityId: userCommunityId,
+          isUsed: false,
+          usedBy: null,
+          usedAt: null,
+          invalidated: false,
+          createdAt: serverTimestamp(),
+          createdBy: session.user.email,
+          createdReason: `Replacement for deleted user ${email}`,
+          expiresAt: null,
+        });
+        console.log('✅ New access code generated:', newAccessCode);
       }
     }
 
@@ -102,7 +140,8 @@ export async function POST(request: NextRequest) {
         email: email,
         deletedAt: new Date().toISOString(),
         deletedBy: session.user.email,
-        note: 'User marked as deleted. They will be signed out and cannot sign in again unless restored.'
+        newAccessCode: newAccessCode, // Return the new code to the admin
+        note: 'User marked as deleted. A new access code has been generated.'
       }
     });
 

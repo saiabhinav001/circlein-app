@@ -166,7 +166,26 @@ export const authOptions: NextAuthOptions = {
 
           // Validate access code and get communityId
           console.log('🔍 Checking access code:', credentials.accessCode);
-          const accessCodeDoc = await getDoc(doc(db, 'accessCodes', credentials.accessCode));
+          
+          // Try to find access code - first by document ID, then by code field
+          let accessCodeDoc = await getDoc(doc(db, 'accessCodes', credentials.accessCode));
+          let accessCodeDocId = credentials.accessCode;
+          
+          // If not found by ID, search by 'code' field (for backwards compatibility)
+          if (!accessCodeDoc.exists()) {
+            console.log('📄 Code not found by ID, searching by code field...');
+            const codeQuery = query(
+              collection(db, 'accessCodes'),
+              where('code', '==', credentials.accessCode)
+            );
+            const codeSnapshot = await getDocs(codeQuery);
+            
+            if (!codeSnapshot.empty) {
+              accessCodeDoc = codeSnapshot.docs[0] as any;
+              accessCodeDocId = codeSnapshot.docs[0].id;
+              console.log('📄 Found code by field search, doc ID:', accessCodeDocId);
+            }
+          }
           
           console.log('📄 Access code doc exists:', accessCodeDoc.exists());
           
@@ -196,9 +215,9 @@ export const authOptions: NextAuthOptions = {
             throw new Error('Access code does not have a valid community assignment');
           }
 
-          // Mark access code as used
+          // Mark access code as used (use the correct document ID)
           console.log('✅ Marking access code as used');
-          await setDoc(doc(db, 'accessCodes', credentials.accessCode), {
+          await setDoc(doc(db, 'accessCodes', accessCodeDocId), {
             isUsed: true,
             usedBy: credentials.email,
             usedAt: serverTimestamp()
@@ -212,7 +231,7 @@ export const authOptions: NextAuthOptions = {
             name: credentials.name,
             communityId: communityId,
             password: credentials.password, // Pass password to be saved
-            accessCode: credentials.accessCode, // Pass access code to signIn callback
+            accessCode: accessCodeDocId, // Pass the correct document ID
             isExistingUser: false // Flag to indicate this is a new user
           };
         } catch (error) {

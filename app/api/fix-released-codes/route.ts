@@ -5,11 +5,10 @@ import { authOptions } from '@/lib/auth';
 /**
  * 🔧 FIX RELEASED ACCESS CODES
  * 
- * This API finds all access codes that were incorrectly released when users
- * were deleted and marks them as invalidated instead.
- * 
- * Access codes with `releasedAt` or `releasedReason` fields are the ones
- * that were released during user deletion - these need to be invalidated.
+ * This API does the following:
+ * 1. Finds all access codes that were incorrectly released and marks them as invalidated
+ * 2. Migrates old codes (created with auto-generated IDs) to use the code as document ID
+ * 3. Reports all fixes made
  */
 
 export async function POST(request: NextRequest) {
@@ -25,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { initializeApp, getApps } = await import('firebase/app');
-    const { getFirestore, collection, getDocs, doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+    const { getFirestore, collection, getDocs, doc, updateDoc, setDoc, deleteDoc, serverTimestamp } = await import('firebase/firestore');
 
     const firebaseConfig = {
       apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -43,45 +42,64 @@ export async function POST(request: NextRequest) {
     const accessCodesSnapshot = await getDocs(collection(db, 'accessCodes'));
     
     const fixedCodes: string[] = [];
-    const alreadyInvalidated: string[] = [];
+    const migratedCodes: string[] = [];
+    const invalidatedCodes: string[] = [];
+    const alreadyCorrect: string[] = [];
     const errors: { code: string; error: string }[] = [];
 
     for (const accessCodeDoc of accessCodesSnapshot.docs) {
       const data = accessCodeDoc.data();
-      const codeId = accessCodeDoc.id;
+      const docId = accessCodeDoc.id;
+      const actualCode = data.code;
 
-      // Find codes that were released (have releasedAt or releasedReason)
-      // These are codes that should have been invalidated, not released
-      if (data.releasedAt || data.releasedReason || data.releasedBy) {
-        
-        // Skip if already invalidated
-        if (data.invalidated === true) {
-          alreadyInvalidated.push(codeId);
+      try {
+        // Case 1: Document ID doesn't match the code field - needs migration
+        if (actualCode && docId !== actualCode) {
+          console.log(`🔄 Migrating code: ${actualCode} (old docId: ${docId})`);
+          
+          // Create new document with code as ID
+          await setDoc(doc(db, 'accessCodes', actualCode), {
+            ...data,
+            _migratedFrom: docId,
+            _migratedAt: serverTimestamp(),
+            _migratedBy: session.user.email,
+          });
+          
+          // Delete old document
+          await deleteDoc(doc(db, 'accessCodes', docId));
+          
+          migratedCodes.push(actualCode);
           continue;
         }
 
-        try {
-          // Fix: Mark as used AND invalidated
-          await updateDoc(doc(db, 'accessCodes', codeId), {
-            isUsed: true,
-            invalidated: true,
-            invalidatedAt: serverTimestamp(),
-            invalidatedReason: data.releasedReason || 'Fixed: Code was incorrectly released',
-            invalidatedBy: session.user.email,
-            // Keep the release info for audit trail
-            _fixedAt: serverTimestamp(),
-            _fixedBy: session.user.email,
-            _fixReason: 'Migrated from released to invalidated state',
-          });
-          
-          fixedCodes.push(codeId);
-          console.log(`✅ Fixed access code: ${codeId}`);
-        } catch (err) {
-          errors.push({ 
-            code: codeId, 
-            error: err instanceof Error ? err.message : 'Unknown error' 
-          });
+        // Case 2: Code was released (has releasedAt/releasedReason) - needs invalidation
+        if (data.releasedAt || data.releasedReason || data.releasedBy) {
+          if (data.invalidated !== true) {
+            await updateDoc(doc(db, 'accessCodes', docId), {
+              isUsed: true,
+              invalidated: true,
+              invalidatedAt: serverTimestamp(),
+              invalidatedReason: data.releasedReason || 'Fixed: Code was incorrectly released',
+              invalidatedBy: session.user.email,
+              _fixedAt: serverTimestamp(),
+              _fixReason: 'Migrated from released to invalidated state',
+            });
+            
+            invalidatedCodes.push(docId);
+          } else {
+            alreadyCorrect.push(docId);
+          }
+          continue;
         }
+
+        // Case 3: Code is correct - no action needed
+        alreadyCorrect.push(docId);
+
+      } catch (err) {
+        errors.push({ 
+          code: docId, 
+          error: err instanceof Error ? err.message : 'Unknown error' 
+        });
       }
     }
 
@@ -90,13 +108,15 @@ export async function POST(request: NextRequest) {
       message: 'Access codes fix completed',
       summary: {
         totalCodesScanned: accessCodesSnapshot.size,
-        codesFixed: fixedCodes.length,
-        alreadyInvalidated: alreadyInvalidated.length,
+        codesMigrated: migratedCodes.length,
+        codesInvalidated: invalidatedCodes.length,
+        alreadyCorrect: alreadyCorrect.length,
         errors: errors.length,
       },
       details: {
-        fixedCodes,
-        alreadyInvalidated,
+        migratedCodes,
+        invalidatedCodes,
+        alreadyCorrect: alreadyCorrect.slice(0, 10), // Only show first 10
         errors,
       }
     });
@@ -114,8 +134,11 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     message: 'Fix Released Access Codes API',
-    description: 'Finds all access codes that were incorrectly released and marks them as invalidated',
+    description: 'Fixes all access code issues: migrates old codes to correct format and invalidates released codes',
     usage: 'POST /api/fix-released-codes (requires admin auth)',
-    note: 'This is a one-time fix for codes that were released when users were deleted'
+    fixes: [
+      '1. Migrates codes with auto-generated IDs to use the code as document ID',
+      '2. Invalidates codes that were incorrectly released when users were deleted'
+    ]
   });
 }

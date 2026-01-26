@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { collection, addDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 // Generate a random access code
@@ -50,11 +50,16 @@ export async function POST(request: NextRequest) {
       let code: string;
       let attempts = 0;
       
-      // Ensure code uniqueness (basic attempt-based approach)
+      // Ensure code uniqueness - check both generated list AND database
       do {
         code = generateAccessCode();
         attempts++;
-      } while (generatedCodes.includes(code) && attempts < 100);
+        // Check if code already exists in database
+        const existingCode = await getDoc(doc(db, 'accessCodes', code));
+        if (!existingCode.exists() && !generatedCodes.includes(code)) {
+          break;
+        }
+      } while (attempts < 100);
 
       if (attempts >= 100) {
         return NextResponse.json(
@@ -65,18 +70,21 @@ export async function POST(request: NextRequest) {
 
       generatedCodes.push(code);
 
-      // Create access code document
+      // Create access code document - USE CODE AS DOCUMENT ID
       const accessCodeData = {
         code,
         communityId,
         isUsed: false,
         usedBy: null,
+        usedAt: null,
+        invalidated: false,
         createdAt: new Date(),
         createdBy: session.user.email,
         expiresAt: null, // Set to null for no expiration, or add expiration logic if needed
       };
 
-      codePromises.push(addDoc(collection(db, 'accessCodes'), accessCodeData));
+      // Use setDoc with code as document ID so auth can look it up directly
+      codePromises.push(setDoc(doc(db, 'accessCodes', code), accessCodeData));
     }
 
     // Save all codes to Firestore
