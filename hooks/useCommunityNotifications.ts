@@ -2,16 +2,20 @@
 
 import { useSession } from 'next-auth/react';
 import { useNotifications } from '@/components/notifications/NotificationSystem';
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+
+// ============================================================================
+// COMMUNITY NOTIFICATIONS HOOK
+// Simplified to match new notification type system
+// ============================================================================
 
 export interface CommunityNotificationData {
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error' | 'booking' | 'community' | 'system';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  category: 'booking' | 'community' | 'system' | 'maintenance' | 'payment' | 'social' | 'amenity' | 'delivery' | 'feedback' | 'parking' | 'promotion';
-  metadata?: Record<string, any>;
+  type: 'booking' | 'system' | 'community' | 'admin' | 'payment';
+  priority: 'normal' | 'important' | 'urgent';
+  metadata?: Record<string, unknown>;
   autoHide?: boolean;
   duration?: number;
 }
@@ -20,31 +24,39 @@ export function useCommunityNotifications() {
   const { data: session } = useSession();
   const { addNotification } = useNotifications();
 
-  const sendCommunityNotification = async (notificationData: CommunityNotificationData & { targetUser?: string }) => {
+  const sendCommunityNotification = async (
+    notificationData: CommunityNotificationData & { targetUser?: string }
+  ) => {
     try {
       if (!session?.user?.communityId) {
         console.error('No community ID found');
-        return;
+        return false;
       }
 
       // Add to local notification system for immediate feedback
       addNotification({
-        ...notificationData,
-        autoHide: notificationData.autoHide ?? true,
+        title: notificationData.title,
+        message: notificationData.message,
+        type: notificationData.type,
+        priority: notificationData.priority,
+        autoHide: notificationData.autoHide ?? false, // Default to persistent notifications
         duration: notificationData.duration ?? 5000
       });
 
-      // Store in Firestore for persistence and cross-user notifications
-      // In a real implementation, this would trigger push notifications to all community members
+      // Store in Firestore for persistence
       const notificationDocData = {
-        ...notificationData,
+        title: notificationData.title,
+        message: notificationData.message,
+        type: notificationData.type,
+        priority: notificationData.priority,
         communityId: session.user.communityId,
         senderEmail: session.user.email,
         senderName: session.user.name || session.user.email,
         timestamp: serverTimestamp(),
-        recipients: notificationData.targetUser || 'all', // Target specific user or all
+        recipients: notificationData.targetUser || 'all',
         delivered: false,
-        read: false
+        read: false,
+        metadata: notificationData.metadata || {}
       };
 
       await addDoc(collection(db, 'communityNotifications'), notificationDocData);
@@ -52,8 +64,7 @@ export function useCommunityNotifications() {
       console.log('📢 Community notification sent:', {
         title: notificationData.title,
         community: session.user.communityId,
-        type: notificationData.type,
-        targetUser: notificationData.targetUser || 'all'
+        type: notificationData.type
       });
 
       return true;
@@ -63,17 +74,20 @@ export function useCommunityNotifications() {
     }
   };
 
-  const sendAmenityBlockNotification = async (amenityName: string, blockedDates: Date[], reason: string) => {
+  const sendAmenityBlockNotification = async (
+    amenityName: string, 
+    blockedDates: Date[], 
+    reason: string
+  ) => {
     const dateRange = blockedDates.length === 1 
       ? blockedDates[0].toLocaleDateString()
       : `${blockedDates[0].toLocaleDateString()} - ${blockedDates[blockedDates.length - 1].toLocaleDateString()}`;
 
     return await sendCommunityNotification({
-      title: `🚫 ${amenityName} Blocked`,
-      message: `${amenityName} has been blocked for ${blockedDates.length} date(s): ${dateRange}. Reason: ${reason}. Please plan accordingly.`,
-      type: 'warning',
-      priority: 'high',
-      category: 'amenity',
+      title: `${amenityName} Blocked`,
+      message: `${amenityName} has been blocked for ${blockedDates.length} date(s): ${dateRange}. Reason: ${reason}.`,
+      type: 'admin',
+      priority: 'important',
       autoHide: false,
       metadata: {
         amenityName,
@@ -86,13 +100,11 @@ export function useCommunityNotifications() {
 
   const sendAmenityUnblockNotification = async (amenityName: string, unblockedDate: string) => {
     return await sendCommunityNotification({
-      title: `✅ ${amenityName} Available`,
-      message: `Great news! ${amenityName} is now available for booking on ${unblockedDate}. Book your slot now!`,
-      type: 'success',
-      priority: 'medium',
-      category: 'amenity',
-      autoHide: true,
-      duration: 8000,
+      title: `${amenityName} Available`,
+      message: `${amenityName} is now available for booking on ${unblockedDate}.`,
+      type: 'system',
+      priority: 'normal',
+      autoHide: false,
       metadata: {
         amenityName,
         unblockedDate
@@ -100,13 +112,15 @@ export function useCommunityNotifications() {
     });
   };
 
-  const sendInstantBlockNotification = async (amenityName: string, reason: string = 'Emergency maintenance') => {
+  const sendInstantBlockNotification = async (
+    amenityName: string, 
+    reason: string = 'Emergency maintenance'
+  ) => {
     return await sendCommunityNotification({
-      title: `⚠️ ${amenityName} Temporarily Unavailable`,
-      message: `${amenityName} is temporarily unavailable due to ${reason}. We apologize for any inconvenience and will update you when it's available again.`,
-      type: 'error',
+      title: `${amenityName} Temporarily Unavailable`,
+      message: `${amenityName} is temporarily unavailable due to ${reason}. We will update you when it's available again.`,
+      type: 'admin',
       priority: 'urgent',
-      category: 'amenity',
       autoHide: false,
       metadata: {
         amenityName,

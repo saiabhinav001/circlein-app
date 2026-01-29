@@ -300,6 +300,11 @@ const setupDatabaseWithAuth = async () => {
 };
 
 export async function POST(request: NextRequest) {
+  // Development only - block in production (destructive operation)
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Manual setup disabled in production' }, { status: 403 });
+  }
+
   try {
     const result = await setupDatabaseWithAuth();
     

@@ -5,16 +5,16 @@ import { useParams, useRouter } from 'next/navigation';
 import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useSession } from 'next-auth/react';
-import { motion } from 'framer-motion';
-import { Calendar as CalendarIcon, Clock, Users, MapPin, Info } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Users, Info, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 interface Amenity {
   id: string;
@@ -385,15 +385,16 @@ export default function AmenityBooking() {
     }
 
     try {
-      // Calculate booking time
-      const [startTime] = selectedSlot.split('-');
-      const [hours, minutes] = startTime.split(':').map(Number);
+      // Calculate booking time from the actual slot times
+      const [slotStartTime, slotEndTime] = selectedSlot.split('-');
+      const [startHours, startMinutes] = slotStartTime.split(':').map(Number);
+      const [endHours, endMinutes] = slotEndTime.split(':').map(Number);
       
       const bookingStart = new Date(selectedDate);
-      bookingStart.setHours(hours, minutes, 0, 0);
+      bookingStart.setHours(startHours, startMinutes, 0, 0);
       
-      const bookingEnd = new Date(bookingStart);
-      bookingEnd.setHours(hours + 2, minutes, 0, 0);
+      const bookingEnd = new Date(selectedDate);
+      bookingEnd.setHours(endHours, endMinutes, 0, 0);
 
       // 🔥 NEW: Use transaction-based API
       console.log('🚀 Creating booking via transaction API...');
@@ -470,402 +471,512 @@ export default function AmenityBooking() {
 
   if (loading || !amenity) {
     return (
-      <div className="p-8">
-        <Card className="animate-pulse">
-          <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded-t-lg"></div>
-          <CardHeader>
-            <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/2 mb-4"></div>
-            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full mb-2"></div>
-            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
-          </CardHeader>
-        </Card>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {/* Skeleton Header */}
+          <div className="mb-6">
+            <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse mb-4" />
+            <div className="h-8 w-64 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            {/* Skeleton Amenity Info */}
+            <div className="lg:col-span-2">
+              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <div className="h-48 bg-slate-200 dark:bg-slate-800 animate-pulse" />
+                <div className="p-5">
+                  <div className="h-5 w-3/4 bg-slate-200 dark:bg-slate-800 rounded animate-pulse mb-3" />
+                  <div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded animate-pulse mb-2" />
+                  <div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+            
+            {/* Skeleton Booking Panel */}
+            <div className="lg:col-span-3">
+              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5">
+                <div className="h-6 w-40 bg-slate-200 dark:bg-slate-800 rounded animate-pulse mb-4" />
+                <div className="h-64 bg-slate-100 dark:bg-slate-800 rounded-lg animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="p-8"
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-        {/* Amenity Info */}
-        <Card className="border-0 bg-white dark:bg-slate-900">
-          <div className="relative overflow-hidden rounded-t-lg">
-            <img
-              src={amenity.imageUrl || 'https://images.pexels.com/photos/296282/pexels-photo-296282.jpeg?auto=compress&cs=tinysrgb&w=1200'}
-              alt={amenity.name}
-              className="w-full h-48 sm:h-56 lg:h-64 object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-            <div className="absolute bottom-4 left-4">
-              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{amenity.name}</h1>
-              <Badge className={amenity.isBlocked ? "bg-red-500/90 text-white border-red-400 text-xs sm:text-sm" : "bg-white/20 text-white border-white/30 text-xs sm:text-sm"}>
-                {amenity.isBlocked ? 'Temporarily Blocked' : 'Available Now'}
-              </Badge>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page Header - Clean & Human-Readable */}
+        <div className="mb-6 sm:mb-8">
+          <Link 
+            href="/dashboard" 
+            className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 mb-3 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Link>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">
+                {amenity.name}
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">
+                {amenity.isBlocked ? 'Currently unavailable for booking' : 'Select a date and time to book'}
+              </p>
             </div>
+            <Badge 
+              className={cn(
+                "w-fit",
+                amenity.isBlocked 
+                  ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800" 
+                  : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+              )}
+            >
+              <span className={cn(
+                "w-1.5 h-1.5 rounded-full mr-1.5",
+                amenity.isBlocked ? "bg-red-500" : "bg-emerald-500"
+              )} />
+              {amenity.isBlocked ? 'Blocked' : 'Available'}
+            </Badge>
           </div>
-          
-          <CardHeader className="p-4 sm:p-6">
-            <CardDescription className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">
-              {amenity.description}
-            </CardDescription>
-            
-            {amenity.isBlocked && amenity.blockReason && (
-              <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <Info className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-semibold text-red-800 dark:text-red-300 text-sm sm:text-base">
-                      Booking Temporarily Unavailable
-                    </p>
-                    <p className="text-red-700 dark:text-red-400 text-xs sm:text-sm mt-1">
-                      {amenity.blockReason}
-                    </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Amenity Info Panel - Left Column */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+              {/* Image */}
+              <div className="relative h-48 sm:h-56">
+                <img
+                  src={amenity.imageUrl || 'https://images.pexels.com/photos/296282/pexels-photo-296282.jpeg?auto=compress&cs=tinysrgb&w=1200'}
+                  alt={amenity.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                {amenity.category && (
+                  <Badge className="absolute top-3 left-3 bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 border-0">
+                    {amenity.category}
+                  </Badge>
+                )}
+              </div>
+              
+              {/* Details */}
+              <div className="p-5">
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-4">
+                  {amenity.description}
+                </p>
+                
+                {/* Quick Info Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                    <Users className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Max per booking</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        {amenity.rules?.maxSlotsPerFamily || amenity.booking?.maxPeople || 4} people
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                    <Clock className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Slot duration</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        {amenity.booking?.slotDuration 
+                          ? amenity.booking.slotDuration === 1 
+                            ? '1 hour' 
+                            : amenity.booking.slotDuration < 1
+                              ? `${amenity.booking.slotDuration * 60} min`
+                              : `${amenity.booking.slotDuration} hours`
+                          : '2 hours'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            
-            <div className="flex flex-wrap gap-3 sm:gap-4 pt-4">
-              <div className="flex items-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                <span>Max {amenity.rules.maxSlotsPerFamily} per family</span>
-              </div>
-              <div className="flex items-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                <span>
-                  {amenity.booking?.slotDuration 
-                    ? amenity.booking.slotDuration === 1 
-                      ? '1-hour slots' 
-                      : amenity.booking.slotDuration < 1
-                        ? `${amenity.booking.slotDuration * 60}-minute slots`
-                        : `${amenity.booking.slotDuration}-hour slots`
-                    : '2-hour slots'}
-                </span>
-              </div>
-              <div className="flex items-center text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                <span>Community Center</span>
+                
+                {/* Block Reason */}
+                {amenity.isBlocked && amenity.blockReason && (
+                  <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-red-800 dark:text-red-300">Temporarily Unavailable</p>
+                        <p className="text-xs text-red-700 dark:text-red-400 mt-0.5">{amenity.blockReason}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </CardHeader>
-        </Card>
+            
+            {/* Booking Rules Card */}
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">Booking Guidelines</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                  <span>Maximum {amenity.rules?.maxSlotsPerFamily || 4} people per booking</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                  <span>Cancellations allowed up to 24 hours in advance</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                  <span>Please arrive on time and follow community rules</span>
+                </li>
+              </ul>
+            </div>
+          </div>
 
-        {/* Booking Calendar - Show blocked message or calendar */}
-        {amenity.isBlocked ? (
-          <Card className="border-0 bg-white dark:bg-slate-900">
-            <CardHeader>
-              <CardTitle className="flex items-center text-base sm:text-lg text-red-600 dark:text-red-400">
-                <Info className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                Booking Unavailable
-              </CardTitle>
-              <CardDescription className="text-sm">
-                This amenity is temporarily blocked
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <div className="text-center max-w-md">
-                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                  <Info className="w-10 h-10 text-red-600 dark:text-red-400" />
+          {/* Booking Panel - Right Column */}
+          <div className="lg:col-span-3">
+            {amenity.isBlocked ? (
+              /* Blocked State */
+              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-8 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <AlertCircle className="w-8 h-8 text-red-500 dark:text-red-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">
-                  Currently Unavailable
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                  Booking Unavailable
                 </h3>
-                <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">
-                  {amenity.blockReason || 'This amenity has been temporarily blocked by administration.'}
-                </p>
-                <p className="text-slate-500 dark:text-slate-500 text-xs">
-                  Please check back later or contact your community administrator for more information.
+                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  {amenity.blockReason || 'This amenity is temporarily unavailable. Please check back later.'}
                 </p>
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="border-0 bg-white dark:bg-slate-900">
-            <CardHeader>
-              <CardTitle className="flex items-center text-base sm:text-lg">
-                <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                Select Date & Time
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Choose your preferred date and time slot
-              </CardDescription>
-            </CardHeader>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex justify-center w-full overflow-x-auto">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                className="rounded-md border w-full max-w-full"
-                classNames={{
-                  months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                  month: "space-y-4 w-full",
-                  caption: "flex justify-center pt-1 relative items-center",
-                  caption_label: "text-sm font-medium",
-                  nav: "space-x-1 flex items-center",
-                  nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-                  nav_button_previous: "absolute left-1",
-                  nav_button_next: "absolute right-1",
-                  table: "w-full border-collapse space-y-1",
-                  head_row: "flex w-full",
-                  head_cell: "text-muted-foreground rounded-md w-full font-normal text-[0.8rem]",
-                  row: "flex w-full mt-2",
-                  cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 w-full",
-                  day: "h-8 w-full sm:h-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md",
-                  day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                  day_today: "bg-accent text-accent-foreground",
-                  day_outside: "text-muted-foreground opacity-50",
-                  day_disabled: "text-muted-foreground opacity-50",
-                  day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                  day_hidden: "invisible",
-                }}
-                disabled={(date) => {
-                // Disable past dates
-                if (date < new Date(Date.now() - 86400000)) return true;
-                
-                // Disable blackout dates with improved date handling
-                if (amenity.rules?.blackoutDates && amenity.rules.blackoutDates.length > 0) {
-                  return amenity.rules.blackoutDates.some((blackoutItem: any) => {
-                    try {
-                      let blackoutDate: Date | null = null;
-                      
-                      // Handle different date formats
-                      if (blackoutItem?.date) {
-                        if (blackoutItem.date instanceof Date) {
-                          blackoutDate = blackoutItem.date;
-                        } else if (blackoutItem.date.seconds) {
-                          // Firestore timestamp
-                          blackoutDate = new Date(blackoutItem.date.seconds * 1000);
-                        } else {
-                          // String date
-                          blackoutDate = new Date(blackoutItem.date);
-                        }
-                      } else if (blackoutItem instanceof Date) {
-                        blackoutDate = blackoutItem;
-                      } else if (blackoutItem?.seconds) {
-                        // Direct Firestore timestamp
-                        blackoutDate = new Date(blackoutItem.seconds * 1000);
-                      } else if (typeof blackoutItem === 'string') {
-                        blackoutDate = new Date(blackoutItem);
-                      }
-                      
-                      if (blackoutDate && !isNaN(blackoutDate.getTime())) {
-                        const dateToCheck = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-                        const blackoutDateToCheck = new Date(blackoutDate.getFullYear(), blackoutDate.getMonth(), blackoutDate.getDate());
-                        return dateToCheck.getTime() === blackoutDateToCheck.getTime();
-                      }
-                      
-                      return false;
-                    } catch (error) {
-                      console.error('Error checking blackout date:', error, blackoutItem);
-                      return false;
-                    }
-                  });
-                }
-                
-                return false;
-              }}
-            />
-            </div>
-            
-            {/* Show blocked dates info */}
-            {amenity.rules?.blackoutDates && amenity.rules.blackoutDates.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Info className="w-4 h-4 text-red-600 dark:text-red-400" />
-                  <span className="text-sm font-medium text-red-800 dark:text-red-200">
-                    Blocked Dates
-                  </span>
+            ) : (
+              /* Booking Flow */
+              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                {/* Header */}
+                <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                    <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                      Select Date & Time
+                    </h2>
+                  </div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    Choose your preferred date and available time slot
+                  </p>
                 </div>
-                <div className="text-xs text-red-700 dark:text-red-300">
-                  Some dates are unavailable due to festive seasons or maintenance.
-                  {amenity.rules.blackoutDates.length <= 5 && (
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {amenity.rules.blackoutDates.map((blackoutItem: any, index: number) => {
-                        let displayDate = '';
-                        let reason = '';
-                        
-                        try {
-                          // Handle different date formats
-                          if (blackoutItem?.date) {
-                            if (blackoutItem.date instanceof Date) {
-                              displayDate = blackoutItem.date.toLocaleDateString();
-                            } else if (blackoutItem.date.seconds) {
-                              displayDate = new Date(blackoutItem.date.seconds * 1000).toLocaleDateString();
-                            } else {
-                              displayDate = new Date(blackoutItem.date).toLocaleDateString();
+                
+                {/* Calendar Section */}
+                <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800">
+                  {/* Calendar Container with subtle elevation */}
+                  <div className="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl p-3 sm:p-4">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      className="mx-auto"
+                      classNames={{
+                        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                        month: "space-y-4",
+                        caption: "flex justify-center pt-1 relative items-center h-10",
+                        caption_label: "text-sm font-semibold text-slate-900 dark:text-slate-100",
+                        nav: "space-x-1 flex items-center",
+                        nav_button: cn(
+                          "h-8 w-8 sm:h-9 sm:w-9 inline-flex items-center justify-center rounded-lg",
+                          "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700",
+                          "hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600",
+                          "active:scale-95 transition-all duration-100",
+                          "text-slate-600 dark:text-slate-400"
+                        ),
+                        nav_button_previous: "absolute left-0",
+                        nav_button_next: "absolute right-0",
+                        table: "w-full border-collapse",
+                        head_row: "flex",
+                        head_cell: "text-slate-500 dark:text-slate-400 rounded-md w-10 sm:w-11 font-medium text-[0.75rem] uppercase tracking-wide",
+                        row: "flex w-full mt-1",
+                        cell: cn(
+                          "relative p-0.5 text-center text-sm focus-within:relative focus-within:z-20",
+                          "[&:has([aria-selected])]:bg-transparent"
+                        ),
+                        day: cn(
+                          "h-10 w-10 sm:h-11 sm:w-11 p-0 font-medium rounded-lg",
+                          "transition-all duration-100",
+                          "hover:bg-slate-200/70 dark:hover:bg-slate-700/70",
+                          "active:scale-95",
+                          "focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-800"
+                        ),
+                        day_selected: cn(
+                          "bg-slate-900 dark:bg-white text-white dark:text-slate-900",
+                          "hover:bg-slate-800 dark:hover:bg-slate-100",
+                          "shadow-sm",
+                          "font-semibold"
+                        ),
+                        day_today: cn(
+                          "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100",
+                          "font-semibold",
+                          "ring-1 ring-slate-300 dark:ring-slate-600"
+                        ),
+                        day_outside: "text-slate-400 dark:text-slate-600 opacity-40 hover:opacity-40",
+                        day_disabled: "text-slate-300 dark:text-slate-700 opacity-30 cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent",
+                        day_hidden: "invisible",
+                      }}
+                    disabled={(date) => {
+                      // Disable past dates
+                      if (date < new Date(Date.now() - 86400000)) return true;
+                      
+                      // Disable blackout dates
+                      if (amenity.rules?.blackoutDates && amenity.rules.blackoutDates.length > 0) {
+                        return amenity.rules.blackoutDates.some((blackoutItem: any) => {
+                          try {
+                            let blackoutDate: Date | null = null;
+                            
+                            if (blackoutItem?.date) {
+                              if (blackoutItem.date instanceof Date) {
+                                blackoutDate = blackoutItem.date;
+                              } else if (blackoutItem.date.seconds) {
+                                blackoutDate = new Date(blackoutItem.date.seconds * 1000);
+                              } else {
+                                blackoutDate = new Date(blackoutItem.date);
+                              }
+                            } else if (blackoutItem instanceof Date) {
+                              blackoutDate = blackoutItem;
+                            } else if (blackoutItem?.seconds) {
+                              blackoutDate = new Date(blackoutItem.seconds * 1000);
+                            } else if (typeof blackoutItem === 'string') {
+                              blackoutDate = new Date(blackoutItem);
                             }
-                            reason = blackoutItem.reason || 'Blocked';
-                          } else if (blackoutItem instanceof Date) {
-                            displayDate = blackoutItem.toLocaleDateString();
-                            reason = 'Blocked';
-                          } else if (blackoutItem?.seconds) {
-                            displayDate = new Date(blackoutItem.seconds * 1000).toLocaleDateString();
-                            reason = 'Blocked';
-                          } else if (typeof blackoutItem === 'string') {
-                            displayDate = new Date(blackoutItem).toLocaleDateString();
-                            reason = 'Blocked';
-                          } else {
-                            displayDate = 'Invalid Date';
-                            reason = 'Blocked';
+                            
+                            if (blackoutDate && !isNaN(blackoutDate.getTime())) {
+                              const dateToCheck = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                              const blackoutDateToCheck = new Date(blackoutDate.getFullYear(), blackoutDate.getMonth(), blackoutDate.getDate());
+                              return dateToCheck.getTime() === blackoutDateToCheck.getTime();
+                            }
+                            
+                            return false;
+                          } catch (error) {
+                            return false;
                           }
-                        } catch (error) {
-                          displayDate = 'Invalid Date';
-                          reason = 'Blocked';
-                        }
-                        
-                        return (
-                          <span
-                            key={index}
-                            title={reason}
-                            className="inline-block px-2 py-1 bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 rounded-full"
-                          >
-                            {displayDate}
-                          </span>
-                        );
-                      })}
+                        });
+                      }
+                      
+                      return false;
+                    }}
+                  />
+                  </div>
+                  
+                  {/* Blocked Dates Notice */}
+                  {amenity.rules?.blackoutDates && amenity.rules.blackoutDates.length > 0 && (
+                    <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Info className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                        <span className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                          Some dates are blocked
+                        </span>
+                      </div>
+                      <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                        Blocked dates are unavailable due to maintenance or community events.
+                      </p>
                     </div>
                   )}
                 </div>
-              </motion.div>
-            )}
-            
-            {selectedDate && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="mt-6"
-              >
-                <h3 className="font-semibold mb-4 text-sm sm:text-base">Available Time Slots</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                  {timeSlots.map((slot) => {
-                    const booked = isSlotBooked(slot);
-                    return (
-                      <Button
-                        key={slot}
-                        variant={booked ? 'secondary' : 'outline'}
-                        disabled={booked}
-                        className={`text-xs sm:text-sm py-2 sm:py-3 ${
-                          selectedSlot === slot
-                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-                            : ''
-                        } ${booked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={() => !booked && setSelectedSlot(slot)}
-                      >
-                        <span className="flex items-center justify-center gap-1 sm:gap-2 w-full">
-                          <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                          {slot}
-                          {booked && <Badge className="ml-1 sm:ml-2 text-xs">Booked</Badge>}
-                        </span>
-                      </Button>
-                    );
-                  })}
-                </div>
-                
-                {selectedSlot && (
-                  <Dialog open={showBookingModal} onOpenChange={setShowBookingModal}>
-                    <DialogTrigger asChild>
-                      <Button className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-sm sm:text-base py-2 sm:py-3">
-                        Book {selectedSlot}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-[95vw] sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle className="text-base sm:text-lg">Confirm Booking</DialogTitle>
-                        <DialogDescription className="text-sm">
-                          {amenity.name} on {selectedDate.toLocaleDateString()} at {selectedSlot}
-                        </DialogDescription>
-                      </DialogHeader>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <Label className="text-sm">Attendees (including yourself)</Label>
-                          {attendees.map((attendee, index) => (
-                            <div key={index} className="flex items-center space-x-2 mt-2">
-                              <Input
-                                placeholder={index === 0 ? "Your name" : "Attendee name"}
-                                value={attendee}
-                                onChange={(e) => updateAttendee(index, e.target.value)}
-                                className="text-sm"
-                              />
-                              {index > 0 && (
+
+                {/* Time Slots Section */}
+                {selectedDate ? (
+                  <div className="p-4 sm:p-5">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        Available Slots
+                      </h3>
+                      <span className="text-xs font-medium px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                        {selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
+                      {timeSlots.map((slot) => {
+                        const booked = isSlotBooked(slot);
+                        const isSelected = selectedSlot === slot;
+                        
+                        return (
+                          <button
+                            key={slot}
+                            disabled={booked}
+                            onClick={() => !booked && setSelectedSlot(slot)}
+                            className={cn(
+                              "relative px-2 sm:px-3 py-3 sm:py-3.5 rounded-xl text-sm font-medium",
+                              "border-2 transition-all duration-100",
+                              "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-500",
+                              booked 
+                                ? "bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 border-slate-100 dark:border-slate-800 cursor-not-allowed"
+                                : isSelected
+                                  ? cn(
+                                      "bg-slate-900 dark:bg-white text-white dark:text-slate-900",
+                                      "border-slate-900 dark:border-white",
+                                      "shadow-md shadow-slate-900/20 dark:shadow-white/10",
+                                      "scale-[1.02]"
+                                    )
+                                  : cn(
+                                      "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300",
+                                      "border-slate-200 dark:border-slate-700",
+                                      "hover:border-slate-400 dark:hover:border-slate-500",
+                                      "hover:bg-slate-50 dark:hover:bg-slate-700/70",
+                                      "hover:shadow-sm",
+                                      "active:scale-[0.98] active:shadow-none"
+                                    )
+                            )}
+                          >
+                            <div className="flex items-center justify-center gap-1.5">
+                              <Clock className={cn(
+                                "w-3.5 h-3.5 transition-colors",
+                                isSelected ? "text-white/80 dark:text-slate-900/80" : ""
+                              )} />
+                              <span>{slot}</span>
+                            </div>
+                            {booked && (
+                              <span className="absolute -top-2 -right-2 px-1.5 py-0.5 text-[10px] font-semibold bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-md">
+                                Taken
+                              </span>
+                            )}
+                            {isSelected && !booked && (
+                              <span className="absolute -top-2 -right-2 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-sm">
+                                <CheckCircle2 className="w-4 h-4 text-white" />
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Book Button */}
+                    {selectedSlot && (
+                      <Dialog open={showBookingModal} onOpenChange={setShowBookingModal}>
+                        <DialogTrigger asChild>
+                          <Button 
+                            className={cn(
+                              "w-full mt-5 sm:mt-6 h-12 sm:h-13 text-base font-semibold",
+                              "bg-slate-900 dark:bg-white text-white dark:text-slate-900",
+                              "hover:bg-slate-800 dark:hover:bg-slate-100",
+                              "shadow-lg shadow-slate-900/20 dark:shadow-white/10",
+                              "active:scale-[0.98] active:shadow-md transition-all duration-150"
+                            )}
+                          >
+                            Book {selectedSlot}
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle className="text-lg">Confirm Your Booking</DialogTitle>
+                            <DialogDescription className="text-slate-500 dark:text-slate-400">
+                              {amenity.name} • {selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} • {selectedSlot}
+                            </DialogDescription>
+                          </DialogHeader>
+                          
+                          <div className="space-y-4 mt-4">
+                            <div>
+                              <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                Attendees
+                              </Label>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                                Add names of people attending (including yourself)
+                              </p>
+                              {attendees.map((attendee, index) => (
+                                <div key={index} className="flex items-center gap-2 mt-2">
+                                  <Input
+                                    placeholder={index === 0 ? "Your name" : "Attendee name"}
+                                    value={attendee}
+                                    onChange={(e) => updateAttendee(index, e.target.value)}
+                                    className="flex-1"
+                                  />
+                                  {index > 0 && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeAttendee(index)}
+                                      className="text-slate-500 hover:text-red-500"
+                                    >
+                                      Remove
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                              {attendees.length < (amenity.rules?.maxSlotsPerFamily || 4) && (
                                 <Button
                                   type="button"
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => removeAttendee(index)}
+                                  onClick={addAttendee}
+                                  className="mt-2"
                                 >
-                                  Remove
+                                  + Add attendee
                                 </Button>
                               )}
                             </div>
-                          ))}
-                          {attendees.length < amenity.rules.maxSlotsPerFamily && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={addAttendee}
-                              className="mt-2"
-                            >
-                              Add Attendee
-                            </Button>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center space-x-2 p-4 bg-blue-50 dark:bg-blue-950/50 rounded-lg">
-                          <Info className="w-5 h-5 text-blue-500" />
-                          <div className="text-sm text-blue-700 dark:text-blue-300">
-                            <p className="font-medium">Booking Rules:</p>
-                            <p>• Maximum {amenity.rules.maxSlotsPerFamily} people per booking</p>
-                            <p>• Bookings can be cancelled up to 24 hours in advance</p>
+                            
+                            {/* Summary */}
+                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Info className="w-4 h-4 text-blue-500" />
+                                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Booking Summary</span>
+                              </div>
+                              <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+                                <li>• {amenity.name}</li>
+                                <li>• {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</li>
+                                <li>• Time: {selectedSlot}</li>
+                                <li>• {attendees.filter(a => a.trim()).length || 1} attendee(s)</li>
+                              </ul>
+                            </div>
+                            
+                            {/* Actions */}
+                            <div className="flex gap-3 pt-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => setShowBookingModal(false)}
+                                disabled={isBooking}
+                                className="flex-1"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={handleBooking}
+                                disabled={isBooking}
+                                className={cn(
+                                  "flex-1",
+                                  "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900",
+                                  "hover:bg-slate-800 dark:hover:bg-slate-200"
+                                )}
+                              >
+                                {isBooking ? (
+                                  <span className="flex items-center gap-2">
+                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    Booking...
+                                  </span>
+                                ) : (
+                                  'Confirm Booking'
+                                )}
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                        
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowBookingModal(false)}
-                            className="flex-1"
-                            disabled={isBooking}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            onClick={handleBooking}
-                            disabled={isBooking}
-                            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {isBooking ? (
-                              <span className="flex items-center justify-center">
-                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Booking...
-                              </span>
-                            ) : (
-                              'Confirm Booking'
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
+                ) : (
+                  /* No Date Selected State */
+                  <div className="p-6 sm:p-8 text-center">
+                    <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                      <CalendarIcon className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+                    </div>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Select a date to continue</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-[200px] mx-auto">
+                      Pick your preferred date from the calendar above
+                    </p>
+                  </div>
                 )}
-              </motion.div>
+              </div>
             )}
-          </CardContent>
-        </Card>
-        )}
+          </div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

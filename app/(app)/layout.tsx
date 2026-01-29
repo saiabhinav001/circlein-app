@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, createContext, useContext } from 'react';
+import { useState } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { SearchProvider } from '@/components/providers/search-provider';
@@ -9,18 +9,8 @@ import { RealtimeNotificationListener } from '@/components/notifications/Realtim
 import { FirebaseAuthSync } from '@/components/firebase-auth-sync';
 import { UserValidationGuard } from '@/components/auth/UserValidationGuard';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useReminderChecker } from '@/hooks/use-reminder-checker';
-
-// Context to share sidebar collapsed state
-const SidebarContext = createContext<{
-  isCollapsed: boolean;
-  setIsCollapsed: (collapsed: boolean) => void;
-}>({
-  isCollapsed: false,
-  setIsCollapsed: () => {},
-});
-
-export const useSidebarContext = () => useContext(SidebarContext);
+import { useReminderChecker } from '@/hooks/useReminderChecker';
+import { SidebarContext } from '@/hooks/useSidebarContext';
 
 export default function AppLayout({
   children,
@@ -40,30 +30,33 @@ export default function AppLayout({
           {/* User Validation Guard - Forces logout if user is deleted */}
           <UserValidationGuard />
           
-          <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
+          <div className="flex h-screen bg-slate-100/50 dark:bg-slate-950 overflow-hidden">
             {/* Desktop Sidebar */}
-            <div className="hidden lg:block">
+            <div className="hidden lg:block shrink-0">
               <Sidebar onCollapseChange={setSidebarCollapsed} />
             </div>
 
-            {/* Mobile Sidebar */}
-            <AnimatePresence>
+            {/* Mobile Sidebar Overlay */}
+            <AnimatePresence mode="wait">
               {mobileMenuOpen && (
                 <>
+                  {/* Backdrop */}
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="fixed inset-0 bg-black/60 z-[100000] lg:hidden backdrop-blur-sm"
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    className="fixed inset-0 bg-slate-900/50 dark:bg-black/60 z-[100000] lg:hidden backdrop-blur-[2px]"
                     onClick={() => setMobileMenuOpen(false)}
+                    aria-hidden="true"
                   />
+                  {/* Sidebar Panel */}
                   <motion.div
                     initial={{ x: '-100%' }}
                     animate={{ x: 0 }}
                     exit={{ x: '-100%' }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    className="fixed inset-y-0 left-0 z-[100001] w-full sm:w-[320px] md:w-[340px] max-w-[85vw] lg:hidden"
+                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                    className="fixed inset-y-0 left-0 z-[100001] w-[85vw] max-w-[300px] lg:hidden shadow-2xl shadow-slate-900/20 dark:shadow-black/40"
                   >
                     <Sidebar onClose={() => setMobileMenuOpen(false)} />
                   </motion.div>
@@ -71,16 +64,25 @@ export default function AppLayout({
               )}
             </AnimatePresence>
 
-            <div className="flex-1 flex flex-col overflow-hidden w-full">
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col overflow-hidden min-w-0 bg-white/40 dark:bg-transparent">
               <Header 
                 onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
                 isMenuOpen={mobileMenuOpen}
               />
-              <main className="flex-1 overflow-auto">
-                {children}
+              <main className="flex-1 overflow-auto bg-gradient-to-br from-slate-50/80 via-white/60 to-slate-100/40 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900/50">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.25 }}
+                  className="min-h-full"
+                >
+                  {children}
+                </motion.div>
               </main>
             </div>
             
+            {/* Notification Listeners */}
             <EnhancedNotificationListener />
             <RealtimeNotificationListener />
           </div>

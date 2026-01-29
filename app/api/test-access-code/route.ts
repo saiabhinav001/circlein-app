@@ -3,6 +3,11 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 export async function POST(request: NextRequest) {
+  // Development only - block in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Test endpoint disabled in production' }, { status: 403 });
+  }
+
   try {
     const { accessCode } = await request.json();
     

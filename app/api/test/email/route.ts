@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email-service';
 
 export async function GET() {
+  // Development only - block in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Test email endpoint disabled in production' }, { status: 403 });
+  }
+
   try {
     // Check if environment variables are set
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {

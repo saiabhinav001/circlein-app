@@ -7,6 +7,11 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET() {
+  // Development only - block in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Test code creation disabled in production' }, { status: 403 });
+  }
+
   try {
     // Create multiple access codes for testing including the ones you've tried
     const accessCodes = [
@@ -57,10 +62,7 @@ export async function GET() {
       total: results.length
     });
   } catch (error) {
-    // Suppress console.error during build
-    if (process.env.NODE_ENV !== 'production' || typeof window !== 'undefined') {
-      console.error('Error creating access codes:', error);
-    }
+    console.error('Error creating access codes:', error);
     return NextResponse.json({
       error: 'Failed to create access codes',
       details: error instanceof Error ? error.message : 'Unknown error'

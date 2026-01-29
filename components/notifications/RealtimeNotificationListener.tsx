@@ -62,16 +62,8 @@ export function RealtimeNotificationListener() {
                 title: data.title || '🔔 New Notification',
                 message: data.message || '',
                 type: mapNotificationType(data.type),
-                priority: data.priority || 'medium',
-                category: data.category || 'system',
-                actionUrl: data.data?.bookingUrl || '/bookings',
-                actionLabel: 'View Details',
-                autoHide: true,
-                duration: 8000,
-                metadata: {
-                  firestoreId: notificationId,
-                  ...data.data,
-                },
+                priority: data.priority || 'normal',
+                autoHide: false
               });
 
               // Mark as read after showing (optional - keep for notification history)
@@ -108,19 +100,25 @@ export function RealtimeNotificationListener() {
 /**
  * Map Firestore notification types to UI notification types
  */
-function mapNotificationType(type: string): 'success' | 'error' | 'warning' | 'info' | 'community' {
+function mapNotificationType(type: string): 'booking' | 'system' | 'community' | 'admin' | 'payment' {
   switch (type) {
     case 'waitlist_promoted':
     case 'booking_confirmed':
-      return 'success';
+    case 'booking_created':
+    case 'booking_reminder':
+      return 'booking';
     case 'booking_cancelled':
     case 'suspension':
-      return 'warning';
-    case 'booking_reminder':
+    case 'amenity_blocked':
+      return 'admin';
+    case 'community':
+    case 'announcement':
+      return 'community';
+    case 'payment':
+      return 'payment';
     case 'system':
-      return 'info';
     default:
-      return 'info';
+      return 'system';
   }
 }
 

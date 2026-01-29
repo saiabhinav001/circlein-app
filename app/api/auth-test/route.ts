@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
+  // Development only - block in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Debug endpoint disabled in production' }, { status: 403 });
+  }
+
   const googleProvider = authOptions.providers?.find(
     (provider: any) => provider.id === 'google'
   );

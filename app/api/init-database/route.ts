@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { initializeDatabase, createSampleBookings } from '@/lib/init-database';
 
 export async function POST(req: NextRequest) {
+  // Development only - block in production (destructive operation)
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Database initialization disabled in production' }, { status: 403 });
+  }
+
   try {
     console.log('🚀 Database initialization requested...');
     

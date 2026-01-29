@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -18,20 +18,39 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   Key,
   Users,
-  UserPlus,
   Copy,
   CheckCircle,
   Plus,
-  Settings,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Search,
+  X,
+  RefreshCw,
+  Shield,
+  Loader2,
+  MoreHorizontal,
+  Clock,
+  Filter,
+  ChevronDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { collection, query, where, getDocs, doc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { cn } from '@/lib/utils';
+
+// ============================================================================
+// TYPES
+// ============================================================================
 
 interface AccessCode {
   id: string;
@@ -54,69 +73,136 @@ interface User {
   lastLogin: any;
 }
 
+type CodeFilter = 'all' | 'available' | 'used';
+type RoleFilter = 'all' | 'admin' | 'resident';
+
+// ============================================================================
+// ANIMATION CONFIG
+// ============================================================================
+
+const easeOut = "easeOut";
+const duration = 0.2;
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 export default function ManageUsers() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  
+  // Data state
   const [accessCodes, setAccessCodes] = useState<AccessCode[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  
+  // Filter & search state
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [codeFilter, setCodeFilter] = useState<CodeFilter>('all');
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  // Check admin access
+  // ============================================================================
+  // AUTH & DATA FETCHING
+  // ============================================================================
+
   useEffect(() => {
     if (status === 'loading') return;
-    
     if (!session?.user?.email || session.user.role !== 'admin') {
       router.push('/dashboard');
       return;
     }
-    
-    fetchUsersAndAccessCodes();
+    fetchData();
   }, [session, status, router]);
 
-  const fetchUsersAndAccessCodes = async () => {
+  const fetchData = useCallback(async () => {
     try {
       if (!session?.user?.communityId) return;
       
-      // Fetch access codes
-      const accessCodesQuery = query(
-        collection(db, 'accessCodes'),
-        where('communityId', '==', session.user.communityId)
-      );
+      const [codesSnapshot, usersSnapshot] = await Promise.all([
+        getDocs(query(collection(db, 'accessCodes'), where('communityId', '==', session.user.communityId))),
+        getDocs(query(collection(db, 'users'), where('communityId', '==', session.user.communityId)))
+      ]);
       
-      const accessCodesSnapshot = await getDocs(accessCodesQuery);
-      const accessCodesData = accessCodesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as AccessCode));
-      
-      setAccessCodes(accessCodesData);
-      
-      // Fetch users
-      const usersQuery = query(
-        collection(db, 'users'),
-        where('communityId', '==', session.user.communityId)
-      );
-      
-      const usersSnapshot = await getDocs(usersQuery);
-      const usersData = usersSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as User));
-      
-      setUsers(usersData);
+      setAccessCodes(codesSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as AccessCode)));
+      setUsers(usersSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as User)));
     } catch (error) {
-      console.error('Error fetching users and access codes:', error);
-      toast.error('Failed to load user data');
+      console.error('Error fetching data:', error);
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user?.communityId]);
+
+  // ============================================================================
+  // COMPUTED VALUES (KPIs & Filtered Data)
+  // ============================================================================
+
+  const stats = useMemo(() => ({
+    totalUsers: users.length,
+    activeResidents: users.filter(u => u.role === 'resident').length,
+    admins: users.filter(u => u.role === 'admin').length,
+    totalCodes: accessCodes.length,
+    usedCodes: accessCodes.filter(c => c.isUsed).length,
+    availableCodes: accessCodes.filter(c => !c.isUsed).length,
+  }), [users, accessCodes]);
+
+  const filteredCodes = useMemo(() => {
+    let result = accessCodes;
+    
+    // Apply code filter
+    if (codeFilter === 'available') result = result.filter(c => !c.isUsed);
+    else if (codeFilter === 'used') result = result.filter(c => c.isUsed);
+    
+    // Apply global search
+    if (globalSearch.trim()) {
+      const search = globalSearch.toLowerCase();
+      result = result.filter(c => 
+        c.id.toLowerCase().includes(search) ||
+        c.usedBy?.toLowerCase().includes(search)
+      );
+    }
+    
+    return result.sort((a, b) => {
+      // Available codes first, then by ID
+      if (a.isUsed !== b.isUsed) return a.isUsed ? 1 : -1;
+      return a.id.localeCompare(b.id);
+    });
+  }, [accessCodes, codeFilter, globalSearch]);
+
+  const filteredUsers = useMemo(() => {
+    let result = users;
+    
+    // Apply role filter
+    if (roleFilter !== 'all') result = result.filter(u => u.role === roleFilter);
+    
+    // Apply global search
+    if (globalSearch.trim()) {
+      const search = globalSearch.toLowerCase();
+      result = result.filter(u => 
+        u.name?.toLowerCase().includes(search) ||
+        u.email.toLowerCase().includes(search)
+      );
+    }
+    
+    return result.sort((a, b) => {
+      // Admins first, then by name
+      if (a.role !== b.role) return a.role === 'admin' ? -1 : 1;
+      return (a.name || a.email).localeCompare(b.name || b.email);
+    });
+  }, [users, roleFilter, globalSearch]);
+
+  const hasActiveFilters = codeFilter !== 'all' || roleFilter !== 'all' || globalSearch.trim();
+
+  // ============================================================================
+  // ACTIONS
+  // ============================================================================
 
   const generateAccessCode = async () => {
+    setActionLoading('generate');
     try {
       if (!session?.user?.communityId) return;
-      
-      // Generate random access code
       const code = Math.random().toString(36).substr(2, 8).toUpperCase();
       
       await setDoc(doc(db, 'accessCodes', code), {
@@ -127,418 +213,773 @@ export default function ManageUsers() {
         description: `Generated by ${session.user.name || session.user.email}`
       });
       
-      toast.success(`Access code ${code} generated successfully!`);
-      fetchUsersAndAccessCodes();
+      toast.success(`Access code ${code} generated`);
+      await navigator.clipboard.writeText(code);
+      toast.success('Code copied to clipboard');
+      fetchData();
     } catch (error) {
       console.error('Error generating access code:', error);
       toast.error('Failed to generate access code');
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const deleteAccessCode = async (codeId: string) => {
+    setActionLoading(codeId);
     try {
-      const codeRef = doc(db, 'accessCodes', codeId);
-      await deleteDoc(codeRef);
-      toast.success('Access code deleted successfully!');
-      fetchUsersAndAccessCodes();
+      await deleteDoc(doc(db, 'accessCodes', codeId));
+      toast.success('Access code revoked');
+      fetchData();
     } catch (error) {
       console.error('Error deleting access code:', error);
-      toast.error('Failed to delete access code');
+      toast.error('Failed to revoke access code');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const replaceUsedCode = async (usedCodeId: string) => {
+    setActionLoading(usedCodeId);
+    try {
+      const response = await fetch('/api/access-codes/auto-replace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usedCodeId }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(`New code ${data.newCode} generated`);
+        await navigator.clipboard.writeText(data.newCode);
+        toast.success('New code copied to clipboard');
+        fetchData();
+      } else {
+        toast.error(data.error || 'Failed to replace code');
+      }
+    } catch (error) {
+      console.error('Error replacing code:', error);
+      toast.error('Failed to replace code');
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const deleteUser = async (userId: string, userEmail: string) => {
+    setActionLoading(userId);
+    const loadingToast = toast.loading(`Removing ${userEmail}...`);
+    
     try {
-      // Show loading toast
-      const loadingToast = toast.loading(`Deleting user ${userEmail} and all associated data...`);
-      
-      // Call comprehensive deletion API
       const response = await fetch('/api/admin/delete-resident', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          userEmail
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, userEmail }),
       });
-
       const data = await response.json();
-
-      // Dismiss loading toast
       toast.dismiss(loadingToast);
 
       if (response.ok) {
-        toast.success(
-          `User deleted successfully! Removed ${data.deletedData.bookings} bookings and ${data.deletedData.notifications} notifications.`,
-          { duration: 5000 }
-        );
-        fetchUsersAndAccessCodes();
+        toast.success(`User removed (${data.deletedData.bookings} bookings deleted)`);
+        fetchData();
       } else {
-        toast.error(data.error || 'Failed to delete user');
+        toast.error(data.error || 'Failed to remove user');
       }
     } catch (error) {
+      toast.dismiss(loadingToast);
       console.error('Error deleting user:', error);
-      toast.error('Failed to delete user. Please try again.');
-    }
-  };
-
-  const autoReplaceUsedCode = async (usedCodeId: string) => {
-    try {
-      const response = await fetch('/api/access-codes/auto-replace', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ usedCodeId }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(`Used code deleted and new code ${data.newCode} generated!`);
-        fetchUsersAndAccessCodes();
-      } else {
-        toast.error(data.error || 'Failed to replace access code');
-      }
-    } catch (error) {
-      console.error('Error auto-replacing access code:', error);
-      toast.error('Failed to replace access code');
+      toast.error('Failed to remove user');
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard!');
+    toast.success('Copied to clipboard');
   };
+
+  const clearFilters = () => {
+    setGlobalSearch('');
+    setCodeFilter('all');
+    setRoleFilter('all');
+  };
+
+  // ============================================================================
+  // LOADING STATE
+  // ============================================================================
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <Users className="w-8 h-8 text-white" />
+          <div className="w-12 h-12 rounded-xl bg-gray-900 dark:bg-white flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="w-6 h-6 text-white dark:text-gray-900 animate-spin" />
           </div>
-          <p className="text-slate-800 dark:text-slate-400">Loading user management...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading user management...</p>
         </div>
       </div>
     );
   }
 
+  // ============================================================================
+  // RENDER
+  // ============================================================================
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 sm:p-4 md:p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
+        
+        {/* ================================================================
+            PAGE HEADER (Sticky on scroll)
+        ================================================================ */}
+        <motion.header 
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration, ease: easeOut }}
           className="mb-6 sm:mb-8"
         >
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent mb-1 sm:mb-2">
-                Manage Users
-              </h1>
-              <p className="text-slate-800 dark:text-slate-400 text-sm sm:text-base md:text-lg">
-                Handle access codes and community member registration
-              </p>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* Title */}
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gray-900 dark:bg-white flex items-center justify-center flex-shrink-0">
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-white dark:text-gray-900" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
+                  Manage Users
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Access control & community membership
+                </p>
+              </div>
             </div>
+            
+            {/* Search + Primary Action */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              {/* Global Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  value={globalSearch}
+                  onChange={(e) => setGlobalSearch(e.target.value)}
+                  placeholder="Search users or codes..."
+                  className="pl-9 pr-8 h-10 w-full sm:w-64 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800"
+                />
+                {globalSearch && (
+                  <button
+                    onClick={() => setGlobalSearch('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              
+              {/* Generate Code Button */}
+              <Button
+                onClick={generateAccessCode}
+                disabled={actionLoading === 'generate'}
+                className="h-10 px-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 
+                         hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors whitespace-nowrap"
+              >
+                {actionLoading === 'generate' ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-2" />
+                )}
+                Generate Code
+              </Button>
+            </div>
+          </div>
+        </motion.header>
+
+        {/* ================================================================
+            KPI SUMMARY ROW
+        ================================================================ */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05, duration, ease: easeOut }}
+          className="mb-6 sm:mb-8"
+        >
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <StatChip label="Total Users" value={stats.totalUsers} />
+            <StatChip label="Residents" value={stats.activeResidents} />
+            <StatChip label="Admins" value={stats.admins} variant="highlight" />
+            <div className="hidden sm:block w-px h-8 bg-gray-200 dark:bg-gray-800 self-center mx-1" />
+            <StatChip label="Access Codes" value={stats.totalCodes} />
+            <StatChip label="Available" value={stats.availableCodes} variant="success" />
+            <StatChip label="Used" value={stats.usedCodes} variant="muted" />
           </div>
         </motion.div>
 
-        {/* Stats Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+        {/* ================================================================
+            ACCESS CODES SECTION
+        ================================================================ */}
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 mb-6 sm:mb-8"
+          transition={{ delay: 0.1, duration, ease: easeOut }}
+          className="mb-8 sm:mb-10"
         >
-          <Card>
-            <CardContent className="p-4 sm:p-5 md:p-6">
-              <div className="flex items-center">
-                <Key className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-blue-500 mr-2 sm:mr-3" />
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-400">Total Access Codes</p>
-                  <p className="text-xl sm:text-2xl font-bold">{accessCodes.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4 sm:p-5 md:p-6">
-              <div className="flex items-center">
-                <CheckCircle className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-green-500 mr-2 sm:mr-3" />
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-400">Used Codes</p>
-                  <p className="text-xl sm:text-2xl font-bold">{accessCodes.filter(code => code.isUsed).length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4 sm:p-5 md:p-6">
-              <div className="flex items-center">
-                <Users className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-500 mr-2 sm:mr-3" />
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-400">Total Users</p>
-                  <p className="text-xl sm:text-2xl font-bold">{users.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+          {/* Section Header with Filters */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Key className="w-4 h-4 text-gray-400" />
+                Access Codes
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {filteredCodes.length} of {accessCodes.length} codes
+              </p>
+            </div>
+            
+            {/* Filter Pills - Desktop */}
+            <div className="hidden sm:flex items-center gap-2">
+              <FilterPill 
+                active={codeFilter === 'all'} 
+                onClick={() => setCodeFilter('all')}
+                label="All"
+              />
+              <FilterPill 
+                active={codeFilter === 'available'} 
+                onClick={() => setCodeFilter('available')}
+                label="Available"
+                count={stats.availableCodes}
+              />
+              <FilterPill 
+                active={codeFilter === 'used'} 
+                onClick={() => setCodeFilter('used')}
+                label="Used"
+                count={stats.usedCodes}
+              />
+            </div>
 
-        {/* Generate New Access Code */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-6 sm:mb-8"
-        >
-          <Card>
-            <CardHeader className="px-4 sm:px-6">
-              <CardTitle className="flex items-center text-base sm:text-lg md:text-xl">
-                <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                Generate Access Code
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Create a new access code for residents to join the community
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-4 sm:px-6">
-              <Button onClick={generateAccessCode} className="w-full sm:w-auto bg-gradient-to-r from-indigo-500 to-purple-600 text-sm sm:text-base">
-                <Plus className="w-4 h-4 mr-2" />
-                Generate New Code
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
+            {/* Filter Dropdown - Mobile */}
+            <div className="sm:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 text-xs">
+                    <Filter className="w-3.5 h-3.5 mr-1.5" />
+                    {codeFilter === 'all' ? 'All Codes' : codeFilter === 'available' ? 'Available' : 'Used'}
+                    <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setCodeFilter('all')}>All Codes</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCodeFilter('available')}>Available ({stats.availableCodes})</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCodeFilter('used')}>Used ({stats.usedCodes})</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
 
-        {/* Access Codes List */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mb-6 sm:mb-8"
-        >
-          <Card>
-            <CardHeader className="px-4 sm:px-6">
-              <CardTitle className="text-base sm:text-lg md:text-xl">Access Codes</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Manage access codes for community registration
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-4 sm:px-6">
-              <div className="space-y-2 sm:space-y-3">
-                {accessCodes.map((code) => (
-                  <div
+          {/* Codes List */}
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+            {filteredCodes.length > 0 ? (
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {filteredCodes.map((code) => (
+                  <CodeRow
                     key={code.id}
-                    className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
-                      code.isUsed
-                        ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
-                        : 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
-                    }`}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex items-center space-x-2 sm:space-x-3">
-                        <div className={`p-1.5 sm:p-2 rounded-lg ${code.isUsed ? 'bg-green-100 dark:bg-green-800' : 'bg-blue-100 dark:bg-blue-800'}`}>
-                          {code.isUsed ? (
-                            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
-                          ) : (
-                            <Key className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-mono text-base sm:text-lg font-bold truncate">{code.id}</p>
-                          <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-400 truncate">
-                            {code.isUsed ? `Used by: ${code.usedBy}` : 'Available for use'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={code.isUsed ? "default" : "secondary"} className="text-xs">
-                          {code.isUsed ? 'Used' : 'Available'}
-                        </Badge>
-                        {!code.isUsed && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => copyToClipboard(code.id)}
-                            className="text-xs sm:text-sm"
-                          >
-                            <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </Button>
-                        )}
-                        {code.isUsed ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => autoReplaceUsedCode(code.id)}
-                            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 text-xs sm:text-sm"
-                          >
-                            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                            Replace
-                          </Button>
-                        ) : null}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs sm:text-sm"
-                            >
-                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-base sm:text-lg">Delete Access Code</AlertDialogTitle>
-                              <AlertDialogDescription className="text-xs sm:text-sm">
-                                Are you sure you want to delete access code <strong>{code.id}</strong>? 
-                                {code.isUsed ? ' This code has already been used.' : ' This code is still available for use.'}
-                                <br />
-                                <span className="text-red-600">This action cannot be undone.</span>
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                              <AlertDialogCancel className="w-full sm:w-auto text-xs sm:text-sm">Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => deleteAccessCode(code.id)}
-                                className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-xs sm:text-sm"
-                              >
-                                Delete Code
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  </div>
+                    code={code}
+                    onCopy={() => copyToClipboard(code.id)}
+                    onReplace={() => replaceUsedCode(code.id)}
+                    onRevoke={() => deleteAccessCode(code.id)}
+                    isLoading={actionLoading === code.id}
+                  />
                 ))}
-                
-                {accessCodes.length === 0 && (
-                  <div className="text-center py-6 sm:py-8">
-                    <Key className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400 mx-auto mb-3 sm:mb-4" />
-                    <h3 className="text-lg sm:text-xl font-semibold mb-2">No Access Codes</h3>
-                    <p className="text-slate-800 dark:text-slate-400 text-sm sm:text-base mb-3 sm:mb-4">
-                      Generate your first access code to allow residents to join.
-                    </p>
-                  </div>
-                )}
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+            ) : (
+              <EmptyState
+                icon={Key}
+                title="No access codes"
+                description={hasActiveFilters ? "Try adjusting your filters" : "Generate your first access code to invite residents"}
+                action={!hasActiveFilters && (
+                  <Button onClick={generateAccessCode} size="sm" className="mt-3">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Generate Code
+                  </Button>
+                )}
+              />
+            )}
+          </div>
+        </motion.section>
 
-        {/* Users List */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+        {/* ================================================================
+            COMMUNITY MEMBERS SECTION
+        ================================================================ */}
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.15, duration, ease: easeOut }}
         >
-          <Card>
-            <CardHeader className="px-4 sm:px-6">
-              <CardTitle className="text-base sm:text-lg md:text-xl">Community Users</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                All registered users in your community
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-4 sm:px-6">
-              <div className="space-y-2 sm:space-y-3">
-                {users.map((user) => (
-                  <div
+          {/* Section Header with Filters */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Users className="w-4 h-4 text-gray-400" />
+                Community Members
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {filteredUsers.length} of {users.length} registered users
+              </p>
+            </div>
+            
+            {/* Filter Pills - Desktop */}
+            <div className="hidden sm:flex items-center gap-2">
+              <FilterPill 
+                active={roleFilter === 'all'} 
+                onClick={() => setRoleFilter('all')}
+                label="All"
+              />
+              <FilterPill 
+                active={roleFilter === 'admin'} 
+                onClick={() => setRoleFilter('admin')}
+                label="Admins"
+                count={stats.admins}
+              />
+              <FilterPill 
+                active={roleFilter === 'resident'} 
+                onClick={() => setRoleFilter('resident')}
+                label="Residents"
+                count={stats.activeResidents}
+              />
+            </div>
+
+            {/* Filter Dropdown - Mobile */}
+            <div className="sm:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 text-xs">
+                    <Filter className="w-3.5 h-3.5 mr-1.5" />
+                    {roleFilter === 'all' ? 'All Roles' : roleFilter === 'admin' ? 'Admins' : 'Residents'}
+                    <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setRoleFilter('all')}>All Roles</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setRoleFilter('admin')}>Admins ({stats.admins})</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setRoleFilter('resident')}>Residents ({stats.activeResidents})</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          {/* Users List */}
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+            {filteredUsers.length > 0 ? (
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {filteredUsers.map((user) => (
+                  <UserRow
                     key={user.id}
-                    className="p-3 sm:p-4 rounded-lg border bg-white dark:bg-slate-800 hover:shadow-md transition-all"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-white font-bold text-sm sm:text-base">
-                            {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-sm sm:text-base truncate">{user.name || 'No name set'}</p>
-                          <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-400 truncate">{user.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
-                          {user.role}
-                        </Badge>
-                        <p className="text-xs sm:text-sm text-slate-700 whitespace-nowrap">
-                          Joined {user.createdAt?.toDate?.()?.toLocaleDateString() || 'Unknown'}
-                        </p>
-                        {user.role !== 'admin' && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs sm:text-sm"
-                              >
-                                <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle className="text-base sm:text-lg flex items-center gap-2">
-                                  <AlertTriangle className="w-5 h-5 text-red-600" />
-                                  Delete User - Permanent Action
-                                </AlertDialogTitle>
-                                <AlertDialogDescription className="text-xs sm:text-sm space-y-2">
-                                  <div>
-                                    Are you sure you want to delete <strong>{user.name || user.email}</strong>?
-                                  </div>
-                                  <div className="text-red-600 font-semibold">
-                                    This will permanently delete:
-                                  </div>
-                                  <ul className="list-disc list-inside space-y-1 text-xs">
-                                    <li>User account and profile</li>
-                                    <li>All booking history (past & future)</li>
-                                    <li>All notifications</li>
-                                    <li>Session data (forces sign-out)</li>
-                                  </ul>
-                                  <div className="text-red-600 font-bold pt-2">
-                                    ⚠️ This action cannot be undone!
-                                  </div>
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                                <AlertDialogCancel className="w-full sm:w-auto text-xs sm:text-sm">Cancel</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => deleteUser(user.id, user.email)}
-                                  className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-xs sm:text-sm"
-                                >
-                                  <Trash2 className="w-3 h-3 mr-1" />
-                                  Delete Permanently
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                    user={user}
+                    onDelete={() => deleteUser(user.id, user.email)}
+                    isLoading={actionLoading === user.id}
+                  />
                 ))}
-                
-                {users.length === 0 && (
-                  <div className="text-center py-6 sm:py-8">
-                    <Users className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400 mx-auto mb-3 sm:mb-4" />
-                    <h3 className="text-lg sm:text-xl font-semibold mb-2">No Users Yet</h3>
-                    <p className="text-slate-800 dark:text-slate-400 text-sm sm:text-base">
-                      Users will appear here once they register with access codes.
-                    </p>
-                  </div>
-                )}
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+            ) : (
+              <EmptyState
+                icon={Users}
+                title="No users found"
+                description={hasActiveFilters ? "Try adjusting your filters" : "Users will appear here once they register"}
+              />
+            )}
+          </div>
+        </motion.section>
+
+        {/* ================================================================
+            CLEAR FILTERS BAR (Conditional)
+        ================================================================ */}
+        {hasActiveFilters && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+          >
+            <Button
+              onClick={clearFilters}
+              variant="outline"
+              size="sm"
+              className="h-9 px-4 bg-white dark:bg-gray-900 shadow-lg border-gray-200 dark:border-gray-700"
+            >
+              <X className="w-3.5 h-3.5 mr-2" />
+              Clear all filters
+            </Button>
+          </motion.div>
+        )}
       </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// STAT CHIP COMPONENT
+// ============================================================================
+
+interface StatChipProps {
+  label: string;
+  value: number;
+  variant?: 'default' | 'success' | 'muted' | 'highlight';
+}
+
+function StatChip({ label, value, variant = 'default' }: StatChipProps) {
+  const variants = {
+    default: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
+    success: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400',
+    muted: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500',
+    highlight: 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400',
+  };
+
+  return (
+    <div className={cn(
+      "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium",
+      variants[variant]
+    )}>
+      <span className="text-[10px] uppercase tracking-wider opacity-70">{label}</span>
+      <span className="font-semibold">{value}</span>
+    </div>
+  );
+}
+
+// ============================================================================
+// FILTER PILL COMPONENT
+// ============================================================================
+
+interface FilterPillProps {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  count?: number;
+}
+
+function FilterPill({ active, onClick, label, count }: FilterPillProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150",
+        active 
+          ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
+          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+      )}
+    >
+      {label}
+      {count !== undefined && (
+        <span className={cn("ml-1.5", active ? "opacity-70" : "opacity-50")}>
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// ============================================================================
+// CODE ROW COMPONENT
+// ============================================================================
+
+interface CodeRowProps {
+  code: AccessCode;
+  onCopy: () => void;
+  onReplace: () => void;
+  onRevoke: () => void;
+  isLoading: boolean;
+}
+
+function CodeRow({ code, onCopy, onReplace, onRevoke, isLoading }: CodeRowProps) {
+  const createdDate = code.createdAt?.toDate?.()?.toLocaleDateString('en-US', { 
+    month: 'short', day: 'numeric' 
+  }) || 'Unknown';
+
+  return (
+    <div className={cn(
+      "flex items-center justify-between gap-4 px-4 py-3 transition-colors",
+      code.isUsed 
+        ? "bg-gray-50/50 dark:bg-gray-900/50" 
+        : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+    )}>
+      {/* Left: Icon + Code */}
+      <div className="flex items-center gap-3 min-w-0">
+        <div className={cn(
+          "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
+          code.isUsed 
+            ? "bg-gray-100 dark:bg-gray-800" 
+            : "bg-emerald-100 dark:bg-emerald-900/30"
+        )}>
+          {code.isUsed ? (
+            <CheckCircle className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          ) : (
+            <Key className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className={cn(
+            "font-mono text-sm font-semibold",
+            code.isUsed ? "text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-white"
+          )}>
+            {code.id}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+            {code.isUsed ? `Used by ${code.usedBy}` : `Created ${createdDate}`}
+          </p>
+        </div>
+      </div>
+
+      {/* Right: Status + Actions */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <Badge 
+          variant="secondary"
+          className={cn(
+            "text-[10px] px-2 py-0.5 hidden sm:inline-flex",
+            code.isUsed 
+              ? "bg-gray-100 dark:bg-gray-800 text-gray-500" 
+              : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+          )}
+        >
+          {code.isUsed ? 'Used' : 'Available'}
+        </Badge>
+
+        {/* Desktop Actions */}
+        <div className="hidden sm:flex items-center gap-1">
+          {!code.isUsed && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCopy}
+              className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
+              title="Copy code"
+            >
+              <Copy className="w-3.5 h-3.5" />
+            </Button>
+          )}
+          {code.isUsed && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onReplace}
+              disabled={isLoading}
+              className="h-8 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+              title="Replace with new code"
+            >
+              {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 mr-1" />}
+              Replace
+            </Button>
+          )}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                title="Revoke code"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="max-w-sm">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Revoke Access Code</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm">
+                  Delete code <span className="font-mono font-semibold">{code.id}</span>?
+                  {code.isUsed && " This code has already been used."}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="text-sm">Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={onRevoke}
+                  className="bg-red-600 hover:bg-red-700 text-sm"
+                >
+                  Revoke
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+
+        {/* Mobile Actions */}
+        <div className="sm:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreHorizontal className="w-4 h-4 text-gray-500" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {!code.isUsed && (
+                <DropdownMenuItem onClick={onCopy}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Code
+                </DropdownMenuItem>
+              )}
+              {code.isUsed && (
+                <DropdownMenuItem onClick={onReplace}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Replace Code
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onRevoke} className="text-red-600 focus:text-red-600">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Revoke Code
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// USER ROW COMPONENT
+// ============================================================================
+
+interface UserRowProps {
+  user: User;
+  onDelete: () => void;
+  isLoading: boolean;
+}
+
+function UserRow({ user, onDelete, isLoading }: UserRowProps) {
+  const isAdmin = user.role === 'admin';
+  const joinDate = user.createdAt?.toDate?.()?.toLocaleDateString('en-US', { 
+    month: 'short', day: 'numeric', year: 'numeric' 
+  }) || 'Unknown';
+  const initials = (user.name?.charAt(0) || user.email.charAt(0)).toUpperCase();
+
+  return (
+    <div className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+      {/* Left: Avatar + Info */}
+      <div className="flex items-center gap-3 min-w-0">
+        <div className={cn(
+          "w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-semibold",
+          isAdmin 
+            ? "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400" 
+            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+        )}>
+          {initials}
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+              {user.name || 'No name set'}
+            </p>
+            <Badge 
+              variant="secondary"
+              className={cn(
+                "text-[10px] px-1.5 py-0 h-4",
+                isAdmin 
+                  ? "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400" 
+                  : "bg-gray-100 dark:bg-gray-800 text-gray-500"
+              )}
+            >
+              {user.role}
+            </Badge>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+        </div>
+      </div>
+
+      {/* Right: Join Date + Actions */}
+      <div className="flex items-center gap-3 flex-shrink-0">
+        <span className="hidden md:flex items-center gap-1 text-xs text-gray-400">
+          <Clock className="w-3 h-3" />
+          {joinDate}
+        </span>
+
+        {/* Desktop Delete */}
+        {!isAdmin && (
+          <div className="hidden sm:block">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  title="Remove user"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="max-w-sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                    Remove User
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm space-y-2">
+                    <p>Remove <strong>{user.name || user.email}</strong>?</p>
+                    <p className="text-red-600 text-xs">
+                      This permanently deletes the user, all bookings, and notifications.
+                    </p>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="text-sm">Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={onDelete}
+                    disabled={isLoading}
+                    className="bg-red-600 hover:bg-red-700 text-sm"
+                  >
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    Remove
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
+
+        {/* Mobile Actions */}
+        <div className="sm:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreHorizontal className="w-4 h-4 text-gray-500" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem disabled className="text-xs text-gray-400">
+                Joined {joinDate}
+              </DropdownMenuItem>
+              {!isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-600">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Remove User
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// EMPTY STATE COMPONENT
+// ============================================================================
+
+interface EmptyStateProps {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}
+
+function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
+  return (
+    <div className="text-center py-12 px-4">
+      <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
+        <Icon className="w-6 h-6 text-gray-400" />
+      </div>
+      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">{title}</h3>
+      <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
+      {action}
     </div>
   );
 }

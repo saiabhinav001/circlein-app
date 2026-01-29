@@ -137,15 +137,11 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
       <motion.div
         variants={sidebarVariants}
         animate={isCollapsed ? 'closed' : 'open'}
-        className="h-screen bg-gradient-to-b from-white via-slate-50/50 to-white dark:from-slate-950 dark:via-slate-900/50 dark:to-slate-950 border-r border-slate-200/80 dark:border-slate-800/80 flex flex-col relative shadow-2xl w-full sm:w-[280px] lg:w-auto overflow-hidden"
+        className="h-screen bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col relative w-full sm:w-[280px] lg:w-auto overflow-hidden"
         style={{ zIndex: 50 }}
       >
-        {/* Enhanced decorative gradient overlay */}
-        <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-br from-blue-500/10 via-purple-500/8 to-transparent pointer-events-none" />
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-100/30 dark:from-slate-900/30 to-transparent pointer-events-none" />
-        
         {/* Header */}
-        <div className="relative p-4 lg:p-6 border-b border-slate-200/50 dark:border-slate-800/50 shrink-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md">
+        <div className="relative p-4 lg:p-6 border-b border-slate-200 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-950">
           {isCollapsed ? (
             // Collapsed state - only on desktop - show logo icon
             <div className="flex flex-col items-center gap-3">
@@ -167,8 +163,8 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
                   <div className="relative shrink-0" style={{ width: '48px', height: '48px' }}>
-                    <CircleInLogo size={48} className="hover:scale-110 transition-transform duration-300" />
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg shadow-green-400/50" />
+                    <CircleInLogo size={48} />
+                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-950" />
                   </div>
                   <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
@@ -210,24 +206,24 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
               <AnimatePresence>
                 {session?.user && (
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800/50 dark:to-slate-700/50 rounded-xl border border-blue-100 dark:border-slate-700"
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/60"
                   >
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-sm font-medium shrink-0">
                         {session.user.name?.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-black dark:text-slate-100 truncate">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                           {session.user.name}
                         </p>
-                        <p className="text-xs text-black dark:text-slate-400 truncate font-medium">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                           {session.user.email}
                         </p>
                       </div>
-                      <Sparkles className="w-4 h-4 text-blue-500 animate-pulse shrink-0" />
                     </div>
                   </motion.div>
                 )}
@@ -251,9 +247,9 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="px-3 py-2 mb-2 sm:mb-4"
+                className="px-3 py-2 mb-2 sm:mb-3"
               >
-                <h3 className="text-xs font-bold text-black dark:text-slate-400 uppercase tracking-wider">
+                <h3 className="text-[11px] font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wider">
                   Navigation
                 </h3>
               </motion.div>
@@ -276,21 +272,21 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   onClick={() => onClose?.()}
                   title={item.name}
                   className={cn(
-                    'relative group flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200',
+                    'relative group flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-150',
                     pathname === item.href
                       ? 'bg-slate-100 dark:bg-slate-800 shadow-sm'
-                      : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
+                      : 'hover:bg-slate-100 dark:hover:bg-slate-800/70'
                   )}
                 >
                   <item.icon 
                     className={cn(
-                      "w-5 h-5 transition-colors duration-200",
+                      "w-5 h-5 transition-colors duration-150",
                       pathname === item.href 
-                        ? "text-blue-600 dark:text-blue-400" 
-                        : "text-slate-600 dark:text-slate-400"
+                        ? "text-slate-900 dark:text-slate-100" 
+                        : "text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300"
                     )} 
                   />
-                  <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
+                  <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
                     {item.name}
                   </span>
                 </Link>
@@ -299,41 +295,21 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   href={item.href}
                   onClick={() => onClose?.()}
                   className={cn(
-                    'group relative flex items-center px-3 sm:px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
+                    'group relative flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 overflow-hidden',
                     pathname === item.href
-                      ? 'bg-gradient-to-r text-white shadow-lg scale-[1.02]'
-                      : 'text-black dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30 active:scale-[0.98]'
+                      ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-md'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 active:scale-[0.98]'
                   )}
-                  style={{
-                    background: pathname === item.href ? `linear-gradient(135deg, ${item.color.split(' ')[1]} 0%, ${item.color.split(' ')[3]} 100%)` : undefined
-                  }}
                 >
-                  {/* Active indicator */}
-                  {pathname === item.href && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute inset-0 bg-gradient-to-r opacity-100 rounded-xl"
-                      style={{
-                        background: `linear-gradient(135deg, ${item.color.split(' ')[1]} 0%, ${item.color.split(' ')[3]} 100%)`
-                      }}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
-                  
-                  {/* Hover glow effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-xl"
-                    style={{
-                      background: `linear-gradient(135deg, ${item.color.split(' ')[1]} 0%, ${item.color.split(' ')[3]} 100%)`
-                    }}
-                  />
-
                   <motion.div
                     variants={iconVariants}
                     className="relative z-10 flex-shrink-0"
                   >
                     <item.icon className={cn(
-                      "w-5 h-5 transition-colors duration-300",
-                      pathname === item.href ? "text-gray-900 dark:text-white" : "text-gray-600 dark:text-slate-400 group-hover:text-gray-800 dark:group-hover:text-slate-200"
+                      "w-5 h-5 transition-colors duration-150",
+                      pathname === item.href 
+                        ? "text-white dark:text-slate-900" 
+                        : "text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200"
                     )} />
                   </motion.div>
                   
@@ -345,8 +321,10 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                         animate="visible"
                         exit="hidden"
                         className={cn(
-                          "ml-3 relative z-10 transition-colors duration-300 font-medium text-sm",
-                          pathname === item.href ? "text-gray-900 dark:text-white font-semibold" : "text-gray-700 dark:text-slate-300 group-hover:text-gray-900 dark:group-hover:text-slate-100"
+                          "ml-3 relative z-10 transition-colors duration-150 font-medium text-sm",
+                          pathname === item.href 
+                            ? "text-white dark:text-slate-900" 
+                            : "text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100"
                         )}
                       >
                         {item.name}
@@ -358,12 +336,12 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   <AnimatePresence>
                     {pathname === item.href && !isCollapsed && (
                       <motion.div
-                        initial={{ opacity: 0, x: -10 }}
+                        initial={{ opacity: 0, x: -5 }}
                         animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
+                        exit={{ opacity: 0, x: -5 }}
                         className="ml-auto relative z-10"
                       >
-                        <ChevronRight className="w-4 h-4 text-white" />
+                        <ChevronRight className="w-4 h-4 text-white/70 dark:text-slate-900/70" />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -375,13 +353,13 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
           {session?.user?.role === 'admin' && (
             <>
               <div className={cn(
-                "my-4 sm:my-6 relative",
+                "my-4 relative",
                 isCollapsed && "my-2 w-full"
               )}>
                 <div className="absolute inset-0 flex items-center">
                   <div className={cn(
-                    "w-full border-t border-slate-200 dark:border-slate-700",
-                    isCollapsed && "border-slate-300 dark:border-slate-600"
+                    "w-full border-t border-slate-200 dark:border-slate-800",
+                    isCollapsed && "border-slate-200 dark:border-slate-700"
                   )} />
                 </div>
                 <AnimatePresence>
@@ -390,9 +368,9 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
-                      className="relative flex justify-center text-xs font-semibold"
+                      className="relative flex justify-center text-[11px] font-semibold"
                     >
-                      <span className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-2.5 sm:px-3 py-1 text-black dark:text-slate-400 uppercase tracking-wider rounded-full font-bold">
+                      <span className="bg-white dark:bg-slate-950 px-2.5 py-0.5 text-slate-500 dark:text-slate-500 uppercase tracking-wider">
                         Admin
                       </span>
                     </motion.div>
@@ -416,21 +394,21 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                       onClick={() => onClose?.()}
                       title={item.name}
                       className={cn(
-                        'relative group flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200',
+                        'relative group flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-150',
                         pathname === item.href
                           ? 'bg-slate-100 dark:bg-slate-800 shadow-sm'
-                          : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
+                          : 'hover:bg-slate-100 dark:hover:bg-slate-800/70'
                       )}
                     >
                       <item.icon 
                         className={cn(
-                          "w-5 h-5 transition-colors duration-200",
+                          "w-5 h-5 transition-colors duration-150",
                           pathname === item.href 
-                            ? "text-orange-600 dark:text-orange-400" 
-                            : "text-slate-600 dark:text-slate-400"
+                            ? "text-slate-900 dark:text-slate-100" 
+                            : "text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300"
                         )} 
                       />
-                      <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
+                      <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
                         {item.name}
                       </span>
                     </Link>
@@ -439,41 +417,21 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                       href={item.href}
                       onClick={() => onClose?.()}
                       className={cn(
-                        'group relative flex items-center px-3 sm:px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 overflow-hidden',
+                        'group relative flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 overflow-hidden',
                         pathname === item.href
-                          ? 'bg-gradient-to-r text-white shadow-lg scale-[1.02]'
-                          : 'text-black dark:text-slate-300 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30 active:scale-[0.98]'
+                          ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-md'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 active:scale-[0.98]'
                       )}
-                      style={{
-                        background: pathname === item.href ? `linear-gradient(135deg, ${item.color.split(' ')[1]} 0%, ${item.color.split(' ')[3]} 100%)` : undefined
-                      }}
                     >
-                      {/* Active indicator */}
-                      {pathname === item.href && (
-                        <motion.div
-                          layoutId="activeAdminTab"
-                          className="absolute inset-0 bg-gradient-to-r opacity-100 rounded-xl"
-                          style={{
-                            background: `linear-gradient(135deg, ${item.color.split(' ')[1]} 0%, ${item.color.split(' ')[3]} 100%)`
-                          }}
-                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        />
-                      )}
-                      
-                      {/* Hover glow effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-xl"
-                        style={{
-                          background: `linear-gradient(135deg, ${item.color.split(' ')[1]} 0%, ${item.color.split(' ')[3]} 100%)`
-                        }}
-                      />
-
                       <motion.div
                         variants={iconVariants}
                         className="relative z-10 flex-shrink-0"
                       >
                         <item.icon className={cn(
-                          "w-5 h-5 transition-colors duration-300",
-                          pathname === item.href ? "text-gray-900 dark:text-white" : "text-gray-600 dark:text-slate-400 group-hover:text-gray-800 dark:group-hover:text-slate-200"
+                          "w-5 h-5 transition-colors duration-150",
+                          pathname === item.href 
+                            ? "text-white dark:text-slate-900" 
+                            : "text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200"
                         )} />
                       </motion.div>
                       
@@ -485,8 +443,10 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                             animate="visible"
                             exit="hidden"
                             className={cn(
-                              "ml-3 relative z-10 transition-colors duration-300 font-medium text-sm",
-                              pathname === item.href ? "text-gray-900 dark:text-white font-semibold" : "text-gray-700 dark:text-slate-300 group-hover:text-gray-900 dark:group-hover:text-slate-100"
+                              "ml-3 relative z-10 transition-colors duration-150 font-medium text-sm",
+                              pathname === item.href 
+                                ? "text-white dark:text-slate-900" 
+                                : "text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100"
                             )}
                           >
                             {item.name}
@@ -498,12 +458,12 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                       <AnimatePresence>
                         {pathname === item.href && !isCollapsed && (
                           <motion.div
-                            initial={{ opacity: 0, x: -10 }}
+                            initial={{ opacity: 0, x: -5 }}
                             animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10 }}
+                            exit={{ opacity: 0, x: -5 }}
                             className="ml-auto relative z-10"
                           >
-                            <ChevronRight className="w-4 h-4 text-white" />
+                            <ChevronRight className="w-4 h-4 text-white/70 dark:text-slate-900/70" />
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -518,8 +478,8 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
         {/* Footer */}
         <div 
           className={cn(
-            "border-t border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-b from-transparent to-slate-50/50 dark:to-slate-900/50 shrink-0",
-            isCollapsed ? "flex flex-col items-center justify-center py-4 px-2 gap-2" : "p-3 sm:p-4 space-y-1.5 sm:space-y-2"
+            "border-t border-slate-200 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30 shrink-0",
+            isCollapsed ? "flex flex-col items-center justify-center py-3 px-2 gap-1.5" : "p-3 space-y-1"
           )}
         >
           {/* Theme Toggle */}
@@ -573,7 +533,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="w-full justify-start px-3 py-3 rounded-xl hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 dark:hover:from-slate-800/50 dark:hover:to-slate-700/30 transition-all duration-300 group"
+                className="w-full justify-start px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all duration-150 group"
               >
               <div className="relative w-5 h-5 flex items-center justify-center">
                 <motion.div
@@ -606,7 +566,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   initial="hidden"
                   animate="visible"
                   exit="hidden"
-                  className="ml-3 text-black dark:text-slate-300 group-hover:text-black dark:group-hover:text-slate-100 transition-colors font-medium"
+                  className="ml-3 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors font-medium text-sm"
                 >
                   {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                 </motion.span>
@@ -630,11 +590,11 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   size="sm"
                   onClick={() => signOut({ callbackUrl: '/auth/signin' })}
                   title="Sign Out"
-                  className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                  className="flex items-center justify-center w-11 h-11 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-150"
                 >
-                  <LogOut className="w-5 h-5 text-red-500" />
+                  <LogOut className="w-5 h-5 text-red-500 dark:text-red-400" />
                 </Button>
-                <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
+                <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
                   Sign Out
                 </span>
               </div>
@@ -643,9 +603,9 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                 variant="ghost"
                 size="sm"
                 onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-                className="w-full justify-start px-3 py-3 rounded-xl hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 transition-all duration-300 group"
+                className="w-full justify-start px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-150 group"
               >
-                <LogOut className="w-5 h-5 text-red-500 group-hover:text-red-600 transition-colors" />
+                <LogOut className="w-5 h-5 text-red-500 dark:text-red-400 group-hover:text-red-600 dark:group-hover:text-red-300 transition-colors" />
                 
                 <AnimatePresence mode="wait">
                   {!isCollapsed && (
@@ -654,9 +614,9 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                       initial="hidden"
                       animate="visible"
                       exit="hidden"
-                      className="ml-3 text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300 transition-colors font-medium"
+                      className="ml-3 text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300 transition-colors font-medium text-sm"
                     >
-                      Logout
+                      Sign out
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -668,12 +628,12 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
           <AnimatePresence>
             {!isCollapsed && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="mt-2 sm:mt-3 px-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="pt-2 px-3"
               >
-                <div className="text-xs text-slate-400 dark:text-slate-500 text-center">
+                <div className="text-[11px] text-slate-400 dark:text-slate-600 text-center font-medium">
                   CircleIn v1.0.0
                 </div>
               </motion.div>

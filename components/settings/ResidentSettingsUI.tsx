@@ -1,639 +1,913 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { motion } from 'framer-motion';
-import { 
-  User, 
-  Bell, 
-  Shield, 
-  Palette, 
-  Globe, 
-  Key, 
-  Download, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Camera,
-  Save,
-  Eye,
-  EyeOff,
-  Check,
-  X,
-  Sun,
-  Moon,
-  Settings,
-  Heart,
-  Calendar,
-  Home,
-  Smartphone,
-  Lock
-} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '@/components/providers/theme-provider';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { useTheme } from '@/components/providers/theme-provider';
-import { useToast } from '@/hooks/use-toast';
-import { AnimatedSettingsTabs } from '@/components/settings/AnimatedSettingsTabs';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  User,
+  Bell,
+  Shield,
+  Palette,
+  Sun,
+  Moon,
+  Monitor,
+  Eye,
+  EyeOff,
+  Save,
+  X,
+  Check,
+  AlertCircle,
+  Lock,
+  Mail,
+  Phone,
+  Home,
+  UserCircle,
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ResidentProfile {
+  name: string;
+  email: string;
+  phone: string;
+  flatNumber: string;
+  emergencyContact: string;
+  bio: string;
+  avatar: string;
+}
+
+interface ResidentNotifications {
+  bookingReminders: boolean;
+  communityUpdates: boolean;
+  maintenanceAlerts: boolean;
+  eventNotifications: boolean;
+  emergencyAlerts: boolean;
+  pushNotifications: boolean;
+  emailDigest: boolean;
+  smsAlerts: boolean;
+}
+
+interface ResidentPrivacy {
+  showProfile: boolean;
+  showBookings: boolean;
+  shareContactInfo: boolean;
+  allowDirectMessages: boolean;
+  profileVisibility: string;
+}
+
+type SettingsSection = 'account' | 'notifications' | 'privacy' | 'appearance' | 'security';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Navigation Items
+// ─────────────────────────────────────────────────────────────────────────────
+
+const navigationItems: { id: SettingsSection; label: string; icon: typeof User; description: string }[] = [
+  { id: 'account', label: 'Account', icon: User, description: 'Your profile information' },
+  { id: 'notifications', label: 'Notifications', icon: Bell, description: 'How you receive alerts' },
+  { id: 'privacy', label: 'Privacy', icon: Shield, description: 'Control your visibility' },
+  { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Theme and display' },
+  { id: 'security', label: 'Security', icon: Lock, description: 'Password and authentication' },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function ResidentSettingsUI() {
-  const { data: session, update } = useSession();
+  const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
-  const { toast } = useToast();
   
+  // Active section
+  const [activeSection, setActiveSection] = useState<SettingsSection>('account');
+  
+  // Loading & saving states
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState('profile');
   
-  // Resident-specific state
-  const [residentProfile, setResidentProfile] = useState({
-    name: session?.user?.name || '',
-    email: session?.user?.email || '',
+  // Profile state
+  const [profile, setProfile] = useState<ResidentProfile>({
+    name: '',
+    email: '',
     phone: '',
-    flatNumber: (session?.user as any)?.flatNumber || '',
+    flatNumber: '',
     emergencyContact: '',
     bio: '',
-    avatar: session?.user?.image || ''
+    avatar: '',
   });
-
-  const [residentNotifications, setResidentNotifications] = useState({
+  
+  // Original profile for dirty checking
+  const [originalProfile, setOriginalProfile] = useState<ResidentProfile | null>(null);
+  
+  // Notifications state
+  const [notifications, setNotifications] = useState<ResidentNotifications>({
     bookingReminders: true,
     communityUpdates: true,
     maintenanceAlerts: true,
     eventNotifications: true,
     emergencyAlerts: true,
-    pushNotifications: true,
+    pushNotifications: false,
     emailDigest: true,
-    smsAlerts: false
+    smsAlerts: false,
   });
-
-  const [residentPrivacy, setResidentPrivacy] = useState({
+  
+  const [originalNotifications, setOriginalNotifications] = useState<ResidentNotifications | null>(null);
+  
+  // Privacy state
+  const [privacy, setPrivacy] = useState<ResidentPrivacy>({
     showProfile: true,
     showBookings: false,
     shareContactInfo: false,
     allowDirectMessages: true,
-    profileVisibility: 'residents'
+    profileVisibility: 'residents',
+  });
+  
+  const [originalPrivacy, setOriginalPrivacy] = useState<ResidentPrivacy | null>(null);
+  
+  // Password state
+  const [passwords, setPasswords] = useState({
+    current: '',
+    new: '',
+    confirm: '',
   });
 
-  const handleSaveProfile = async () => {
-    setIsLoading(true);
-    try {
-      // Update flat number in database if it has changed
-      const currentFlatNumber = (session?.user as any)?.flatNumber || '';
-      if (residentProfile.flatNumber !== currentFlatNumber) {
-        const response = await fetch('/api/update-flat-number', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: session?.user?.email,
-            flatNumber: residentProfile.flatNumber.trim()
-          }),
-        });
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Load settings from localStorage
+  // ─────────────────────────────────────────────────────────────────────────────
+  
+  useEffect(() => {
+    if (session?.user?.email) {
+      const storageKey = `resident-settings-${session.user.email}`;
+      const savedSettings = localStorage.getItem(storageKey);
+      
+      if (savedSettings) {
+        try {
+          const parsed = JSON.parse(savedSettings);
+          if (parsed.profile) {
+            setProfile(parsed.profile);
+            setOriginalProfile(parsed.profile);
+          }
+          if (parsed.notifications) {
+            setNotifications(parsed.notifications);
+            setOriginalNotifications(parsed.notifications);
+          }
+          if (parsed.privacy) {
+            setPrivacy(parsed.privacy);
+            setOriginalPrivacy(parsed.privacy);
+          }
+        } catch (e) {
+          console.error('Failed to load settings:', e);
+        }
+      } else {
+        // Initialize with session data
+        const initialProfile = {
+          name: session.user.name || '',
+          email: session.user.email || '',
+          phone: '',
+          flatNumber: '',
+          emergencyContact: '',
+          bio: '',
+          avatar: session.user.image || '',
+        };
+        setProfile(initialProfile);
+        setOriginalProfile(initialProfile);
+        setOriginalNotifications(notifications);
+        setOriginalPrivacy(privacy);
+      }
+    }
+  }, [session]);
 
-        if (!response.ok) {
-          throw new Error('Failed to update flat number');
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Dirty state detection
+  // ─────────────────────────────────────────────────────────────────────────────
+  
+  const isDirty = useMemo(() => {
+    if (!originalProfile || !originalNotifications || !originalPrivacy) return false;
+    
+    const profileDirty = JSON.stringify(profile) !== JSON.stringify(originalProfile);
+    const notificationsDirty = JSON.stringify(notifications) !== JSON.stringify(originalNotifications);
+    const privacyDirty = JSON.stringify(privacy) !== JSON.stringify(originalPrivacy);
+    const passwordDirty = passwords.current || passwords.new || passwords.confirm;
+    
+    return profileDirty || notificationsDirty || privacyDirty || !!passwordDirty;
+  }, [profile, originalProfile, notifications, originalNotifications, privacy, originalPrivacy, passwords]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Save handler
+  // ─────────────────────────────────────────────────────────────────────────────
+  
+  const handleSave = async () => {
+    if (!session?.user?.email) return;
+    
+    setIsLoading(true);
+    
+    try {
+      // Validate password change if attempted
+      if (passwords.new || passwords.confirm) {
+        if (!passwords.current) {
+          toast.error('Current password is required');
+          setIsLoading(false);
+          return;
+        }
+        if (passwords.new !== passwords.confirm) {
+          toast.error('New passwords do not match');
+          setIsLoading(false);
+          return;
+        }
+        if (passwords.new.length < 8) {
+          toast.error('Password must be at least 8 characters');
+          setIsLoading(false);
+          return;
         }
       }
-
-      // Save other profile data to localStorage for persistence
-      const settingsData = {
-        profile: residentProfile,
-        notifications: residentNotifications,
-        privacy: residentPrivacy,
-        lastUpdated: new Date().toISOString()
-      };
       
-      localStorage.setItem(`resident-settings-${session?.user?.email}`, JSON.stringify(settingsData));
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Force session refresh to include updated flat number
-      if (residentProfile.flatNumber !== currentFlatNumber) {
-        await update(); // This will trigger the JWT callback to refresh user data
-        await new Promise(resolve => setTimeout(resolve, 500)); // Brief delay for session update
-      }
+      // Save to localStorage
+      const storageKey = `resident-settings-${session.user.email}`;
+      localStorage.setItem(storageKey, JSON.stringify({
+        profile,
+        notifications,
+        privacy,
+        updatedAt: new Date().toISOString(),
+      }));
       
-      toast({
-        title: 'Profile Updated Successfully! 🏠',
-        description: 'Your resident profile has been saved'
-      });
+      // Update original states
+      setOriginalProfile(profile);
+      setOriginalNotifications(notifications);
+      setOriginalPrivacy(privacy);
+      setPasswords({ current: '', new: '', confirm: '' });
+      
+      toast.success('Settings saved successfully');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update profile',
-        variant: 'destructive'
-      });
+      toast.error('Failed to save settings');
+      console.error('Save error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Load saved settings on component mount
-  useEffect(() => {
-    // First, sync session data (this takes priority over localStorage)
-    if (session?.user) {
-      setResidentProfile(prev => ({
-        ...prev,
-        name: session.user.name || prev.name,
-        email: session.user.email || prev.email,
-        flatNumber: (session.user as any)?.flatNumber || prev.flatNumber,
-        avatar: session.user.image || prev.avatar
-      }));
-    }
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Cancel handler
+  // ─────────────────────────────────────────────────────────────────────────────
+  
+  const handleCancel = () => {
+    if (originalProfile) setProfile(originalProfile);
+    if (originalNotifications) setNotifications(originalNotifications);
+    if (originalPrivacy) setPrivacy(originalPrivacy);
+    setPasswords({ current: '', new: '', confirm: '' });
+    toast.info('Changes discarded');
+  };
 
-    // Then load any additional saved settings from localStorage
-    const savedSettings = localStorage.getItem(`resident-settings-${session?.user?.email}`);
-    if (savedSettings) {
-      try {
-        const parsed = JSON.parse(savedSettings);
-        if (parsed.profile) {
-          setResidentProfile(prev => ({ 
-            ...prev, 
-            ...parsed.profile,
-            // Ensure session data takes priority for these fields
-            name: session?.user?.name || parsed.profile.name,
-            email: session?.user?.email || parsed.profile.email,
-            flatNumber: (session?.user as any)?.flatNumber || parsed.profile.flatNumber || prev.flatNumber,
-            avatar: session?.user?.image || parsed.profile.avatar
-          }));
-        }
-        if (parsed.notifications) setResidentNotifications(prev => ({ ...prev, ...parsed.notifications }));
-        if (parsed.privacy) setResidentPrivacy(prev => ({ ...prev, ...parsed.privacy }));
-      } catch (error) {
-        console.log('Could not load saved settings:', error);
-      }
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Render Section Content
+  // ─────────────────────────────────────────────────────────────────────────────
+  
+  const renderSectionContent = () => {
+    switch (activeSection) {
+      case 'account':
+        return <AccountSection profile={profile} setProfile={setProfile} />;
+      case 'notifications':
+        return <NotificationsSection notifications={notifications} setNotifications={setNotifications} />;
+      case 'privacy':
+        return <PrivacySection privacy={privacy} setPrivacy={setPrivacy} />;
+      case 'appearance':
+        return <AppearanceSection theme={theme} setTheme={setTheme} />;
+      case 'security':
+        return (
+          <SecuritySection 
+            passwords={passwords} 
+            setPasswords={setPasswords}
+            showPassword={showPassword}
+            setShowPassword={setShowPassword}
+          />
+        );
+      default:
+        return null;
     }
-  }, [session?.user?.email, session?.user?.name, session?.user?.image, (session?.user as any)?.flatNumber]);
+  };
 
-  // Define tabs configuration
-  const settingsTabs = [
-    { value: 'profile', label: 'Profile', icon: User },
-    { value: 'notifications', label: 'Notifications', icon: Bell },
-    { value: 'privacy', label: 'Privacy', icon: Shield },
-    { value: 'appearance', label: 'Appearance', icon: Palette },
-    { value: 'security', label: 'Security', icon: Lock },
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Settings</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Manage your account preferences and settings
+          </p>
+        </div>
+
+        {/* Main Layout: Sidebar + Content */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left Sidebar Navigation */}
+          <nav className="lg:w-64 flex-shrink-0">
+            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+              {navigationItems.map((item, index) => {
+                const Icon = item.icon;
+                const isActive = activeSection === item.id;
+                
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveSection(item.id)}
+                    className={`
+                      w-full flex items-center gap-3 px-4 py-3 text-left transition-colors
+                      ${isActive 
+                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white' 
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                      }
+                      ${index !== 0 ? 'border-t border-gray-100 dark:border-gray-800' : ''}
+                    `}
+                  >
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium ${isActive ? 'text-gray-900 dark:text-white' : ''}`}>
+                        {item.label}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500 truncate">
+                        {item.description}
+                      </p>
+                    </div>
+                    {isActive && (
+                      <div className="w-1 h-8 bg-gray-900 dark:bg-white rounded-full" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+
+          {/* Right Content Panel */}
+          <main className="flex-1 min-w-0">
+            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeSection}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  {renderSectionContent()}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Action Bar */}
+            <AnimatePresence>
+              {isDirty && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className="mt-6 flex items-center justify-between bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4"
+                >
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>You have unsaved changes</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={handleCancel}
+                      disabled={isLoading}
+                      className="gap-2"
+                    >
+                      <X className="w-4 h-4" />
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSave}
+                      disabled={isLoading}
+                      className="gap-2 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+                    >
+                      {isLoading ? (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                          className="w-4 h-4 border-2 border-white dark:border-gray-900 border-t-transparent rounded-full"
+                        />
+                      ) : (
+                        <Save className="w-4 h-4" />
+                      )}
+                      Save Changes
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Account Section
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AccountSection({ 
+  profile, 
+  setProfile 
+}: { 
+  profile: ResidentProfile; 
+  setProfile: (p: ResidentProfile) => void;
+}) {
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white">Account Information</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Update your personal details and contact information
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        {/* Avatar */}
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+            {profile.avatar ? (
+              <img src={profile.avatar} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <UserCircle className="w-10 h-10 text-gray-400" />
+            )}
+          </div>
+          <div>
+            <Button variant="outline" size="sm">Change Photo</Button>
+            <p className="mt-1 text-xs text-gray-500">JPG, PNG up to 2MB</p>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Name & Email */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Full Name
+            </Label>
+            <div className="mt-1.5 relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                id="name"
+                value={profile.name}
+                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                className="pl-10"
+                placeholder="Your full name"
+              />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Email Address
+            </Label>
+            <div className="mt-1.5 relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                id="email"
+                type="email"
+                value={profile.email}
+                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                className="pl-10"
+                placeholder="you@example.com"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Phone & Flat */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="phone" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Phone Number
+            </Label>
+            <div className="mt-1.5 relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                id="phone"
+                value={profile.phone}
+                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                className="pl-10"
+                placeholder="+1 (555) 000-0000"
+              />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="flat" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Unit / Flat Number
+            </Label>
+            <div className="mt-1.5 relative">
+              <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                id="flat"
+                value={profile.flatNumber}
+                onChange={(e) => setProfile({ ...profile, flatNumber: e.target.value })}
+                className="pl-10"
+                placeholder="A-101"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Emergency Contact */}
+        <div>
+          <Label htmlFor="emergency" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Emergency Contact
+          </Label>
+          <div className="mt-1.5 relative">
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              id="emergency"
+              value={profile.emergencyContact}
+              onChange={(e) => setProfile({ ...profile, emergencyContact: e.target.value })}
+              className="pl-10"
+              placeholder="Emergency contact number"
+            />
+          </div>
+          <p className="mt-1.5 text-xs text-gray-500">
+            This number will be contacted in case of emergencies
+          </p>
+        </div>
+
+        {/* Bio */}
+        <div>
+          <Label htmlFor="bio" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Bio
+          </Label>
+          <Textarea
+            id="bio"
+            value={profile.bio}
+            onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+            className="mt-1.5"
+            placeholder="A brief description about yourself..."
+            rows={3}
+          />
+          <p className="mt-1.5 text-xs text-gray-500">
+            Visible to other residents based on your privacy settings
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notifications Section
+// ─────────────────────────────────────────────────────────────────────────────
+
+function NotificationsSection({ 
+  notifications, 
+  setNotifications 
+}: { 
+  notifications: ResidentNotifications; 
+  setNotifications: (n: ResidentNotifications) => void;
+}) {
+  const notificationGroups = [
+    {
+      title: 'Activity',
+      description: 'Notifications about your bookings and community events',
+      items: [
+        { key: 'bookingReminders', label: 'Booking Reminders', description: 'Get reminded before your bookings start' },
+        { key: 'communityUpdates', label: 'Community Updates', description: 'News and updates from your community' },
+        { key: 'eventNotifications', label: 'Event Notifications', description: 'Upcoming events and gatherings' },
+      ],
+    },
+    {
+      title: 'Alerts',
+      description: 'Important alerts and maintenance notifications',
+      items: [
+        { key: 'maintenanceAlerts', label: 'Maintenance Alerts', description: 'Scheduled maintenance and disruptions' },
+        { key: 'emergencyAlerts', label: 'Emergency Alerts', description: 'Critical safety and emergency notifications' },
+      ],
+    },
+    {
+      title: 'Delivery Methods',
+      description: 'How you want to receive notifications',
+      items: [
+        { key: 'pushNotifications', label: 'Push Notifications', description: 'Browser and mobile push alerts' },
+        { key: 'emailDigest', label: 'Email Digest', description: 'Daily summary of notifications' },
+        { key: 'smsAlerts', label: 'SMS Alerts', description: 'Text message notifications' },
+      ],
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 max-w-6xl">
-        {/* Resident Settings Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 sm:mb-8"
-        >
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl flex-shrink-0">
-              <Home className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white truncate">
-                Resident Settings
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base md:text-lg">
-                Manage your community profile and preferences
-              </p>
-            </div>
-          </div>
-          
-          {/* Resident Status Badge */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm">
-              <User className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-              Community Resident
-            </Badge>
-            <Badge variant="outline" className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm">
-              <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-              <span className="hidden xs:inline">Member since </span>{new Date().getFullYear()}
-            </Badge>
-          </div>
-        </motion.div>
+    <div className="p-6">
+      <div className="mb-6">
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white">Notification Preferences</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Choose what notifications you receive and how
+        </p>
+      </div>
 
-        {/* Animated Settings Tabs */}
-        <div className="mb-6">
-          <AnimatedSettingsTabs
-            tabs={settingsTabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            variant="resident"
-          />
+      <div className="space-y-8">
+        {notificationGroups.map((group) => (
+          <div key={group.title}>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">{group.title}</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">{group.description}</p>
+            
+            <div className="space-y-3">
+              {group.items.map((item) => (
+                <div 
+                  key={item.key} 
+                  className="flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+                >
+                  <div className="flex-1 min-w-0 mr-4">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{item.description}</p>
+                  </div>
+                  <Switch
+                    checked={notifications[item.key as keyof ResidentNotifications]}
+                    onCheckedChange={(checked) => 
+                      setNotifications({ ...notifications, [item.key]: checked })
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Privacy Section
+// ─────────────────────────────────────────────────────────────────────────────
+
+function PrivacySection({ 
+  privacy, 
+  setPrivacy 
+}: { 
+  privacy: ResidentPrivacy; 
+  setPrivacy: (p: ResidentPrivacy) => void;
+}) {
+  const privacyItems = [
+    { key: 'showProfile', label: 'Show Profile', description: 'Allow others to view your profile page' },
+    { key: 'showBookings', label: 'Show Bookings', description: 'Display your upcoming bookings to neighbors' },
+    { key: 'shareContactInfo', label: 'Share Contact Info', description: 'Allow neighbors to see your contact details' },
+    { key: 'allowDirectMessages', label: 'Allow Direct Messages', description: 'Let other residents message you directly' },
+  ];
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white">Privacy Settings</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Control who can see your information
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        {/* Profile Visibility Dropdown */}
+        <div>
+          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Profile Visibility
+          </Label>
+          <Select
+            value={privacy.profileVisibility}
+            onValueChange={(value) => setPrivacy({ ...privacy, profileVisibility: value })}
+          >
+            <SelectTrigger className="mt-1.5 w-full md:w-64">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="public">Everyone</SelectItem>
+              <SelectItem value="residents">Residents Only</SelectItem>
+              <SelectItem value="neighbors">Close Neighbors</SelectItem>
+              <SelectItem value="private">Private</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="mt-1.5 text-xs text-gray-500">
+            Choose who can discover and view your profile
+          </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          {/* Profile Tab */}
-          <TabsContent value="profile">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6"
+        <Separator />
+
+        {/* Privacy Toggles */}
+        <div className="space-y-3">
+          {privacyItems.map((item) => (
+            <div 
+              key={item.key} 
+              className="flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
             >
-              {/* Profile Picture Card */}
-              <Card className="lg:col-span-1 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 border-blue-200 dark:border-blue-800">
-                <CardHeader className="text-center p-4 sm:p-6">
-                  <CardTitle className="flex items-center gap-2 justify-center text-blue-700 dark:text-blue-300 text-base sm:text-lg">
-                    <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Profile Picture
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-center p-4 sm:p-6 pt-0">
-                  <div className="relative mb-4 sm:mb-6">
-                    <Avatar className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 mx-auto border-4 border-blue-200 dark:border-blue-700 shadow-xl">
-                      <AvatarImage src={residentProfile.avatar} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-2xl sm:text-3xl font-bold">
-                        {residentProfile.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <motion.div
-                      whileHover={{ scale: 1.1 }}
-                      className="absolute bottom-2 right-1/2 translate-x-1/2 translate-y-1/2"
-                    >
-                      <Button size="sm" className="rounded-full bg-blue-500 hover:bg-blue-600 shadow-lg h-8 w-8 sm:h-10 sm:w-10 p-0">
-                        <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </Button>
-                    </motion.div>
-                  </div>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                    Upload a new profile picture to personalize your community presence
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Profile Details Card */}
-              <Card className="lg:col-span-2">
-                <CardHeader className="p-4 sm:p-6">
-                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
-                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                    Resident Information
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Update your personal details and contact information
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                    <div>
-                      <Label htmlFor="name" className="text-xs sm:text-sm">Full Name</Label>
-                      <Input
-                        id="name"
-                        value={residentProfile.name}
-                        onChange={(e) => setResidentProfile({...residentProfile, name: e.target.value})}
-                        className="mt-1 h-9 sm:h-10 text-xs sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="email" className="text-xs sm:text-sm">Email Address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={residentProfile.email}
-                        onChange={(e) => setResidentProfile({...residentProfile, email: e.target.value})}
-                        className="mt-1 h-9 sm:h-10 text-xs sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="phone" className="text-xs sm:text-sm">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        value={residentProfile.phone}
-                        onChange={(e) => setResidentProfile({...residentProfile, phone: e.target.value})}
-                        className="mt-1 h-9 sm:h-10 text-xs sm:text-sm"
-                        placeholder="+1 (555) 123-4567"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="flatNumber" className="text-xs sm:text-sm">Flat Number</Label>
-                      <Input
-                        id="flatNumber"
-                        value={residentProfile.flatNumber}
-                        onChange={(e) => setResidentProfile({...residentProfile, flatNumber: e.target.value})}
-                        className="mt-1 h-9 sm:h-10 text-xs sm:text-sm"
-                        placeholder="A-123, B-456, etc."
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="emergency" className="text-xs sm:text-sm">Emergency Contact</Label>
-                    <Input
-                      id="emergency"
-                      value={residentProfile.emergencyContact}
-                      onChange={(e) => setResidentProfile({...residentProfile, emergencyContact: e.target.value})}
-                      className="mt-1 h-9 sm:h-10 text-xs sm:text-sm"
-                      placeholder="Emergency contact name and phone"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="bio" className="text-xs sm:text-sm">About Me</Label>
-                    <Textarea
-                      id="bio"
-                      value={residentProfile.bio}
-                      onChange={(e) => setResidentProfile({...residentProfile, bio: e.target.value})}
-                      className="mt-1 text-xs sm:text-sm"
-                      placeholder="Tell your neighbors about yourself..."
-                      rows={4}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-
-          {/* Notifications Tab */}
-          <TabsContent value="notifications">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6"
-            >
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50 border-green-200 dark:border-green-800">
-                <CardHeader className="p-4 sm:p-6">
-                  <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300 text-base sm:text-lg">
-                    <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Community Notifications
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Stay updated with community activities and announcements
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0">
-                  {Object.entries({
-                    bookingReminders: 'Booking Reminders',
-                    communityUpdates: 'Community Updates',
-                    maintenanceAlerts: 'Maintenance Alerts',
-                    eventNotifications: 'Event Notifications'
-                  }).map(([key, label]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <Label htmlFor={key} className="text-xs sm:text-sm font-medium">{label}</Label>
-                      <Switch
-                        id={key}
-                        checked={residentNotifications[key as keyof typeof residentNotifications]}
-                        onCheckedChange={(checked) => 
-                          setResidentNotifications({...residentNotifications, [key]: checked})
-                        }
-                      />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/50 dark:to-violet-950/50 border-purple-200 dark:border-purple-800">
-                <CardHeader className="p-4 sm:p-6">
-                  <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300 text-base sm:text-lg">
-                    <Smartphone className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Delivery Methods
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Choose how you want to receive notifications
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0">
-                  {Object.entries({
-                    pushNotifications: 'Push Notifications',
-                    emailDigest: 'Email Digest',
-                    smsAlerts: 'SMS Alerts',
-                    emergencyAlerts: 'Emergency Alerts'
-                  }).map(([key, label]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <Label htmlFor={key} className="text-xs sm:text-sm font-medium">{label}</Label>
-                      <Switch
-                        id={key}
-                        checked={residentNotifications[key as keyof typeof residentNotifications]}
-                        onCheckedChange={(checked) => 
-                          setResidentNotifications({...residentNotifications, [key]: checked})
-                        }
-                      />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-
-          {/* Privacy Tab */}
-          <TabsContent value="privacy">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/50 dark:to-red-950/50 border-orange-200 dark:border-orange-800">
-                <CardHeader className="p-4 sm:p-6">
-                  <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300 text-base sm:text-lg">
-                    <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Privacy & Visibility
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Control what information other residents can see
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                    <div className="space-y-3 sm:space-y-4">{Object.entries({
-                        showProfile: 'Show Profile to Neighbors',
-                        showBookings: 'Show My Facility Bookings',
-                        shareContactInfo: 'Share Contact Information',
-                        allowDirectMessages: 'Allow Direct Messages'
-                      }).map(([key, label]) => (
-                        <div key={key} className="flex items-center justify-between">
-                          <Label htmlFor={key} className="text-xs sm:text-sm font-medium">{label}</Label>
-                          <Switch
-                            id={key}
-                            checked={residentPrivacy[key as keyof typeof residentPrivacy] as boolean}
-                            onCheckedChange={(checked) => 
-                              setResidentPrivacy({...residentPrivacy, [key]: checked})
-                            }
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="visibility" className="text-xs sm:text-sm">Profile Visibility</Label>
-                      <Select 
-                        value={residentPrivacy.profileVisibility} 
-                        onValueChange={(value) => 
-                          setResidentPrivacy({...residentPrivacy, profileVisibility: value})
-                        }
-                      >
-                        <SelectTrigger className="mt-1 h-9 sm:h-10 text-xs sm:text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="public">Everyone</SelectItem>
-                          <SelectItem value="residents">Residents Only</SelectItem>
-                          <SelectItem value="neighbors">Close Neighbors</SelectItem>
-                          <SelectItem value="private">Private</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-
-          {/* Appearance Tab */}
-          <TabsContent value="appearance">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Card>
-                <CardHeader className="p-4 sm:p-6">
-                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                    <Palette className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Appearance Settings
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Customize how the application looks and feels
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
-                  <div>
-                    <Label className="text-sm sm:text-base font-medium">Theme</Label>
-                    <div className="grid grid-cols-3 gap-3 sm:gap-4 mt-3">
-                      {[
-                        { value: 'light', label: 'Light', icon: Sun },
-                        { value: 'dark', label: 'Dark', icon: Moon },
-                        { value: 'system', label: 'System', icon: Settings }
-                      ].map((option) => (
-                        <motion.div
-                          key={option.value}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <Button
-                            variant={theme === option.value ? "default" : "outline"}
-                            onClick={() => setTheme(option.value as any)}
-                            className="w-full h-16 sm:h-20 flex flex-col gap-1 sm:gap-2 text-xs sm:text-sm"
-                          >
-                            <option.icon className="w-5 h-5 sm:w-6 sm:h-6" />
-                            {option.label}
-                          </Button>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-
-          {/* Security Tab */}
-          <TabsContent value="security">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Card className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/50 dark:to-pink-950/50 border-red-200 dark:border-red-800">
-                <CardHeader className="p-4 sm:p-6">
-                  <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-300 text-base sm:text-lg">
-                    <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Security Settings
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Manage your account security and access
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
-                  <div className="space-y-3 sm:space-y-4">
-                    <div>
-                      <Label htmlFor="current-password" className="text-xs sm:text-sm">Current Password</Label>
-                      <div className="relative mt-1">
-                        <Input
-                          id="current-password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Enter current password"
-                          className="h-9 sm:h-10 text-xs sm:text-sm"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-2 sm:px-3"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="w-3 h-3 sm:w-4 sm:h-4" /> : <Eye className="w-3 h-3 sm:w-4 sm:h-4" />}
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                      <div>
-                        <Label htmlFor="new-password" className="text-xs sm:text-sm">New Password</Label>
-                        <Input
-                          id="new-password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Enter new password"
-                          className="mt-1 h-9 sm:h-10 text-xs sm:text-sm"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="confirm-password" className="text-xs sm:text-sm">Confirm Password</Label>
-                        <Input
-                          id="confirm-password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Confirm new password"
-                          className="mt-1 h-9 sm:h-10 text-xs sm:text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="space-y-3 sm:space-y-4">
-                    <h4 className="font-medium text-sm sm:text-base">Two-Factor Authentication</h4>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-xs sm:text-sm">SMS Verification</p>
-                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                          Receive verification codes via SMS
-                        </p>
-                      </div>
-                      <Switch />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Save Button */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-6 sm:mt-8 flex justify-center"
-        >
-          <Button 
-            onClick={handleSaveProfile}
-            disabled={isLoading}
-            className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 hover:from-blue-600 hover:via-indigo-600 hover:to-purple-600 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl font-medium shadow-lg text-sm sm:text-base w-full sm:w-auto"
-          >
-            {isLoading ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full"
+              <div className="flex-1 min-w-0 mr-4">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{item.description}</p>
+              </div>
+              <Switch
+                checked={privacy[item.key as keyof ResidentPrivacy] as boolean}
+                onCheckedChange={(checked) => 
+                  setPrivacy({ ...privacy, [item.key]: checked })
+                }
               />
-            ) : (
-              <>
-                <Save className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                Save All Changes
-              </>
-            )}
-          </Button>
-        </motion.div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Appearance Section
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AppearanceSection({ 
+  theme, 
+  setTheme 
+}: { 
+  theme: string | undefined; 
+  setTheme: (t: 'light' | 'dark' | 'system') => void;
+}) {
+  const themes = [
+    { value: 'light', label: 'Light', icon: Sun, description: 'A clean, bright interface' },
+    { value: 'dark', label: 'Dark', icon: Moon, description: 'Easy on the eyes' },
+    { value: 'system', label: 'System', icon: Monitor, description: 'Match your device settings' },
+  ];
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white">Appearance</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Customize how the app looks and feels
+        </p>
+      </div>
+
+      <div>
+        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4 block">
+          Theme
+        </Label>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {themes.map((option) => {
+            const Icon = option.icon;
+            const isActive = theme === option.value;
+            
+            return (
+              <button
+                key={option.value}
+                onClick={() => setTheme(option.value as 'light' | 'dark' | 'system')}
+                className={`
+                  relative flex flex-col items-center gap-3 p-6 rounded-lg border-2 transition-all
+                  ${isActive 
+                    ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-800' 
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }
+                `}
+              >
+                {isActive && (
+                  <div className="absolute top-3 right-3">
+                    <Check className="w-4 h-4 text-gray-900 dark:text-white" />
+                  </div>
+                )}
+                <Icon className={`w-8 h-8 ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`} />
+                <div className="text-center">
+                  <p className={`text-sm font-medium ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'}`}>
+                    {option.label}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">{option.description}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Security Section
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SecuritySection({ 
+  passwords, 
+  setPasswords,
+  showPassword,
+  setShowPassword,
+}: { 
+  passwords: { current: string; new: string; confirm: string };
+  setPasswords: (p: { current: string; new: string; confirm: string }) => void;
+  showPassword: boolean;
+  setShowPassword: (s: boolean) => void;
+}) {
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white">Security</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Manage your password and security settings
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        {/* Change Password */}
+        <div>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">Change Password</h3>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="current-password" className="text-sm text-gray-700 dark:text-gray-300">
+                Current Password
+              </Label>
+              <div className="mt-1.5 relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="current-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={passwords.current}
+                  onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
+                  className="pl-10 pr-10"
+                  placeholder="Enter current password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="new-password" className="text-sm text-gray-700 dark:text-gray-300">
+                  New Password
+                </Label>
+                <Input
+                  id="new-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={passwords.new}
+                  onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
+                  className="mt-1.5"
+                  placeholder="Enter new password"
+                />
+              </div>
+              <div>
+                <Label htmlFor="confirm-password" className="text-sm text-gray-700 dark:text-gray-300">
+                  Confirm Password
+                </Label>
+                <Input
+                  id="confirm-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={passwords.confirm}
+                  onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+                  className="mt-1.5"
+                  placeholder="Confirm new password"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Two-Factor Authentication */}
+        <div>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">Two-Factor Authentication</h3>
+          <div className="flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <div className="flex-1 min-w-0 mr-4">
+              <p className="text-sm font-medium text-gray-900 dark:text-white">SMS Verification</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Receive verification codes via SMS when signing in
+              </p>
+            </div>
+            <Switch />
+          </div>
+        </div>
+
+        {/* Security Tips */}
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Password Requirements</h4>
+          <ul className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+            <li>• At least 8 characters long</li>
+            <li>• Include uppercase and lowercase letters</li>
+            <li>• Include at least one number</li>
+            <li>• Include at least one special character</li>
+          </ul>
+        </div>
       </div>
     </div>
   );

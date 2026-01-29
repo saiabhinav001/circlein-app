@@ -1,6 +1,6 @@
 'use client';
 
-import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
+import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
 import { ReactNode } from 'react';
 
 /**

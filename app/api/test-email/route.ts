@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email-service';
 
 export async function GET(request: NextRequest) {
+  // Development only - block in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Test email endpoint disabled in production' }, { status: 403 });
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const testEmail = searchParams.get('email') || process.env.EMAIL_USER || 'circleinapp1@gmail.com';
 

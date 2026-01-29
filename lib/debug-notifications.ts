@@ -72,8 +72,7 @@ export const forceWelcomeNotification = () => {
       type: 'info',
       priority: 'medium',
       category: 'system',
-      autoHide: true,
-      duration: 8000
+      autoHide: false
     }
   });
   

@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, memo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -10,10 +10,8 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Clock, 
-  MapPin,
   Users, 
   Plus,
-  Filter,
   Search,
   Eye,
   Edit,
@@ -22,25 +20,27 @@ import {
   AlertCircle,
   XCircle,
   MoreHorizontal,
-  RefreshCw
+  RefreshCw,
+  Building2,
+  X,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { useCommunityNotifications } from '@/hooks/use-community-notifications';
+import { useToast } from '@/hooks/useToast';
+import { useCommunityNotifications } from '@/hooks/useCommunityNotifications';
 import Link from 'next/link';
 import { CalendarErrorBoundary } from '@/components/calendar/CalendarErrorBoundary';
 
-// Utility function for consistent date formatting
+// ============================================================================
+// UTILITIES
+// ============================================================================
+
 const formatDateConsistently = (date: Date): string => {
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -48,7 +48,6 @@ const formatDateConsistently = (date: Date): string => {
   return `${day}/${month}/${year}`;
 };
 
-// Utility function for consistent time formatting
 const formatTimeConsistently = (date: Date): string => {
   const hours = date.getHours();
   const minutes = date.getMinutes();
@@ -58,12 +57,14 @@ const formatTimeConsistently = (date: Date): string => {
   return `${displayHour}:${displayMinutes} ${ampm}`;
 };
 
-// Utility function for consistent date comparison
 const isSameDay = (date1: Date, date2: Date): boolean => {
   return formatDateConsistently(date1) === formatDateConsistently(date2);
 };
 
-// Interface for real booking data from Firebase
+// ============================================================================
+// TYPES
+// ============================================================================
+
 interface Booking {
   id: string;
   amenityId: string;
@@ -77,11 +78,14 @@ interface Booking {
   communityId: string;
   checkInTime?: Date;
   checkOutTime?: Date;
+  userName?: string;
+  userFlatNumber?: string;
+  userEmail?: string;
 }
 
-// Real bookings would come from your database/API
-// For now, this will be empty until real bookings are made
-const mockBookings: any[] = [];
+// ============================================================================
+// CONSTANTS
+// ============================================================================
 
 const amenityTypes = [
   'All Amenities',
@@ -93,49 +97,79 @@ const amenityTypes = [
   'Playground'
 ];
 
-const statusColors = {
-  confirmed: 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800',
-  pending: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800',
-  cancelled: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800'
+// Status configurations - minimal, functional
+const statusConfig = {
+  confirmed: { 
+    color: 'bg-emerald-500', 
+    text: 'text-emerald-700 dark:text-emerald-400',
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10',
+    label: 'Confirmed',
+    Icon: CheckCircle
+  },
+  pending: { 
+    color: 'bg-amber-500', 
+    text: 'text-amber-700 dark:text-amber-400',
+    bg: 'bg-amber-50 dark:bg-amber-500/10',
+    label: 'Pending',
+    Icon: AlertCircle
+  },
+  cancelled: { 
+    color: 'bg-slate-400', 
+    text: 'text-slate-600 dark:text-slate-400',
+    bg: 'bg-slate-100 dark:bg-slate-800',
+    label: 'Cancelled',
+    Icon: XCircle
+  }
 };
 
-const statusIcons = {
-  confirmed: CheckCircle,
-  pending: AlertCircle,
-  cancelled: XCircle
+// ============================================================================
+// ANIMATION VARIANTS - Subtle, professional
+// ============================================================================
+
+const fadeIn = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+  transition: { duration: 0.15 }
 };
+
+const slideUp = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.2, ease: "easeOut" as const }
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 
 export default function CalendarPage() {
   const { data: session } = useSession();
   const { toast } = useToast();
   const { sendCommunityNotification } = useCommunityNotifications();
   
-  // Check if user is admin
   const isAdmin = session?.user?.role === 'admin';
   
-  // Hydration state to prevent SSR mismatch
+  // State
   const [isHydrated, setIsHydrated] = useState(false);
-  
-  // State for real bookings data
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAmenity, setSelectedAmenity] = useState('All Amenities');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showBookingDialog, setShowBookingDialog] = useState(false);
 
-  // Handle hydration
+  // Hydration
   useEffect(() => {
     setIsHydrated(true);
   }, []);
 
-  // Fetch real bookings from Firebase
+  // Fetch bookings
   useEffect(() => {
     if (session?.user?.email && session?.user?.communityId) {
       fetchBookings();
@@ -152,7 +186,6 @@ export default function CalendarPage() {
         setLoading(true);
       }
       
-      // Query all bookings for the community (not just user's bookings)
       const q = query(
         collection(db, 'bookings'),
         where('communityId', '==', session.user.communityId)
@@ -175,9 +208,9 @@ export default function CalendarPage() {
           userId: data.userId,
           communityId: data.communityId,
           userName: data.userName,
-          userFlatNumber: data.userFlatNumber,
+          userFlatNumber: data.userFlatNumber || data.flatNumber,
           userEmail: data.userEmail
-        } as any);
+        });
       });
 
       setBookings(bookingList);
@@ -195,68 +228,65 @@ export default function CalendarPage() {
     }
   };
 
-  // Filter bookings based on search and filters
+  // Filtered bookings
   const filteredBookings = useMemo(() => {
     return bookings.filter(booking => {
       const matchesSearch = booking.amenityName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           booking.userId?.toLowerCase().includes(searchQuery.toLowerCase());
-      
+                           booking.userId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           booking.userName?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesAmenity = selectedAmenity === 'All Amenities' || booking.amenityName === selectedAmenity;
       const matchesStatus = selectedStatus === 'all' || booking.status === selectedStatus;
-      
       return matchesSearch && matchesAmenity && matchesStatus;
     });
   }, [bookings, searchQuery, selectedAmenity, selectedStatus]);
 
-  // Get bookings for selected date
+  // Selected date bookings
   const selectedDateBookings = useMemo(() => {
     if (!selectedDate) return [];
-    return filteredBookings.filter(booking => {
-      const bookingDate = new Date(booking.startTime);
-      return isSameDay(bookingDate, selectedDate);
-    });
+    return filteredBookings.filter(booking => isSameDay(new Date(booking.startTime), selectedDate));
   }, [selectedDate, filteredBookings]);
 
-  // Get dates that have bookings for calendar highlighting
+  // Booking dates for calendar highlights
   const bookingDates = useMemo(() => {
     return filteredBookings.map(booking => new Date(booking.startTime));
   }, [filteredBookings]);
 
-  const formatTime = (time: string) => {
-    // Convert string time to Date for consistent formatting
-    const [hours, minutes] = time.split(':');
-    const date = new Date();
-    date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    return formatTimeConsistently(date);
-  };
+  // Stats
+  const stats = useMemo(() => ({
+    total: filteredBookings.length,
+    confirmed: filteredBookings.filter(b => b.status === 'confirmed').length,
+    pending: filteredBookings.filter(b => b.status === 'pending').length,
+    cancelled: filteredBookings.filter(b => b.status === 'cancelled').length,
+  }), [filteredBookings]);
 
-  const formatDateRange = (startTime: string, endTime: string) => {
-    return `${formatTime(startTime)} - ${formatTime(endTime)}`;
-  };
+  // Handlers
+  const handleRefresh = useCallback(() => {
+    fetchBookings(true);
+    toast({ title: "Refreshed", description: "Calendar data updated." });
+  }, []);
 
-  const handleBookingAction = async (action: string, booking: any) => {
+  const navigateMonth = useCallback((direction: 'prev' | 'next') => {
+    setCurrentMonth(prev => {
+      const newMonth = new Date(prev);
+      newMonth.setMonth(prev.getMonth() + (direction === 'prev' ? -1 : 1));
+      return newMonth;
+    });
+  }, []);
+
+  const handleBookingAction = async (action: string, booking: Booking) => {
     switch (action) {
       case 'view':
         setSelectedBooking(booking);
         setShowBookingDialog(true);
         break;
       case 'edit':
-        toast({
-          title: "Edit Booking",
-          description: "Edit functionality would open here.",
-          variant: "default" as any,
-        });
+        toast({ title: "Edit Booking", description: "Edit functionality would open here." });
         break;
       case 'cancel':
         await handleCancelBooking(booking);
         break;
       case 'approve':
-        toast({
-          title: "✅ Booking Approved",
-          description: `${booking.amenityName} booking has been approved successfully.`,
-          variant: "success" as any,
-        });
-        // Refresh bookings after action
+        toast({ title: "Booking Approved", description: `${booking.amenityName} booking approved.` });
         fetchBookings(true);
         break;
     }
@@ -264,30 +294,26 @@ export default function CalendarPage() {
 
   const handleCancelBooking = async (booking: Booking) => {
     try {
-      // CRITICAL: Prevent cancellation if already checked in
       if (booking.checkInTime || booking.checkOutTime) {
         toast({
           title: "Cannot Cancel",
-          description: "This booking cannot be cancelled as check-in has already been completed. Please contact support if you need assistance.",
+          description: "This booking has already been checked in.",
           variant: "destructive",
         });
         return;
       }
 
-      // Check if booking time has already passed
       const now = new Date();
       if (new Date(booking.endTime) < now) {
         toast({
           title: "Cannot Cancel",
-          description: "This booking has already ended and cannot be cancelled.",
+          description: "This booking has already ended.",
           variant: "destructive",
         });
         return;
       }
 
-      // Check if user can cancel this booking
       const canCancel = isAdmin || booking.userId === session?.user?.email;
-      
       if (!canCancel) {
         toast({
           title: "Access Denied",
@@ -297,29 +323,14 @@ export default function CalendarPage() {
         return;
       }
 
-      // Confirm cancellation for admin actions on other users' bookings
       if (isAdmin && booking.userId !== session?.user?.email) {
         const confirmed = window.confirm(
-          `Are you sure you want to cancel this booking for ${booking.userId}?\n\n` +
-          `Amenity: ${booking.amenityName}\n` +
-          `Date: ${formatDateConsistently(booking.startTime)}\n` +
-          `Time: ${formatTimeConsistently(booking.startTime)} - ${formatTimeConsistently(booking.endTime)}\n\n` +
-          `The user will be notified of this cancellation.`
+          `Cancel this booking for ${booking.userName || booking.userId}?\n\n` +
+          `${booking.amenityName}\n` +
+          `${formatDateConsistently(booking.startTime)} · ${formatTimeConsistently(booking.startTime)}`
         );
-        
-        if (!confirmed) {
-          return;
-        }
+        if (!confirmed) return;
       }
-
-      // Use the new cancel API endpoint (handles email + waitlist promotion automatically)
-      console.log('🗑️ Cancelling booking via API:', {
-        bookingId: booking.id,
-        userId: booking.userId,
-        amenity: booking.amenityName,
-        isAdmin,
-        currentUser: session?.user?.email
-      });
 
       const cancelResponse = await fetch(`/api/bookings/cancel/${booking.id}`, {
         method: 'POST',
@@ -332,1015 +343,730 @@ export default function CalendarPage() {
       }
 
       const cancelData = await cancelResponse.json();
-      console.log('✅ Booking cancelled successfully:', cancelData);
 
-      // Show success message with waitlist info
       if (cancelData.waitlistPromoted) {
         toast({
-          title: "✅ Booking Cancelled & Waitlist Promoted",
-          description: `${booking.amenityName} booking cancelled. The next person (${cancelData.promotedUser}) has been notified and will have 48 hours to confirm.`,
-          variant: "success" as any,
+          title: "Cancelled & Waitlist Promoted",
+          description: `Next person (${cancelData.promotedUser}) notified.`,
         });
       } else {
-        toast({
-          title: "Booking Cancelled",
-          description: `${booking.amenityName} booking has been cancelled successfully.`,
-          variant: "success" as any,
-        });
+        toast({ title: "Booking Cancelled", description: "Successfully cancelled." });
       }
 
-      // Close dialog if open
       setShowBookingDialog(false);
-      
-      // Refresh bookings after cancellation
       fetchBookings(true);
     } catch (error) {
       console.error('Error cancelling booking:', error);
       toast({
         title: "Error",
-        description: "Failed to cancel booking. Please try again.",
+        description: "Failed to cancel booking.",
         variant: "destructive",
       });
     }
   };
 
-  const handleRefresh = () => {
-    fetchBookings(true);
-    toast({
-      title: "Calendar Refreshed",
-      description: "Booking data has been updated.",
-    });
-  };
+  // ============================================================================
+  // BOOKING CARD COMPONENT - Premium, minimal
+  // ============================================================================
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentMonth(prev => {
-      const newMonth = new Date(prev);
-      if (direction === 'prev') {
-        newMonth.setMonth(prev.getMonth() - 1);
-      } else {
-        newMonth.setMonth(prev.getMonth() + 1);
-      }
-      return newMonth;
-    });
-  };
-
-  // Memoized BookingCard for better performance
-  const BookingCard = memo(function BookingCard({ booking, isCompact = false }: { booking: Booking, isCompact?: boolean }) {
-    const StatusIcon = statusIcons[booking.status as keyof typeof statusIcons] || statusIcons.confirmed;
-    
-    const formatTimeFromDate = useCallback((date: Date) => {
-      return formatTimeConsistently(date);
-    }, []);
-    
-    const formatDateRange = useCallback((startTime: Date, endTime: Date) => {
-      return `${formatTimeFromDate(startTime)} - ${formatTimeFromDate(endTime)}`;
-    }, [formatTimeFromDate]);
-
-    // Get user display name and flat number - FIXED to show flat number
-    const getUserDisplay = useCallback(() => {
-      const userName = (booking as any).userName || 'Resident';
-      const flatNumber = (booking as any).flatNumber || (booking as any).userFlatNumber;
-      return flatNumber ? `${userName} - Flat ${flatNumber}` : userName;
-    }, [booking]);
+  const BookingCard = memo(function BookingCard({ 
+    booking, 
+    isCompact = false 
+  }: { 
+    booking: Booking; 
+    isCompact?: boolean;
+  }) {
+    const config = statusConfig[booking.status as keyof typeof statusConfig] || statusConfig.confirmed;
+    const isOwn = booking.userId === session?.user?.email;
+    const isCheckedIn = !!(booking.checkInTime || booking.checkOutTime);
     
     return (
-      <div
+      <motion.div
+        layout
+        {...fadeIn}
         className={cn(
-          "relative group rounded-2xl border overflow-hidden transition-all duration-200",
-          "bg-white dark:bg-slate-800/90",
-          "border-slate-200 dark:border-slate-700",
-          "shadow-md hover:shadow-xl",
-          "hover:border-blue-300 dark:hover:border-blue-600",
-          isCompact ? "p-3 sm:p-4" : "p-4 sm:p-5"
+          "group relative rounded-xl border transition-all duration-150",
+          "bg-white dark:bg-slate-900",
+          "border-slate-200 dark:border-slate-800",
+          "hover:border-slate-300 dark:hover:border-slate-700",
+          "hover:shadow-sm"
         )}
       >
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div className="flex-1 min-w-0 space-y-3">
-            {/* Header with amenity name and status */}
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className={cn(
-                "font-bold text-slate-900 dark:text-white",
-                isCompact ? "text-sm sm:text-base" : "text-base sm:text-lg"
-              )}>
-                {booking.amenityName}
-              </h3>
-              <Badge variant="outline" className={cn(
-                "text-xs font-semibold",
-                statusColors[booking.status as keyof typeof statusColors] || statusColors.confirmed
-              )}>
-                <StatusIcon className="w-3 h-3 mr-1.5" />
-                {(booking.status || 'confirmed').toUpperCase()}
-              </Badge>
-              {/* Admin badge */}
-              {isAdmin && booking.userId !== session?.user?.email && (
-                <Badge className="text-xs bg-blue-600 text-white border-0">
-                  🛡️ Admin
-                </Badge>
-              )}
-              {/* Own booking */}
-              {booking.userId === session?.user?.email && (
-                <Badge className="text-xs bg-green-600 text-white border-0">
-                  ✓ Your Booking
-                </Badge>
-              )}
-              {/* Checked-in status - CRITICAL INDICATOR */}
-              {(booking.checkInTime || booking.checkOutTime) && (
-                <Badge className="text-xs bg-emerald-600 text-white border-0 animate-pulse">
-                  ✓ Checked In
-                </Badge>
-              )}
-            </div>
-            
-            {/* Booking details - Simplified and optimized */}
-            <div className="space-y-2">
-              {/* Booked by - with flat number */}
-              <div className="flex items-center gap-2 text-sm">
-                <Users className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                <span className="text-slate-600 dark:text-slate-400">Booked by:</span>
-                <span className="font-semibold text-slate-900 dark:text-white truncate">
-                  {getUserDisplay()}
+        {/* Status accent line */}
+        <div className={cn("absolute left-0 top-3 bottom-3 w-0.5 rounded-full", config.color)} />
+        
+        <div className={cn("p-4", isCompact ? "py-3" : "py-4", "pl-5")}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              {/* Header */}
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <h3 className={cn(
+                  "font-semibold text-slate-900 dark:text-white truncate",
+                  isCompact ? "text-sm" : "text-base"
+                )}>
+                  {booking.amenityName}
+                </h3>
+                
+                {/* Minimal status indicator */}
+                <span className={cn(
+                  "shrink-0 text-xs font-medium px-2 py-0.5 rounded-md",
+                  config.bg, config.text
+                )}>
+                  {config.label}
                 </span>
-              </div>
-
-              {/* Time slot */}
-              <div className="flex items-center gap-2 text-sm">
-                <Clock className="w-4 h-4 text-slate-600 dark:text-slate-400 flex-shrink-0" />
-                <span className="text-slate-900 dark:text-white font-medium">
-                  {formatDateRange(booking.startTime, booking.endTime)}
-                </span>
-              </div>
-
-              {/* Attendees count */}
-              {!isCompact && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-                  <span className="text-slate-600 dark:text-slate-400">Attendees:</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">
-                    {booking.attendees?.length || 1} {(booking.attendees?.length || 1) === 1 ? 'person' : 'people'}
+                
+                {isCheckedIn && (
+                  <span className="shrink-0 text-xs font-medium px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+                    Checked In
                   </span>
+                )}
+              </div>
+              
+              {/* Meta info */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  {formatTimeConsistently(booking.startTime)} – {formatTimeConsistently(booking.endTime)}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" />
+                  {booking.userName || 'Resident'}
+                  {booking.userFlatNumber && (
+                    <span className="text-slate-400 dark:text-slate-500">
+                      · Flat {booking.userFlatNumber}
+                    </span>
+                  )}
+                </span>
+              </div>
+              
+              {/* Tags */}
+              {!isCompact && (
+                <div className="flex items-center gap-2 mt-2">
+                  {isOwn && (
+                    <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                      Your booking
+                    </span>
+                  )}
+                  {isAdmin && !isOwn && (
+                    <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded">
+                      Admin view
+                    </span>
+                  )}
                 </div>
               )}
             </div>
+            
+            {/* Actions - always visible on mobile, hover on desktop */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                >
+                  <MoreHorizontal className="w-4 h-4 text-slate-500" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 rounded-xl border-slate-200 dark:border-slate-800 shadow-lg">
+                <DropdownMenuItem 
+                  onClick={() => handleBookingAction('view', booking)} 
+                  className="rounded-lg cursor-pointer"
+                >
+                  <Eye className="w-4 h-4 mr-2 text-slate-500" />
+                  View Details
+                </DropdownMenuItem>
+                
+                {(isAdmin || isOwn) && (
+                  <DropdownMenuItem 
+                    onClick={() => handleBookingAction('edit', booking)} 
+                    className="rounded-lg cursor-pointer"
+                  >
+                    <Edit className="w-4 h-4 mr-2 text-slate-500" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
+                
+                {isAdmin && booking.status === 'pending' && (
+                  <DropdownMenuItem 
+                    onClick={() => handleBookingAction('approve', booking)} 
+                    className="rounded-lg cursor-pointer"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2 text-emerald-500" />
+                    Approve
+                  </DropdownMenuItem>
+                )}
+                
+                {!isCheckedIn && (isAdmin || isOwn) && booking.status !== 'cancelled' && (
+                  <DropdownMenuItem 
+                    onClick={() => handleBookingAction('cancel', booking)}
+                    className="rounded-lg cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Cancel
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-8 w-8 p-0 flex-shrink-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 rounded-xl border-2 shadow-2xl p-2">
-              <DropdownMenuItem 
-                onClick={() => handleBookingAction('view', booking)} 
-                className="text-sm font-medium rounded-lg cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950/50 focus:bg-blue-50 dark:focus:bg-blue-950/50 py-3"
-              >
-                <Eye className="w-4 h-4 mr-3 text-blue-600 dark:text-blue-400" />
-                View Details
-              </DropdownMenuItem>
-              
-              {/* Edit only for own bookings or if admin */}
-              {(isAdmin || booking.userId === session?.user?.email) && (
-                <DropdownMenuItem 
-                  onClick={() => handleBookingAction('edit', booking)} 
-                  className="text-sm font-medium rounded-lg cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/50 focus:bg-purple-50 dark:focus:bg-purple-950/50 py-3"
-                >
-                  <Edit className="w-4 h-4 mr-3 text-purple-600 dark:text-purple-400" />
-                  Edit Booking
-                </DropdownMenuItem>
-              )}
-              
-              {/* Approve only for admin and pending bookings */}
-              {isAdmin && booking.status === 'pending' && (
-                <DropdownMenuItem 
-                  onClick={() => handleBookingAction('approve', booking)} 
-                  className="text-sm font-medium rounded-lg cursor-pointer hover:bg-green-50 dark:hover:bg-green-950/50 focus:bg-green-50 dark:focus:bg-green-950/50 py-3"
-                >
-                  <CheckCircle className="w-4 h-4 mr-3 text-green-600 dark:text-green-400" />
-                  Approve Booking
-                </DropdownMenuItem>
-              )}
-              
-              {/* Cancel: Own bookings or admin can cancel any booking - ONLY if NOT checked in */}
-              {!booking.checkInTime && 
-               !booking.checkOutTime && 
-               (isAdmin || booking.userId === session?.user?.email) && 
-               booking.status !== 'cancelled' && (
-                <DropdownMenuItem 
-                  onClick={() => handleBookingAction('cancel', booking)}
-                  className="text-sm font-medium rounded-lg cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/50 focus:bg-red-50 dark:focus:bg-red-950/50 text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 py-3"
-                >
-                  <Trash2 className="w-4 h-4 mr-3" />
-                  {isAdmin && booking.userId !== session?.user?.email ? 'Cancel (Admin)' : 'Cancel Booking'}
-                </DropdownMenuItem>
-              )}
-              
-              {/* Show read-only indicator for other users' bookings when not admin */}
-              {!isAdmin && booking.userId !== session?.user?.email && (
-                <DropdownMenuItem disabled className="text-gray-400">
-                  <Eye className="w-4 h-4 mr-2" />
-                  View Only
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
-      </div>
+      </motion.div>
     );
-  }, (prevProps, nextProps) => {
-    // Custom comparison for better performance
-    return prevProps.booking.id === nextProps.booking.id && 
-           prevProps.booking.status === nextProps.booking.status &&
-           prevProps.isCompact === nextProps.isCompact;
   });
 
-  // Prevent hydration issues by not rendering until client-side
+  // ============================================================================
+  // LOADING STATE
+  // ============================================================================
+
   if (!isHydrated) {
     return (
       <CalendarErrorBoundary>
-        <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl">
-          <Card>
-            <CardHeader className="px-4 sm:px-6">
-              <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg md:text-xl">
-                <CalendarIcon className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-blue-600" />
-                Loading Calendar...
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Preparing your calendar interface
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-4 sm:px-6">
-              <div className="flex items-center justify-center py-8 sm:py-10 md:py-12">
-                <div className="animate-spin rounded-full h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 border-b-2 border-blue-600"></div>
+        <div className="min-h-screen bg-white dark:bg-slate-950">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="animate-pulse space-y-6">
+              <div className="h-8 w-32 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+              <div className="h-4 w-64 bg-slate-100 dark:bg-slate-900 rounded" />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="h-80 bg-slate-100 dark:bg-slate-900 rounded-xl" />
+                <div className="lg:col-span-2 h-80 bg-slate-100 dark:bg-slate-900 rounded-xl" />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </CalendarErrorBoundary>
     );
   }
 
+  // ============================================================================
+  // MAIN RENDER
+  // ============================================================================
+
   return (
     <CalendarErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-blue-950/10 dark:to-indigo-950/10">
-        <div className="container mx-auto p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-6 sm:space-y-7 md:space-y-8"
-          >
-          {/* Header - Enhanced with glassmorphism */}
-          <motion.div 
-            className="relative overflow-hidden rounded-3xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-2xl shadow-blue-500/10 p-6 sm:p-8"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            {/* Animated background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 dark:from-blue-500/10 dark:via-purple-500/10 dark:to-pink-500/10 animate-gradient-x"></div>
+      <div className="min-h-screen bg-white dark:bg-slate-950 transition-colors duration-200">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+          <motion.div {...slideUp} className="space-y-6 sm:space-y-8">
             
-            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
-              <div className="space-y-2">
-                <motion.h1 
-                  className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent flex items-center gap-3"
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                >
-                  <motion.div
-                    className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg shadow-blue-500/30"
-                    whileHover={{ scale: 1.05, rotate: 5 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <CalendarIcon className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
-                  </motion.div>
-                  Calendar
-                  {isAdmin && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 200, delay: 0.4 }}
-                    >
-                      <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 shadow-lg shadow-blue-500/30 text-sm px-3 py-1">
-                        Admin
-                      </Badge>
-                    </motion.div>
-                  )}
-                </motion.h1>
-                <motion.p 
-                  className="text-gray-600 dark:text-gray-300 text-base sm:text-lg font-medium"
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                >
-                  {isAdmin 
-                    ? "🎯 Manage all community bookings and events" 
-                    : "📅 Your personal booking dashboard"
-                  }
-                </motion.p>
-              </div>
-              
-              <motion.div 
-                className="flex items-center gap-3"
-                initial={{ x: 20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button 
-                    variant="outline" 
-                    onClick={handleRefresh} 
-                    disabled={refreshing}
-                    className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border-2 border-blue-200 dark:border-blue-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all duration-300 shadow-lg shadow-blue-500/10"
-                    size="default"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                    {refreshing ? 'Refreshing...' : 'Refresh'}
-                  </Button>
-                </motion.div>
-                <Link href="/dashboard">
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-xl shadow-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/40 transition-all duration-300">
-                      <Plus className="h-4 w-4" />
-                      <span className="font-semibold">New Booking</span>
-                    </Button>
-                  </motion.div>
-                </Link>
-              </motion.div>
-            </div>
-          </motion.div>
-
-        {/* Admin Info Panel - Enhanced with animation */}
-        {isAdmin && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.4, type: "spring", stiffness: 100 }}
-          >
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 dark:from-blue-500/20 dark:via-purple-500/20 dark:to-pink-500/20 backdrop-blur-xl border-2 border-blue-300/50 dark:border-blue-600/50 shadow-xl shadow-blue-500/20">
-              {/* Animated background pattern */}
-              <div className="absolute inset-0 opacity-30">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 via-transparent to-purple-400/20 animate-pulse"></div>
-              </div>
-              
-              <CardContent className="relative z-10 pt-6 px-6 pb-6">
-                <div className="flex items-start gap-4">
-                  <motion.div 
-                    className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg shadow-blue-500/30"
-                    animate={{ 
-                      boxShadow: [
-                        "0 10px 30px rgba(59, 130, 246, 0.3)",
-                        "0 10px 40px rgba(168, 85, 247, 0.4)",
-                        "0 10px 30px rgba(59, 130, 246, 0.3)"
-                      ]
-                    }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                  >
-                    <Users className="w-6 h-6 text-white" />
-                  </motion.div>
-                  <div className="flex-1 space-y-1">
-                    <h3 className="font-bold text-blue-900 dark:text-blue-100 text-lg flex items-center gap-2">
-                      Admin Privileges Active
-                      <motion.span
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="inline-block w-2 h-2 bg-green-500 rounded-full shadow-lg shadow-green-500/50"
-                      />
-                    </h3>
-                    <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
-                      Full access to view, edit, and manage all community bookings. Residents receive automatic notifications for any admin actions.
-                    </p>
+            {/* ================================================================
+                HEADER - Executive-grade, calm
+            ================================================================ */}
+            <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3 mb-1.5">
+                  <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-900">
+                    <CalendarIcon className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                   </div>
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">
+                    Calendar
+                  </h1>
                 </div>
-              </CardContent>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Filters - Enhanced with glassmorphism and animations */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-        >
-          <div className="rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-xl shadow-blue-500/5 overflow-hidden">
-            <CardContent className="pt-6 px-6 pb-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <motion.div 
-                  className="relative group"
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-300" />
-                  <Input
-                    placeholder="Search bookings..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 h-12 bg-gradient-to-r from-slate-50 to-blue-50/50 dark:from-slate-800 dark:to-blue-900/20 border-2 border-gray-200 dark:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500 rounded-xl text-base font-medium shadow-sm hover:shadow-md transition-all duration-300"
-                  />
-                </motion.div>
-                
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <Select value={selectedAmenity} onValueChange={setSelectedAmenity}>
-                    <SelectTrigger className="h-12 bg-gradient-to-r from-slate-50 to-purple-50/50 dark:from-slate-800 dark:to-purple-900/20 border-2 border-gray-200 dark:border-slate-700 focus:border-purple-500 dark:focus:border-purple-500 rounded-xl text-base font-medium shadow-sm hover:shadow-md transition-all duration-300">
-                      <SelectValue placeholder="Filter by amenity" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-2 shadow-2xl">
-                      {amenityTypes.map((amenity) => (
-                        <SelectItem key={amenity} value={amenity} className="text-base hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors">
-                          {amenity}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </motion.div>
-                
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                    <SelectTrigger className="h-12 bg-gradient-to-r from-slate-50 to-pink-50/50 dark:from-slate-800 dark:to-pink-900/20 border-2 border-gray-200 dark:border-slate-700 focus:border-pink-500 dark:focus:border-pink-500 rounded-xl text-base font-medium shadow-sm hover:shadow-md transition-all duration-300">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-2 shadow-2xl">
-                      <SelectItem value="all" className="text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">All Status</SelectItem>
-                      <SelectItem value="confirmed" className="text-base hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">✓ Confirmed</SelectItem>
-                      <SelectItem value="pending" className="text-base hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors">⏳ Pending</SelectItem>
-                      <SelectItem value="cancelled" className="text-base hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">✗ Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </motion.div>
-                
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
-                    <SelectTrigger className="h-12 bg-gradient-to-r from-slate-50 to-indigo-50/50 dark:from-slate-800 dark:to-indigo-900/20 border-2 border-gray-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-500 rounded-xl text-base font-medium shadow-sm hover:shadow-md transition-all duration-300">
-                      <SelectValue placeholder="View mode" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-2 shadow-2xl">
-                      <SelectItem value="month" className="text-base hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">📅 Month View</SelectItem>
-                      <SelectItem value="week" className="text-base hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">📆 Week View</SelectItem>
-                      <SelectItem value="day" className="text-base hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">📋 Day View</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </motion.div>
+                <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400">
+                  {isAdmin ? 'Manage community bookings and events.' : 'View and manage your reservations.'}
+                </p>
               </div>
-            </CardContent>
-          </div>
-        </motion.div>
+              
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={handleRefresh} 
+                  disabled={refreshing}
+                  className={cn(
+                    "h-9 sm:h-10 px-3 sm:px-4 rounded-lg text-sm font-medium",
+                    "border-slate-200 dark:border-slate-800",
+                    "hover:bg-slate-50 dark:hover:bg-slate-900",
+                    "transition-colors duration-150"
+                  )}
+                >
+                  <RefreshCw className={cn("w-4 h-4 mr-2", refreshing && "animate-spin")} />
+                  <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+                </Button>
+                
+                <Link href="/dashboard">
+                  <Button className={cn(
+                    "h-9 sm:h-10 px-3 sm:px-4 rounded-lg text-sm font-medium",
+                    "bg-slate-900 dark:bg-white",
+                    "text-white dark:text-slate-900",
+                    "hover:bg-slate-800 dark:hover:bg-slate-100",
+                    "transition-colors duration-150"
+                  )}>
+                    <Plus className="w-4 h-4 sm:mr-1.5" />
+                    <span className="hidden sm:inline">New Booking</span>
+                  </Button>
+                </Link>
+              </div>
+            </header>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Calendar - Enhanced */}
-          <motion.div 
-            className="lg:col-span-1"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-          >
-            <div className="rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-xl shadow-purple-500/5 overflow-hidden">
-              <CardHeader className="pb-4 px-4 sm:px-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 border-b border-purple-200/30 dark:border-purple-800/30">
-                <div className="flex items-center justify-between gap-2 sm:gap-3">
-                  <CardTitle className="text-sm sm:text-base lg:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent flex items-center gap-1.5 sm:gap-2 min-w-0">
-                    <span className="text-lg sm:text-xl lg:text-2xl flex-shrink-0">📅</span>
-                    <span className="whitespace-nowrap truncate">{currentMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</span>
-                  </CardTitle>
-                  <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            {/* ================================================================
+                ADMIN BANNER - Subtle status strip
+            ================================================================ */}
+            {isAdmin && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.15, delay: 0.1 }}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-2.5 rounded-xl",
+                  "bg-blue-50 dark:bg-blue-500/10",
+                  "border border-blue-100 dark:border-blue-500/20"
+                )}
+              >
+                <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                <span className="text-sm text-blue-700 dark:text-blue-300">
+                  Admin access · View and manage all community bookings
+                </span>
+              </motion.div>
+            )}
+
+            {/* ================================================================
+                FILTERS - Unified control bar
+            ================================================================ */}
+            <div className="flex flex-col gap-3">
+              {/* Search - full width on mobile */}
+              <div className="relative w-full sm:max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <Input
+                  placeholder="Search bookings..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={cn(
+                    "w-full h-10 pl-9 pr-9 text-sm",
+                    "bg-slate-50 dark:bg-slate-900",
+                    "border-0 ring-1 ring-slate-200 dark:ring-slate-800",
+                    "focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-300",
+                    "rounded-lg transition-shadow duration-150"
+                  )}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              
+              {/* Filter controls - grid on mobile, flex on desktop */}
+              <div className="grid grid-cols-2 sm:flex gap-2">
+                <Select value={selectedAmenity} onValueChange={setSelectedAmenity}>
+                  <SelectTrigger className={cn(
+                    "h-10 w-full sm:w-44 text-sm rounded-lg",
+                    "bg-slate-50 dark:bg-slate-900",
+                    "border-0 ring-1 ring-slate-200 dark:ring-slate-800",
+                    "focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-300"
+                  )}>
+                    <SelectValue placeholder="Amenity" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
+                    {amenityTypes.map((amenity) => (
+                      <SelectItem key={amenity} value={amenity} className="rounded-lg">
+                        {amenity}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className={cn(
+                    "h-10 w-full sm:w-36 text-sm rounded-lg",
+                    "bg-slate-50 dark:bg-slate-900",
+                    "border-0 ring-1 ring-slate-200 dark:ring-slate-800",
+                    "focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-300"
+                  )}>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
+                    <SelectItem value="all" className="rounded-lg">All Status</SelectItem>
+                    <SelectItem value="confirmed" className="rounded-lg">Confirmed</SelectItem>
+                    <SelectItem value="pending" className="rounded-lg">Pending</SelectItem>
+                    <SelectItem value="cancelled" className="rounded-lg">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                {/* View mode - full width on mobile row, auto on desktop */}
+                <div className="col-span-2 sm:col-span-1 flex items-center p-1 bg-slate-100 dark:bg-slate-900 rounded-lg w-full sm:w-auto">
+                  {(['month', 'week', 'day'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => setViewMode(mode)}
+                      className={cn(
+                        "flex-1 sm:flex-initial px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-150 capitalize",
+                        viewMode === mode
+                          ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                      )}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ================================================================
+                MAIN CONTENT - Two-pane layout
+            ================================================================ */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+              
+              {/* LEFT COLUMN - Calendar & Stats */}
+              <div className="space-y-4 sm:space-y-6">
+                
+                {/* Calendar */}
+                <div className={cn(
+                  "rounded-xl border p-3 sm:p-4",
+                  "bg-white dark:bg-slate-900",
+                  "border-slate-200 dark:border-slate-800"
+                )}>
+                  {/* Month navigation */}
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <h2 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-white">
+                      {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </h2>
+                    <div className="flex items-center gap-1">
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => navigateMonth('prev')}
-                        className="h-9 w-9 p-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 border-0 text-white shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all"
+                        className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
-                    </motion.div>
-                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => navigateMonth('next')}
-                        className="h-9 w-9 p-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 border-0 text-white shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all"
+                        className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
                       >
                         <ChevronRight className="h-4 w-4" />
                       </Button>
-                    </motion.div>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="px-6 py-4">
-                <div className="overflow-x-auto">
+                  
+                  {/* Calendar grid */}
                   <Calendar
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
                     month={currentMonth}
                     onMonthChange={setCurrentMonth}
-                    modifiers={{
-                      hasBooking: bookingDates
-                    }}
+                    modifiers={{ hasBooking: bookingDates }}
                     modifiersStyles={{
                       hasBooking: {
                         backgroundColor: 'rgb(59 130 246 / 0.1)',
-                        color: 'rgb(37 99 235)',
-                        fontWeight: 'bold'
+                        fontWeight: '600'
                       }
                     }}
-                    className="rounded-md w-full"
+                    className="w-full"
                     classNames={{
-                      months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                      months: "flex flex-col",
                       month: "space-y-4 w-full",
-                      caption: "flex justify-center pt-1 relative items-center",
-                      caption_label: "text-sm font-medium",
-                      nav: "space-x-1 flex items-center",
-                      nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-                      nav_button_previous: "absolute left-1",
-                      nav_button_next: "absolute right-1",
-                      table: "w-full border-collapse space-y-1",
+                      caption: "hidden",
+                      nav: "hidden",
+                      table: "w-full border-collapse",
                       head_row: "flex w-full",
-                      head_cell: "text-muted-foreground rounded-md w-full font-normal text-[0.65rem] sm:text-[0.8rem]",
-                      row: "flex w-full mt-2",
-                      cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 w-full aspect-square",
-                      day: "h-full w-full p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md text-xs sm:text-sm",
-                      day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                      day_today: "bg-accent text-accent-foreground",
-                      day_outside: "text-muted-foreground opacity-50",
-                      day_disabled: "text-muted-foreground opacity-50",
-                      day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                      head_cell: "text-slate-500 dark:text-slate-400 rounded-md w-full font-medium text-xs",
+                      row: "flex w-full mt-1",
+                      cell: "text-center text-sm p-0 relative w-full aspect-square",
+                      day: cn(
+                        "h-full w-full p-0 font-normal rounded-lg text-sm",
+                        "hover:bg-slate-100 dark:hover:bg-slate-800",
+                        "transition-colors duration-100"
+                      ),
+                      day_selected: "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-900 dark:hover:bg-white",
+                      day_today: "ring-1 ring-slate-300 dark:ring-slate-700",
+                      day_outside: "text-slate-300 dark:text-slate-700 opacity-50",
+                      day_disabled: "text-slate-300 dark:text-slate-700 opacity-50",
                       day_hidden: "invisible",
                     }}
                   />
                 </div>
-              </CardContent>
-            </div>
-
-            {/* Quick Stats - Enhanced */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-              className="mt-6"
-            >
-              <div className="rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-xl shadow-blue-500/5 overflow-hidden">
-                <CardHeader className="px-6 pb-4">
-                  <CardTitle className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                    📊 Quick Stats
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-6 pb-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Total */}
-                    <motion.div 
-                      className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/50 border-2 border-blue-200/50 dark:border-blue-800/50"
-                      whileHover={{ scale: 1.05, y: -2 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
-                      <div className="text-3xl font-black bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-400 dark:to-blue-500 bg-clip-text text-transparent">
-                        {filteredBookings.length}
+                
+                {/* Stats - Inline indicators (hidden on mobile, shown on lg+) */}
+                <div className={cn(
+                  "hidden lg:block rounded-xl border p-4",
+                  "bg-white dark:bg-slate-900",
+                  "border-slate-200 dark:border-slate-800"
+                )}>
+                  <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-4">
+                    Overview
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                      <div className="text-2xl font-semibold text-slate-900 dark:text-white">
+                        {stats.total}
                       </div>
-                      <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 mt-1">Total</div>
-                    </motion.div>
-
-                    {/* Confirmed */}
-                    <motion.div 
-                      className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/50 dark:to-green-900/50 border-2 border-green-200/50 dark:border-green-800/50"
-                      whileHover={{ scale: 1.05, y: -2 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
-                      <div className="text-3xl font-black bg-gradient-to-r from-green-600 to-green-700 dark:from-green-400 dark:to-green-500 bg-clip-text text-transparent">
-                        {filteredBookings.filter(b => b.status === 'confirmed').length}
-                      </div>
-                      <div className="text-xs font-semibold text-green-700 dark:text-green-300 mt-1">Confirmed</div>
-                    </motion.div>
-
-                    {/* Pending */}
-                    <motion.div 
-                      className="p-4 rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100/50 dark:from-yellow-950/50 dark:to-yellow-900/50 border-2 border-yellow-200/50 dark:border-yellow-800/50"
-                      whileHover={{ scale: 1.05, y: -2 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
-                      <div className="text-3xl font-black bg-gradient-to-r from-yellow-600 to-yellow-700 dark:from-yellow-400 dark:to-yellow-500 bg-clip-text text-transparent">
-                        {filteredBookings.filter(b => b.status === 'pending').length}
-                      </div>
-                      <div className="text-xs font-semibold text-yellow-700 dark:text-yellow-300 mt-1">Pending</div>
-                    </motion.div>
-
-                    {/* Cancelled */}
-                    <motion.div 
-                      className="p-4 rounded-xl bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/50 dark:to-red-900/50 border-2 border-red-200/50 dark:border-red-800/50"
-                      whileHover={{ scale: 1.05, y: -2 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
-                      <div className="text-3xl font-black bg-gradient-to-r from-red-600 to-red-700 dark:from-red-400 dark:to-red-500 bg-clip-text text-transparent">
-                        {filteredBookings.filter(b => b.status === 'cancelled').length}
-                      </div>
-                      <div className="text-xs font-semibold text-red-700 dark:text-red-300 mt-1">Cancelled</div>
-                    </motion.div>
-                  </div>
-                </CardContent>
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* Bookings List - Enhanced */}
-          <motion.div 
-            className="lg:col-span-2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.8 }}
-          >
-            <Tabs defaultValue="selected-date" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 h-auto p-1 rounded-2xl bg-gradient-to-r from-slate-100 to-blue-100/50 dark:from-slate-800 dark:to-blue-900/20 border-2 border-white/50 dark:border-slate-700/50 shadow-lg">
-                <TabsTrigger 
-                  value="selected-date" 
-                  className="text-sm px-4 py-3 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/50 font-semibold transition-all duration-300"
-                >
-                  <span className="hidden sm:inline">📆 Selected Date ({selectedDate ? formatDateConsistently(selectedDate) : ''})</span>
-                  <span className="sm:hidden">📆 Selected</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="all-bookings" 
-                  className="text-sm px-4 py-3 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/50 font-semibold transition-all duration-300"
-                >
-                  <span className="hidden sm:inline">📋 All Bookings ({filteredBookings.length})</span>
-                  <span className="sm:hidden">📋 All ({filteredBookings.length})</span>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="selected-date" className="space-y-4">
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-xl overflow-hidden"
-                >
-                  <CardHeader className="px-6 pb-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50 border-b border-blue-200/30 dark:border-blue-800/30">
-                    <CardTitle className="flex items-center gap-3 text-lg font-bold">
-                      <motion.div
-                        className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg"
-                        whileHover={{ rotate: 360, scale: 1.1 }}
-                        transition={{ duration: 0.5 }}
-                      >
-                        <CalendarIcon className="h-5 w-5 text-white" />
-                      </motion.div>
-                      <span className="truncate bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                        {selectedDate?.toLocaleDateString('en-GB', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}
-                      </span>
-                    </CardTitle>
-                    <CardDescription className="text-sm font-medium text-slate-600 dark:text-slate-400 ml-14 mt-1">
-                      {selectedDateBookings.length} booking{selectedDateBookings.length !== 1 ? 's' : ''} scheduled
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4 px-6 py-6">
-                    <AnimatePresence>
-                      {loading ? (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400"
-                        >
-                          <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto mb-3 sm:mb-4"></div>
-                          <p className="text-sm sm:text-base">Loading bookings...</p>
-                        </motion.div>
-                      ) : selectedDateBookings.length === 0 ? (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.5 }}
-                          className="text-center py-12"
-                        >
-                          <motion.div
-                            animate={{ 
-                              y: [0, -10, 0],
-                              rotate: [0, 5, -5, 0]
-                            }}
-                            transition={{
-                              duration: 3,
-                              repeat: Infinity,
-                              ease: "easeInOut"
-                            }}
-                            className="relative inline-block mb-6"
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full blur-xl opacity-30"></div>
-                            <CalendarIcon className="h-20 w-20 mx-auto relative text-slate-300 dark:text-slate-600" />
-                          </motion.div>
-                          <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">
-                            No bookings yet
-                          </h3>
-                          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                            This date is free. Book an amenity to get started!
-                          </p>
-                          <Link href="/dashboard">
-                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                              <Button 
-                                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 rounded-xl px-6 py-3 font-semibold"
-                                size="default"
-                              >
-                                <Plus className="h-5 w-5 mr-2" />
-                                Create Booking
-                              </Button>
-                            </motion.div>
-                          </Link>
-                        </motion.div>
-                      ) : (
-                        selectedDateBookings.map((booking) => (
-                          <BookingCard key={booking.id} booking={booking} />
-                        ))
-                      )}
-                    </AnimatePresence>
-                  </CardContent>
-                </motion.div>
-              </TabsContent>
-
-              <TabsContent value="all-bookings" className="space-y-4">
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 shadow-xl overflow-hidden"
-                >
-                  <CardHeader className="px-6 pb-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 border-b border-purple-200/30 dark:border-purple-800/30">
-                    <CardTitle className="flex items-center gap-3 text-lg font-bold">
-                      <motion.div
-                        className="p-2 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-lg"
-                        whileHover={{ rotate: 360, scale: 1.1 }}
-                        transition={{ duration: 0.5 }}
-                      >
-                        <Filter className="h-5 w-5 text-white" />
-                      </motion.div>
-                      <span className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
-                        All Bookings
-                      </span>
-                    </CardTitle>
-                    <CardDescription className="text-sm font-medium text-slate-600 dark:text-slate-400 ml-14">
-                      {filteredBookings.length} booking{filteredBookings.length !== 1 ? 's' : ''} found
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6">
-                    <AnimatePresence>
-                      {loading ? (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400"
-                        >
-                          <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto mb-3 sm:mb-4"></div>
-                          <p className="text-sm sm:text-base">Loading bookings...</p>
-                        </motion.div>
-                      ) : filteredBookings.length === 0 ? (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.5 }}
-                          className="text-center py-12"
-                        >
-                          {searchQuery || selectedAmenity !== 'All Amenities' || selectedStatus !== 'all' ? (
-                            <>
-                              <motion.div
-                                animate={{ 
-                                  scale: [1, 1.1, 1],
-                                  rotate: [0, 10, -10, 0]
-                                }}
-                                transition={{
-                                  duration: 2,
-                                  repeat: Infinity,
-                                  ease: "easeInOut"
-                                }}
-                                className="relative inline-block mb-6"
-                              >
-                                <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 rounded-full blur-xl opacity-30"></div>
-                                <Search className="h-20 w-20 mx-auto relative text-slate-300 dark:text-slate-600" />
-                              </motion.div>
-                              <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">
-                                No matches found
-                              </h3>
-                              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                                Try adjusting your filters or search query
-                              </p>
-                              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                <Button 
-                                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 rounded-xl px-6 py-3 font-semibold"
-                                  size="default" 
-                                  onClick={() => {
-                                    setSearchQuery('');
-                                    setSelectedAmenity('All Amenities');
-                                    setSelectedStatus('all');
-                                  }}
-                                >
-                                  Clear Filters
-                                </Button>
-                              </motion.div>
-                            </>
-                          ) : (
-                            <>
-                              <motion.div
-                                animate={{ 
-                                  y: [0, -10, 0],
-                                  rotate: [0, 5, -5, 0]
-                                }}
-                                transition={{
-                                  duration: 3,
-                                  repeat: Infinity,
-                                  ease: "easeInOut"
-                                }}
-                                className="relative inline-block mb-6"
-                              >
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full blur-xl opacity-30"></div>
-                                <CalendarIcon className="h-20 w-20 mx-auto relative text-slate-300 dark:text-slate-600" />
-                              </motion.div>
-                              <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">
-                                No bookings yet
-                              </h3>
-                              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                                Start by creating your first booking!
-                              </p>
-                              <Link href="/dashboard">
-                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                  <Button 
-                                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 rounded-xl px-6 py-3 font-semibold"
-                                    size="default"
-                                  >
-                                    <Plus className="h-5 w-5 mr-2" />
-                                    Make Your First Booking
-                                  </Button>
-                                </motion.div>
-                              </Link>
-                            </>
-                          )}
-                        </motion.div>
-                      ) : (
-                        filteredBookings.map((booking) => (
-                          <BookingCard key={booking.id} booking={booking} />
-                        ))
-                      )}
-                    </AnimatePresence>
-                  </CardContent>
-                </motion.div>
-              </TabsContent>
-            </Tabs>
-          </motion.div>
-        </div>
-
-        {/* Booking Details Dialog - Enhanced */}
-        <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
-          <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 border-2 border-white/20 dark:border-slate-700/50 shadow-2xl backdrop-blur-xl">
-            <DialogHeader className="px-6 pb-4 border-b border-slate-200/50 dark:border-slate-700/50">
-              <DialogTitle className="flex items-center gap-3 text-xl font-bold">
-                <motion.div
-                  className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg"
-                  whileHover={{ rotate: 360, scale: 1.1 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <CalendarIcon className="h-6 w-6 text-white" />
-                </motion.div>
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                  Booking Details
-                </span>
-              </DialogTitle>
-              <DialogDescription className="text-sm text-slate-600 dark:text-slate-400 ml-14">
-                Complete information about this booking
-              </DialogDescription>
-            </DialogHeader>
-            
-            {selectedBooking && (
-              <div className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-4 sm:pb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="space-y-3 sm:space-y-4">
-                    <div>
-                      <h3 className="font-semibold text-base sm:text-lg text-gray-900 dark:text-white">
-                        {selectedBooking.amenityName}
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-400 mt-1 text-xs sm:text-sm">
-                        Community amenity booking
-                      </p>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">Total</div>
                     </div>
-                    
-                    <div className="space-y-2 sm:space-y-3">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <div className="font-medium text-sm sm:text-base truncate">{selectedBooking.amenityName}</div>
-                          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                            Community Facility
-                          </div>
-                        </div>
+                    <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
+                      <div className="text-2xl font-semibold text-emerald-700 dark:text-emerald-400">
+                        {stats.confirmed}
                       </div>
-                      
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <div className="font-medium text-sm sm:text-base">
-                            {selectedBooking.startTime.toLocaleDateString('en-GB', { 
-                              weekday: 'long', 
-                              year: 'numeric', 
-                              month: 'long', 
-                              day: 'numeric' 
-                            })}
-                          </div>
-                          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                            {formatTimeConsistently(selectedBooking.startTime)} - {formatTimeConsistently(selectedBooking.endTime)}
-                          </div>
-                        </div>
+                      <div className="text-xs text-emerald-600 dark:text-emerald-500">Confirmed</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-500/10">
+                      <div className="text-2xl font-semibold text-amber-700 dark:text-amber-400">
+                        {stats.pending}
                       </div>
-                      
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <div className="font-medium text-sm sm:text-base">{selectedBooking.attendees?.length || 1} Attendees</div>
-                          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
-                            Booked by {(selectedBooking as any).userName || 'Resident'}
-                            {(selectedBooking as any).userFlatNumber && (
-                              <span className="ml-2 inline-block px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-md text-xs font-semibold">
-                                Flat {(selectedBooking as any).userFlatNumber}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                      <div className="text-xs text-amber-600 dark:text-amber-500">Pending</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800">
+                      <div className="text-2xl font-semibold text-slate-500 dark:text-slate-400">
+                        {stats.cancelled}
                       </div>
+                      <div className="text-xs text-slate-400 dark:text-slate-500">Cancelled</div>
                     </div>
                   </div>
-                  
-                  <div className="space-y-3 sm:space-y-4">
-                    <div>
-                      <h4 className="font-medium mb-2 text-sm sm:text-base">Status</h4>
-                      <Badge className={cn("text-xs sm:text-sm", statusColors[selectedBooking.status as keyof typeof statusColors] || statusColors.confirmed)}>
-                        {React.createElement(statusIcons[selectedBooking.status as keyof typeof statusIcons] || statusIcons.confirmed, { className: "w-3 h-3 sm:w-4 sm:h-4 mr-2" })}
-                        {(selectedBooking.status || 'confirmed').charAt(0).toUpperCase() + (selectedBooking.status || 'confirmed').slice(1)}
-                      </Badge>
+                </div>
+                
+                {/* Mobile stats - horizontal scroll */}
+                <div className="lg:hidden overflow-x-auto -mx-3 px-3">
+                  <div className="inline-flex items-center gap-3 py-1 min-w-max">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900">
+                      <span className="text-lg font-semibold text-slate-900 dark:text-white">{stats.total}</span>
+                      <span className="text-xs text-slate-500">Total</span>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm sm:text-base">Actions</h4>
-                      <div className="flex flex-col gap-2">
-                        {/* Edit only for own bookings or if admin */}
-                        {(isAdmin || selectedBooking.userId === session?.user?.email) && (
-                          <Button variant="outline" size="sm" onClick={() => handleBookingAction('edit', selectedBooking)} className="w-full justify-start text-xs sm:text-sm">
-                            <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                            Edit Booking
-                          </Button>
-                        )}
-                        
-                        {/* Approve only for admin and pending bookings */}
-                        {isAdmin && selectedBooking.status === 'pending' && (
-                          <Button variant="outline" size="sm" onClick={() => handleBookingAction('approve', selectedBooking)} className="w-full justify-start text-xs sm:text-sm">
-                            <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                            Approve Booking
-                          </Button>
-                        )}
-                        
-                        {/* Cancel: Own bookings or admin can cancel any booking - ONLY if NOT checked in */}
-                        {!selectedBooking.checkInTime && 
-                         !selectedBooking.checkOutTime && 
-                         (isAdmin || selectedBooking.userId === session?.user?.email) && 
-                         selectedBooking.status !== 'cancelled' && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleBookingAction('cancel', selectedBooking)}
-                            className="w-full justify-start text-red-600 hover:text-red-700 text-xs sm:text-sm"
-                          >
-                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                            {isAdmin && selectedBooking.userId !== session?.user?.email ? 'Cancel Booking (Admin)' : 'Cancel Booking'}
-                          </Button>
-                        )}
-                        
-                        {/* Show permission info for residents viewing others' bookings */}
-                        {!isAdmin && selectedBooking.userId !== session?.user?.email && (
-                          <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                            ℹ️ You can only modify your own bookings
-                          </div>
-                        )}
-                        
-                        {/* Show admin privileges info */}
-                        {isAdmin && selectedBooking.userId !== session?.user?.email && (
-                          <div className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 p-2 bg-blue-50 dark:bg-blue-950 rounded">
-                            🛡️ Admin: You can manage all community bookings
-                          </div>
-                        )}
-                      </div>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
+                      <span className="text-lg font-semibold text-emerald-700 dark:text-emerald-400">{stats.confirmed}</span>
+                      <span className="text-xs text-emerald-600 dark:text-emerald-500">Confirmed</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-500/10">
+                      <span className="text-lg font-semibold text-amber-700 dark:text-amber-400">{stats.pending}</span>
+                      <span className="text-xs text-amber-600 dark:text-amber-500">Pending</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800">
+                      <span className="text-lg font-semibold text-slate-500 dark:text-slate-400">{stats.cancelled}</span>
+                      <span className="text-xs text-slate-400">Cancelled</span>
                     </div>
                   </div>
                 </div>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
+              
+              {/* RIGHT COLUMN - Selected date details */}
+              <div className="lg:col-span-2">
+                <div className={cn(
+                  "rounded-xl border h-full",
+                  "bg-white dark:bg-slate-900",
+                  "border-slate-200 dark:border-slate-800"
+                )}>
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+                    <div>
+                      <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">
+                        {selectedDate?.toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </h2>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {selectedDateBookings.length} booking{selectedDateBookings.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    
+                    {/* Tab switcher */}
+                    <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                      <button
+                        className={cn(
+                          "px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-150",
+                          "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                        )}
+                      >
+                        <span className="hidden sm:inline">Selected Date</span>
+                        <span className="sm:hidden">Day</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="p-4 sm:p-6">
+                    <AnimatePresence mode="wait">
+                      {loading ? (
+                        <motion.div
+                          key="loading"
+                          {...fadeIn}
+                          className="flex items-center justify-center py-16"
+                        >
+                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-slate-900 dark:border-white border-t-transparent" />
+                        </motion.div>
+                      ) : selectedDateBookings.length === 0 ? (
+                        <motion.div
+                          key="empty"
+                          {...fadeIn}
+                          className="text-center py-16"
+                        >
+                          <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                            <CalendarIcon className="w-6 h-6 text-slate-400" />
+                          </div>
+                          <h3 className="text-base font-medium text-slate-900 dark:text-white mb-1">
+                            No bookings
+                          </h3>
+                          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                            This day is open for reservations.
+                          </p>
+                          <Link href="/dashboard">
+                            <Button className={cn(
+                              "h-10 px-4 rounded-lg text-sm font-medium",
+                              "bg-slate-900 dark:bg-white",
+                              "text-white dark:text-slate-900",
+                              "hover:bg-slate-800 dark:hover:bg-slate-100"
+                            )}>
+                              <Plus className="w-4 h-4 mr-1.5" />
+                              Book Amenity
+                            </Button>
+                          </Link>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="bookings"
+                          {...fadeIn}
+                          className="space-y-3"
+                        >
+                          {selectedDateBookings.map((booking) => (
+                            <BookingCard key={booking.id} booking={booking} />
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ================================================================
+                BOOKING DETAILS DIALOG - Clean, functional
+            ================================================================ */}
+            <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
+              <DialogContent className={cn(
+                "max-w-lg rounded-2xl",
+                "bg-white dark:bg-slate-900",
+                "border-slate-200 dark:border-slate-800"
+              )}>
+                <DialogHeader className="pb-4 border-b border-slate-200 dark:border-slate-800">
+                  <DialogTitle className="flex items-center gap-3 text-lg font-semibold text-slate-900 dark:text-white">
+                    <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
+                      <Building2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                    </div>
+                    Booking Details
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-slate-500 dark:text-slate-400">
+                    Complete information about this reservation
+                  </DialogDescription>
+                </DialogHeader>
+                
+                {selectedBooking && (
+                  <div className="space-y-6 py-4">
+                    {/* Amenity & Status */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+                          {selectedBooking.amenityName}
+                        </h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          Community amenity
+                        </p>
+                      </div>
+                      <span className={cn(
+                        "text-xs font-medium px-2.5 py-1 rounded-md",
+                        statusConfig[selectedBooking.status as keyof typeof statusConfig]?.bg,
+                        statusConfig[selectedBooking.status as keyof typeof statusConfig]?.text
+                      )}>
+                        {statusConfig[selectedBooking.status as keyof typeof statusConfig]?.label}
+                      </span>
+                    </div>
+                    
+                    {/* Details grid */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-sm">
+                        <CalendarIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="text-slate-900 dark:text-white">
+                          {selectedBooking.startTime.toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="text-slate-900 dark:text-white">
+                          {formatTimeConsistently(selectedBooking.startTime)} – {formatTimeConsistently(selectedBooking.endTime)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <Users className="w-4 h-4 text-slate-400 shrink-0" />
+                        <div className="text-slate-900 dark:text-white">
+                          {selectedBooking.userName || 'Resident'}
+                          {selectedBooking.userFlatNumber && (
+                            <span className="ml-2 text-xs px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded">
+                              Flat {selectedBooking.userFlatNumber}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <Users className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="text-slate-900 dark:text-white">
+                          {selectedBooking.attendees?.length || 1} attendee{(selectedBooking.attendees?.length || 1) !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex flex-col gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+                      {(isAdmin || selectedBooking.userId === session?.user?.email) && (
+                        <Button 
+                          variant="outline" 
+                          onClick={() => handleBookingAction('edit', selectedBooking)} 
+                          className="justify-start h-10 rounded-lg"
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit Booking
+                        </Button>
+                      )}
+                      
+                      {isAdmin && selectedBooking.status === 'pending' && (
+                        <Button 
+                          variant="outline" 
+                          onClick={() => handleBookingAction('approve', selectedBooking)} 
+                          className="justify-start h-10 rounded-lg text-emerald-600 hover:text-emerald-700 border-emerald-200 hover:border-emerald-300"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Approve
+                        </Button>
+                      )}
+                      
+                      {!selectedBooking.checkInTime && 
+                       !selectedBooking.checkOutTime && 
+                       (isAdmin || selectedBooking.userId === session?.user?.email) && 
+                       selectedBooking.status !== 'cancelled' && (
+                        <Button 
+                          variant="outline" 
+                          onClick={() => handleBookingAction('cancel', selectedBooking)}
+                          className="justify-start h-10 rounded-lg text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Cancel Booking
+                        </Button>
+                      )}
+                      
+                      {/* Info notices */}
+                      {!isAdmin && selectedBooking.userId !== session?.user?.email && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                          You can only modify your own bookings.
+                        </p>
+                      )}
+                      
+                      {isAdmin && selectedBooking.userId !== session?.user?.email && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 p-3 bg-blue-50 dark:bg-blue-500/10 rounded-lg">
+                          Admin access: Managing booking for {selectedBooking.userName || 'resident'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+            
           </motion.div>
         </div>
       </div>

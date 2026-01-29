@@ -3,17 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Plus, 
   Edit2, 
@@ -28,20 +27,25 @@ import {
   CheckCircle,
   AlertTriangle,
   CalendarDays,
-  Star
+  Star,
+  Shield,
+  Loader2,
+  ImageIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogPortal, DialogOverlay } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogPortal, DialogOverlay } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { notifyDateSpecificBlock } from '@/lib/notification-helpers';
 import { useNotifications } from '@/components/notifications/NotificationSystem';
-import { useCommunityNotifications } from '@/hooks/use-community-notifications';
+import { useCommunityNotifications } from '@/hooks/useCommunityNotifications';
 
-// Schema for editing amenities
+// ============================================================================
+// SCHEMA & TYPES
+// ============================================================================
+
 const amenityEditSchema = z.object({
   name: z.string().min(2, 'Amenity name is required'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
@@ -69,14 +73,8 @@ interface Amenity {
   booking?: {
     maxPeople: number;
     slotDuration: number;
-    weekdayHours: {
-      startTime: string;
-      endTime: string;
-    };
-    weekendHours: {
-      startTime: string;
-      endTime: string;
-    };
+    weekdayHours: { startTime: string; endTime: string };
+    weekendHours: { startTime: string; endTime: string };
   };
   rules?: {
     maxSlotsPerFamily: number;
@@ -84,50 +82,62 @@ interface Amenity {
   };
 }
 
+// ============================================================================
+// ANIMATION CONFIG
+// ============================================================================
+
+const easeOut = "easeOut";
+const transitionDuration = 0.2;
+
+const staggerContainer = {
+  animate: { transition: { staggerChildren: 0.05 } }
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 export default function AdminPanel() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { addNotification } = useNotifications();
   const { sendAmenityBlockNotification, sendAmenityUnblockNotification, sendInstantBlockNotification } = useCommunityNotifications();
+  
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  
-  // New state for date blocking functionality
   const [showDateBlockDialog, setShowDateBlockDialog] = useState(false);
   const [selectedAmenityForBlock, setSelectedAmenityForBlock] = useState<Amenity | null>(null);
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [festiveReason, setFestiveReason] = useState('');
-  const [isSelectingDateRange, setIsSelectingDateRange] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Check admin access
+  // ============================================================================
+  // AUTH & DATA FETCHING
+  // ============================================================================
+
   useEffect(() => {
     if (status === 'loading') return;
-    
     if (!session?.user?.email || session.user.role !== 'admin') {
       router.push('/dashboard');
       return;
     }
-    
     fetchAmenities();
   }, [session, status, router]);
 
   const fetchAmenities = async () => {
     try {
       if (!session?.user?.communityId) return;
-
       const q = query(
         collection(db, 'amenities'),
         where('communityId', '==', session.user.communityId)
       );
       const querySnapshot = await getDocs(q);
-      
       const amenityList = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       })) as Amenity[];
-      
       amenityList.sort((a, b) => a.name.localeCompare(b.name));
       setAmenities(amenityList);
     } catch (error) {
@@ -137,6 +147,10 @@ export default function AdminPanel() {
       setLoading(false);
     }
   };
+
+  // ============================================================================
+  // FORM SETUP
+  // ============================================================================
 
   const editForm = useForm<AmenityEditData>({
     resolver: zodResolver(amenityEditSchema),
@@ -156,6 +170,10 @@ export default function AdminPanel() {
       weekendEndTime: '22:00',
     },
   });
+
+  // ============================================================================
+  // CRUD OPERATIONS
+  // ============================================================================
 
   const startEdit = (amenity: Amenity) => {
     setEditingId(amenity.id);
@@ -178,6 +196,7 @@ export default function AdminPanel() {
   };
 
   const saveEdit = async (data: AmenityEditData) => {
+    setActionLoading('save');
     try {
       const amenityRef = doc(db, 'amenities', editingId!);
       await updateDoc(amenityRef, {
@@ -187,45 +206,32 @@ export default function AdminPanel() {
         booking: {
           maxPeople: data.maxPeople,
           slotDuration: data.slotDuration,
-          weekdayHours: {
-            startTime: data.weekdayStartTime,
-            endTime: data.weekdayEndTime,
-          },
-          weekendHours: {
-            startTime: data.weekendStartTime,
-            endTime: data.weekendEndTime,
-          },
+          weekdayHours: { startTime: data.weekdayStartTime, endTime: data.weekdayEndTime },
+          weekendHours: { startTime: data.weekendStartTime, endTime: data.weekendEndTime },
         },
-        // Also update operatingHours for backward compatibility
-        operatingHours: {
-          start: data.weekdayStartTime,
-          end: data.weekdayEndTime,
-        },
-        rules: {
-          maxSlotsPerFamily: data.maxPeople,
-          blackoutDates: [],
-        },
-        // CRITICAL: Clear custom time slots so they regenerate
+        operatingHours: { start: data.weekdayStartTime, end: data.weekdayEndTime },
+        rules: { maxSlotsPerFamily: data.maxPeople, blackoutDates: [] },
         timeSlots: [],
         weekdaySlots: [],
         weekendSlots: [],
         updatedAt: new Date(),
       });
-
       toast.success('Amenity updated successfully');
       setEditingId(null);
       fetchAmenities();
     } catch (error) {
       console.error('Error updating amenity:', error);
       toast.error('Failed to update amenity');
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const deleteAmenity = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) {
+    if (!confirm(`Delete "${name}"?\n\nThis action cannot be undone. All bookings for this amenity will be affected.`)) {
       return;
     }
-
+    setActionLoading(id);
     try {
       await deleteDoc(doc(db, 'amenities', id));
       toast.success('Amenity deleted successfully');
@@ -233,17 +239,18 @@ export default function AdminPanel() {
     } catch (error) {
       console.error('Error deleting amenity:', error);
       toast.error('Failed to delete amenity');
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const toggleAmenityBlock = async (id: string, name: string, currentStatus: boolean) => {
     const action = currentStatus ? 'unblock' : 'block';
-    const reason = currentStatus ? '' : prompt(`Reason for blocking "${name}" (e.g., Festive Season, Maintenance):`) || 'Administrative block';
+    const reason = currentStatus ? '' : prompt(`Reason for blocking "${name}":\n(e.g., Maintenance, Festive Season)`) || 'Administrative block';
     
-    if (!currentStatus && !reason.trim()) {
-      return; // User cancelled or didn't provide reason
-    }
+    if (!currentStatus && !reason.trim()) return;
 
+    setActionLoading(id);
     try {
       await updateDoc(doc(db, 'amenities', id), {
         isBlocked: !currentStatus,
@@ -252,12 +259,8 @@ export default function AdminPanel() {
         updatedAt: new Date(),
       });
 
-      // Send community notification for instant blocking/unblocking
       if (!currentStatus) {
-        // Blocking the amenity
         await sendInstantBlockNotification(name, reason);
-        
-        // Send email to all residents
         try {
           await fetch('/api/notifications/amenity-block', {
             method: 'POST',
@@ -265,38 +268,26 @@ export default function AdminPanel() {
             body: JSON.stringify({
               amenityName: name,
               reason: reason,
-              startDate: new Date().toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              }),
+              startDate: new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
               endDate: 'Until further notice',
               communityId: session?.user?.communityId,
               communityName: (session?.user as any)?.communityName || 'Your Community',
               isFestive: false,
             }),
           });
-          console.log('✅ Amenity block emails sent to all residents');
         } catch (emailError) {
-          console.error('⚠️ Failed to send block emails:', emailError);
-          // Don't fail the block if email fails
+          console.error('Failed to send block emails:', emailError);
         }
       } else {
-        // Unblocking the amenity
         addNotification({
-          title: `✅ ${name} Now Available`,
-          message: `Good news! ${name} is now available for booking. The block has been removed.`,
-          type: 'success',
-          priority: 'medium',
-          category: 'amenity',
-          autoHide: true,
-          duration: 6000
+          title: `${name} Now Available`,
+          message: `${name} is now available for booking.`,
+          type: 'system',
+          priority: 'normal',
+          autoHide: false
         });
-        
-        // Send email notification for unblock - IMMEDIATE parallel sending
         try {
-          const response = await fetch('/api/notifications/amenity-unblock', {
+          await fetch('/api/notifications/amenity-unblock', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -305,16 +296,8 @@ export default function AdminPanel() {
               communityName: (session?.user as any)?.communityName || 'Your Community',
             }),
           });
-          
-          const result = await response.json();
-          console.log(`✅ Amenity unblock emails sent: ${result.sent}/${result.total} residents`);
-          
-          if (result.failed > 0) {
-            console.warn(`⚠️ ${result.failed} emails failed to send`);
-          }
         } catch (emailError) {
-          console.error('⚠️ Failed to send unblock emails:', emailError);
-          // Don't fail the unblock if email fails
+          console.error('Failed to send unblock emails:', emailError);
         }
       }
 
@@ -323,10 +306,13 @@ export default function AdminPanel() {
     } catch (error) {
       console.error(`Error ${action}ing amenity:`, error);
       toast.error(`Failed to ${action} amenity`);
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const addAmenity = async (data: AmenityEditData) => {
+    setActionLoading('add');
     try {
       await addDoc(collection(db, 'amenities'), {
         name: data.name.trim(),
@@ -337,23 +323,13 @@ export default function AdminPanel() {
         booking: {
           maxPeople: data.maxPeople,
           slotDuration: data.slotDuration,
-          weekdayHours: {
-            startTime: data.weekdayStartTime,
-            endTime: data.weekdayEndTime,
-          },
-          weekendHours: {
-            startTime: data.weekendStartTime,
-            endTime: data.weekendEndTime,
-          },
+          weekdayHours: { startTime: data.weekdayStartTime, endTime: data.weekdayEndTime },
+          weekendHours: { startTime: data.weekendStartTime, endTime: data.weekendEndTime },
         },
-        rules: {
-          maxSlotsPerFamily: data.maxPeople,
-          blackoutDates: [],
-        },
+        rules: { maxSlotsPerFamily: data.maxPeople, blackoutDates: [] },
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-
       toast.success('Amenity added successfully');
       setShowAddForm(false);
       addForm.reset();
@@ -361,10 +337,15 @@ export default function AdminPanel() {
     } catch (error) {
       console.error('Error adding amenity:', error);
       toast.error('Failed to add amenity');
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  // New function for date-specific blocking
+  // ============================================================================
+  // DATE BLOCKING
+  // ============================================================================
+
   const handleDateBlocking = (amenity: Amenity) => {
     setSelectedAmenityForBlock(amenity);
     const validDates = amenity.rules?.blackoutDates
@@ -382,6 +363,7 @@ export default function AdminPanel() {
     }
 
     const reason = festiveReason.trim() || 'Festive Season Blocking';
+    setActionLoading('blackout');
 
     try {
       const existingBlackoutDates = selectedAmenityForBlock.rules?.blackoutDates || [];
@@ -409,34 +391,12 @@ export default function AdminPanel() {
         updatedAt: new Date(),
       });
 
-      // Send notification to all users about the blocked dates
-      await notifyDateSpecificBlock(
-        selectedAmenityForBlock.name,
-        selectedDates,
-        reason
-      );
+      await notifyDateSpecificBlock(selectedAmenityForBlock.name, selectedDates, reason);
+      await sendAmenityBlockNotification(selectedAmenityForBlock.name, selectedDates, reason);
 
-      // Send real-time community notification
-      await sendAmenityBlockNotification(
-        selectedAmenityForBlock.name,
-        selectedDates,
-        reason
-      );
-
-      // Send email to all residents about festive blocking
       try {
-        const startDate = selectedDates[0].toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        });
-        const endDate = selectedDates[selectedDates.length - 1].toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        });
+        const startDate = selectedDates[0].toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const endDate = selectedDates[selectedDates.length - 1].toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         
         await fetch('/api/notifications/amenity-block', {
           method: 'POST',
@@ -451,13 +411,11 @@ export default function AdminPanel() {
             isFestive: true,
           }),
         });
-        console.log('✅ Festive block emails sent to all residents');
       } catch (emailError) {
-        console.error('⚠️ Failed to send festive block emails:', emailError);
-        // Don't fail the block if email fails
+        console.error('Failed to send festive block emails:', emailError);
       }
 
-      toast.success(`Added ${selectedDates.length} blackout date(s) for ${selectedAmenityForBlock.name}`);
+      toast.success(`Added ${selectedDates.length} blackout date(s)`);
       setShowDateBlockDialog(false);
       setSelectedDates([]);
       setFestiveReason('');
@@ -465,6 +423,8 @@ export default function AdminPanel() {
     } catch (error) {
       console.error('Error adding blackout dates:', error);
       toast.error('Failed to add blackout dates');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -473,17 +433,13 @@ export default function AdminPanel() {
       const amenity = amenities.find(a => a.id === amenityId);
       if (!amenity) return;
 
-      const updatedBlackoutDates = (amenity.rules?.blackoutDates || []).filter((d: any) => {
-        // More robust comparison - compare the actual blackout items
-        return d !== dateToRemove;
-      });
+      const updatedBlackoutDates = (amenity.rules?.blackoutDates || []).filter((d: any) => d !== dateToRemove);
 
       await updateDoc(doc(db, 'amenities', amenityId), {
         'rules.blackoutDates': updatedBlackoutDates,
         updatedAt: new Date(),
       });
 
-      // Add notification for date removal with better date handling
       let removedDateDisplay = '';
       try {
         if (dateToRemove?.date) {
@@ -501,14 +457,12 @@ export default function AdminPanel() {
         } else {
           removedDateDisplay = new Date(dateToRemove).toLocaleDateString();
         }
-      } catch (error) {
+      } catch {
         removedDateDisplay = 'Selected date';
       }
       
-      // Send community notification for date removal
       await sendAmenityUnblockNotification(amenity.name, removedDateDisplay);
-
-      toast.success('Blackout date removed successfully');
+      toast.success('Blackout date removed');
       fetchAmenities();
     } catch (error) {
       console.error('Error removing blackout date:', error);
@@ -516,664 +470,693 @@ export default function AdminPanel() {
     }
   };
 
+  // ============================================================================
+  // LOADING STATE
+  // ============================================================================
+
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <Settings className="w-8 h-8 text-white" />
+          <div className="w-12 h-12 rounded-xl bg-gray-900 dark:bg-white flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="w-6 h-6 text-white dark:text-gray-900 animate-spin" />
           </div>
-          <p className="text-slate-800 dark:text-slate-400">Loading admin panel...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading admin panel...</p>
         </div>
       </div>
     );
   }
 
+  // ============================================================================
+  // RENDER
+  // ============================================================================
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 dark:from-slate-950 dark:to-purple-950/20 p-3 sm:p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Enhanced Header with floating elements */}
-        <motion.div
-          initial={{ opacity: 0, y: -30 }}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
+        
+        {/* ================================================================
+            PAGE HEADER
+        ================================================================ */}
+        <motion.header 
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
-          className="mb-6 sm:mb-8 md:mb-10 lg:mb-12 relative"
+          transition={{ duration: transitionDuration, ease: easeOut }}
+          className="mb-8 sm:mb-10"
         >
-          {/* Floating decorative elements */}
-          <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-xl"></div>
-          <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-xl"></div>
-          
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 sm:gap-5 md:gap-6 p-4 sm:p-5 md:p-6 lg:p-8 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 dark:border-slate-700/20 relative overflow-hidden">
-            {/* Animated background pattern */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-600/5 dark:from-blue-500/10 dark:to-purple-600/10"></div>
-            
-            <div className="flex items-center gap-3 sm:gap-4 md:gap-6 relative z-10">
-              <motion.div
-                className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl"
-                whileHover={{ rotate: 360, scale: 1.1 }}
-                transition={{ duration: 0.6 }}
-              >
-                <Settings className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
-              </motion.div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gray-900 dark:bg-white flex items-center justify-center flex-shrink-0">
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-white dark:text-gray-900" />
+              </div>
               <div>
-                <motion.h1 
-                  className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-800 to-purple-600 dark:from-white dark:to-purple-400 bg-clip-text text-transparent mb-1 sm:mb-2"
-                  initial={{ x: -20 }}
-                  animate={{ x: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  Admin Panel
-                </motion.h1>
-                <motion.p 
-                  className="text-slate-600 dark:text-slate-400 text-sm sm:text-base md:text-lg"
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  Manage your community amenities with festive season controls
-                </motion.p>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
+                    Admin Panel
+                  </h1>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-medium">
+                    Admin
+                  </Badge>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Manage community amenities and availability
+                </p>
               </div>
             </div>
             
-            <motion.div
-              className="relative z-10 w-full lg:w-auto"
-              initial={{ x: 20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <Button
+              onClick={() => setShowAddForm(true)}
+              className="w-full sm:w-auto h-10 px-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 
+                       hover:bg-gray-800 dark:hover:bg-gray-100 
+                       transition-colors duration-150"
             >
-              <Button
-                onClick={() => setShowAddForm(true)}
-                className="w-full lg:w-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
-                size="lg"
-              >
-                <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                Add Amenity
-              </Button>
-            </motion.div>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Amenity
+            </Button>
           </div>
-        </motion.div>
+        </motion.header>
 
-        {/* Enhanced Add Form */}
-        {showAddForm && (
-          <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -30, scale: 0.95 }}
-            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            className="mb-4 sm:mb-6 md:mb-8"
-          >
-            <Card className="border-0 shadow-2xl bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950/20 overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600"></div>
-              <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
-                <CardTitle className="flex items-center justify-between text-base sm:text-lg md:text-xl">
-                  Add New Amenity
-                  <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>
-                    <X className="w-4 h-4" />
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6">
-                <form onSubmit={addForm.handleSubmit(addAmenity)} className="space-y-3 sm:space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                    <div>
-                      <Label className="text-xs sm:text-sm">Name</Label>
-                      <Input {...addForm.register('name')} placeholder="e.g., Swimming Pool" className="text-sm sm:text-base" />
-                      {addForm.formState.errors.name && (
-                        <p className="text-red-500 text-xs sm:text-sm mt-1">{addForm.formState.errors.name.message}</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label className="text-xs sm:text-sm">Image URL (optional)</Label>
-                      <Input {...addForm.register('imageUrl')} placeholder="Leave empty for auto-selection" className="text-sm sm:text-base" />
-                    </div>
-                  </div>
+        {/* ================================================================
+            ADD AMENITY FORM
+        ================================================================ */}
+        <AnimatePresence>
+          {showAddForm && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="mb-6 sm:mb-8 overflow-hidden"
+            >
+              <AmenityForm
+                form={addForm}
+                onSubmit={addForm.handleSubmit(addAmenity)}
+                onCancel={() => setShowAddForm(false)}
+                isLoading={actionLoading === 'add'}
+                title="Add New Amenity"
+                submitLabel="Add Amenity"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-                  <div>
-                    <Label className="text-xs sm:text-sm">Description</Label>
-                    <Textarea {...addForm.register('description')} placeholder="Describe this amenity..." rows={3} className="text-sm sm:text-base" />
-                    {addForm.formState.errors.description && (
-                      <p className="text-red-500 text-xs sm:text-sm mt-1">{addForm.formState.errors.description.message}</p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div>
-                      <Label className="text-xs sm:text-sm">Max People</Label>
-                      <Input type="number" min="1" max="100" {...addForm.register('maxPeople', { valueAsNumber: true })} className="text-sm sm:text-base" />
-                    </div>
-                    <div>
-                      <Label className="text-xs sm:text-sm">Slot Duration (hours)</Label>
-                      <Input type="number" min="0.5" max="8" step="0.5" {...addForm.register('slotDuration', { valueAsNumber: true })} className="text-sm sm:text-base" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div>
-                      <Label className="text-xs sm:text-sm">Weekday Hours</Label>
-                      <div className="flex gap-2">
-                        <Input type="time" {...addForm.register('weekdayStartTime')} className="text-sm sm:text-base" />
-                        <Input type="time" {...addForm.register('weekdayEndTime')} className="text-sm sm:text-base" />
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-xs sm:text-sm">Weekend Hours</Label>
-                      <div className="flex gap-2">
-                        <Input type="time" {...addForm.register('weekendStartTime')} className="text-sm sm:text-base" />
-                        <Input type="time" {...addForm.register('weekendEndTime')} className="text-sm sm:text-base" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button type="submit" className="w-full sm:w-auto text-sm sm:text-base">Add Amenity</Button>
-                    <Button type="button" variant="outline" onClick={() => setShowAddForm(false)} className="w-full sm:w-auto text-sm sm:text-base">Cancel</Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
-        {/* Amenities List */}
-        <div className="grid gap-4 sm:gap-5 md:gap-6 lg:gap-8">
+        {/* ================================================================
+            AMENITIES LIST
+        ================================================================ */}
+        <motion.div 
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+          className="space-y-4"
+        >
           {amenities.map((amenity, index) => (
             <motion.div
               key={amenity.id}
-              initial={{ opacity: 0, y: 40, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ 
-                delay: index * 0.1,
-                duration: 0.7,
-                ease: [0.4, 0, 0.2, 1]
-              }}
-              whileHover={{ 
-                y: -8,
-                scale: 1.02,
-                transition: { duration: 0.3 }
-              }}
-              className="group"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05, duration: transitionDuration, ease: easeOut }}
             >
-              <Card className="border-0 shadow-xl bg-gradient-to-br from-white via-slate-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 hover:shadow-2xl transition-all duration-500 overflow-hidden relative">
-                {/* Animated gradient border */}
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl p-[2px]">
-                  <div className="bg-white dark:bg-slate-900 rounded-xl h-full w-full"></div>
-                </div>
-                
-                {/* Floating particles effect */}
-                <div className="absolute top-4 right-4 w-2 h-2 bg-blue-400 rounded-full opacity-0 group-hover:opacity-100 animate-ping"></div>
-                <div className="absolute top-8 right-8 w-1 h-1 bg-purple-400 rounded-full opacity-0 group-hover:opacity-100 animate-pulse delay-100"></div>
-                
-                <CardContent className="p-4 sm:p-6 md:p-8 relative z-10">
-                  {editingId === amenity.id ? (
-                    // Edit Form
-                    <form onSubmit={editForm.handleSubmit(saveEdit)} className="space-y-3 sm:space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                        <div>
-                          <Label className="text-xs sm:text-sm">Name</Label>
-                          <Input {...editForm.register('name')} className="text-sm sm:text-base" />
-                          {editForm.formState.errors.name && (
-                            <p className="text-red-500 text-xs sm:text-sm mt-1">{editForm.formState.errors.name.message}</p>
-                          )}
-                        </div>
-                        <div>
-                          <Label className="text-xs sm:text-sm">Image URL</Label>
-                          <Input {...editForm.register('imageUrl')} className="text-sm sm:text-base" />
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label className="text-xs sm:text-sm">Description</Label>
-                        <Textarea {...editForm.register('description')} rows={3} className="text-sm sm:text-base" />
-                        {editForm.formState.errors.description && (
-                          <p className="text-red-500 text-xs sm:text-sm mt-1">{editForm.formState.errors.description.message}</p>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                        <div>
-                          <Label className="text-xs sm:text-sm">Max People</Label>
-                          <Input type="number" min="1" max="100" {...editForm.register('maxPeople', { valueAsNumber: true })} className="text-sm sm:text-base" />
-                        </div>
-                        <div>
-                          <Label className="text-xs sm:text-sm">Slot Duration (hours)</Label>
-                          <Input type="number" min="0.5" max="8" step="0.5" {...editForm.register('slotDuration', { valueAsNumber: true })} className="text-sm sm:text-base" />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                        <div>
-                          <Label className="text-xs sm:text-sm">Weekday Hours</Label>
-                          <div className="flex gap-2">
-                            <Input type="time" {...editForm.register('weekdayStartTime')} className="text-sm sm:text-base" />
-                            <Input type="time" {...editForm.register('weekdayEndTime')} className="text-sm sm:text-base" />
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-xs sm:text-sm">Weekend Hours</Label>
-                          <div className="flex gap-2">
-                            <Input type="time" {...editForm.register('weekendStartTime')} className="text-sm sm:text-base" />
-                            <Input type="time" {...editForm.register('weekendEndTime')} className="text-sm sm:text-base" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Button type="submit" className="w-full sm:w-auto text-sm sm:text-base">
-                          <Save className="w-4 h-4 mr-2" />
-                          Save
-                        </Button>
-                        <Button type="button" variant="outline" onClick={cancelEdit} className="w-full sm:w-auto text-sm sm:text-base">
-                          <X className="w-4 h-4 mr-2" />
-                          Cancel
-                        </Button>
-                      </div>
-                    </form>
-                  ) : (
-                    // Display Mode - Enhanced with animations and responsive design
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.5 }}
-                      className="flex flex-col lg:flex-row gap-4 sm:gap-5 md:gap-6"
-                    >
-                      {/* Amenity Image with hover effects */}
-                      <motion.div 
-                        className="relative group/image"
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <div className="relative overflow-hidden rounded-xl shadow-lg">
-                          <img
-                            src={amenity.imageUrl}
-                            alt={amenity.name}
-                            className="w-full lg:w-32 xl:w-40 h-40 sm:h-48 lg:h-32 xl:lg:h-40 object-cover transition-transform duration-500 group-hover/image:scale-110"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300"></div>
-                          
-                          {/* Floating status indicator */}
-                          {amenity.isBlocked && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              className="absolute top-2 sm:top-3 left-2 sm:left-3"
-                            >
-                              <Badge variant="destructive" className="flex items-center gap-1 shadow-lg text-xs sm:text-sm">
-                                <Ban className="w-3 h-3" />
-                                Blocked
-                              </Badge>
-                            </motion.div>
-                          )}
-                        </div>
-                      </motion.div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start mb-4 sm:mb-5 md:mb-6">
-                          <motion.div 
-                            className="mb-3 sm:mb-4 lg:mb-0"
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                          >
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                              <h3 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                                {amenity.name}
-                              </h3>
-                            </div>
-                            <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
-                              {amenity.description}
-                            </p>
-                            {amenity.isBlocked && amenity.blockReason && (
-                              <motion.p 
-                                initial={{ y: 10, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                className="text-red-600 dark:text-red-400 text-xs sm:text-sm mt-2 font-medium flex items-center gap-2"
-                              >
-                                <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
-                                Reason: {amenity.blockReason}
-                              </motion.p>
-                            )}
-                          </motion.div>
-                          
-                          <motion.div 
-                            className="flex flex-wrap gap-2"
-                            initial={{ x: 20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                          >
-                            <Button 
-                              variant={amenity.isBlocked ? "default" : "destructive"} 
-                              size="sm" 
-                              onClick={() => toggleAmenityBlock(amenity.id, amenity.name, amenity.isBlocked || false)}
-                              className={`text-xs sm:text-sm ${amenity.isBlocked ? "bg-green-600 hover:bg-green-700" : ""}`}
-                            >
-                              {amenity.isBlocked ? (
-                                <>
-                                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                                  Unblock
-                                </>
-                              ) : (
-                                <>
-                                  <Ban className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                                  Block
-                                </>
-                              )}
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleDateBlocking(amenity)}
-                              className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-none hover:from-orange-600 hover:to-red-600 text-xs sm:text-sm"
-                            >
-                              <CalendarDays className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                              Festive Block
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => startEdit(amenity)} className="text-xs sm:text-sm">
-                              <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </Button>
-                            <Button variant="destructive" size="sm" onClick={() => deleteAmenity(amenity.id, amenity.name)} className="text-xs sm:text-sm">
-                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </Button>
-                          </motion.div>
-                        </div>
-
-                        {/* Enhanced stats section with animations */}
-                        <motion.div 
-                          className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 text-xs sm:text-sm"
-                          initial={{ y: 20, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 0.4 }}
-                        >
-                          <motion.div 
-                            className="flex items-center gap-2 p-2 sm:p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <Users className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                            <span className="font-medium">Max {amenity.booking?.maxPeople || 6}</span>
-                          </motion.div>
-                          <motion.div 
-                            className="flex items-center gap-2 p-2 sm:p-3 bg-green-50 dark:bg-green-950/20 rounded-lg"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
-                            <span className="font-medium">{amenity.booking?.slotDuration || 2}h slots</span>
-                          </motion.div>
-                          <motion.div 
-                            className="flex items-center gap-1 sm:gap-2 p-2 sm:p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500 flex-shrink-0" />
-                            <span className="font-medium text-[10px] sm:text-xs truncate">
-                              WD: {amenity.booking?.weekdayHours?.startTime || '09:00'}-{amenity.booking?.weekdayHours?.endTime || '21:00'}
-                            </span>
-                          </motion.div>
-                          <motion.div 
-                            className="flex items-center gap-1 sm:gap-2 p-2 sm:p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 text-orange-500 flex-shrink-0" />
-                            <span className="font-medium text-[10px] sm:text-xs truncate">
-                              WE: {amenity.booking?.weekendHours?.startTime || '08:00'}-{amenity.booking?.weekendHours?.endTime || '22:00'}
-                            </span>
-                          </motion.div>
-                        </motion.div>
-
-                        {/* Enhanced blackout dates display */}
-                        {amenity.rules?.blackoutDates && amenity.rules.blackoutDates.length > 0 && (
-                          <motion.div 
-                            className="mt-4 sm:mt-5 md:mt-6 p-3 sm:p-4 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 rounded-xl border border-red-200 dark:border-red-800"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.5 }}
-                          >
-                            <motion.h4 
-                              className="font-semibold text-red-800 dark:text-red-200 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base"
-                              initial={{ x: -10 }}
-                              animate={{ x: 0 }}
-                            >
-                              <Star className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
-                              Festive Blocked Dates ({amenity.rules.blackoutDates.length})
-                            </motion.h4>
-                            <div className="flex flex-wrap gap-2">
-                              {amenity.rules.blackoutDates.slice(0, 8).map((blackoutItem: any, index: number) => {
-                                let displayDate = '';
-                                let dateForRemoval = blackoutItem;
-                                
-                                try {
-                                  // Handle different date formats
-                                  if (blackoutItem?.date) {
-                                    // If it's an object with a date property
-                                    if (blackoutItem.date instanceof Date) {
-                                      displayDate = blackoutItem.date.toLocaleDateString();
-                                    } else if (blackoutItem.date.seconds) {
-                                      // Firestore timestamp
-                                      displayDate = new Date(blackoutItem.date.seconds * 1000).toLocaleDateString();
-                                    } else {
-                                      // String date
-                                      const parsedDate = new Date(blackoutItem.date);
-                                      displayDate = !isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString() : 'Invalid Date';
-                                    }
-                                  } else if (blackoutItem instanceof Date) {
-                                    // Direct Date object
-                                    displayDate = blackoutItem.toLocaleDateString();
-                                  } else if (blackoutItem?.seconds) {
-                                    // Direct Firestore timestamp
-                                    displayDate = new Date(blackoutItem.seconds * 1000).toLocaleDateString();
-                                  } else if (typeof blackoutItem === 'string') {
-                                    // Direct string date
-                                    const parsedDate = new Date(blackoutItem);
-                                    displayDate = !isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString() : blackoutItem;
-                                  } else {
-                                    displayDate = 'Invalid Date';
-                                  }
-                                } catch (error) {
-                                  console.error('Date parsing error:', error, blackoutItem);
-                                  displayDate = 'Invalid Date';
-                                }
-                                
-                                const reason = blackoutItem?.reason || 'Blocked';
-                                
-                                return (
-                                  <motion.div
-                                    key={index}
-                                    className="group relative inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 bg-gradient-to-r from-red-100 to-orange-100 dark:from-red-900/30 dark:to-orange-900/30 text-red-800 dark:text-red-200 text-[10px] sm:text-xs rounded-full border border-red-200 dark:border-red-700 shadow-sm"
-                                    initial={{ scale: 0, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    transition={{ delay: index * 0.1 }}
-                                    whileHover={{ scale: 1.05 }}
-                                  >
-                                    <span className="font-medium">{displayDate}</span>
-                                    <button
-                                      onClick={() => removeBlackoutDate(amenity.id, blackoutItem)}
-                                      className="opacity-0 group-hover:opacity-100 transition-all duration-200 ml-1 text-red-600 hover:text-red-800 hover:bg-red-200 dark:hover:bg-red-800 rounded-full p-0.5 sm:p-1"
-                                      title={`Remove ${displayDate} (${reason})`}
-                                    >
-                                      <X className="w-2 h-2 sm:w-3 sm:h-3" />
-                                    </button>
-                                  </motion.div>
-                                );
-                              })}
-                              {amenity.rules.blackoutDates.length > 8 && (
-                                <span className="text-[10px] sm:text-xs text-red-600 dark:text-red-400 px-2 py-1">
-                                  +{amenity.rules.blackoutDates.length - 8} more
-                                </span>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </CardContent>
-              </Card>
+              {editingId === amenity.id ? (
+                <AmenityForm
+                  form={editForm}
+                  onSubmit={editForm.handleSubmit(saveEdit)}
+                  onCancel={cancelEdit}
+                  isLoading={actionLoading === 'save'}
+                  title={`Edit ${amenity.name}`}
+                  submitLabel="Save Changes"
+                />
+              ) : (
+                <AmenityCard
+                  amenity={amenity}
+                  onEdit={() => startEdit(amenity)}
+                  onDelete={() => deleteAmenity(amenity.id, amenity.name)}
+                  onToggleBlock={() => toggleAmenityBlock(amenity.id, amenity.name, amenity.isBlocked || false)}
+                  onFestiveBlock={() => handleDateBlocking(amenity)}
+                  onRemoveBlackoutDate={(date) => removeBlackoutDate(amenity.id, date)}
+                  isLoading={actionLoading === amenity.id}
+                />
+              )}
             </motion.div>
           ))}
-        </div>
+        </motion.div>
 
-        {amenities.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
+        {/* ================================================================
+            EMPTY STATE
+        ================================================================ */}
+        {amenities.length === 0 && !loading && (
+          <motion.div 
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: transitionDuration, ease: easeOut }}
+            className="text-center py-16 sm:py-20"
           >
-            <Card className="border-0 shadow-2xl bg-gradient-to-br from-white to-blue-50 dark:from-slate-900 dark:to-blue-950/20 relative overflow-hidden">
-              {/* Animated background elements */}
-              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-400/10 to-purple-600/10 rounded-full blur-3xl"></div>
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-br from-purple-400/10 to-pink-600/10 rounded-full blur-2xl"></div>
-              
-              <CardContent className="text-center py-12 sm:py-14 md:py-16 px-4 sm:px-6 relative z-10">
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-xl">
-                    <Settings className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
-                  </div>
-                </motion.div>
-                
-                <motion.h3 
-                  className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-slate-800 to-purple-600 dark:from-white dark:to-purple-400 bg-clip-text text-transparent mb-2 sm:mb-3"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  No Amenities Found
-                </motion.h3>
-                
-                <motion.p 
-                  className="text-slate-600 dark:text-slate-400 mb-4 sm:mb-6 text-base sm:text-lg max-w-md mx-auto"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  Start building your community by adding your first amenity with festive season management.
-                </motion.p>
-                
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button 
-                    onClick={() => setShowAddForm(true)}
-                    className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
-                    size="lg"
-                  >
-                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    Add Your First Amenity
-                  </Button>
-                </motion.div>
-              </CardContent>
-            </Card>
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-900 flex items-center justify-center mx-auto mb-5">
+              <Settings className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              No amenities yet
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
+              Start managing your community by adding your first amenity.
+            </p>
+            <Button
+              onClick={() => setShowAddForm(true)}
+              className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add First Amenity
+            </Button>
           </motion.div>
         )}
       </div>
 
-      {/* Enhanced Date Blocking Dialog */}
-      <Dialog open={showDateBlockDialog} onOpenChange={setShowDateBlockDialog}>
-        <DialogPortal>
-          <DialogOverlay className="dialog-overlay fixed inset-0 z-[9998] bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-          <DialogContent className="dialog-content max-w-5xl max-h-[95vh] overflow-y-auto bg-gradient-to-br from-white to-orange-50 dark:from-slate-900 dark:to-orange-950/20 border-0 shadow-2xl !z-[9999] fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg">
-          {/* Animated header with gradient */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-red-500"></div>
-          
-          <DialogHeader className="pb-6">
-            <motion.div
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="flex items-center gap-3"
+      {/* ================================================================
+          DATE BLOCKING DIALOG
+      ================================================================ */}
+      <DateBlockDialog
+        open={showDateBlockDialog}
+        onOpenChange={setShowDateBlockDialog}
+        amenity={selectedAmenityForBlock}
+        selectedDates={selectedDates}
+        setSelectedDates={setSelectedDates}
+        festiveReason={festiveReason}
+        setFestiveReason={setFestiveReason}
+        onConfirm={addBlackoutDates}
+        isLoading={actionLoading === 'blackout'}
+      />
+    </div>
+  );
+}
+
+// ============================================================================
+// AMENITY FORM COMPONENT
+// ============================================================================
+
+interface AmenityFormProps {
+  form: any;
+  onSubmit: () => void;
+  onCancel: () => void;
+  isLoading: boolean;
+  title: string;
+  submitLabel: string;
+}
+
+function AmenityForm({ form, onSubmit, onCancel, isLoading, title, submitLabel }: AmenityFormProps) {
+  return (
+    <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+      {/* Form Header */}
+      <div className="px-5 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <h2 className="text-base font-medium text-gray-900 dark:text-white">{title}</h2>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      <form onSubmit={onSubmit}>
+        <CardContent className="px-5 sm:px-6 py-5 space-y-6">
+          {/* SECTION: Basic Information */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Basic Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                label="Amenity Name"
+                error={form.formState.errors.name?.message}
+              >
+                <Input
+                  {...form.register('name')}
+                  placeholder="e.g., Swimming Pool"
+                  className="h-10"
+                />
+              </FormField>
+              <FormField
+                label="Image URL"
+                hint="Optional - leave empty for default"
+              >
+                <Input
+                  {...form.register('imageUrl')}
+                  placeholder="https://..."
+                  className="h-10"
+                />
+              </FormField>
+            </div>
+            <FormField
+              label="Description"
+              error={form.formState.errors.description?.message}
             >
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
-                <CalendarDays className="w-6 h-6 text-white" />
+              <Textarea
+                {...form.register('description')}
+                placeholder="Describe this amenity and any rules..."
+                rows={3}
+                className="resize-none"
+              />
+            </FormField>
+          </div>
+
+          {/* SECTION: Booking Rules */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Booking Rules
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField label="Maximum People">
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  {...form.register('maxPeople', { valueAsNumber: true })}
+                  className="h-10"
+                />
+              </FormField>
+              <FormField label="Slot Duration (hours)">
+                <Input
+                  type="number"
+                  min="0.5"
+                  max="8"
+                  step="0.5"
+                  {...form.register('slotDuration', { valueAsNumber: true })}
+                  className="h-10"
+                />
+              </FormField>
+            </div>
+          </div>
+
+          {/* SECTION: Operating Hours */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Operating Hours
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField label="Weekday Hours">
+                <div className="flex items-center gap-2">
+                  <Input type="time" {...form.register('weekdayStartTime')} className="h-10 flex-1" />
+                  <span className="text-gray-400 text-sm">to</span>
+                  <Input type="time" {...form.register('weekdayEndTime')} className="h-10 flex-1" />
+                </div>
+              </FormField>
+              <FormField label="Weekend Hours">
+                <div className="flex items-center gap-2">
+                  <Input type="time" {...form.register('weekendStartTime')} className="h-10 flex-1" />
+                  <span className="text-gray-400 text-sm">to</span>
+                  <Input type="time" {...form.register('weekendEndTime')} className="h-10 flex-1" />
+                </div>
+              </FormField>
+            </div>
+          </div>
+        </CardContent>
+
+        {/* Form Actions */}
+        <div className="px-5 sm:px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onCancel}
+            className="h-10"
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="h-10 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
+            {submitLabel}
+          </Button>
+        </div>
+      </form>
+    </Card>
+  );
+}
+
+// ============================================================================
+// FORM FIELD COMPONENT
+// ============================================================================
+
+interface FormFieldProps {
+  label: string;
+  error?: string;
+  hint?: string;
+  children: React.ReactNode;
+}
+
+function FormField({ label, error, hint, children }: FormFieldProps) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        {label}
+      </Label>
+      {children}
+      {error && <p className="text-xs text-red-500">{error}</p>}
+      {hint && !error && <p className="text-xs text-gray-400">{hint}</p>}
+    </div>
+  );
+}
+
+// ============================================================================
+// AMENITY CARD COMPONENT
+// ============================================================================
+
+interface AmenityCardProps {
+  amenity: Amenity;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggleBlock: () => void;
+  onFestiveBlock: () => void;
+  onRemoveBlackoutDate: (date: any) => void;
+  isLoading: boolean;
+}
+
+function AmenityCard({ 
+  amenity, 
+  onEdit, 
+  onDelete, 
+  onToggleBlock, 
+  onFestiveBlock,
+  onRemoveBlackoutDate,
+  isLoading 
+}: AmenityCardProps) {
+  const blackoutDates = amenity.rules?.blackoutDates || [];
+
+  return (
+    <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+      <CardContent className="p-0">
+        <div className="flex flex-col lg:flex-row">
+          {/* Image Section */}
+          <div className="relative lg:w-48 xl:w-56 flex-shrink-0">
+            {amenity.imageUrl ? (
+              <img
+                src={amenity.imageUrl}
+                alt={amenity.name}
+                className="w-full h-40 lg:h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-40 lg:h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <ImageIcon className="w-10 h-10 text-gray-300 dark:text-gray-600" />
+              </div>
+            )}
+            {/* Status Badge */}
+            {amenity.isBlocked && (
+              <div className="absolute top-3 left-3">
+                <Badge variant="destructive" className="text-xs font-medium px-2 py-0.5 shadow-sm">
+                  <Ban className="w-3 h-3 mr-1" />
+                  Blocked
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          {/* Content Section */}
+          <div className="flex-1 p-5 sm:p-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+              <div className="min-w-0">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                  {amenity.name}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                  {amenity.description}
+                </p>
+                {amenity.isBlocked && amenity.blockReason && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {amenity.blockReason}
+                  </p>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Button
+                  variant={amenity.isBlocked ? "outline" : "destructive"}
+                  size="sm"
+                  onClick={onToggleBlock}
+                  disabled={isLoading}
+                  className={cn(
+                    "h-8 text-xs",
+                    amenity.isBlocked && "border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+                  )}
+                >
+                  {amenity.isBlocked ? (
+                    <>
+                      <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                      Unblock
+                    </>
+                  ) : (
+                    <>
+                      <Ban className="w-3.5 h-3.5 mr-1" />
+                      Block
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onFestiveBlock}
+                  className="h-8 text-xs border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                >
+                  <CalendarDays className="w-3.5 h-3.5 mr-1" />
+                  Festive
+                </Button>
+                <Button variant="ghost" size="sm" onClick={onEdit} className="h-8 w-8 p-0">
+                  <Edit2 className="w-4 h-4 text-gray-500" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={onDelete} className="h-8 w-8 p-0 hover:text-red-600">
+                  <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-600" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+              <StatBadge icon={Users} label="Capacity" value={`${amenity.booking?.maxPeople || 6} people`} />
+              <StatBadge icon={Clock} label="Duration" value={`${amenity.booking?.slotDuration || 2}h slots`} />
+              <StatBadge 
+                icon={CalendarIcon} 
+                label="Weekdays" 
+                value={`${amenity.booking?.weekdayHours?.startTime || '09:00'} - ${amenity.booking?.weekdayHours?.endTime || '21:00'}`} 
+              />
+              <StatBadge 
+                icon={CalendarIcon} 
+                label="Weekends" 
+                value={`${amenity.booking?.weekendHours?.startTime || '08:00'} - ${amenity.booking?.weekendHours?.endTime || '22:00'}`} 
+              />
+            </div>
+
+            {/* Blackout Dates */}
+            {blackoutDates.length > 0 && (
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <Star className="w-4 h-4 text-amber-500" />
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    Blocked Dates ({blackoutDates.length})
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {blackoutDates.slice(0, 6).map((blackoutItem: any, index: number) => (
+                    <BlackoutDateBadge
+                      key={index}
+                      blackoutItem={blackoutItem}
+                      onRemove={() => onRemoveBlackoutDate(blackoutItem)}
+                    />
+                  ))}
+                  {blackoutDates.length > 6 && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1">
+                      +{blackoutDates.length - 6} more
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============================================================================
+// STAT BADGE COMPONENT
+// ============================================================================
+
+interface StatBadgeProps {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+}
+
+function StatBadge({ icon: Icon, label, value }: StatBadgeProps) {
+  return (
+    <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+      <Icon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+      <div className="min-w-0">
+        <p className="text-[10px] text-gray-400 uppercase tracking-wider">{label}</p>
+        <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// BLACKOUT DATE BADGE COMPONENT
+// ============================================================================
+
+interface BlackoutDateBadgeProps {
+  blackoutItem: any;
+  onRemove: () => void;
+}
+
+function BlackoutDateBadge({ blackoutItem, onRemove }: BlackoutDateBadgeProps) {
+  let displayDate = '';
+  
+  try {
+    if (blackoutItem?.date) {
+      if (blackoutItem.date instanceof Date) {
+        displayDate = blackoutItem.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } else if (blackoutItem.date.seconds) {
+        displayDate = new Date(blackoutItem.date.seconds * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } else {
+        const parsedDate = new Date(blackoutItem.date);
+        displayDate = !isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Invalid';
+      }
+    } else if (blackoutItem instanceof Date) {
+      displayDate = blackoutItem.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } else if (blackoutItem?.seconds) {
+      displayDate = new Date(blackoutItem.seconds * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } else if (typeof blackoutItem === 'string') {
+      const parsedDate = new Date(blackoutItem);
+      displayDate = !isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : blackoutItem;
+    } else {
+      displayDate = 'Invalid';
+    }
+  } catch {
+    displayDate = 'Invalid';
+  }
+
+  return (
+    <span className="group inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium 
+                   bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 
+                   border border-amber-200 dark:border-amber-800 rounded-md">
+      {displayDate}
+      <button
+        onClick={onRemove}
+        className="opacity-0 group-hover:opacity-100 -mr-1 p-0.5 rounded hover:bg-amber-200 dark:hover:bg-amber-800 transition-opacity"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </span>
+  );
+}
+
+// ============================================================================
+// DATE BLOCK DIALOG COMPONENT
+// ============================================================================
+
+interface DateBlockDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  amenity: Amenity | null;
+  selectedDates: Date[];
+  setSelectedDates: (dates: Date[]) => void;
+  festiveReason: string;
+  setFestiveReason: (reason: string) => void;
+  onConfirm: () => void;
+  isLoading: boolean;
+}
+
+function DateBlockDialog({
+  open,
+  onOpenChange,
+  amenity,
+  selectedDates,
+  setSelectedDates,
+  festiveReason,
+  setFestiveReason,
+  onConfirm,
+  isLoading
+}: DateBlockDialogProps) {
+  const quickReasons = [
+    { emoji: '🎆', label: 'Diwali' },
+    { emoji: '🎄', label: 'Christmas' },
+    { emoji: '🎊', label: 'New Year' },
+    { emoji: '🔧', label: 'Maintenance' },
+    { emoji: '👥', label: 'Community Event' },
+    { emoji: '🕉️', label: 'Religious' },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogPortal>
+        <DialogOverlay className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm" />
+        <DialogContent className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] z-[9999] 
+                                  w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto
+                                  bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 
+                                  rounded-xl shadow-2xl">
+          <DialogHeader className="px-6 py-5 border-b border-gray-100 dark:border-gray-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                <CalendarDays className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-orange-600 dark:from-white dark:to-orange-400 bg-clip-text text-transparent">
-                  Block {selectedAmenityForBlock?.name} on Specific Dates
+                <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Schedule Blocked Dates
                 </DialogTitle>
-                <DialogDescription className="text-base text-slate-600 dark:text-slate-400 mt-1">
-                  Select dates to block this amenity during festive seasons or special events. 
-                  These dates will be unavailable for booking.
+                <DialogDescription className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                  Block {amenity?.name} on specific dates for holidays or events
                 </DialogDescription>
               </div>
-            </motion.div>
+            </div>
           </DialogHeader>
 
-          <motion.div 
-            className="space-y-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            {/* Enhanced Reason Input */}
-            <motion.div 
-              className="space-y-4"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Label htmlFor="festive-reason" className="text-lg font-semibold">Reason for Blocking</Label>
-              
-              {/* Enhanced quick reason buttons */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-                {[
-                  { emoji: '🎆', text: 'Diwali Festival', color: 'from-yellow-400 to-orange-500' },
-                  { emoji: '🎄', text: 'Christmas Celebration', color: 'from-green-400 to-red-500' }, 
-                  { emoji: '🎊', text: 'New Year Events', color: 'from-purple-400 to-pink-500' },
-                  { emoji: '🕉️', text: 'Religious Festival', color: 'from-orange-400 to-red-500' },
-                  { emoji: '🔧', text: 'Maintenance Work', color: 'from-gray-400 to-slate-500' },
-                  { emoji: '👥', text: 'Community Event', color: 'from-blue-400 to-cyan-500' }
-                ].map((reasonOption, index) => (
-                  <motion.div
-                    key={reasonOption.text}
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.4 + index * 0.1 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+          <div className="px-6 py-5 space-y-6">
+            {/* Reason Input */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Reason for blocking
+              </Label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {quickReasons.map((reason) => (
+                  <button
+                    key={reason.label}
+                    type="button"
+                    onClick={() => setFestiveReason(`${reason.emoji} ${reason.label}`)}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-medium rounded-lg border transition-all duration-150",
+                      festiveReason === `${reason.emoji} ${reason.label}`
+                        ? "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300"
+                        : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
+                    )}
                   >
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setFestiveReason(`${reasonOption.emoji} ${reasonOption.text}`)}
-                      className={`w-full h-auto p-3 transition-all duration-300 ${
-                        festiveReason === `${reasonOption.emoji} ${reasonOption.text}` 
-                          ? `bg-gradient-to-r ${reasonOption.color} text-white border-none shadow-lg` 
-                          : 'hover:bg-gradient-to-r hover:from-slate-50 hover:to-slate-100 dark:hover:from-slate-800 dark:hover:to-slate-700'
-                      }`}
-                    >
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-2xl">{reasonOption.emoji}</span>
-                        <span className="text-xs font-medium">{reasonOption.text}</span>
-                      </div>
-                    </Button>
-                  </motion.div>
+                    {reason.emoji} {reason.label}
+                  </button>
                 ))}
               </div>
-              
               <Input
-                id="festive-reason"
-                placeholder="e.g., Diwali Festival, Christmas Celebration, Maintenance"
+                placeholder="e.g., Diwali Festival, Annual Maintenance"
                 value={festiveReason}
                 onChange={(e) => setFestiveReason(e.target.value)}
-                className="w-full"
+                className="h-10"
               />
-            </motion.div>
+            </div>
 
-            {/* Date Selection */}
+            {/* Calendar & Selected Dates */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Calendar */}
               <div className="space-y-3">
-                <Label>Select Dates to Block</Label>
-                <div className="border rounded-lg p-4">
+                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Select dates
+                </Label>
+                <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-3">
                   <Calendar
                     mode="multiple"
                     selected={selectedDates}
@@ -1185,121 +1168,98 @@ export default function AdminPanel() {
                     }}
                     disabled={(date) => date < new Date()}
                     className="rounded-md"
-                    classNames={{
-                      months: "space-y-4",
-                      month: "space-y-4",
-                      caption: "flex justify-center pt-1 relative items-center",
-                      caption_label: "text-sm font-medium",
-                      nav: "space-x-1 flex items-center",
-                      nav_button: cn(
-                        "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
-                      ),
-                      nav_button_previous: "absolute left-1",
-                      nav_button_next: "absolute right-1",
-                      table: "w-full border-collapse space-y-1",
-                      head_row: "flex",
-                      head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-                      row: "flex w-full mt-2",
-                      cell: "text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
-                      day: cn(
-                        "h-9 w-9 p-0 font-normal",
-                        "hover:bg-accent hover:text-accent-foreground",
-                        "focus:bg-accent focus:text-accent-foreground"
-                      ),
-                      day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                      day_today: "bg-accent text-accent-foreground",
-                      day_outside: "text-muted-foreground opacity-50",
-                      day_disabled: "text-muted-foreground opacity-50",
-                      day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                      day_hidden: "invisible",
-                    }}
                   />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Click dates to select/deselect. Multiple dates can be selected.
+                <p className="text-xs text-gray-400">
+                  Click dates to select or deselect them
                 </p>
               </div>
 
-              {/* Selected Dates Preview */}
+              {/* Selected Dates List */}
               <div className="space-y-3">
-                <Label>Selected Dates ({selectedDates.length})</Label>
-                <div className="border rounded-lg p-4 min-h-[300px] bg-slate-50 dark:bg-slate-900">
+                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Selected dates ({selectedDates.length})
+                </Label>
+                <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-4 min-h-[300px] max-h-[360px] overflow-y-auto bg-gray-50 dark:bg-gray-800/30">
                   {selectedDates.length > 0 ? (
                     <div className="space-y-2">
                       {selectedDates
                         .filter((date) => date instanceof Date && !isNaN(date.getTime()))
                         .sort((a, b) => a.getTime() - b.getTime())
                         .map((date, index) => (
-                          <motion.div
-                            key={`date-${date.getTime()}-${index}`}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            transition={{ delay: index * 0.05 }}
-                            className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded border"
+                          <div
+                            key={`${date.getTime()}-${index}`}
+                            className="flex items-center justify-between p-2.5 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700"
                           >
-                            <div className="flex items-center gap-2">
-                              <CalendarIcon className="w-4 h-4 text-orange-500" />
-                              <span className="font-medium">
+                            <div className="flex items-center gap-2.5">
+                              <CalendarIcon className="w-4 h-4 text-amber-500" />
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                 {date.toLocaleDateString('en-US', { 
                                   weekday: 'short', 
-                                  year: 'numeric', 
                                   month: 'short', 
-                                  day: 'numeric' 
+                                  day: 'numeric',
+                                  year: 'numeric'
                                 })}
                               </span>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
+                            <button
                               onClick={() => {
-                                setSelectedDates(prev => prev.filter(d => 
+                                setSelectedDates(selectedDates.filter(d => 
                                   d instanceof Date && !isNaN(d.getTime()) && d.getTime() !== date.getTime()
                                 ));
                               }}
-                              className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 transition-colors"
                             >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </motion.div>
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         ))}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-center">
-                      <CalendarDays className="w-12 h-12 text-slate-400 mb-2" />
-                      <p className="text-slate-500 font-medium">No dates selected</p>
-                      <p className="text-sm text-slate-400">Choose dates from the calendar</p>
+                    <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                      <CalendarDays className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-3" />
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        No dates selected
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        Pick dates from the calendar
+                      </p>
                     </div>
                   )}
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowDateBlockDialog(false);
-                  setSelectedDates([]);
-                  setFestiveReason('');
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={addBlackoutDates}
-                disabled={selectedDates.length === 0}
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-              >
+          {/* Actions */}
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                onOpenChange(false);
+                setSelectedDates([]);
+                setFestiveReason('');
+              }}
+              className="h-10"
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={onConfirm}
+              disabled={selectedDates.length === 0 || isLoading}
+              className="h-10 bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
                 <Star className="w-4 h-4 mr-2" />
-                Block {selectedDates.length} Date{selectedDates.length !== 1 ? 's' : ''}
-              </Button>
-            </div>
-          </motion.div>
+              )}
+              Block {selectedDates.length} Date{selectedDates.length !== 1 ? 's' : ''}
+            </Button>
+          </div>
         </DialogContent>
-        </DialogPortal>
-      </Dialog>
-    </div>
+      </DialogPortal>
+    </Dialog>
   );
 }

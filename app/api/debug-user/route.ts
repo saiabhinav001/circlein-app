@@ -9,6 +9,11 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
+  // Development only - block in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Debug endpoint disabled in production' }, { status: 403 });
+  }
+
   try {
     const session = await getServerSession(authOptions);
     

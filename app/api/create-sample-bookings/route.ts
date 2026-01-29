@@ -3,6 +3,11 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 export async function POST(request: NextRequest) {
+  // Development only - block in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Sample data creation disabled in production' }, { status: 403 });
+  }
+
   try {
     const { userEmail, communityId } = await request.json();
 

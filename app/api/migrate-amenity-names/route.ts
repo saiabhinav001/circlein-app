@@ -3,6 +3,11 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, updateDoc, doc, writeBatch } from 'firebase/firestore';
 
 export async function POST(request: NextRequest) {
+  // Development only - block in production (migration script)
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Migration scripts disabled in production' }, { status: 403 });
+  }
+
   try {
     const { communityId = 'default-community' } = await request.json();
     
