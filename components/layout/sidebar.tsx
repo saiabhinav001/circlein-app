@@ -287,9 +287,6 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                             : "text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300"
                         )} 
                       />
-                      {pathname === item.href && (
-                        <span className="absolute -right-0.5 top-1/2 -translate-y-1/2 w-1 h-5 bg-slate-900 dark:bg-white rounded-l-full" />
-                      )}
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent side="right">{item.name}</TooltipContent>
@@ -413,9 +410,6 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                                 : "text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300"
                             )} 
                           />
-                          {pathname === item.href && (
-                            <span className="absolute -right-0.5 top-1/2 -translate-y-1/2 w-1 h-5 bg-slate-900 dark:bg-white rounded-l-full" />
-                          )}
                         </Link>
                       </TooltipTrigger>
                       <TooltipContent side="right">{item.name}</TooltipContent>
