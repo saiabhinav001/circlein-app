@@ -347,10 +347,16 @@ export default function CalendarPage() {
       if (cancelData.waitlistPromoted) {
         toast({
           title: "Cancelled & Waitlist Promoted",
-          description: `Next person (${cancelData.promotedUser}) notified.`,
+          description: `Booking cancelled. Next person (${cancelData.promotedUser}) has been notified.`,
         });
       } else {
-        toast({ title: "Booking Cancelled", description: "Successfully cancelled." });
+        const isAdminCancellation = isAdmin && booking.userId !== session?.user?.email;
+        toast({ 
+          title: isAdminCancellation ? "Booking Cancelled (Admin)" : "Booking Cancelled", 
+          description: isAdminCancellation 
+            ? `The booking for ${booking.userName || 'resident'} has been cancelled. They will receive an email notification.`
+            : "Your booking has been successfully cancelled."
+        });
       }
 
       setShowBookingDialog(false);
@@ -570,23 +576,25 @@ export default function CalendarPage() {
                   onClick={handleRefresh} 
                   disabled={refreshing}
                   className={cn(
-                    "h-9 sm:h-10 px-3 sm:px-4 rounded-lg text-sm font-medium",
+                    "h-9 w-9 sm:h-10 sm:w-auto sm:px-4 rounded-lg text-sm font-medium",
                     "border-slate-200 dark:border-slate-800",
                     "hover:bg-slate-50 dark:hover:bg-slate-900",
-                    "transition-colors duration-150"
+                    "transition-colors duration-150",
+                    "flex items-center justify-center"
                   )}
                 >
-                  <RefreshCw className={cn("w-4 h-4 mr-2", refreshing && "animate-spin")} />
+                  <RefreshCw className={cn("w-4 h-4 sm:mr-2", refreshing && "animate-spin")} />
                   <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
                 </Button>
                 
                 <Link href="/dashboard">
                   <Button className={cn(
-                    "h-9 sm:h-10 px-3 sm:px-4 rounded-lg text-sm font-medium",
+                    "h-9 w-9 sm:h-10 sm:w-auto sm:px-4 rounded-lg text-sm font-medium",
                     "bg-slate-900 dark:bg-white",
                     "text-white dark:text-slate-900",
                     "hover:bg-slate-800 dark:hover:bg-slate-100",
-                    "transition-colors duration-150"
+                    "transition-colors duration-150",
+                    "flex items-center justify-center"
                   )}>
                     <Plus className="w-4 h-4 sm:mr-1.5" />
                     <span className="hidden sm:inline">New Booking</span>

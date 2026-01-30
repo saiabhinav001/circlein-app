@@ -131,6 +131,14 @@ export default function AmenityBooking() {
             ...amenityData,
           } as Amenity;
           
+          // Check if amenity just got blocked and show notification
+          if (fetchedAmenity.isBlocked && (!amenity || !amenity.isBlocked)) {
+            toast.error(
+              `${fetchedAmenity.name} is currently unavailable${fetchedAmenity.blockReason ? `: ${fetchedAmenity.blockReason}` : '. Please check back later.'}`,
+              { duration: 6000 }
+            );
+          }
+          
           setAmenity(fetchedAmenity);
           
           // DEBUG: Log what we received
@@ -663,17 +671,17 @@ export default function AmenityBooking() {
                 </div>
                 
                 {/* Calendar Section */}
-                <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-3 sm:p-5 border-b border-slate-100 dark:border-slate-800">
                   {/* Calendar Container with subtle elevation */}
-                  <div className="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl p-3 sm:p-4">
+                  <div className="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl p-2 sm:p-4">
                     <Calendar
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      className="mx-auto"
+                      className="mx-auto w-full"
                       classNames={{
-                        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                        month: "space-y-4",
+                        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full",
+                        month: "space-y-4 w-full",
                         caption: "flex justify-center pt-1 relative items-center h-10",
                         caption_label: "text-sm font-semibold text-slate-900 dark:text-slate-100",
                         nav: "space-x-1 flex items-center",
@@ -687,33 +695,35 @@ export default function AmenityBooking() {
                         nav_button_previous: "absolute left-0",
                         nav_button_next: "absolute right-0",
                         table: "w-full border-collapse",
-                        head_row: "flex",
-                        head_cell: "text-slate-500 dark:text-slate-400 rounded-md w-10 sm:w-11 font-medium text-[0.75rem] uppercase tracking-wide",
-                        row: "flex w-full mt-1",
+                        head_row: "flex w-full justify-between",
+                        head_cell: "text-slate-500 dark:text-slate-400 rounded-md w-9 sm:w-11 font-medium text-[0.7rem] sm:text-xs uppercase tracking-wide text-center",
+                        row: "flex w-full mt-1 justify-between",
                         cell: cn(
-                          "relative p-0.5 text-center text-sm focus-within:relative focus-within:z-20",
+                          "relative p-0 sm:p-0.5 text-center text-sm focus-within:relative focus-within:z-20",
                           "[&:has([aria-selected])]:bg-transparent"
                         ),
                         day: cn(
-                          "h-10 w-10 sm:h-11 sm:w-11 p-0 font-medium rounded-lg",
+                          "h-9 w-9 sm:h-11 sm:w-11 p-0 font-medium rounded-lg",
                           "transition-all duration-100",
+                          "text-slate-900 dark:text-slate-100",
                           "hover:bg-slate-200/70 dark:hover:bg-slate-700/70",
                           "active:scale-95",
                           "focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-800"
                         ),
                         day_selected: cn(
                           "bg-slate-900 dark:bg-white text-white dark:text-slate-900",
-                          "hover:bg-slate-800 dark:hover:bg-slate-100",
-                          "shadow-sm",
-                          "font-semibold"
+                          "hover:bg-slate-900 dark:hover:bg-white hover:text-white dark:hover:text-slate-900",
+                          "shadow-md",
+                          "font-bold",
+                          "ring-2 ring-slate-900 dark:ring-white ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-800"
                         ),
                         day_today: cn(
-                          "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100",
-                          "font-semibold",
-                          "ring-1 ring-slate-300 dark:ring-slate-600"
+                          "bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100",
+                          "font-bold",
+                          "ring-2 ring-blue-400 dark:ring-blue-500"
                         ),
-                        day_outside: "text-slate-400 dark:text-slate-600 opacity-40 hover:opacity-40",
-                        day_disabled: "text-slate-300 dark:text-slate-700 opacity-30 cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent",
+                        day_outside: "text-slate-300 dark:text-slate-700 opacity-30 hover:opacity-30 cursor-default",
+                        day_disabled: "text-slate-300 dark:text-slate-700 opacity-20 cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent",
                         day_hidden: "invisible",
                       }}
                     disabled={(date) => {

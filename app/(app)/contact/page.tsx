@@ -252,11 +252,11 @@ export default function ContactPage() {
             SEGMENTED CONTROL - Pixel-perfect transitions
         ================================================================ */}
         <div className="mb-6 sm:mb-8">
-          <div className="inline-flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+          <div className="inline-flex w-full sm:w-auto p-1 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-x-auto">
             <button
               onClick={() => setMode('ai')}
-              className="relative px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-colors duration-200
-                flex items-center justify-center gap-2 whitespace-nowrap min-w-[140px] sm:min-w-[170px]"
+              className="relative flex-1 sm:flex-none px-3 sm:px-5 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-colors duration-200
+                flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap min-w-0 sm:min-w-[170px]"
             >
               <motion.div
                 className="absolute inset-0 bg-white dark:bg-gray-700 rounded-lg shadow-sm"
@@ -267,21 +267,21 @@ export default function ContactPage() {
                 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 0.8 }}
               />
-              <span className={`relative z-10 flex items-center gap-2 transition-colors duration-200 ${
+              <span className={`relative z-10 flex items-center gap-1.5 sm:gap-2 transition-colors duration-200 ${
                 mode === 'ai' 
                   ? 'text-gray-900 dark:text-white' 
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}>
-                <Bot className="w-4 h-4" />
-                <span>AI Assistant</span>
-                <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">Instant</span>
+                <Bot className="w-4 h-4 flex-shrink-0" />
+                <span className="text-xs sm:text-sm">AI Assistant</span>
+                <span className="hidden xs:inline text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">Instant</span>
               </span>
             </button>
             
             <button
               onClick={() => setMode('email')}
-              className="relative px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-colors duration-200
-                flex items-center justify-center gap-2 whitespace-nowrap min-w-[140px] sm:min-w-[170px]"
+              className="relative flex-1 sm:flex-none px-3 sm:px-5 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-colors duration-200
+                flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap min-w-0 sm:min-w-[170px]"
             >
               <motion.div
                 className="absolute inset-0 bg-white dark:bg-gray-700 rounded-lg shadow-sm"
@@ -292,14 +292,14 @@ export default function ContactPage() {
                 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 0.8 }}
               />
-              <span className={`relative z-10 flex items-center gap-2 transition-colors duration-200 ${
+              <span className={`relative z-10 flex items-center gap-1.5 sm:gap-2 transition-colors duration-200 ${
                 mode === 'email' 
                   ? 'text-gray-900 dark:text-white' 
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}>
-                <Mail className="w-4 h-4" />
-                <span>Email Support</span>
-                <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">Human</span>
+                <Mail className="w-4 h-4 flex-shrink-0" />
+                <span className="text-xs sm:text-sm">Email Support</span>
+                <span className="hidden xs:inline text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">Human</span>
               </span>
             </button>
           </div>

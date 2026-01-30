@@ -267,29 +267,33 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
               className={cn(isCollapsed && "w-full flex items-center justify-center")}
             >
               {isCollapsed ? (
-                <Link
-                  href={item.href}
-                  onClick={() => onClose?.()}
-                  title={item.name}
-                  className={cn(
-                    'relative group flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-150',
-                    pathname === item.href
-                      ? 'bg-slate-100 dark:bg-slate-800 shadow-sm'
-                      : 'hover:bg-slate-100 dark:hover:bg-slate-800/70'
-                  )}
-                >
-                  <item.icon 
-                    className={cn(
-                      "w-5 h-5 transition-colors duration-150",
-                      pathname === item.href 
-                        ? "text-slate-900 dark:text-slate-100" 
-                        : "text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300"
-                    )} 
-                  />
-                  <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
-                    {item.name}
-                  </span>
-                </Link>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={item.href}
+                      onClick={() => onClose?.()}
+                      className={cn(
+                        'relative flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-150',
+                        pathname === item.href
+                          ? 'bg-slate-900 dark:bg-white shadow-lg'
+                          : 'hover:bg-slate-100 dark:hover:bg-slate-800/70'
+                      )}
+                    >
+                      <item.icon 
+                        className={cn(
+                          "w-5 h-5 transition-colors duration-150",
+                          pathname === item.href 
+                            ? "text-white dark:text-slate-900" 
+                            : "text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300"
+                        )} 
+                      />
+                      {pathname === item.href && (
+                        <span className="absolute -right-0.5 top-1/2 -translate-y-1/2 w-1 h-5 bg-slate-900 dark:bg-white rounded-l-full" />
+                      )}
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{item.name}</TooltipContent>
+                </Tooltip>
               ) : (
                 <Link
                   href={item.href}
@@ -389,29 +393,33 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   className={cn(isCollapsed && "w-full flex items-center justify-center")}
                 >
                   {isCollapsed ? (
-                    <Link
-                      href={item.href}
-                      onClick={() => onClose?.()}
-                      title={item.name}
-                      className={cn(
-                        'relative group flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-150',
-                        pathname === item.href
-                          ? 'bg-slate-100 dark:bg-slate-800 shadow-sm'
-                          : 'hover:bg-slate-100 dark:hover:bg-slate-800/70'
-                      )}
-                    >
-                      <item.icon 
-                        className={cn(
-                          "w-5 h-5 transition-colors duration-150",
-                          pathname === item.href 
-                            ? "text-slate-900 dark:text-slate-100" 
-                            : "text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300"
-                        )} 
-                      />
-                      <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
-                        {item.name}
-                      </span>
-                    </Link>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href={item.href}
+                          onClick={() => onClose?.()}
+                          className={cn(
+                            'relative flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-150',
+                            pathname === item.href
+                              ? 'bg-slate-900 dark:bg-white shadow-lg'
+                              : 'hover:bg-slate-100 dark:hover:bg-slate-800/70'
+                          )}
+                        >
+                          <item.icon 
+                            className={cn(
+                              "w-5 h-5 transition-colors duration-150",
+                              pathname === item.href 
+                                ? "text-white dark:text-slate-900" 
+                                : "text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300"
+                            )} 
+                          />
+                          {pathname === item.href && (
+                            <span className="absolute -right-0.5 top-1/2 -translate-y-1/2 w-1 h-5 bg-slate-900 dark:bg-white rounded-l-full" />
+                          )}
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">{item.name}</TooltipContent>
+                    </Tooltip>
                   ) : (
                     <Link
                       href={item.href}
@@ -491,43 +499,42 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
             className={cn(isCollapsed && "w-full flex items-center justify-center")}
           >
             {isCollapsed ? (
-              <div className="relative group">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                  className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-all duration-200"
-                >
-                  <div className="relative w-5 h-5 flex items-center justify-center">
-                    <motion.div
-                      animate={{ 
-                        rotate: theme === 'dark' ? 0 : 180,
-                        scale: theme === 'dark' ? 1 : 0,
-                        opacity: theme === 'dark' ? 1 : 0
-                      }}
-                      transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                      className="absolute"
-                    >
-                      <Sun className="w-5 h-5 text-amber-500" />
-                    </motion.div>
-                    <motion.div
-                      animate={{ 
-                        rotate: theme === 'dark' ? -180 : 0,
-                        scale: theme === 'dark' ? 0 : 1,
-                        opacity: theme === 'dark' ? 0 : 1
-                      }}
-                      transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                      className="absolute"
-                    >
-                      <Moon className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                    </motion.div>
-                  </div>
-                </Button>
-                <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs font-medium rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
-                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                </span>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className="flex items-center justify-center w-11 h-11 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-all duration-200"
+                  >
+                    <div className="relative w-5 h-5 flex items-center justify-center">
+                      <motion.div
+                        animate={{ 
+                          rotate: theme === 'dark' ? 0 : 180,
+                          scale: theme === 'dark' ? 1 : 0,
+                          opacity: theme === 'dark' ? 1 : 0
+                        }}
+                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                        className="absolute"
+                      >
+                        <Sun className="w-5 h-5 text-amber-500" />
+                      </motion.div>
+                      <motion.div
+                        animate={{ 
+                          rotate: theme === 'dark' ? -180 : 0,
+                          scale: theme === 'dark' ? 0 : 1,
+                          opacity: theme === 'dark' ? 0 : 1
+                        }}
+                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                        className="absolute"
+                      >
+                        <Moon className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                      </motion.div>
+                    </div>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</TooltipContent>
+              </Tooltip>
             ) : (
               <Button
                 variant="ghost"
@@ -584,20 +591,19 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
             className={cn(isCollapsed && "w-full flex items-center justify-center")}
           >
             {isCollapsed ? (
-              <div className="relative group">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-                  title="Sign Out"
-                  className="flex items-center justify-center w-11 h-11 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-150"
-                >
-                  <LogOut className="w-5 h-5 text-red-500 dark:text-red-400" />
-                </Button>
-                <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 whitespace-nowrap pointer-events-none z-[9999] shadow-lg">
-                  Sign Out
-                </span>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                    className="flex items-center justify-center w-11 h-11 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-150"
+                  >
+                    <LogOut className="w-5 h-5 text-red-500 dark:text-red-400" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Sign out</TooltipContent>
+              </Tooltip>
             ) : (
               <Button
                 variant="ghost"

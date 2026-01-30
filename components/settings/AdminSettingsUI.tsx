@@ -451,37 +451,37 @@ export default function AdminSettingsUI() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
-                  className="mt-6 flex items-center justify-between bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4"
+                  className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3 sm:p-4"
                 >
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>You have unsaved changes</span>
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span className="whitespace-nowrap">You have unsaved changes</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
                     <Button
                       variant="outline"
                       onClick={handleCancel}
                       disabled={isLoading}
-                      className="gap-2"
+                      className="gap-1.5 sm:gap-2 flex-1 sm:flex-none text-xs sm:text-sm px-3 sm:px-4 h-9 sm:h-10"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       Cancel
                     </Button>
                     <Button
                       onClick={handleSave}
                       disabled={isLoading}
-                      className="gap-2 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+                      className="gap-1.5 sm:gap-2 flex-1 sm:flex-none text-xs sm:text-sm px-3 sm:px-4 h-9 sm:h-10 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
                     >
                       {isLoading ? (
                         <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                          className="w-4 h-4 border-2 border-white dark:border-gray-900 border-t-transparent rounded-full"
+                          className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-white dark:border-gray-900 border-t-transparent rounded-full"
                         />
                       ) : (
-                        <Save className="w-4 h-4" />
+                        <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       )}
-                      Save Changes
+                      <span className="whitespace-nowrap">Save Changes</span>
                     </Button>
                   </div>
                 </motion.div>
