@@ -576,27 +576,27 @@ export default function CalendarPage() {
                   onClick={handleRefresh} 
                   disabled={refreshing}
                   className={cn(
-                    "h-9 w-9 sm:h-10 sm:w-auto sm:px-4 rounded-lg text-sm font-medium",
+                    "h-10 px-3 sm:px-4 rounded-lg text-sm font-medium",
                     "border-slate-200 dark:border-slate-800",
                     "hover:bg-slate-50 dark:hover:bg-slate-900",
                     "transition-colors duration-150",
-                    "flex items-center justify-center"
+                    "flex items-center justify-center gap-2"
                   )}
                 >
-                  <RefreshCw className={cn("w-4 h-4 sm:mr-2", refreshing && "animate-spin")} />
+                  <RefreshCw className={cn("w-4 h-4 shrink-0", refreshing && "animate-spin")} />
                   <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
                 </Button>
                 
                 <Link href="/dashboard">
                   <Button className={cn(
-                    "h-9 w-9 sm:h-10 sm:w-auto sm:px-4 rounded-lg text-sm font-medium",
+                    "h-10 px-3 sm:px-4 rounded-lg text-sm font-medium",
                     "bg-slate-900 dark:bg-white",
                     "text-white dark:text-slate-900",
                     "hover:bg-slate-800 dark:hover:bg-slate-100",
                     "transition-colors duration-150",
-                    "flex items-center justify-center"
+                    "flex items-center justify-center gap-1.5"
                   )}>
-                    <Plus className="w-4 h-4 sm:mr-1.5" />
+                    <Plus className="w-4 h-4 shrink-0" />
                     <span className="hidden sm:inline">New Booking</span>
                   </Button>
                 </Link>
