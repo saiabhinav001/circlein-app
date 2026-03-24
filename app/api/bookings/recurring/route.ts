@@ -6,9 +6,9 @@ import {
   query, 
   where, 
   getDocs, 
-  addDoc,
   doc,
   getDoc,
+  setDoc,
   Timestamp,
   serverTimestamp 
 } from 'firebase/firestore';
@@ -97,6 +97,10 @@ export async function POST(request: NextRequest) {
 
       // Create booking
       try {
+        const bookingRef = doc(collection(db, 'bookings'));
+        const bookingReference = bookingRef.id.substring(0, 8).toUpperCase();
+        const qrAccessCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+
         const bookingData = {
           userId: session.user.email,
           userEmail: session.user.email,
@@ -109,9 +113,11 @@ export async function POST(request: NextRequest) {
           startTime: Timestamp.fromDate(slotStart),
           endTime: Timestamp.fromDate(slotEnd),
           selectedSlot,
+          timeSlot: selectedSlot,
+          bookingReference,
           status: 'confirmed',
           attendees: [],
-          qrId: Math.random().toString(36).substring(2, 15),
+          qrId: qrAccessCode,
           isRecurring: true,
           recurringParentId: parentBookingId,
           recurringFrequency: frequency,
@@ -120,7 +126,7 @@ export async function POST(request: NextRequest) {
           reminderSent: false
         };
 
-        const bookingRef = await addDoc(collection(db, 'bookings'), bookingData);
+        await setDoc(bookingRef, bookingData);
         
         results.push({
           week: weekNum + 1,

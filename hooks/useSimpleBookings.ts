@@ -14,6 +14,8 @@ import { db } from '@/lib/firebase';
 
 export interface SimpleBooking {
   id: string;
+  bookingReference?: string;
+  qrId?: string;
   userId: string;
   userEmail: string;
   userName?: string;
@@ -24,6 +26,8 @@ export interface SimpleBooking {
   amenityType: string;
   startTime: Date;
   endTime: Date;
+  selectedSlot?: string;
+  timeSlot?: string;
   status: string;
   attendees: string[];
   createdAt: Date;
@@ -320,6 +324,8 @@ export function useSimpleBookings() {
 
         const booking: SimpleBooking = {
           id: bookingDoc.id,
+          bookingReference: bookingData.bookingReference || bookingDoc.id.substring(0, 8).toUpperCase(),
+          qrId: bookingData.qrId,
           userId: bookingData.userId || bookingData.userEmail || activeUserEmail,
           userEmail: bookingData.userEmail || bookingData.userId || activeUserEmail,
           userName: bookingData.userName || activeUserEmail?.split('@')[0] || 'User',
@@ -330,6 +336,8 @@ export function useSimpleBookings() {
           amenityType: amenityDetails.type,
           startTime,
           endTime,
+          selectedSlot: bookingData.selectedSlot,
+          timeSlot: bookingData.timeSlot,
           status: bookingData.status || 'confirmed',
           attendees: bookingData.attendees || [activeUserEmail || ''],
           createdAt: bookingData.createdAt?.toDate ? bookingData.createdAt.toDate() : new Date()

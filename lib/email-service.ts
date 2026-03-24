@@ -1,14 +1,39 @@
 import nodemailer from 'nodemailer';
+import { formatDateInTimeZone } from '@/lib/timezone';
 
-// Email configuration with proper error handling
+interface EmailTemplateResult {
+  subject: string;
+  html: string;
+}
+
+interface LayoutOptions {
+  preheader: string;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  introHtml: string;
+  detailsRows?: Array<{ label: string; value: string }>;
+  statusHtml?: string;
+  contentHtml?: string;
+  cta?: {
+    label: string;
+    url: string;
+  };
+  accent: {
+    from: string;
+    to: string;
+    text: string;
+  };
+}
+
+const APP_URL = process.env.NEXTAUTH_URL || 'https://circlein-app.vercel.app';
+
 const createTransporter = () => {
   const emailUser = process.env.EMAIL_USER || 'circleinapp1@gmail.com';
   const emailPassword = process.env.EMAIL_PASSWORD;
 
   if (!emailPassword) {
-    console.error('⚠️  EMAIL_PASSWORD not configured in environment variables');
-    console.error('   Email notifications will NOT work!');
-    console.error('   Please set EMAIL_PASSWORD in Vercel or .env.local');
+    console.error('EMAIL_PASSWORD not configured. Email delivery is disabled.');
   }
 
   return nodemailer.createTransport({
@@ -18,39 +43,186 @@ const createTransporter = () => {
       pass: emailPassword,
     },
     tls: {
-      rejectUnauthorized: false // Allow self-signed certificates
+      rejectUnauthorized: false,
     },
   });
 };
 
 const transporter = createTransporter();
 
-// Verify email configuration on startup
-transporter.verify((error, success) => {
+transporter.verify((error) => {
   if (error) {
-    console.error('❌ Email Configuration Error:', error);
-    console.error('   Please check:');
-    console.error('   1. EMAIL_USER is set correctly');
-    console.error('   2. EMAIL_PASSWORD is a valid App Password (not regular Gmail password)');
-    console.error('   3. 2-Step Verification is enabled on Gmail account');
+    console.error('Email transporter verification failed:', error.message);
   } else {
-    console.log('✅ Email service is ready to send messages');
+    console.log('Email service is ready.');
   }
 });
 
-// Helper function to format dates beautifully
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  const options: Intl.DateTimeFormatOptions = { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  };
-  return date.toLocaleDateString('en-US', options);
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const normalizeDateLabel = (value: string): string => {
+  if (!value) {
+    return 'N/A';
+  }
+
+  // If date is already human-readable (e.g. "Friday, March 22, 2026"), keep it as-is.
+  if (/[a-zA-Z]/.test(value) && !/\d{4}-\d{2}-\d{2}T/.test(value)) {
+    return escapeHtml(value);
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return escapeHtml(value);
+  }
+
+  return formatDateInTimeZone(parsed, 'UTC', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 };
 
-// Email templates with beautiful HTML
+const safeUrl = (value?: string): string => {
+  if (!value) {
+    return APP_URL;
+  }
+
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  if (value.startsWith('/')) {
+    return `${APP_URL}${value}`;
+  }
+
+  return `${APP_URL}/${value}`;
+};
+
+const renderDetailRows = (rows: Array<{ label: string; value: string }>) => {
+  if (!rows.length) {
+    return '';
+  }
+
+  return `
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; margin-top: 18px;">
+      ${rows
+        .map(
+          (row) => `
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #334155; font-weight: 600; font-size: 13px; width: 36%; vertical-align: top;">${escapeHtml(row.label)}</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 600; text-align: right; vertical-align: top;">${escapeHtml(row.value)}</td>
+            </tr>
+          `
+        )
+        .join('')}
+    </table>
+  `;
+};
+
+const renderLayout = (options: LayoutOptions): string => {
+  const details = options.detailsRows?.length
+    ? `
+      <section style="margin-top: 26px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 18px 12px;">
+        ${renderDetailRows(options.detailsRows)}
+      </section>
+    `
+    : '';
+
+  const cta = options.cta
+    ? `
+      <div style="margin-top: 26px; text-align: center;">
+        <a href="${safeUrl(options.cta.url)}" style="display: inline-block; padding: 13px 26px; border-radius: 10px; text-decoration: none; color: #ffffff; font-weight: 700; font-size: 14px; background: linear-gradient(135deg, ${options.accent.from}, ${options.accent.to});">${escapeHtml(options.cta.label)}</a>
+      </div>
+    `
+    : '';
+
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${escapeHtml(options.title)}</title>
+      </head>
+      <body style="margin: 0; padding: 0; background: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif;">
+        <span style="display: none; max-height: 0; overflow: hidden; opacity: 0; mso-hide: all;">${escapeHtml(options.preheader)}</span>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: radial-gradient(circle at top right, #f8fafc 0%, #e2e8f0 100%); padding: 30px 12px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="width: 100%; max-width: 640px; border-collapse: collapse; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #dbe3ee; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);">
+                <tr>
+                  <td style="padding: 28px 28px 24px; background: linear-gradient(135deg, ${options.accent.from}, ${options.accent.to}); color: #ffffff;">
+                    <div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; opacity: 0.88;">${escapeHtml(options.eyebrow)}</div>
+                    <h1 style="margin: 8px 0 8px; font-size: 31px; line-height: 1.2; font-weight: 800;">${escapeHtml(options.title)}</h1>
+                    <p style="margin: 0; font-size: 14px; line-height: 1.6; opacity: 0.94;">${escapeHtml(options.subtitle)}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 28px; color: #0f172a;">
+                    <div style="font-size: 15px; line-height: 1.8; color: #334155;">${options.introHtml}</div>
+                    ${options.statusHtml || ''}
+                    ${details}
+                    ${options.contentHtml || ''}
+                    ${cta}
+                    <div style="margin-top: 28px; padding-top: 16px; border-top: 1px dashed #dbe3ee; color: #64748b; font-size: 12px; line-height: 1.7;">
+                      CircleIn updates are automated so your community never misses key events. If you need help, contact your community admin.
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 16px 0 0; color: #64748b; font-size: 11px;">CircleIn by community operations | Transactional email</p>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+};
+
+const accent = {
+  emerald: { from: '#0f766e', to: '#14b8a6', text: '#0f766e' },
+  amber: { from: '#b45309', to: '#f59e0b', text: '#b45309' },
+  rose: { from: '#be123c', to: '#f43f5e', text: '#be123c' },
+  indigo: { from: '#3730a3', to: '#6366f1', text: '#3730a3' },
+  cyan: { from: '#0c4a6e', to: '#06b6d4', text: '#0c4a6e' },
+};
+
+const bookingDateTimeRows = (data: {
+  userName?: string;
+  amenityName: string;
+  date: string;
+  timeSlot: string;
+  bookingId?: string;
+  bookingReference?: string;
+  communityName?: string;
+  flatNumber?: string;
+}) => {
+  const rows: Array<{ label: string; value: string }> = [
+    { label: 'Resident', value: data.flatNumber ? `${data.userName || 'Resident'} | Flat ${data.flatNumber}` : data.userName || 'Resident' },
+    { label: 'Amenity', value: data.amenityName },
+    { label: 'Date', value: normalizeDateLabel(data.date) },
+    { label: 'Time', value: data.timeSlot },
+  ];
+
+  if (data.communityName) {
+    rows.push({ label: 'Community', value: data.communityName });
+  }
+
+  const resolvedBookingReference = data.bookingReference || (data.bookingId ? data.bookingId.substring(0, 8).toUpperCase() : undefined);
+  if (resolvedBookingReference) {
+    rows.push({ label: 'Booking Ref', value: `#${resolvedBookingReference}` });
+  }
+
+  return rows;
+};
+
 export const emailTemplates = {
   bookingConfirmation: (data: {
     userName: string;
@@ -61,220 +233,29 @@ export const emailTemplates = {
     communityName: string;
     flatNumber?: string;
     enhancedSections?: string;
-  }) => ({
-    subject: `✅ Booking Confirmed - ${data.amenityName}`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              line-height: 1.6; 
-              color: #1a202c;
-              background: #f7fafc;
-            }
-            .email-wrapper { 
-              max-width: 600px; 
-              margin: 0 auto; 
-              background: #ffffff;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header { 
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-              color: white; 
-              padding: 40px 30px; 
-              text-align: center;
-            }
-            .header h1 { 
-              font-size: 32px; 
-              margin-bottom: 10px; 
-              font-weight: 700;
-            }
-            .header p { 
-              font-size: 16px; 
-              opacity: 0.95;
-            }
-            .content { 
-              background: #ffffff; 
-              padding: 40px 30px;
-            }
-            .greeting { 
-              font-size: 18px; 
-              color: #2d3748; 
-              margin-bottom: 20px;
-            }
-            .greeting strong { 
-              color: #667eea; 
-              font-weight: 600;
-            }
-            .message { 
-              font-size: 16px; 
-              color: #4a5568; 
-              margin-bottom: 30px;
-              line-height: 1.8;
-            }
-            .details-card { 
-              background: linear-gradient(to bottom, #f7fafc, #edf2f7); 
-              padding: 25px; 
-              border-radius: 12px; 
-              margin: 25px 0;
-              border: 2px solid #e2e8f0;
-            }
-            .detail-row { 
-              display: flex; 
-              justify-content: space-between; 
-              align-items: center;
-              padding: 16px 0; 
-              border-bottom: 1px solid #e2e8f0;
-            }
-            .detail-row:last-child { 
-              border-bottom: none;
-            }
-            .detail-label { 
-              font-weight: 600; 
-              color: #4f46e5;
-              font-size: 15px;
-            }
-            .detail-value {
-              font-weight: 600;
-              color: #1e293b;
-              font-size: 15px;
-              text-align: right;
-            }
-            .flat-badge {
-              display: inline-block;
-              margin-left: 8px;
-              padding: 4px 12px;
-              background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-              color: white;
-              border-radius: 12px;
-              font-size: 13px;
-              font-weight: 700;
-              box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
-            }
-            .button { 
-              display: inline-block; 
-              padding: 14px 35px; 
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white !important; color: #ffffff !important; 
-              text-decoration: none; 
-              border-radius: 8px; 
-              margin: 25px 0;
-              font-weight: 600;
-              font-size: 16px;
-              box-shadow: 0 4px 6px rgba(102, 126, 234, 0.4);
-            }
-            .reminder-box {
-              background: #fffbeb;
-              border-left: 4px solid #f59e0b;
-              padding: 20px;
-              border-radius: 8px;
-              margin: 25px 0;
-            }
-            .reminder-title {
-              color: #92400e;
-              font-weight: 600;
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-            .reminder-list {
-              list-style: none;
-              padding: 0;
-            }
-            .reminder-list li {
-              padding: 8px 0;
-              color: #78350f;
-              font-size: 14px;
-            }
-            .footer { 
-              text-align: center; 
-              padding: 30px; 
-              background: #f7fafc;
-              color: #718096; 
-              font-size: 13px;
-              border-top: 1px solid #e2e8f0;
-            }
-            .footer-brand {
-              color: #667eea;
-              font-weight: 600;
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="email-wrapper">
-            <div class="header">
-              <h1>✅ Booking Confirmed!</h1>
-              <p>Your amenity booking has been successfully confirmed</p>
-            </div>
-            <div class="content">
-              <p class="greeting">Hi <strong>${data.userName}</strong>,</p>
-              <p class="message">Great news! Your booking has been confirmed. We're excited to have you use our facilities!</p>
-              
-              <div class="details-card">
-                <div class="detail-row">
-                  <span class="detail-label">🏠 Resident:</span>
-                  <span class="detail-value">
-                    ${data.userName}
-                    ${data.flatNumber ? `<span class="flat-badge">Flat ${data.flatNumber}</span>` : ''}
-                  </span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">🏊 Amenity:</span>
-                  <span class="detail-value">${data.amenityName}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">📅 Date:</span>
-                  <span class="detail-value">${formatDate(data.date)}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">⏰ Time Slot:</span>
-                  <span class="detail-value">${data.timeSlot}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">🏘️ Community:</span>
-                  <span class="detail-value">${data.communityName}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">🎫 Booking ID:</span>
-                  <span class="detail-value">#${data.bookingId.substring(0, 8).toUpperCase()}</span>
-                </div>
-              </div>
-
-              <div class="reminder-box">
-                <div class="reminder-title">📌 Important Reminders</div>
-                <ul class="reminder-list">
-                  <li>☑ You'll receive a reminder 1 hour before your booking</li>
-                  <li>☑ Please arrive on time to make the most of your slot</li>
-                  <li>☑ Check the weather if needed</li>
-                  <li>☑ To cancel, please do so at least 2 hours in advance</li>
-                </ul>
-              </div>
-
-              ${data.enhancedSections || ''}
-
-              <center>
-                <a href="https://circlein-app.vercel.app/bookings" class="button">View My Bookings</a>
-              </center>
-
-              <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
-                Need help? Contact your community administrator for assistance.
-              </p>
-            </div>
-            <div class="footer">
-              <div class="footer-brand">CircleIn</div>
-              <p>Your Community Management Platform</p>
-              <p style="margin-top: 10px;">This is an automated message. Please do not reply to this email.</p>
-            </div>
+  }): EmailTemplateResult => ({
+    subject: `Booking confirmed | ${data.amenityName}`,
+    html: renderLayout({
+      preheader: `Your ${data.amenityName} booking is confirmed.`,
+      eyebrow: 'Booking update',
+      title: 'Booking confirmed',
+      subtitle: 'Your slot is reserved. See details below.',
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>, your booking has been locked in and is ready.`,
+      detailsRows: bookingDateTimeRows(data),
+      contentHtml: `
+        <section style="margin-top: 22px; border-left: 4px solid ${accent.emerald.from}; background: #ecfeff; border-radius: 10px; padding: 16px;">
+          <div style="font-weight: 700; font-size: 14px; color: #0f172a; margin-bottom: 6px;">Before you arrive</div>
+          <div style="font-size: 13px; color: #334155; line-height: 1.7;">
+            1) Arrive on time to avoid slot loss.<br/>
+            2) Bring required accessories for the amenity.<br/>
+            3) Cancel early if plans change so others can use the slot.
           </div>
-        </body>
-      </html>
-    `,
+        </section>
+        ${data.enhancedSections || ''}
+      `,
+      cta: { label: 'Open my bookings', url: '/bookings' },
+      accent: accent.emerald,
+    }),
   }),
 
   bookingReminder: (data: {
@@ -284,223 +265,24 @@ export const emailTemplates = {
     timeSlot: string;
     bookingId: string;
     flatNumber?: string;
-  }) => ({
-    subject: `⏰ Reminder: Your ${data.amenityName} booking is in 1 hour`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              line-height: 1.6; 
-              color: #1a202c;
-              background: #f7fafc;
-            }
-            .email-wrapper { 
-              max-width: 600px; 
-              margin: 0 auto; 
-              background: #ffffff;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header { 
-              background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); 
-              color: white; 
-              padding: 40px 30px; 
-              text-align: center;
-            }
-            .header h1 { 
-              font-size: 32px; 
-              margin-bottom: 10px; 
-              font-weight: 700;
-            }
-            .header p { 
-              font-size: 16px; 
-              opacity: 0.95;
-            }
-            .content { 
-              background: #ffffff; 
-              padding: 40px 30px;
-            }
-            .greeting { 
-              font-size: 18px; 
-              color: #2d3748; 
-              margin-bottom: 20px;
-            }
-            .greeting strong { 
-              color: #f59e0b; 
-              font-weight: 600;
-            }
-            .message { 
-              font-size: 16px; 
-              color: #4a5568; 
-              margin-bottom: 30px;
-              line-height: 1.8;
-            }
-            .details-card { 
-              background: linear-gradient(to bottom, #fefcbf, #fef3c7); 
-              padding: 25px; 
-              border-radius: 12px; 
-              margin: 25px 0;
-              border: 2px solid #fde68a;
-            }
-            .detail-row { 
-              display: flex; 
-              justify-content: space-between; 
-              align-items: center;
-              padding: 15px 0; 
-              border-bottom: 1px solid #fde68a;
-            }
-            .detail-row:last-child { 
-              border-bottom: none;
-            }
-            .detail-label { 
-              font-weight: 600; 
-              color: #d97706;
-              font-size: 15px;
-            }
-            .detail-value {
-              font-weight: 500;
-              color: #92400e;
-              font-size: 15px;
-              text-align: right;
-            }
-            .urgent-box {
-              background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-              padding: 25px;
-              border-radius: 12px;
-              margin: 25px 0;
-              text-align: center;
-              border: 2px solid #f59e0b;
-            }
-            .urgent-title {
-              font-size: 24px;
-              color: #d97706;
-              font-weight: 700;
-              margin-bottom: 10px;
-            }
-            .urgent-text {
-              font-size: 16px;
-              color: #92400e;
-            }
-            .button { 
-              display: inline-block; 
-              padding: 14px 35px; 
-              background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-              color: white !important; color: #ffffff !important; 
-              text-decoration: none; 
-              border-radius: 8px; 
-              margin: 25px 0;
-              font-weight: 600;
-              font-size: 16px;
-              box-shadow: 0 4px 6px rgba(245, 158, 11, 0.4);
-            }
-            .checklist-box {
-              background: #ecfdf5;
-              border-left: 4px solid #10b981;
-              padding: 20px;
-              border-radius: 8px;
-              margin: 25px 0;
-            }
-            .checklist-title {
-              color: #065f46;
-              font-weight: 600;
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-            .checklist {
-              list-style: none;
-              padding: 0;
-            }
-            .checklist li {
-              padding: 8px 0;
-              color: #047857;
-              font-size: 14px;
-            }
-            .footer { 
-              text-align: center; 
-              padding: 30px; 
-              background: #f7fafc;
-              color: #718096; 
-              font-size: 13px;
-              border-top: 1px solid #e2e8f0;
-            }
-            .footer-brand {
-              color: #f59e0b;
-              font-weight: 600;
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="email-wrapper">
-            <div class="header">
-              <h1>⏰ Booking Reminder</h1>
-              <p>Your booking starts in 1 hour!</p>
-            </div>
-            <div class="content">
-              <p class="greeting">Hi <strong>${data.userName}</strong>,</p>
-              <p class="message">This is a friendly reminder that your amenity booking is coming up soon!</p>
-              
-              <div class="urgent-box">
-                <div class="urgent-title">⏰ Starting in 1 Hour</div>
-                <div class="urgent-text">Please make sure you're ready!</div>
-              </div>
-
-              <div class="details-card">
-                <div class="detail-row">
-                  <span class="detail-label">🏠 Resident:</span>
-                  <span class="detail-value">${data.userName}${data.flatNumber ? ` - Flat ${data.flatNumber}` : ''}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">🏊 Amenity:</span>
-                  <span class="detail-value">${data.amenityName}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">📅 Date:</span>
-                  <span class="detail-value">${formatDate(data.date)}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">⏰ Time Slot:</span>
-                  <span class="detail-value">${data.timeSlot}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">🎫 Booking ID:</span>
-                  <span class="detail-value">#${data.bookingId.substring(0, 8).toUpperCase()}</span>
-                </div>
-              </div>
-
-              <div class="checklist-box">
-                <div class="checklist-title">✅ Quick Checklist</div>
-                <ul class="checklist">
-                  <li>☑ Check the weather if needed</li>
-                  <li>☑ Bring any necessary equipment or accessories</li>
-                  <li>☑ Arrive a few minutes early</li>
-                  <li>☑ Follow community guidelines</li>
-                </ul>
-              </div>
-
-              <center>
-                <a href="https://circlein-app.vercel.app/bookings" class="button">View Booking Details</a>
-              </center>
-
-              <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
-                If you need to cancel, please contact your administrator immediately.
-              </p>
-            </div>
-            <div class="footer">
-              <div class="footer-brand">CircleIn</div>
-              <p>Your Community Management Platform</p>
-              <p style="margin-top: 10px;">This is an automated message. Please do not reply to this email.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
+  }): EmailTemplateResult => ({
+    subject: `Reminder | ${data.amenityName} starts soon`,
+    html: renderLayout({
+      preheader: `${data.amenityName} starts in about one hour.`,
+      eyebrow: '1-hour reminder',
+      title: 'You are up next',
+      subtitle: 'Your booking starts soon. Plan to be ready.',
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>, this is your reminder that your booking begins shortly.`,
+      detailsRows: bookingDateTimeRows(data),
+      statusHtml: `
+        <section style="margin-top: 20px; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, #fef3c7, #fde68a); border: 1px solid #f59e0b;">
+          <div style="font-size: 20px; font-weight: 800; color: #92400e;">Starts in ~1 hour</div>
+          <div style="font-size: 13px; color: #78350f; margin-top: 5px;">Traffic, elevator waits, or weather can affect arrival. Leave a bit early.</div>
+        </section>
+      `,
+      cta: { label: 'View booking', url: '/bookings' },
+      accent: accent.amber,
+    }),
   }),
 
   bookingCancellation: (data: {
@@ -513,230 +295,29 @@ export const emailTemplates = {
     isAdminCancellation?: boolean;
     cancellationReason?: string;
     flatNumber?: string;
-  }) => ({
-    subject: `❌ Booking Cancelled - ${data.amenityName}`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              line-height: 1.6; 
-              color: #1a202c;
-              background: #f7fafc;
-            }
-            .email-wrapper { 
-              max-width: 600px; 
-              margin: 0 auto; 
-              background: #ffffff;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header { 
-              background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
-              color: white; 
-              padding: 40px 30px; 
-              text-align: center;
-            }
-            .header h1 { 
-              font-size: 32px; 
-              margin-bottom: 10px; 
-              font-weight: 700;
-            }
-            .header p { 
-              font-size: 16px; 
-              opacity: 0.95;
-            }
-            .content { 
-              background: #ffffff; 
-              padding: 40px 30px;
-            }
-            .greeting { 
-              font-size: 18px; 
-              color: #2d3748; 
-              margin-bottom: 20px;
-            }
-            .greeting strong { 
-              color: #ef4444; 
-              font-weight: 600;
-            }
-            .message { 
-              font-size: 16px; 
-              color: #4a5568; 
-              margin-bottom: 30px;
-              line-height: 1.8;
-            }
-            .details-card { 
-              background: linear-gradient(to bottom, #fef2f2, #fee2e2); 
-              padding: 25px; 
-              border-radius: 12px; 
-              margin: 25px 0;
-              border: 2px solid #fecaca;
-            }
-            .detail-row { 
-              display: flex; 
-              justify-content: space-between; 
-              align-items: center;
-              padding: 15px 0; 
-              border-bottom: 1px solid #fecaca;
-            }
-            .detail-row:last-child { 
-              border-bottom: none;
-            }
-            .detail-label { 
-              font-weight: 600; 
-              color: #dc2626;
-              font-size: 15px;
-            }
-            .detail-value {
-              font-weight: 500;
-              color: #991b1b;
-              font-size: 15px;
-              text-align: right;
-            }
-            .reason-box {
-              background: #fffbeb;
-              border-left: 4px solid #f59e0b;
-              padding: 20px;
-              border-radius: 8px;
-              margin: 25px 0;
-            }
-            .reason-title {
-              color: #92400e;
-              font-weight: 600;
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-            .reason-text {
-              color: #78350f;
-              font-size: 14px;
-              line-height: 1.6;
-            }
-            .button { 
-              display: inline-block; 
-              padding: 14px 35px; 
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white !important; color: #ffffff !important; 
-              text-decoration: none; 
-              border-radius: 8px; 
-              margin: 25px 0;
-              font-weight: 600;
-              font-size: 16px;
-              box-shadow: 0 4px 6px rgba(102, 126, 234, 0.4);
-            }
-            .info-box {
-              background: #ecfdf5;
-              border-left: 4px solid #10b981;
-              padding: 20px;
-              border-radius: 8px;
-              margin: 25px 0;
-            }
-            .info-title {
-              color: #065f46;
-              font-weight: 600;
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-            .info-text {
-              color: #047857;
-              font-size: 14px;
-              line-height: 1.6;
-            }
-            .footer { 
-              text-align: center; 
-              padding: 30px; 
-              background: #f7fafc;
-              color: #718096; 
-              font-size: 13px;
-              border-top: 1px solid #e2e8f0;
-            }
-            .footer-brand {
-              color: #667eea;
-              font-weight: 600;
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="email-wrapper">
-            <div class="header">
-              <h1>❌ Booking Cancelled</h1>
-              <p>Your booking has been cancelled</p>
-            </div>
-            <div class="content">
-              <p class="greeting">Hi <strong>${data.userName}</strong>,</p>
-              <p class="message">${data.isAdminCancellation 
-                ? `We're writing to inform you that your booking has been cancelled by ${data.cancelledBy || 'the administrator'}.`
-                : 'Your booking has been successfully cancelled as per your request.'
-              }</p>
-              
-              <div class="details-card">
-                <div class="detail-row">
-                  <span class="detail-label">🏠 Resident:</span>
-                  <span class="detail-value">${data.userName}${data.flatNumber ? ` - Flat ${data.flatNumber}` : ''}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">🏊 Amenity:</span>
-                  <span class="detail-value">${data.amenityName}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">📅 Date:</span>
-                  <span class="detail-value">${formatDate(data.date)}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">⏰ Time Slot:</span>
-                  <span class="detail-value">${data.timeSlot}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">🎫 Booking ID:</span>
-                  <span class="detail-value">#${data.bookingId.substring(0, 8).toUpperCase()}</span>
-                </div>
-                ${data.isAdminCancellation ? `
-                <div class="detail-row">
-                  <span class="detail-label">👤 Cancelled By:</span>
-                  <span class="detail-value">${data.cancelledBy || 'Administrator'}</span>
-                </div>
-                ` : ''}
-              </div>
-
-              ${data.cancellationReason ? `
-              <div class="reason-box">
-                <div class="reason-title">📝 Cancellation Reason</div>
-                <div class="reason-text">${data.cancellationReason}</div>
-              </div>
-              ` : ''}
-
-              <div class="info-box">
-                <div class="info-title">💡 What's Next?</div>
-                <div class="info-text">
-                  ${data.isAdminCancellation 
-                    ? 'If you have any questions about this cancellation, please contact your community administrator for more information.'
-                    : 'You can make a new booking anytime through the CircleIn app. We hope to see you soon!'
-                  }
-                </div>
-              </div>
-
-              <center>
-                <a href="https://circlein-app.vercel.app/bookings" class="button">Make New Booking</a>
-              </center>
-
-              <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
-                Thank you for understanding. We appreciate your cooperation.
-              </p>
-            </div>
-            <div class="footer">
-              <div class="footer-brand">CircleIn</div>
-              <p>Your Community Management Platform</p>
-              <p style="margin-top: 10px;">This is an automated message. Please do not reply to this email.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
+  }): EmailTemplateResult => ({
+    subject: `Booking cancelled | ${data.amenityName}`,
+    html: renderLayout({
+      preheader: `${data.amenityName} booking has been cancelled.`,
+      eyebrow: 'Booking update',
+      title: 'Booking cancelled',
+      subtitle: data.isAdminCancellation
+        ? `Cancelled by ${data.cancelledBy || 'community administration'}.`
+        : 'Cancellation request completed successfully.',
+      introHtml: data.isAdminCancellation
+        ? `Hi <strong>${escapeHtml(data.userName)}</strong>, your booking was cancelled by administration.`
+        : `Hi <strong>${escapeHtml(data.userName)}</strong>, we have processed your cancellation request.`,
+      detailsRows: bookingDateTimeRows(data),
+      contentHtml: `
+        ${
+          data.cancellationReason
+            ? `<section style="margin-top: 20px; padding: 14px 16px; background: #fff7ed; border: 1px solid #fdba74; border-radius: 10px;"><div style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #9a3412; font-weight: 700;">Reason</div><div style="margin-top: 6px; color: #7c2d12; font-size: 13px; line-height: 1.7;">${escapeHtml(data.cancellationReason)}</div></section>`
+            : ''
+        }
+      `,
+      cta: { label: 'Book another slot', url: '/bookings' },
+      accent: accent.rose,
+    }),
   }),
 
   amenityBlocked: (data: {
@@ -746,238 +327,29 @@ export const emailTemplates = {
     endDate: string;
     communityName: string;
     isFestive?: boolean;
-  }) => ({
-    subject: `🚫 Amenity Blocked - ${data.amenityName}`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              line-height: 1.6; 
-              color: #1a202c;
-              background: #f7fafc;
-            }
-            .email-wrapper { 
-              max-width: 600px; 
-              margin: 0 auto; 
-              background: #ffffff;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header { 
-              background: ${data.isFestive 
-                ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
-                : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'}; 
-              color: white; 
-              padding: 40px 30px; 
-              text-align: center;
-            }
-            .header h1 { 
-              font-size: 32px; 
-              margin-bottom: 10px; 
-              font-weight: 700;
-            }
-            .header p { 
-              font-size: 16px; 
-              opacity: 0.95;
-            }
-            .content { 
-              background: #ffffff; 
-              padding: 40px 30px;
-            }
-            .greeting { 
-              font-size: 18px; 
-              color: #2d3748; 
-              margin-bottom: 20px;
-            }
-            .message { 
-              font-size: 16px; 
-              color: #4a5568; 
-              margin-bottom: 30px;
-              line-height: 1.8;
-            }
-            .details-card { 
-              background: linear-gradient(to bottom, #f0f9ff, #e0f2fe); 
-              padding: 25px; 
-              border-radius: 12px; 
-              margin: 25px 0;
-              border: 2px solid #bae6fd;
-            }
-            .detail-row { 
-              display: flex; 
-              justify-content: space-between; 
-              align-items: center;
-              padding: 15px 0; 
-              border-bottom: 1px solid #bae6fd;
-            }
-            .detail-row:last-child { 
-              border-bottom: none;
-            }
-            .detail-label { 
-              font-weight: 600; 
-              color: #0369a1;
-              font-size: 15px;
-            }
-            .detail-value {
-              font-weight: 500;
-              color: #075985;
-              font-size: 15px;
-              text-align: right;
-            }
-            .reason-box {
-              background: ${data.isFestive ? '#fef3c7' : '#fef3c7'};
-              border-left: 4px solid ${data.isFestive ? '#f97316' : '#f59e0b'};
-              padding: 20px;
-              border-radius: 8px;
-              margin: 25px 0;
-            }
-            .reason-title {
-              color: ${data.isFestive ? '#9a3412' : '#92400e'};
-              font-weight: 600;
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-            .reason-text {
-              color: ${data.isFestive ? '#7c2d12' : '#78350f'};
-              font-size: 14px;
-              line-height: 1.6;
-            }
-            .festive-box {
-              background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
-              padding: 25px;
-              border-radius: 12px;
-              margin: 25px 0;
-              text-align: center;
-              border: 2px solid #f97316;
-            }
-            .festive-title {
-              font-size: 24px;
-              color: #9a3412;
-              font-weight: 700;
-              margin-bottom: 10px;
-            }
-            .festive-text {
-              font-size: 16px;
-              color: #7c2d12;
-            }
-            .button { 
-              display: inline-block; 
-              padding: 14px 35px; 
-              background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-              color: white !important; color: #ffffff !important; 
-              text-decoration: none; 
-              border-radius: 8px; 
-              margin: 25px 0;
-              font-weight: 600;
-              font-size: 16px;
-              box-shadow: 0 4px 6px rgba(99, 102, 241, 0.4);
-            }
-            .info-box {
-              background: #ecfdf5;
-              border-left: 4px solid #10b981;
-              padding: 20px;
-              border-radius: 8px;
-              margin: 25px 0;
-            }
-            .info-title {
-              color: #065f46;
-              font-weight: 600;
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-            .info-text {
-              color: #047857;
-              font-size: 14px;
-              line-height: 1.6;
-            }
-            .footer { 
-              text-align: center; 
-              padding: 30px; 
-              background: #f7fafc;
-              color: #718096; 
-              font-size: 13px;
-              border-top: 1px solid #e2e8f0;
-            }
-            .footer-brand {
-              color: #6366f1;
-              font-weight: 600;
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="email-wrapper">
-            <div class="header">
-              <h1>🚫 Amenity Blocked</h1>
-              <p>Important update about ${data.amenityName}</p>
-            </div>
-            <div class="content">
-              <p class="greeting">Dear Residents,</p>
-              <p class="message">We would like to inform you that the following amenity has been temporarily blocked:</p>
-              
-              ${data.isFestive ? `
-              <div class="festive-box">
-                <div class="festive-title">🎉 Festival/Special Occasion</div>
-                <div class="festive-text">This amenity is blocked for a special event</div>
-              </div>
-              ` : ''}
-
-              <div class="details-card">
-                <div class="detail-row">
-                  <span class="detail-label">Amenity:</span>
-                  <span class="detail-value">${data.amenityName}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">Start Date:</span>
-                  <span class="detail-value">${formatDate(data.startDate)}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">End Date:</span>
-                  <span class="detail-value">${formatDate(data.endDate)}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">Community:</span>
-                  <span class="detail-value">${data.communityName}</span>
-                </div>
-              </div>
-
-              <div class="reason-box">
-                <div class="reason-title">📝 Reason for Blocking</div>
-                <div class="reason-text">${data.reason}</div>
-              </div>
-
-              <div class="info-box">
-                <div class="info-title">💡 Important Information</div>
-                <div class="info-text">
-                  • Any existing bookings during this period may be automatically cancelled<br>
-                  • The amenity will be available again after ${formatDate(data.endDate)}<br>
-                  • You can book other available amenities in the meantime<br>
-                  • For urgent queries, please contact your community administrator
-                </div>
-              </div>
-
-              <center>
-                <a href="https://circlein-app.vercel.app/dashboard" class="button">View Available Amenities</a>
-              </center>
-
-              <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
-                We apologize for any inconvenience caused. Thank you for your understanding and cooperation.
-              </p>
-            </div>
-            <div class="footer">
-              <div class="footer-brand">CircleIn</div>
-              <p>Your Community Management Platform</p>
-              <p style="margin-top: 10px;">This is an automated message. Please do not reply to this email.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
+  }): EmailTemplateResult => ({
+    subject: `Amenity blocked | ${data.amenityName}`,
+    html: renderLayout({
+      preheader: `${data.amenityName} is temporarily unavailable.`,
+      eyebrow: data.isFestive ? 'Special event update' : 'Operations update',
+      title: `${data.amenityName} is temporarily blocked`,
+      subtitle: 'Please review dates, reason, and alternatives.',
+      introHtml: `This is an operational update for <strong>${escapeHtml(data.communityName)}</strong>.`,
+      detailsRows: [
+        { label: 'Amenity', value: data.amenityName },
+        { label: 'Start', value: normalizeDateLabel(data.startDate) },
+        { label: 'End', value: normalizeDateLabel(data.endDate) },
+        { label: 'Community', value: data.communityName },
+      ],
+      contentHtml: `
+        <section style="margin-top: 20px; padding: 14px 16px; border-radius: 10px; border: 1px solid #dbeafe; background: #eff6ff;">
+          <div style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #1d4ed8; font-weight: 700;">Reason</div>
+          <div style="margin-top: 6px; color: #1e3a8a; font-size: 13px; line-height: 1.7;">${escapeHtml(data.reason)}</div>
+        </section>
+      `,
+      cta: { label: 'See available amenities', url: '/dashboard' },
+      accent: data.isFestive ? accent.amber : accent.indigo,
+    }),
   }),
 
   amenityUnblocked: (data: {
@@ -986,238 +358,24 @@ export const emailTemplates = {
     communityName: string;
     bookingUrl: string;
     flatNumber?: string;
-  }) => ({
-    subject: `✅ Good News! ${data.amenityName} is Now Available`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              line-height: 1.6; 
-              color: #1a202c;
-              background: #f7fafc;
-            }
-            .email-wrapper { 
-              max-width: 600px; 
-              margin: 0 auto; 
-              background: #ffffff;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header { 
-              background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-              color: white; 
-              padding: 40px 30px; 
-              text-align: center;
-            }
-            .header h1 { 
-              font-size: 32px; 
-              margin-bottom: 10px; 
-              font-weight: 700;
-            }
-            .header p { 
-              font-size: 16px; 
-              opacity: 0.95;
-            }
-            .content { 
-              background: #ffffff; 
-              padding: 40px 30px;
-            }
-            .greeting { 
-              font-size: 18px; 
-              color: #2d3748; 
-              margin-bottom: 20px;
-            }
-            .message { 
-              font-size: 16px; 
-              color: #4a5568; 
-              margin-bottom: 30px;
-              line-height: 1.8;
-            }
-            .success-box {
-              background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-              padding: 30px;
-              border-radius: 12px;
-              text-align: center;
-              margin: 25px 0;
-              border: 2px solid #10b981;
-            }
-            .success-icon {
-              font-size: 64px;
-              margin-bottom: 15px;
-            }
-            .success-title {
-              font-size: 28px;
-              color: #065f46;
-              font-weight: 700;
-              margin-bottom: 10px;
-            }
-            .success-subtitle {
-              font-size: 16px;
-              color: #047857;
-            }
-            .amenity-details {
-              background: linear-gradient(to bottom, #f0fdf4, #dcfce7);
-              padding: 25px;
-              border-radius: 12px;
-              margin: 25px 0;
-              border: 2px solid #86efac;
-            }
-            .detail-row {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              padding: 15px 0;
-              border-bottom: 1px solid #bbf7d0;
-            }
-            .detail-row:last-child {
-              border-bottom: none;
-            }
-            .detail-label {
-              font-weight: 600;
-              color: #166534;
-              font-size: 15px;
-            }
-            .detail-value {
-              font-weight: 500;
-              color: #15803d;
-              font-size: 15px;
-              text-align: right;
-            }
-            .info-box {
-              background: #eff6ff;
-              border-left: 4px solid #3b82f6;
-              padding: 20px;
-              border-radius: 8px;
-              margin: 25px 0;
-            }
-            .info-title {
-              color: #1e40af;
-              font-weight: 600;
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-            .info-text {
-              color: #1e3a8a;
-              font-size: 14px;
-              line-height: 1.6;
-            }
-            .button {
-              display: inline-block;
-              padding: 16px 40px;
-              background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-              color: white !important; color: #ffffff !important;
-              text-decoration: none;
-              border-radius: 8px;
-              margin: 25px 0;
-              font-weight: 700;
-              font-size: 18px;
-              box-shadow: 0 4px 6px rgba(16, 185, 129, 0.4);
-              transition: all 0.3s;
-            }
-            .cta-box {
-              text-align: center;
-              padding: 30px;
-              background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
-              border-radius: 12px;
-              margin: 25px 0;
-            }
-            .cta-text {
-              font-size: 18px;
-              color: #065f46;
-              margin-bottom: 20px;
-              font-weight: 600;
-            }
-            .footer {
-              text-align: center;
-              padding: 30px;
-              background: #f7fafc;
-              color: #718096;
-              font-size: 13px;
-              border-top: 1px solid #e2e8f0;
-            }
-            .footer-brand {
-              color: #10b981;
-              font-weight: 600;
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="email-wrapper">
-            <div class="header">
-              <h1>✅ Amenity Now Available</h1>
-              <p>Great news for our community!</p>
-            </div>
-            <div class="content">
-              <p class="greeting">Hello ${data.userName}! 👋</p>
-              <p class="message">We're excited to inform you that an amenity you may be interested in is now available for booking!</p>
-
-              <div class="success-box">
-                <div class="success-icon">🎉</div>
-                <div class="success-title">${data.amenityName}</div>
-                <div class="success-subtitle">Ready to book now!</div>
-              </div>
-
-              <div class="amenity-details">
-                ${data.flatNumber ? `
-                <div class="detail-row">
-                  <span class="detail-label">Resident:</span>
-                  <span class="detail-value">${data.userName} (${data.flatNumber})</span>
-                </div>
-                ` : ''}
-                <div class="detail-row">
-                  <span class="detail-label">Amenity:</span>
-                  <span class="detail-value">${data.amenityName}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">Community:</span>
-                  <span class="detail-value">${data.communityName}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">Status:</span>
-                  <span class="detail-value" style="color: #10b981; font-weight: 700;">🟢 Available Now</span>
-                </div>
-              </div>
-
-              <div class="info-box">
-                <div class="info-title">📅 What You Can Do Now</div>
-                <div class="info-text">
-                  • Book your preferred time slots immediately<br>
-                  • View available dates on the calendar<br>
-                  • Check real-time slot availability<br>
-                  • Receive instant booking confirmation
-                </div>
-              </div>
-
-              <div class="cta-box">
-                <p class="cta-text">Don't miss out! Book your slot before they're all taken.</p>
-                <center>
-                  <a href="${data.bookingUrl}" class="button">📅 Book Now</a>
-                </center>
-              </div>
-
-              <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
-                Thank you for being part of our wonderful community! 💚
-              </p>
-            </div>
-            <div class="footer">
-              <div class="footer-brand">CircleIn</div>
-              <p>Your Community Management Platform</p>
-              <p style="margin-top: 10px;">This is an automated message. Please do not reply to this email.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
+  }): EmailTemplateResult => ({
+    subject: `Amenity available again | ${data.amenityName}`,
+    html: renderLayout({
+      preheader: `${data.amenityName} is open for bookings now.`,
+      eyebrow: 'Availability update',
+      title: `${data.amenityName} is back`,
+      subtitle: 'Slots are open again and may fill quickly.',
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>${data.flatNumber ? ` (Flat ${escapeHtml(data.flatNumber)})` : ''}, good news - this amenity is available now.`,
+      detailsRows: [
+        { label: 'Amenity', value: data.amenityName },
+        { label: 'Community', value: data.communityName },
+        { label: 'Status', value: 'Open for booking' },
+      ],
+      cta: { label: 'Book now', url: data.bookingUrl },
+      accent: accent.emerald,
+    }),
   }),
 
-  // 🆕 Waitlist Notification Template
   bookingWaitlist: (data: {
     userName: string;
     amenityName: string;
@@ -1225,155 +383,30 @@ export const emailTemplates = {
     timeSlot: string;
     waitlistPosition: number;
     communityName: string;
-  }) => ({
-    subject: `📋 Waitlist Confirmation - ${data.amenityName}`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              line-height: 1.6; 
-              color: #1a202c;
-              background: #f7fafc;
-            }
-            .email-wrapper { 
-              max-width: 600px; 
-              margin: 0 auto; 
-              background: #ffffff;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header { 
-              background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); 
-              color: white; 
-              padding: 40px 30px; 
-              text-align: center;
-            }
-            .header h1 { font-size: 32px; margin-bottom: 10px; font-weight: 700; }
-            .header p { font-size: 16px; opacity: 0.95; }
-            .content { background: #ffffff; padding: 40px 30px; }
-            .greeting { font-size: 18px; color: #2d3748; margin-bottom: 20px; }
-            .greeting strong { color: #f59e0b; font-weight: 600; }
-            .message { font-size: 16px; color: #4a5568; margin-bottom: 30px; line-height: 1.8; }
-            .position-badge {
-              background: linear-gradient(135deg, #fbbf24, #f59e0b);
-              color: white;
-              padding: 20px;
-              border-radius: 12px;
-              text-align: center;
-              margin: 25px 0;
-              font-size: 48px;
-              font-weight: 700;
-              box-shadow: 0 8px 16px rgba(251, 191, 36, 0.3);
-            }
-            .position-text {
-              font-size: 16px;
-              margin-top: 10px;
-              opacity: 0.95;
-            }
-            .details-card { 
-              background: linear-gradient(to bottom, #fef3c7, #fde68a); 
-              padding: 25px; 
-              border-radius: 12px; 
-              margin: 25px 0;
-              border: 2px solid #fbbf24;
-            }
-            .detail-row { 
-              display: flex; 
-              justify-content: space-between; 
-              padding: 12px 0; 
-              border-bottom: 1px solid #fbbf24;
-            }
-            .detail-row:last-child { border-bottom: none; }
-            .detail-label { font-weight: 600; color: #92400e; }
-            .detail-value { color: #78350f; font-weight: 500; }
-            .info-box {
-              background: #fffbeb;
-              padding: 20px;
-              border-radius: 8px;
-              margin: 25px 0;
-              border-left: 4px solid #fbbf24;
-            }
-            .info-title { color: #92400e; font-weight: 600; font-size: 16px; margin-bottom: 10px; }
-            .info-text { color: #78350f; font-size: 14px; line-height: 1.6; }
-            .footer { 
-              text-align: center; 
-              padding: 30px; 
-              background: #f7fafc;
-              color: #718096; 
-              font-size: 13px;
-              border-top: 1px solid #e2e8f0;
-            }
-            .footer-brand { color: #6366f1; font-weight: 600; font-size: 16px; margin-bottom: 10px; }
-          </style>
-        </head>
-        <body>
-          <div class="email-wrapper">
-            <div class="header">
-              <h1>📋 Waitlist Confirmed</h1>
-              <p>You're in line for ${data.amenityName}</p>
-            </div>
-            <div class="content">
-              <p class="greeting">Hi <strong>${data.userName}</strong>,</p>
-              <p class="message">
-                The ${data.amenityName} is currently at full capacity for your requested time slot. 
-                We've added you to the waitlist and will notify you immediately if a spot opens up!
-              </p>
-
-              <div class="position-badge">
-                #${data.waitlistPosition}
-                <div class="position-text">Your Position in Line</div>
-              </div>
-
-              <div class="details-card">
-                <div class="detail-row">
-                  <span class="detail-label">📍 Amenity:</span>
-                  <span class="detail-value">${data.amenityName}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">📅 Date:</span>
-                  <span class="detail-value">${data.date}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">⏰ Time Slot:</span>
-                  <span class="detail-value">${data.timeSlot}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">🏘️ Community:</span>
-                  <span class="detail-value">${data.communityName}</span>
-                </div>
-              </div>
-
-              <div class="info-box">
-                <div class="info-title">💡 What Happens Next?</div>
-                <div class="info-text">
-                  ✓ If someone cancels, you'll be next in line<br>
-                  ✓ We'll send you an email immediately when a spot opens<br>
-                  ✓ You'll have 48 hours to confirm your booking<br>
-                  ✓ Your position in the waitlist is secure
-                </div>
-              </div>
-
-              <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
-                We'll keep you updated. Thank you for your patience!
-              </p>
-            </div>
-            <div class="footer">
-              <div class="footer-brand">CircleIn</div>
-              <p>Your Community Management Platform</p>
-              <p style="margin-top: 10px;">This is an automated message. Please do not reply to this email.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
+  }): EmailTemplateResult => ({
+    subject: `Waitlist confirmed | ${data.amenityName}`,
+    html: renderLayout({
+      preheader: `You are #${data.waitlistPosition} on the waitlist.`,
+      eyebrow: 'Waitlist update',
+      title: `You are #${data.waitlistPosition} in queue`,
+      subtitle: 'We will notify you immediately when a slot opens.',
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>, the requested slot is full, but you are now in the waitlist line.`,
+      detailsRows: bookingDateTimeRows({
+        userName: data.userName,
+        amenityName: data.amenityName,
+        date: data.date,
+        timeSlot: data.timeSlot,
+        communityName: data.communityName,
+      }),
+      contentHtml: `
+        <section style="margin-top: 20px; padding: 14px 16px; border-radius: 10px; border: 1px solid #fcd34d; background: #fef9c3; color: #713f12; font-size: 13px; line-height: 1.7;">
+          As soon as someone cancels, we auto-promote from top of queue and send you a confirmation update.
+        </section>
+      `,
+      accent: accent.amber,
+    }),
   }),
 
-  // 🆕 Waitlist Promotion Template
   waitlistPromoted: (data: {
     userName: string;
     amenityName: string;
@@ -1383,304 +416,59 @@ export const emailTemplates = {
     deadline: string;
     waitlistPosition: number;
     flatNumber?: string;
-  }) => ({
-    subject: `🎉 You're Next! Confirm Your ${data.amenityName} Booking`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              line-height: 1.6; 
-              color: #1a202c;
-              background: #f7fafc;
-            }
-            .email-wrapper { 
-              max-width: 600px; 
-              margin: 0 auto; 
-              background: #ffffff;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header { 
-              background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-              color: white; 
-              padding: 40px 30px; 
-              text-align: center;
-            }
-            .header h1 { font-size: 32px; margin-bottom: 10px; font-weight: 700; }
-            .header p { font-size: 16px; opacity: 0.95; }
-            .content { background: #ffffff; padding: 40px 30px; }
-            .greeting { font-size: 18px; color: #2d3748; margin-bottom: 20px; }
-            .greeting strong { color: #059669; font-weight: 600; }
-            .message { font-size: 16px; color: #4a5568; margin-bottom: 30px; line-height: 1.8; }
-            .celebrate-banner {
-              background: linear-gradient(135deg, #10b981, #059669);
-              color: white;
-              padding: 30px;
-              border-radius: 12px;
-              text-align: center;
-              margin: 25px 0;
-              font-size: 24px;
-              font-weight: 700;
-              box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
-            }
-            .celebrate-icon { font-size: 48px; margin-bottom: 10px; }
-            .details-card { 
-              background: linear-gradient(to bottom, #d1fae5, #a7f3d0); 
-              padding: 25px; 
-              border-radius: 12px; 
-              margin: 25px 0;
-              border: 2px solid #10b981;
-            }
-            .detail-row { 
-              display: flex; 
-              justify-content: space-between; 
-              padding: 12px 0; 
-              border-bottom: 1px solid #10b981;
-            }
-            .detail-row:last-child { border-bottom: none; }
-            .detail-label { font-weight: 600; color: #065f46; }
-            .detail-value { color: #047857; font-weight: 500; }
-            .button {
-              display: inline-block;
-              background: linear-gradient(135deg, #10b981, #059669);
-              color: white !important; color: #ffffff !important;
-              padding: 16px 40px;
-              text-decoration: none;
-              border-radius: 12px;
-              font-weight: 600;
-              font-size: 18px;
-              box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
-              transition: all 0.3s;
-            }
-            .button:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
-            }
-            .deadline-warning {
-              background: #fef3c7;
-              padding: 20px;
-              border-radius: 8px;
-              margin: 25px 0;
-              border-left: 4px solid #f59e0b;
-              text-align: center;
-            }
-            .deadline-title { color: #92400e; font-weight: 600; font-size: 16px; margin-bottom: 10px; }
-            .deadline-time { color: #78350f; font-size: 20px; font-weight: 700; }
-            .footer { 
-              text-align: center; 
-              padding: 30px; 
-              background: #f7fafc;
-              color: #718096; 
-              font-size: 13px;
-              border-top: 1px solid #e2e8f0;
-            }
-            .footer-brand { color: #6366f1; font-weight: 600; font-size: 16px; margin-bottom: 10px; }
-          </style>
-        </head>
-        <body>
-          <div class="email-wrapper">
-            <div class="header">
-              <h1>🎉 Good News!</h1>
-              <p>A spot just opened up for ${data.amenityName}</p>
-            </div>
-            <div class="content">
-              <p class="greeting">Congratulations <strong>${data.userName}</strong>!</p>
-              <p class="message">
-                You were #${data.waitlistPosition} on the waitlist and a spot has become available! 
-                You're now next in line to secure this booking. Please confirm within 48 hours to reserve your spot.
-              </p>
-
-              <div class="celebrate-banner">
-                <div class="celebrate-icon">🎊</div>
-                Your Spot is Reserved!
-              </div>
-
-              <div class="details-card">
-                <div class="detail-row">
-                  <span class="detail-label">🏠 Resident:</span>
-                  <span class="detail-value">${data.userName}${data.flatNumber ? ` - Flat ${data.flatNumber}` : ''}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">🏊 Amenity:</span>
-                  <span class="detail-value">${data.amenityName}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">🕐 Start Time:</span>
-                  <span class="detail-value">${data.startTime}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">🕑 End Time:</span>
-                  <span class="detail-value">${data.endTime}</span>
-                </div>
-              </div>
-
-              <div class="deadline-warning">
-                <div class="deadline-title">⏰ Confirmation Deadline</div>
-                <div class="deadline-time">${data.deadline}</div>
-                <p style="margin-top: 10px; color: #92400e; font-size: 14px;">
-                  If you don't confirm by this time, the spot will be offered to the next person in line.
-                </p>
-              </div>
-
-              <div style="text-align: center; margin: 30px 0;">
-                <p style="font-size: 18px; font-weight: 600; color: #2d3748; margin-bottom: 20px;">
-                  Do you want to confirm this booking?
-                </p>
-                <div style="display: inline-block;">
-                  <a href="${data.confirmationUrl}?action=confirm" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: #ffffff !important; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 18px; margin: 0 10px; box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);">
-                    ✅ YES, Confirm
-                  </a>
-                  <a href="${data.confirmationUrl}?action=decline" style="display: inline-block; background: linear-gradient(135deg, #ef4444, #dc2626); color: #ffffff !important; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 18px; margin: 0 10px; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);">
-                    ❌ NO, Decline
-                  </a>
-                </div>
-              </div>
-
-              <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
-                Click YES to secure your booking and receive your QR code!<br/>
-                Click NO if you can't make it, so the next person can book the slot.
-              </p>
-            </div>
-            <div class="footer">
-              <div class="footer-brand">CircleIn</div>
-              <p>Your Community Management Platform</p>
-              <p style="margin-top: 10px;">This is an automated message. Please do not reply to this email.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
+  }): EmailTemplateResult => ({
+    subject: `Spot opened up | Confirm ${data.amenityName}`,
+    html: renderLayout({
+      preheader: 'A waitlist slot opened and needs your confirmation.',
+      eyebrow: 'Waitlist promotion',
+      title: 'Your waitlist slot is ready',
+      subtitle: 'Confirm quickly before the deadline expires.',
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>, you were promoted from waitlist position #${data.waitlistPosition}.`,
+      detailsRows: [
+        {
+          label: 'Resident',
+          value: data.flatNumber ? `${data.userName} | Flat ${data.flatNumber}` : data.userName,
+        },
+        { label: 'Amenity', value: data.amenityName },
+        { label: 'Start', value: data.startTime },
+        { label: 'End', value: data.endTime },
+        { label: 'Confirm by', value: data.deadline },
+      ],
+      statusHtml: `
+        <section style="margin-top: 20px; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, #fff7ed, #ffedd5); border: 1px solid #fdba74;">
+          <div style="font-size: 18px; font-weight: 800; color: #9a3412;">Action required</div>
+          <div style="font-size: 13px; color: #7c2d12; margin-top: 5px;">If this is not confirmed in time, it goes to the next resident automatically.</div>
+        </section>
+      `,
+      cta: { label: 'Confirm booking', url: data.confirmationUrl },
+      accent: accent.emerald,
+    }),
   }),
 
-  // 🆕 Confirmation Reminder Template
   confirmationReminder: (data: {
     userName: string;
     amenityName: string;
     startTime: string;
     confirmationUrl: string;
     hoursRemaining: number;
-  }) => ({
-    subject: `⏰ Reminder: Confirm Your ${data.amenityName} Booking (${data.hoursRemaining}h left)`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              line-height: 1.6; 
-              color: #1a202c;
-              background: #f7fafc;
-            }
-            .email-wrapper { 
-              max-width: 600px; 
-              margin: 0 auto; 
-              background: #ffffff;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header { 
-              background: linear-gradient(135deg, #f59e0b 0%, #dc2626 100%); 
-              color: white; 
-              padding: 40px 30px; 
-              text-align: center;
-            }
-            .header h1 { font-size: 32px; margin-bottom: 10px; font-weight: 700; }
-            .header p { font-size: 16px; opacity: 0.95; }
-            .content { background: #ffffff; padding: 40px 30px; }
-            .greeting { font-size: 18px; color: #2d3748; margin-bottom: 20px; }
-            .greeting strong { color: #dc2626; font-weight: 600; }
-            .message { font-size: 16px; color: #4a5568; margin-bottom: 30px; line-height: 1.8; }
-            .urgent-banner {
-              background: linear-gradient(135deg, #fbbf24, #f59e0b);
-              color: white;
-              padding: 30px;
-              border-radius: 12px;
-              text-align: center;
-              margin: 25px 0;
-              font-size: 28px;
-              font-weight: 700;
-              box-shadow: 0 8px 16px rgba(251, 191, 36, 0.3);
-            }
-            .urgent-icon { font-size: 64px; margin-bottom: 15px; }
-            .button {
-              display: inline-block;
-              background: linear-gradient(135deg, #dc2626, #b91c1c);
-              color: white !important; color: #ffffff !important;
-              padding: 18px 50px;
-              text-decoration: none;
-              border-radius: 12px;
-              font-weight: 700;
-              font-size: 20px;
-              box-shadow: 0 8px 16px rgba(220, 38, 38, 0.3);
-              transition: all 0.3s;
-            }
-            .button:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 12px 24px rgba(220, 38, 38, 0.4);
-            }
-            .footer { 
-              text-align: center; 
-              padding: 30px; 
-              background: #f7fafc;
-              color: #718096; 
-              font-size: 13px;
-              border-top: 1px solid #e2e8f0;
-            }
-            .footer-brand { color: #6366f1; font-weight: 600; font-size: 16px; margin-bottom: 10px; }
-          </style>
-        </head>
-        <body>
-          <div class="email-wrapper">
-            <div class="header">
-              <h1>⏰ Time Running Out!</h1>
-              <p>Confirm your booking before it expires</p>
-            </div>
-            <div class="content">
-              <p class="greeting">Hi <strong>${data.userName}</strong>,</p>
-              <p class="message">
-                This is a friendly reminder that your booking confirmation for ${data.amenityName} 
-                is about to expire. You have only <strong>${data.hoursRemaining} hours</strong> remaining to confirm!
-              </p>
-
-              <div class="urgent-banner">
-                <div class="urgent-icon">⏳</div>
-                ${data.hoursRemaining} Hours Left
-              </div>
-
-              <p class="message">
-                <strong>Booking Details:</strong><br>
-                📍 ${data.amenityName}<br>
-                ⏰ ${data.startTime}
-              </p>
-
-              <center>
-                <a href="${data.confirmationUrl}" class="button">🚀 CONFIRM NOW</a>
-              </center>
-
-              <p style="margin-top: 25px; color: #dc2626; font-size: 14px; text-align: center; font-weight: 600;">
-                ⚠️ If not confirmed in time, the spot will be offered to the next person in line.
-              </p>
-            </div>
-            <div class="footer">
-              <div class="footer-brand">CircleIn</div>
-              <p>Your Community Management Platform</p>
-              <p style="margin-top: 10px;">This is an automated message. Please do not reply to this email.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
+  }): EmailTemplateResult => ({
+    subject: `Reminder | Confirm ${data.amenityName} (${data.hoursRemaining}h left)`,
+    html: renderLayout({
+      preheader: `${data.hoursRemaining} hours left to confirm your waitlist slot.`,
+      eyebrow: 'Confirmation reminder',
+      title: 'Confirmation window closing',
+      subtitle: `${data.hoursRemaining} hour(s) remaining before expiry.`,
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>, your promoted booking for ${escapeHtml(data.amenityName)} is awaiting confirmation.`,
+      detailsRows: [
+        { label: 'Amenity', value: data.amenityName },
+        { label: 'Start', value: data.startTime },
+        { label: 'Time left', value: `${data.hoursRemaining} hour(s)` },
+      ],
+      cta: { label: 'Confirm now', url: data.confirmationUrl },
+      accent: accent.rose,
+    }),
   }),
 
-  // 🆕 AUTO-PROMOTION EMAIL - No confirmation needed, instant booking
   waitlistAutoPromoted: (data: {
     userName: string;
     amenityName: string;
@@ -1688,187 +476,25 @@ export const emailTemplates = {
     timeSlot: string;
     bookingUrl: string;
     flatNumber?: string;
-  }) => ({
-    subject: `🎉 Great News! You're Automatically Confirmed for ${data.amenityName}`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              line-height: 1.6; 
-              color: #1a202c;
-              background: #f7fafc;
-            }
-            .email-wrapper { 
-              max-width: 600px; 
-              margin: 0 auto; 
-              background: #ffffff;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header { 
-              background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-              color: white; 
-              padding: 40px 30px; 
-              text-align: center;
-            }
-            .header h1 { font-size: 32px; margin-bottom: 10px; font-weight: 700; }
-            .header p { font-size: 16px; opacity: 0.95; }
-            .content { background: #ffffff; padding: 40px 30px; }
-            .greeting { font-size: 18px; color: #2d3748; margin-bottom: 20px; }
-            .greeting strong { color: #059669; font-weight: 600; }
-            .message { font-size: 16px; color: #4a5568; margin-bottom: 30px; line-height: 1.8; }
-            .celebrate-banner {
-              background: linear-gradient(135deg, #10b981, #059669);
-              color: white;
-              padding: 35px;
-              border-radius: 12px;
-              text-align: center;
-              margin: 25px 0;
-              box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
-            }
-            .celebrate-icon { font-size: 64px; margin-bottom: 15px; animation: bounce 2s infinite; }
-            @keyframes bounce {
-              0%, 100% { transform: translateY(0); }
-              50% { transform: translateY(-20px); }
-            }
-            .celebrate-text { font-size: 28px; font-weight: 700; }
-            .details-card { 
-              background: linear-gradient(to bottom, #d1fae5, #a7f3d0); 
-              padding: 25px; 
-              border-radius: 12px; 
-              margin: 25px 0;
-              border: 2px solid #10b981;
-            }
-            .detail-row { 
-              display: flex; 
-              justify-content: space-between; 
-              padding: 14px 0; 
-              border-bottom: 1px solid #10b981;
-            }
-            .detail-row:last-child { border-bottom: none; }
-            .detail-label { font-weight: 600; color: #065f46; font-size: 15px; }
-            .detail-value { color: #047857; font-weight: 600; font-size: 15px; text-align: right; }
-            .flat-badge {
-              display: inline-block;
-              padding: 4px 12px;
-              background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-              color: white;
-              border-radius: 12px;
-              font-size: 13px;
-              font-weight: 700;
-              box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
-              margin-left: 8px;
-            }
-            .button {
-              display: inline-block;
-              background: linear-gradient(135deg, #10b981, #059669);
-              color: white !important; color: #ffffff !important;
-              padding: 16px 40px;
-              text-decoration: none;
-              border-radius: 12px;
-              font-weight: 600;
-              font-size: 18px;
-              box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
-              transition: all 0.3s;
-            }
-            .button:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
-            }
-            .info-box {
-              background: #eff6ff;
-              padding: 20px;
-              border-radius: 8px;
-              margin: 25px 0;
-              border-left: 4px solid #3b82f6;
-            }
-            .info-title { color: #1e40af; font-weight: 600; font-size: 16px; margin-bottom: 10px; }
-            .info-text { color: #1e3a8a; font-size: 14px; line-height: 1.6; }
-            .footer { 
-              text-align: center; 
-              padding: 30px; 
-              background: #f7fafc;
-              color: #718096; 
-              font-size: 13px;
-              border-top: 1px solid #e2e8f0;
-            }
-            .footer-brand { color: #6366f1; font-weight: 600; font-size: 16px; margin-bottom: 10px; }
-          </style>
-        </head>
-        <body>
-          <div class="email-wrapper">
-            <div class="header">
-              <h1>🎉 You're Confirmed!</h1>
-              <p>A spot opened up and you're automatically booked</p>
-            </div>
-            <div class="content">
-              <p class="greeting">Hi <strong>${data.userName}</strong>${data.flatNumber ? `<span class="flat-badge">Flat ${data.flatNumber}</span>` : ''},</p>
-              
-              <div class="celebrate-banner">
-                <div class="celebrate-icon">🎊</div>
-                <div class="celebrate-text">You're Automatically Confirmed!</div>
-              </div>
-
-              <p class="message">
-                <strong>Great news!</strong> A slot has opened up for <strong>${data.amenityName}</strong>, 
-                and since you were waiting in line, you've been <strong>automatically confirmed</strong>. 
-                No action needed from your side!
-              </p>
-
-              <div class="details-card">
-                <div class="detail-row">
-                  <span class="detail-label">🎯 Amenity</span>
-                  <span class="detail-value">${data.amenityName}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">📅 Date</span>
-                  <span class="detail-value">${data.date}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">⏰ Time Slot</span>
-                  <span class="detail-value">${data.timeSlot}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">✅ Status</span>
-                  <span class="detail-value" style="color: #10b981; font-weight: 700;">CONFIRMED</span>
-                </div>
-              </div>
-
-              <center>
-                <a href="${data.bookingUrl}" class="button">📋 View My Bookings</a>
-              </center>
-
-              <div class="info-box">
-                <div class="info-title">📌 What Happens Next?</div>
-                <div class="info-text">
-                  • Your booking is fully confirmed - no further action needed<br>
-                  • We'll send you a reminder 24 hours before<br>
-                  • If you can't make it, please cancel early so others can use the slot<br>
-                  • Remember to bring any required items (towels, equipment, etc.)
-                </div>
-              </div>
-
-              <p class="message" style="color: #059669; font-weight: 600; text-align: center;">
-                🎉 We're excited to see you there!
-              </p>
-            </div>
-            <div class="footer">
-              <div class="footer-brand">CircleIn</div>
-              <p>Your Community Management Platform</p>
-              <p style="margin-top: 10px;">This is an automated message. Please do not reply to this email.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
+  }): EmailTemplateResult => ({
+    subject: `Auto-confirmed | ${data.amenityName}`,
+    html: renderLayout({
+      preheader: 'A slot opened and your booking is auto-confirmed.',
+      eyebrow: 'Auto promotion',
+      title: 'You are confirmed automatically',
+      subtitle: 'No action needed. Your booking is already active.',
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>${data.flatNumber ? ` (Flat ${escapeHtml(data.flatNumber)})` : ''}, a slot opened and we confirmed it for you instantly.`,
+      detailsRows: bookingDateTimeRows({
+        userName: data.userName,
+        amenityName: data.amenityName,
+        date: data.date,
+        timeSlot: data.timeSlot,
+      }),
+      cta: { label: 'Open booking details', url: data.bookingUrl },
+      accent: accent.emerald,
+    }),
   }),
 
-  // Waitlist Promotion Email Template
   waitlistPromotion: (data: {
     userName: string;
     amenityName: string;
@@ -1877,215 +503,241 @@ export const emailTemplates = {
     confirmationDeadline: string;
     bookingId: string;
     flatNumber?: string;
-  }) => ({
-    subject: `🎉 Good News! Spot Available - ${data.amenityName}`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              line-height: 1.6; 
-              color: #1a202c;
-              background: #f7fafc;
-            }
-            .email-wrapper { 
-              max-width: 600px; 
-              margin: 0 auto; 
-              background: #ffffff;
-              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header { 
-              background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-              color: white; 
-              padding: 40px 30px; 
-              text-align: center;
-            }
-            .header h1 { 
-              font-size: 32px; 
-              margin-bottom: 10px; 
-              font-weight: 700;
-            }
-            .header p { 
-              font-size: 16px; 
-              opacity: 0.95;
-            }
-            .content { 
-              background: #ffffff; 
-              padding: 40px 30px;
-            }
-            .urgent-box {
-              background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-              border-left: 4px solid #f59e0b;
-              padding: 20px;
-              border-radius: 12px;
-              margin: 25px 0;
-              box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
-            }
-            .urgent-title {
-              color: #92400e;
-              font-weight: 700;
-              font-size: 18px;
-              margin-bottom: 10px;
-            }
-            .urgent-text {
-              color: #78350f;
-              font-size: 15px;
-              line-height: 1.6;
-            }
-            .countdown {
-              display: inline-block;
-              background: #dc2626;
-              color: white;
-              padding: 8px 16px;
-              border-radius: 8px;
-              font-weight: 700;
-              font-size: 16px;
-              margin-top: 10px;
-            }
-            .details-card { 
-              background: linear-gradient(to bottom, #f7fafc, #edf2f7); 
-              padding: 25px; 
-              border-radius: 12px; 
-              margin: 25px 0;
-              border: 2px solid #e2e8f0;
-            }
-            .detail-row { 
-              display: flex; 
-              justify-content: space-between; 
-              align-items: center;
-              padding: 16px 0; 
-              border-bottom: 1px solid #e2e8f0;
-            }
-            .detail-row:last-child { 
-              border-bottom: none;
-            }
-            .detail-label { 
-              font-weight: 600; 
-              color: #10b981;
-              font-size: 15px;
-            }
-            .detail-value {
-              font-weight: 600;
-              color: #1e293b;
-              font-size: 15px;
-              text-align: right;
-            }
-            .flat-badge {
-              display: inline-block;
-              margin-left: 8px;
-              padding: 4px 12px;
-              background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-              color: white;
-              border-radius: 12px;
-              font-size: 13px;
-              font-weight: 700;
-              box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
-            }
-            .button { 
-              display: inline-block; 
-              padding: 16px 40px; 
-              background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-              color: white !important; color: #ffffff !important; 
-              text-decoration: none; 
-              border-radius: 12px; 
-              margin: 25px 0;
-              font-weight: 700;
-              font-size: 18px;
-              box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-              text-align: center;
-            }
-            .footer { 
-              text-align: center; 
-              padding: 30px; 
-              background: #f7fafc;
-              color: #718096; 
-              font-size: 13px;
-              border-top: 1px solid #e2e8f0;
-            }
-            .footer-brand {
-              color: #10b981;
-              font-weight: 600;
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="email-wrapper">
-            <div class="header">
-              <h1>🎉 Spot Available!</h1>
-              <p>You've been promoted from the waitlist</p>
-            </div>
-            <div class="content">
-              <p style="font-size: 18px; color: #2d3748; margin-bottom: 20px;">
-                Hi <strong>${data.userName}</strong>,
-              </p>
-              <p style="font-size: 16px; color: #4a5568; margin-bottom: 30px; line-height: 1.8;">
-                Great news! A spot has opened up for your waitlisted booking. <strong>You have 30 minutes to confirm</strong> or the spot will go to the next person in line.
-              </p>
-              
-              <div class="urgent-box">
-                <div class="urgent-title">⏰ Action Required - Time Sensitive!</div>
-                <div class="urgent-text">
-                  Please confirm your booking before: <br/>
-                  <span class="countdown">${data.confirmationDeadline}</span>
-                </div>
-              </div>
+  }): EmailTemplateResult => ({
+    subject: `Spot available | ${data.amenityName}`,
+    html: renderLayout({
+      preheader: 'A waitlist slot is available and expires soon.',
+      eyebrow: 'Waitlist promotion',
+      title: 'Spot is available now',
+      subtitle: 'Confirm before deadline to keep this slot.',
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>, you are next in line and this slot is now yours to confirm.`,
+      detailsRows: [
+        ...bookingDateTimeRows({
+          userName: data.userName,
+          amenityName: data.amenityName,
+          date: data.date,
+          timeSlot: data.timeSlot,
+          bookingId: data.bookingId,
+          flatNumber: data.flatNumber,
+        }),
+        { label: 'Deadline', value: data.confirmationDeadline },
+      ],
+      cta: { label: 'Confirm booking', url: `/bookings/confirm/${data.bookingId}?action=confirm` },
+      accent: accent.amber,
+    }),
+  }),
 
-              <div class="details-card">
-                <div class="detail-row">
-                  <span class="detail-label">🏠 Resident:</span>
-                  <span class="detail-value">
-                    ${data.userName}
-                    ${data.flatNumber ? `<span class="flat-badge">Flat ${data.flatNumber}</span>` : ''}
-                  </span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">🏊 Amenity:</span>
-                  <span class="detail-value">${data.amenityName}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">📅 Date:</span>
-                  <span class="detail-value">${data.date}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">⏰ Time Slot:</span>
-                  <span class="detail-value">${data.timeSlot}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">🎫 Booking ID:</span>
-                  <span class="detail-value">#${data.bookingId.substring(0, 8).toUpperCase()}</span>
-                </div>
-              </div>
+  maintenanceStatusUpdate: (data: {
+    userName: string;
+    requestTitle: string;
+    status: string;
+    updateNote?: string;
+    category?: string;
+    priority?: string;
+  }): EmailTemplateResult => ({
+    subject: `Maintenance update | ${data.requestTitle}`,
+    html: renderLayout({
+      preheader: `${data.requestTitle} status changed to ${data.status}.`,
+      eyebrow: 'Maintenance desk',
+      title: 'Maintenance status updated',
+      subtitle: 'Track your request progress in real-time.',
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>, your maintenance request received a fresh update.`,
+      detailsRows: [
+        { label: 'Request', value: data.requestTitle },
+        { label: 'Status', value: data.status },
+        { label: 'Category', value: data.category || 'General' },
+        { label: 'Priority', value: data.priority || 'Medium' },
+      ],
+      contentHtml: data.updateNote
+        ? `<section style="margin-top: 20px; padding: 14px 16px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc;"><div style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #475569; font-weight: 700;">Admin note</div><div style="margin-top: 6px; color: #334155; font-size: 13px; line-height: 1.7;">${escapeHtml(data.updateNote)}</div></section>`
+        : '',
+      cta: { label: 'Track request', url: '/maintenance' },
+      accent: accent.indigo,
+    }),
+  }),
 
-              <center>
-                <a href="https://circlein-app.vercel.app/bookings?action=confirm&id=${data.bookingId}" class="button">
-                  ✓ Confirm Booking Now
-                </a>
-              </center>
+  bookingRescheduled: (data: {
+    userName: string;
+    amenityName: string;
+    oldDateTime: string;
+    newDateTime: string;
+    updatedBy: string;
+  }): EmailTemplateResult => ({
+    subject: `Booking rescheduled | ${data.amenityName}`,
+    html: renderLayout({
+      preheader: `${data.amenityName} booking has a new schedule.`,
+      eyebrow: 'Schedule change',
+      title: 'Booking rescheduled',
+      subtitle: 'Please check the updated schedule below.',
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>, your booking schedule was updated by ${escapeHtml(data.updatedBy)}.`,
+      detailsRows: [
+        { label: 'Amenity', value: data.amenityName },
+        { label: 'Previous slot', value: data.oldDateTime },
+        { label: 'New slot', value: data.newDateTime },
+      ],
+      cta: { label: 'Open bookings', url: '/bookings' },
+      accent: accent.cyan,
+    }),
+  }),
 
-              <p style="margin-top: 25px; color: #718096; font-size: 14px; text-align: center;">
-                If you don't confirm within 30 minutes, this spot will automatically go to the next person on the waitlist.
-              </p>
-            </div>
-            <div class="footer">
-              <div class="footer-brand">CircleIn</div>
-              <p>Your Community Management Platform</p>
-              <p style="margin-top: 10px;">This is an automated message. Please do not reply to this email.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
+  weeklyDigest: (data: {
+    userName: string;
+    communityName: string;
+    upcomingBookings: Array<{ amenityName: string; dateLabel: string; timeLabel: string }>;
+  }): EmailTemplateResult => {
+    const rows = data.upcomingBookings
+      .slice(0, 8)
+      .map(
+        (booking) => `
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-weight: 700; font-size: 13px;">${escapeHtml(booking.amenityName)}</td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #334155; font-size: 13px; text-align: right;">${escapeHtml(booking.dateLabel)} | ${escapeHtml(booking.timeLabel)}</td>
+          </tr>
+        `
+      )
+      .join('');
+
+    const contentHtml = data.upcomingBookings.length
+      ? `
+        <section style="margin-top: 20px; border: 1px solid #dbe3ee; border-radius: 12px; padding: 14px 16px; background: #f8fafc;">
+          <div style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #0f766e; font-weight: 700; margin-bottom: 6px;">Upcoming bookings</div>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">${rows}</table>
+        </section>
+      `
+      : `
+        <section style="margin-top: 20px; border: 1px solid #bae6fd; border-radius: 12px; padding: 14px 16px; background: #ecfeff; color: #0c4a6e; font-size: 13px; line-height: 1.7;">
+          No confirmed bookings for the next 7 days. Explore amenities and reserve your preferred slots.
+        </section>
+      `;
+
+    return {
+      subject: `Weekly digest | ${data.communityName}`,
+      html: renderLayout({
+        preheader: `Your weekly booking snapshot for ${data.communityName}.`,
+        eyebrow: 'Weekly digest',
+        title: 'Your community week at a glance',
+        subtitle: `Bookings and activity highlights for ${data.communityName}.`,
+        introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>, here is your weekly booking snapshot from CircleIn.`,
+        detailsRows: [
+          { label: 'Community', value: data.communityName },
+          { label: 'Upcoming bookings', value: String(data.upcomingBookings.length) },
+        ],
+        contentHtml,
+        cta: { label: 'Plan this week', url: '/bookings' },
+        accent: accent.cyan,
+      }),
+    };
+  },
+
+  communityAnnouncement: (data: {
+    userName: string;
+    title: string;
+    previewText: string;
+    authorName: string;
+    communityName: string;
+    actionUrl?: string;
+  }): EmailTemplateResult => ({
+    subject: `Community announcement | ${data.title}`,
+    html: renderLayout({
+      preheader: `New announcement in ${data.communityName}.`,
+      eyebrow: 'Community feed',
+      title: data.title,
+      subtitle: `Published by ${data.authorName}`,
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>, your community posted a new update.`,
+      detailsRows: [
+        { label: 'Community', value: data.communityName },
+        { label: 'Author', value: data.authorName },
+      ],
+      contentHtml: `
+        <section style="margin-top: 20px; border: 1px solid #dbe3ee; border-radius: 12px; padding: 14px 16px; background: #f8fafc; color: #334155; font-size: 13px; line-height: 1.7;">
+          ${escapeHtml(data.previewText)}
+        </section>
+      `,
+      cta: { label: 'Read announcement', url: data.actionUrl || '/community' },
+      accent: accent.indigo,
+    }),
+  }),
+
+  noShowWarning: (data: {
+    userName: string;
+    amenityName: string;
+    incidentDate: string;
+    noShowCount: number;
+    suspensionUntil?: string;
+  }): EmailTemplateResult => ({
+    subject: `Attendance warning | ${data.amenityName}`,
+    html: renderLayout({
+      preheader: 'A no-show was recorded for your recent booking.',
+      eyebrow: 'Policy update',
+      title: 'No-show recorded',
+      subtitle: 'Please review policy impact and next steps.',
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>, we recorded a no-show for a recent booking.`,
+      detailsRows: [
+        { label: 'Amenity', value: data.amenityName },
+        { label: 'Incident date', value: normalizeDateLabel(data.incidentDate) },
+        { label: 'No-show count', value: String(data.noShowCount) },
+        ...(data.suspensionUntil
+          ? [{ label: 'Suspended until', value: normalizeDateLabel(data.suspensionUntil) }]
+          : []),
+      ],
+      cta: { label: 'Review bookings', url: '/bookings' },
+      accent: accent.rose,
+    }),
+  }),
+
+  securityAlert: (data: {
+    userName: string;
+    alertTitle: string;
+    alertDetails: string;
+    occurredAt: string;
+    actionUrl?: string;
+  }): EmailTemplateResult => ({
+    subject: `Security alert | ${data.alertTitle}`,
+    html: renderLayout({
+      preheader: 'Important security activity detected on your account.',
+      eyebrow: 'Security',
+      title: data.alertTitle,
+      subtitle: 'If this was not you, take action immediately.',
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>, we detected a security event that needs your attention.`,
+      detailsRows: [
+        { label: 'Occurred at', value: data.occurredAt },
+      ],
+      contentHtml: `
+        <section style="margin-top: 20px; border: 1px solid #fecaca; border-radius: 12px; background: #fff1f2; padding: 14px 16px; color: #881337; font-size: 13px; line-height: 1.7;">
+          ${escapeHtml(data.alertDetails)}
+        </section>
+      `,
+      cta: { label: 'Secure account', url: data.actionUrl || '/settings' },
+      accent: accent.rose,
+    }),
+  }),
+
+  monthlyCommunityPulse: (data: {
+    userName: string;
+    communityName: string;
+    highlights: string[];
+    actionUrl?: string;
+  }): EmailTemplateResult => ({
+    subject: `Monthly pulse | ${data.communityName}`,
+    html: renderLayout({
+      preheader: `Monthly highlights from ${data.communityName}.`,
+      eyebrow: 'Community pulse',
+      title: 'Monthly highlights',
+      subtitle: `What moved in ${data.communityName} this month.`,
+      introHtml: `Hi <strong>${escapeHtml(data.userName)}</strong>, here is your monthly pulse report.`,
+      contentHtml: `
+        <section style="margin-top: 20px; border: 1px solid #dbe3ee; border-radius: 12px; background: #f8fafc; padding: 14px 16px;">
+          <ul style="margin: 0; padding-left: 18px; color: #334155; font-size: 13px; line-height: 1.8;">
+            ${data.highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+          </ul>
+        </section>
+      `,
+      cta: { label: 'Open community', url: data.actionUrl || '/community' },
+      accent: accent.cyan,
+    }),
   }),
 };
 
-// Send a single email
 export async function sendEmail(
   options: {
     to: string;
@@ -2094,110 +746,84 @@ export async function sendEmail(
   },
   retries = 3
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  // Validate inputs
   if (!options.to || !options.to.includes('@')) {
-    console.error('❌ Invalid email address:', options.to);
-    return { 
-      success: false, 
-      error: 'Invalid email address' 
-    };
+    return { success: false, error: 'Invalid email address' };
   }
 
   if (!process.env.EMAIL_PASSWORD) {
-    console.error('❌ EMAIL_PASSWORD not configured');
-    return { 
-      success: false, 
-      error: 'Email service not configured. Please set EMAIL_PASSWORD environment variable.' 
+    return {
+      success: false,
+      error: 'Email service is not configured. Set EMAIL_PASSWORD.',
     };
   }
 
   let lastError: any = null;
+  const senderEmail = process.env.EMAIL_USER || 'circleinapp1@gmail.com';
+  const senderName = process.env.EMAIL_SENDER_NAME || 'CircleIn';
 
-  // Retry logic for transient failures
-  for (let attempt = 1; attempt <= retries; attempt++) {
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
     try {
-      console.log(`📧 Sending email (attempt ${attempt}/${retries})...`);
-      console.log(`   To: ${options.to}`);
-      console.log(`   Subject: ${options.subject}`);
-
       const info = await transporter.sendMail({
-        from: '"CircleIn Community" <circleinapp1@gmail.com>',
+        from: `"${senderName}" <${senderEmail}>`,
         to: options.to,
         subject: options.subject,
         html: options.html,
-        // Add these for better deliverability
-        replyTo: 'circleinapp1@gmail.com',
+        replyTo: senderEmail,
         priority: 'high',
       });
 
-      console.log(`✅ Email sent successfully!`);
-      console.log(`   Message ID: ${info.messageId}`);
-      console.log(`   Response: ${info.response}`);
-
-      return { 
-        success: true, 
-        messageId: info.messageId 
-      };
-
+      return { success: true, messageId: info.messageId };
     } catch (error: any) {
       lastError = error;
-      console.error(`❌ Email send failed (attempt ${attempt}/${retries}):`, error.message);
 
-      // Log specific error types
-      if (error.code === 'EAUTH') {
-        console.error('   Authentication failed - Check EMAIL_PASSWORD');
-        console.error('   Make sure you are using an App Password, not your regular Gmail password');
-        break; // Don't retry auth errors
-      } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
-        console.error('   Network error - Will retry...');
-        if (attempt < retries) {
-          await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // Exponential backoff
-        }
-      } else if (error.responseCode === 550) {
-        console.error('   Recipient address rejected - Invalid email');
-        break; // Don't retry invalid emails
-      } else {
-        console.error('   Unknown error:', error);
+      if (error?.code === 'EAUTH' || error?.responseCode === 550) {
+        break;
+      }
+
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
       }
     }
   }
 
-  // All retries failed
-  console.error(`❌ Failed to send email after ${retries} attempts`);
-  console.error('   Last error:', lastError?.message);
-
-  return { 
-    success: false, 
-    error: lastError?.message || 'Unknown error' 
+  return {
+    success: false,
+    error: lastError?.message || 'Unknown email delivery error',
   };
 }
 
-// Send batch emails with rate limiting (to avoid Gmail limits)
 export async function sendBatchEmails(
   emails: Array<{ to: string; subject: string; html: string }>,
   template: string
-) {
+): Promise<{ sent: number; failed: number; errors: string[] }> {
+  const chunkSize = 25;
   const results = {
     sent: 0,
     failed: 0,
     errors: [] as string[],
   };
 
-  // Send ALL emails simultaneously - maximum speed!
-  console.log(`📧 Sending ${emails.length} emails simultaneously...`);
-  
-  await Promise.all(
-    emails.map(async (email) => {
-      try {
-        await sendEmail(email);
-        results.sent++;
-      } catch (error) {
-        results.failed++;
-        results.errors.push(`Failed to send to ${email.to}: ${error}`);
-      }
-    })
-  );
+  for (let i = 0; i < emails.length; i += chunkSize) {
+    const chunk = emails.slice(i, i + chunkSize);
 
-  console.log(`✅ Completed: ${results.sent} sent, ${results.failed} failed`);
+    const settled = await Promise.allSettled(
+      chunk.map(async (email) => {
+        const result = await sendEmail(email);
+        if (!result.success) {
+          throw new Error(result.error || 'Unknown batch email error');
+        }
+      })
+    );
+
+    settled.forEach((entry, idx) => {
+      if (entry.status === 'fulfilled') {
+        results.sent += 1;
+      } else {
+        results.failed += 1;
+        results.errors.push(`[${template}] ${chunk[idx]?.to || 'unknown'}: ${entry.reason?.message || 'failed'}`);
+      }
+    });
+  }
+
   return results;
 }

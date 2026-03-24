@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
-import { useTheme } from 'next-themes';
 import QRCode from 'qrcode';
 import { 
   Calendar, 
@@ -29,7 +28,10 @@ import {
   Shield,
   ArrowRight,
   Circle,
-  Sparkles
+  Sparkles,
+  FileText,
+  Printer,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,7 +41,8 @@ import { useSimpleBookings, SimpleBooking } from '@/hooks/useSimpleBookings';
 import { toast } from 'sonner';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { formatDistanceToNow, format, isToday, isTomorrow, isYesterday } from 'date-fns';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateInTimeZone, formatDateTimeInTimeZone, formatTimeInTimeZone } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 
 interface Fortune500BookingsUIProps {
@@ -48,18 +51,64 @@ interface Fortune500BookingsUIProps {
 
 export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIProps) {
   const { data: session } = useSession();
-  const { theme } = useTheme();
+  const timeZone = useCommunityTimeZone();
   const [selectedBooking, setSelectedBooking] = useState<SimpleBooking | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [mounted, setMounted] = useState(false);
   const [filter, setFilter] = useState<'current' | 'all' | 'past'>('current');
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
+  const [receiptQrDataUrl, setReceiptQrDataUrl] = useState<string | null>(null);
   const [generatingQR, setGeneratingQR] = useState(false);
+  const [generatingReceiptQR, setGeneratingReceiptQR] = useState(false);
   const [showQRDetails, setShowQRDetails] = useState(true);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const { bookings, loading, error, refetch } = useSimpleBookings();
+
+  const formatDateKey = useCallback((date: Date) => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(date);
+
+    const year = parts.find((part) => part.type === 'year')?.value ?? '0000';
+    const month = parts.find((part) => part.type === 'month')?.value ?? '01';
+    const day = parts.find((part) => part.type === 'day')?.value ?? '01';
+
+    return `${year}-${month}-${day}`;
+  }, [timeZone]);
+
+  const formatShortDate = useCallback((date: Date) => (
+    formatDateInTimeZone(date, timeZone, {
+      month: 'short',
+      day: 'numeric',
+    })
+  ), [timeZone]);
+
+  const formatLongDate = useCallback((date: Date) => (
+    formatDateInTimeZone(date, timeZone, {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  ), [timeZone]);
+
+  const getBookingReference = useCallback((booking: SimpleBooking) => (
+    booking.bookingReference || booking.id.substring(0, 8).toUpperCase()
+  ), []);
+
+  const getBookingAccessCode = useCallback((booking: SimpleBooking) => (
+    (booking.qrId || booking.id.slice(-8)).toUpperCase()
+  ), []);
+
+  const getBookingTimeLabel = useCallback((booking: SimpleBooking) => (
+    booking.selectedSlot || booking.timeSlot || `${formatTimeInTimeZone(booking.startTime, timeZone)} - ${formatTimeInTimeZone(booking.endTime, timeZone)}`
+  ), [timeZone]);
 
   useEffect(() => {
     setMounted(true);
@@ -78,6 +127,13 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
       setGeneratingQR(false);
     }
   }, [showQRModal]);
+
+  useEffect(() => {
+    if (!showReceiptModal) {
+      setReceiptQrDataUrl(null);
+      setGeneratingReceiptQR(false);
+    }
+  }, [showReceiptModal]);
 
   const getBookingStatus = useCallback((booking: SimpleBooking) => {
     if (booking.status === 'waitlist') return 'waitlist';
@@ -235,7 +291,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
         startTime: booking.startTime.toISOString(),
         endTime: booking.endTime.toISOString(),
         status: booking.status,
-        accessCode: `${booking.id.slice(-8).toUpperCase()}`,
+        accessCode: getBookingAccessCode(booking),
         securityHash: btoa(`${booking.id}-${booking.userId}-${Date.now()}`),
         timestamp: new Date().toISOString(),
         expiresAt: new Date(booking.endTime.getTime() + 30 * 60 * 1000).toISOString(),
@@ -288,21 +344,8 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                   userEmail: booking.userId,
                   userName: 'Resident',
                   amenityName: booking.amenityName,
-                  date: new Date(booking.startTime).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  }),
-                  timeSlot: `${new Date(booking.startTime).toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                  })} - ${new Date(booking.endTime).toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                  })}`,
+                  date: formatLongDate(new Date(booking.startTime)),
+                  timeSlot: `${formatTimeInTimeZone(new Date(booking.startTime), timeZone)} - ${formatTimeInTimeZone(new Date(booking.endTime), timeZone)}`,
                   bookingId: booking.id,
                   isAdminCancellation: false,
                 }
@@ -338,6 +381,212 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
     }
   };
 
+  const handleOpenReceipt = async (booking: SimpleBooking) => {
+    try {
+      setGeneratingReceiptQR(true);
+
+      const qrPayload = {
+        bookingId: booking.id,
+        bookingReference: getBookingReference(booking),
+        amenityId: booking.amenityId,
+        amenityName: booking.amenityName,
+        userId: booking.userId,
+        status: booking.status,
+        accessCode: getBookingAccessCode(booking),
+      };
+
+      const receiptQr = await QRCode.toDataURL(JSON.stringify(qrPayload), {
+        errorCorrectionLevel: 'M',
+        type: 'image/png',
+        margin: 1,
+        width: 160,
+      });
+
+      setReceiptQrDataUrl(receiptQr);
+    } catch (error) {
+      console.error('Receipt QR generation failed:', error);
+      setReceiptQrDataUrl(null);
+    } finally {
+      setGeneratingReceiptQR(false);
+    }
+
+    setSelectedBooking(booking);
+    setShowReceiptModal(true);
+  };
+
+  const downloadCSV = () => {
+    if (!bookings.length) {
+      toast.info('No bookings available to export');
+      return;
+    }
+
+    const rows = bookings
+      .slice()
+      .sort((a, b) => b.startTime.getTime() - a.startTime.getTime())
+      .map((booking) => {
+        const calculatedStatus = getBookingStatus(booking);
+        return [
+          booking.id,
+          booking.amenityName || 'Community Facility',
+          booking.amenityType || 'general',
+          formatDateKey(booking.startTime),
+          formatTimeInTimeZone(booking.startTime, timeZone),
+          formatTimeInTimeZone(booking.endTime, timeZone),
+          calculateDuration(booking.startTime, booking.endTime),
+          calculatedStatus,
+          getBookingAccessCode(booking),
+        ];
+      });
+
+    const header = [
+      'Booking ID',
+      'Amenity',
+      'Amenity Type',
+      'Date',
+      'Start Time',
+      'End Time',
+      'Duration',
+      'Status',
+      'QR Access Code',
+    ];
+
+    const escapeCell = (value: string) => {
+      let safeValue = value ?? '';
+
+      // Prevent CSV formula injection when opened in spreadsheet tools.
+      if (/^[=+\-@]/.test(safeValue)) {
+        safeValue = `'${safeValue}`;
+      }
+
+      if (safeValue.includes(',') || safeValue.includes('"') || safeValue.includes('\n')) {
+        return `"${safeValue.replace(/"/g, '""')}"`;
+      }
+      return safeValue;
+    };
+
+    const csv = [header, ...rows]
+      .map((row) => row.map((cell) => escapeCell(String(cell))).join(','))
+      .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `booking-history-${formatDateKey(new Date())}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    toast.success('Booking history exported');
+  };
+
+  const printReceipt = (booking: SimpleBooking) => {
+    const escapeHtml = (value: string) =>
+      value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const status = getStatusDisplay(getBookingStatus(booking)).label;
+    const accessCode = getBookingAccessCode(booking);
+    const bookingReference = `#${getBookingReference(booking)}`;
+    const safeBookingId = escapeHtml(booking.id);
+    const safeBookingReference = escapeHtml(bookingReference);
+    const safeAmenityName = escapeHtml(booking.amenityName || 'Community Facility');
+    const safeStatus = escapeHtml(status);
+    const safeAccessCode = escapeHtml(accessCode);
+    const safeGeneratedAt = escapeHtml(formatDateTimeInTimeZone(new Date(), timeZone, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      year: 'numeric',
+    }));
+    const safeDate = escapeHtml(formatLongDate(booking.startTime));
+    const safeTime = escapeHtml(getBookingTimeLabel(booking));
+    const safeDuration = escapeHtml(calculateDuration(booking.startTime, booking.endTime));
+    const qrImage = receiptQrDataUrl
+      ? `<img src="${receiptQrDataUrl}" alt="Booking QR" style="width: 120px; height: 120px; border: 1px solid #e2e8f0; padding: 8px; border-radius: 12px;"/>`
+      : '<div style="width: 120px; height: 120px; border: 1px solid #e2e8f0; border-radius: 12px; display:flex; align-items:center; justify-content:center; color:#64748b; font-size:12px;">QR unavailable</div>';
+
+    const html = `
+      <!doctype html>
+      <html>
+        <head>
+          <title>Booking Receipt - ${safeAccessCode}</title>
+          <meta charset="utf-8" />
+          <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 24px; color: #0f172a; }
+            .receipt { max-width: 760px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; }
+            .header { background: #0f172a; color: #fff; padding: 18px 22px; }
+            .header h1 { margin: 0; font-size: 20px; }
+            .header p { margin: 6px 0 0; font-size: 13px; opacity: 0.86; }
+            .content { padding: 22px; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+            .item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; }
+            .label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+            .value { font-size: 14px; font-weight: 600; color: #0f172a; }
+            .foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 8px; border-top: 1px solid #e2e8f0; }
+            .meta { font-size: 12px; color: #64748b; }
+            @media print {
+              body { padding: 0; }
+              .receipt { border: none; border-radius: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt">
+            <div class="header">
+              <h1>CircleIn Booking Receipt</h1>
+              <p>Booking confirmation for facility access</p>
+            </div>
+            <div class="content">
+              <div class="grid">
+                <div class="item"><div class="label">Booking Ref</div><div class="value">${safeBookingReference}</div></div>
+                <div class="item"><div class="label">Amenity</div><div class="value">${safeAmenityName}</div></div>
+                <div class="item"><div class="label">Internal ID</div><div class="value">${safeBookingId}</div></div>
+                <div class="item"><div class="label">Date</div><div class="value">${safeDate}</div></div>
+                <div class="item"><div class="label">Time</div><div class="value">${safeTime}</div></div>
+                <div class="item"><div class="label">Duration</div><div class="value">${safeDuration}</div></div>
+                <div class="item"><div class="label">Status</div><div class="value">${safeStatus}</div></div>
+                <div class="item"><div class="label">QR Access Code</div><div class="value">${safeAccessCode}</div></div>
+                <div class="item"><div class="label">Generated At</div><div class="value">${safeGeneratedAt}</div></div>
+              </div>
+              <div class="foot">
+                <div>
+                  <div class="label">Facility Access QR</div>
+                  ${qrImage}
+                </div>
+                <div class="meta">
+                  Keep this receipt for your records.<br/>
+                  You can save this as PDF from the print dialog.
+                </div>
+              </div>
+            </div>
+          </div>
+          <script>
+            window.addEventListener('load', function () {
+              window.print();
+            });
+          </script>
+        </body>
+      </html>
+    `;
+
+    const popup = window.open('', '_blank', 'width=900,height=700');
+    if (!popup) {
+      toast.error('Unable to open print preview. Please allow pop-ups.');
+      return;
+    }
+
+    popup.document.open();
+    popup.document.write(html);
+    popup.document.close();
+  };
+
   const isCheckInAvailable = (booking: SimpleBooking) => {
     const now = new Date();
     const checkInWindow = new Date(booking.startTime.getTime() - 15 * 60 * 1000);
@@ -348,10 +597,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
   };
 
   const formatBookingTime = (date: Date) => {
-    if (isToday(date)) return `Today at ${format(date, 'h:mm a')}`;
-    if (isTomorrow(date)) return `Tomorrow at ${format(date, 'h:mm a')}`;
-    if (isYesterday(date)) return `Yesterday at ${format(date, 'h:mm a')}`;
-    return format(date, 'MMM d, h:mm a');
+    return `${formatShortDate(date)}, ${formatTimeInTimeZone(date, timeZone)}`;
   };
 
   const calculateDuration = (startTime: Date, endTime: Date) => {
@@ -517,6 +763,15 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
               </button>
             ))}
           </div>
+
+          <Button
+            onClick={downloadCSV}
+            variant="outline"
+            className="h-10 sm:h-11 px-4 rounded-xl border-slate-200 dark:border-slate-700 w-full sm:w-auto"
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
         </div>
 
         {/* Bookings List */}
@@ -646,7 +901,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                           {status === 'pending_confirmation' && (booking as any).confirmationDeadline && (
                             <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 p-3 bg-sky-50 dark:bg-sky-500/10 rounded-xl">
                               <span className="text-xs sm:text-sm text-sky-700 dark:text-sky-400">
-                                Confirm by {new Date((booking as any).confirmationDeadline.seconds * 1000).toLocaleString()}
+                                Confirm by {formatDateTimeInTimeZone(new Date((booking as any).confirmationDeadline.seconds * 1000), timeZone)}
                               </span>
                               <Button
                                 size="sm"
@@ -725,6 +980,13 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                               >
                                 <QrCode className="w-4 h-4 mr-2 text-slate-500" />
                                 View QR Code
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => void handleOpenReceipt(booking)}
+                                className="rounded-lg text-sm cursor-pointer"
+                              >
+                                <FileText className="w-4 h-4 mr-2 text-slate-500" />
+                                View Receipt
                               </DropdownMenuItem>
                               {checkInAvailable && (
                                 <DropdownMenuItem 
@@ -850,7 +1112,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                       <div>
                         <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mb-0.5">Access Code</div>
                         <div className="font-mono text-lg font-semibold text-white tracking-widest">
-                          {showQRDetails ? selectedBooking.id.slice(-8).toUpperCase() : '••••••••'}
+                          {showQRDetails ? getBookingAccessCode(selectedBooking) : '••••••••'}
                         </div>
                       </div>
                       <button
@@ -889,7 +1151,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                           <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                           <div className="min-w-0">
                             <div className="text-sm text-slate-700 dark:text-slate-300">
-                              {format(selectedBooking.startTime, 'EEE, MMM d')} · {format(selectedBooking.startTime, 'h:mm a')} – {format(selectedBooking.endTime, 'h:mm a')}
+                              {formatDateInTimeZone(selectedBooking.startTime, timeZone, { weekday: 'short', month: 'short', day: 'numeric' })} · {getBookingTimeLabel(selectedBooking)}
                             </div>
                           </div>
                         </div>
@@ -903,7 +1165,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                       onClick={() => {
                         if (qrCodeDataUrl) {
                           const link = document.createElement('a');
-                          link.download = `access-${selectedBooking.id.slice(-8)}.png`;
+                          link.download = `access-${getBookingAccessCode(selectedBooking)}.png`;
                           link.href = qrCodeDataUrl;
                           link.click();
                           toast.success('QR code downloaded');
@@ -918,7 +1180,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
 
                     <Button
                       onClick={() => {
-                        const details = `Access Code: ${selectedBooking.id.slice(-8).toUpperCase()}\nFacility: ${selectedBooking.amenityName}\nTime: ${format(selectedBooking.startTime, 'MMM d, h:mm a')} - ${format(selectedBooking.endTime, 'h:mm a')}`;
+                        const details = `Booking Ref: #${getBookingReference(selectedBooking)}\nAccess Code: ${getBookingAccessCode(selectedBooking)}\nFacility: ${selectedBooking.amenityName}\nTime: ${formatShortDate(selectedBooking.startTime)}, ${getBookingTimeLabel(selectedBooking)}`;
                         navigator.clipboard.writeText(details);
                         toast.success('Copied to clipboard');
                       }}
@@ -927,6 +1189,121 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                     >
                       <Copy className="w-4 h-4 mr-1.5" />
                       Copy
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogPrimitive.Content>
+          </DialogPrimitive.Portal>
+        </DialogPrimitive.Root>
+
+        {/* Receipt Modal */}
+        <DialogPrimitive.Root open={showReceiptModal} onOpenChange={setShowReceiptModal}>
+          <DialogPrimitive.Portal>
+            <DialogPrimitive.Overlay
+              className={cn(
+                'fixed inset-0 z-[9999]',
+                'bg-slate-900/55 dark:bg-slate-950/80 backdrop-blur-sm',
+                'data-[state=open]:animate-in data-[state=closed]:animate-out',
+                'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+                'duration-200'
+              )}
+            />
+            <DialogPrimitive.Content
+              className={cn(
+                'fixed left-[50%] top-[50%] z-[10000] w-[calc(100%-2rem)] max-w-2xl translate-x-[-50%] translate-y-[-50%]',
+                'rounded-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 shadow-2xl',
+                'max-h-[90vh] overflow-y-auto',
+                'data-[state=open]:animate-in data-[state=closed]:animate-out',
+                'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+                'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 duration-200'
+              )}
+            >
+              {selectedBooking && (
+                <div className="p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-3 mb-5">
+                    <div>
+                      <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Booking Receipt</h2>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Confirmation for {selectedBooking.amenityName || 'Community Facility'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowReceiptModal(false)}
+                      className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Amenity</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white mt-1">
+                        {selectedBooking.amenityName || 'Community Facility'}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Booking Ref</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white mt-1">
+                        #{getBookingReference(selectedBooking)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Internal ID</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white mt-1 break-all">
+                        {selectedBooking.id}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Date</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white mt-1">
+                        {formatLongDate(selectedBooking.startTime)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Time</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white mt-1">
+                        {getBookingTimeLabel(selectedBooking)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Status</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white mt-1">
+                        {getStatusDisplay(getBookingStatus(selectedBooking)).label}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">QR Access Code</p>
+                      <p className="text-sm font-medium tracking-widest text-slate-900 dark:text-white mt-1">
+                        {getBookingAccessCode(selectedBooking)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-6 rounded-xl border border-slate-200 dark:border-slate-700 p-4 flex items-center gap-4">
+                    <div className="w-28 h-28 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-white dark:bg-slate-950">
+                      {receiptQrDataUrl && !generatingReceiptQR ? (
+                        <img src={receiptQrDataUrl} alt="Receipt QR" className="w-24 h-24" />
+                      ) : (
+                        <span className="text-xs text-slate-500">Generating QR...</span>
+                      )}
+                    </div>
+                    <div className="text-sm text-slate-600 dark:text-slate-300">
+                      Use this QR for quick verification at the amenity entry point.
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                    <Button variant="outline" onClick={() => setShowReceiptModal(false)} className="h-10">
+                      Close
+                    </Button>
+                    <Button
+                      onClick={() => printReceipt(selectedBooking)}
+                      className="h-10 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                    >
+                      <Printer className="w-4 h-4 mr-2" />
+                      Print / Save PDF
                     </Button>
                   </div>
                 </div>

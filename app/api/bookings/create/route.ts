@@ -6,12 +6,14 @@ import {
   query, 
   where, 
   getDocs, 
+  getDoc,
   runTransaction,
   doc,
   Timestamp,
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { formatDateInTimeZone, resolveTimeZone } from '@/lib/timezone';
 
 /**
  * PRODUCTION-GRADE BOOKING SYSTEM
@@ -96,10 +98,107 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (bookingEnd <= bookingStart) {
+      return NextResponse.json(
+        { error: 'End time must be after start time' },
+        { status: 400 }
+      );
+    }
+
+    // 4.5 Resolve community settings once so rule checks and notifications stay consistent
+    let settingsData: any = {};
+    if (session.user.communityId) {
+      try {
+        const settingsSnapshot = await getDoc(doc(db, 'settings', session.user.communityId));
+        settingsData = settingsSnapshot.data() || {};
+      } catch (settingsError) {
+        console.error('   ⚠️ Failed to read community settings, using defaults:', settingsError);
+      }
+    }
+
+    const maintenanceModeEnabled = Boolean(settingsData?.systemSettings?.enableMaintenanceMode);
+    if (maintenanceModeEnabled) {
+      const isAdmin = (session.user as any).role === 'admin' || (session.user as any).role === 'super_admin';
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: 'New bookings are temporarily disabled due to maintenance mode' },
+          { status: 503 }
+        );
+      }
+    }
+
+    const bookingRules = settingsData?.bookingRules || {};
+    const bookingsRef = collection(db, 'bookings');
+    const toPositiveNumber = (value: any): number | null => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    };
+
+    const maxBookingDurationHours = toPositiveNumber(bookingRules.maxBookingDuration);
+    const advanceBookingDays = toPositiveNumber(bookingRules.advanceBookingDays);
+    const maxActiveBookings = toPositiveNumber(bookingRules.maxActiveBookings);
+    const allowWeekendBookings = bookingRules.weekendBookings !== false;
+
+    const bookingDurationHours =
+      (bookingEnd.getTime() - bookingStart.getTime()) / (1000 * 60 * 60);
+
+    if (maxBookingDurationHours !== null && bookingDurationHours > maxBookingDurationHours) {
+      return NextResponse.json(
+        {
+          error: `Booking duration cannot exceed ${maxBookingDurationHours} hour${maxBookingDurationHours === 1 ? '' : 's'}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!allowWeekendBookings) {
+      const dayOfWeek = bookingStart.getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      if (isWeekend) {
+        return NextResponse.json(
+          { error: 'Weekend bookings are currently disabled by community policy' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (advanceBookingDays !== null) {
+      const now = new Date();
+      const maxAllowedDate = new Date(now);
+      maxAllowedDate.setDate(maxAllowedDate.getDate() + advanceBookingDays);
+
+      if (bookingStart.getTime() > maxAllowedDate.getTime()) {
+        return NextResponse.json(
+          {
+            error: `Bookings can only be made up to ${advanceBookingDays} day${advanceBookingDays === 1 ? '' : 's'} in advance`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (maxActiveBookings !== null && session.user.communityId) {
+      const userActiveBookingsQuery = query(
+        bookingsRef,
+        where('communityId', '==', session.user.communityId),
+        where('userEmail', '==', session.user.email),
+        where('status', 'in', ['confirmed', 'pending_confirmation', 'waitlist'])
+      );
+
+      const userActiveBookingsSnapshot = await getDocs(userActiveBookingsQuery);
+      if (userActiveBookingsSnapshot.size >= maxActiveBookings) {
+        return NextResponse.json(
+          {
+            error: `You already have ${userActiveBookingsSnapshot.size} active bookings. The limit is ${maxActiveBookings}.`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     console.log(`🎯 Booking request: ${amenityName} at ${selectedSlot} by ${session.user.email}`);
 
     // 5. PRE-READ: Check existing bookings (before transaction)
-    const bookingsRef = collection(db, 'bookings');
     const conflictQuery = query(
       bookingsRef,
       where('amenityId', '==', amenityId),
@@ -146,6 +245,8 @@ export async function POST(request: NextRequest) {
 
       // Step 6c: Decide - Confirmed or Waitlist?
       const newBookingRef = doc(collection(db, 'bookings'));
+      const bookingReference = newBookingRef.id.substring(0, 8).toUpperCase();
+      const qrAccessCode = Math.random().toString(36).substring(2, 10).toUpperCase();
       const baseBookingData = {
         amenityId,
         amenityName,
@@ -161,7 +262,8 @@ export async function POST(request: NextRequest) {
         selectedDate,
         selectedSlot,
         timeSlot: selectedSlot, // Store time slot for reminder email
-        qrId: Math.random().toString(36).substring(2, 15),
+        bookingReference,
+        qrId: qrAccessCode,
         reminderSent: false, // Track if 1-hour reminder was sent
         createdAt: serverTimestamp(),
       };
@@ -179,6 +281,8 @@ export async function POST(request: NextRequest) {
         return {
           status: 'confirmed',
           bookingId: newBookingRef.id,
+          bookingReference,
+          qrId: qrAccessCode,
           message: 'Booking confirmed successfully!',
           position: existingBookings.length + 1,
           capacity: maxCapacity
@@ -201,6 +305,8 @@ export async function POST(request: NextRequest) {
         return {
           status: 'waitlist',
           bookingId: newBookingRef.id,
+          bookingReference,
+          qrId: qrAccessCode,
           message: `Added to waitlist (Position #${waitlistPosition})`,
           position: waitlistPosition,
           capacity: maxCapacity,
@@ -211,6 +317,8 @@ export async function POST(request: NextRequest) {
 
     // 6. Send email notification based on status
     console.log(`   📧 Preparing email notification (${result.status})...`);
+
+    const communityTimeZone = resolveTimeZone(settingsData?.community?.timezone || settingsData?.timezone);
     
     // Import email service and enhancements
     const { emailTemplates, sendEmail } = await import('@/lib/email-service');
@@ -227,7 +335,7 @@ export async function POST(request: NextRequest) {
       const emailData = {
         userName: userName || session.user.name || 'Resident',
         amenityName,
-        date: bookingStart.toLocaleDateString('en-US', { 
+        date: formatDateInTimeZone(bookingStart, communityTimeZone, {
           weekday: 'long', 
           year: 'numeric', 
           month: 'long', 
@@ -235,6 +343,7 @@ export async function POST(request: NextRequest) {
         }),
         timeSlot: selectedSlot,
         bookingId: result.bookingId,
+        bookingReference: result.bookingReference,
         communityName: (session.user as any).communityName || 'Your Community',
         flatNumber: userFlatNumber || (session.user as any).flatNumber || '',
       };
@@ -297,20 +406,45 @@ export async function POST(request: NextRequest) {
       // Don't throw - booking succeeded, email is just a notification
     }
 
+    // 6.5 Award gamification badges for confirmed bookings (non-blocking)
+    if (result.status === 'confirmed' && session.user.communityId) {
+      try {
+        const { evaluateAndAwardBadges } = await import('@/lib/gamification-service');
+        const awardedBadges = await evaluateAndAwardBadges({
+          userEmail: session.user.email,
+          communityId: session.user.communityId,
+          bookingStartTime: bookingStart,
+        });
+
+        if (awardedBadges.length > 0) {
+          console.log(
+            `   🏆 Awarded badges: ${awardedBadges.map((badge: any) => badge.name).join(', ')}`
+          );
+        }
+      } catch (badgeError: any) {
+        console.error('   ⚠️ Badge evaluation failed (non-critical):', badgeError.message);
+      }
+    }
+
     // 7. Return success
     return NextResponse.json({
       success: true,
       status: result.status,
       bookingId: result.bookingId,
+      bookingReference: result.bookingReference,
+      qrId: result.qrId,
       message: result.message,
       position: result.position,
       capacity: result.capacity,
       booking: {
         id: result.bookingId,
+        bookingReference: result.bookingReference,
+        qrId: result.qrId,
         status: result.status,
         amenityName,
         startTime: bookingStart.toISOString(),
         endTime: bookingEnd.toISOString(),
+        selectedSlot,
         waitlistPosition: result.status === 'waitlist' ? result.position : undefined,
       }
     });
