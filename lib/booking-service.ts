@@ -228,7 +228,7 @@ export async function applySuspension(userId: string, noShowCount: number) {
           updatedAt: serverTimestamp()
         });
         
-        console.log(`🚫 Suspended user ${userId} until ${suspensionDate.toLocaleDateString()}`);
+        console.log(`🚫 Suspended user ${userId} until ${suspensionDate.toISOString().slice(0, 10)}`);
         return true;
       }
     }

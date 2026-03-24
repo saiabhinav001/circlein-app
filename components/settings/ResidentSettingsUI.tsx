@@ -4,6 +4,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/components/providers/theme-provider';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,8 +39,10 @@ import {
   Phone,
   Home,
   UserCircle,
+  Compass,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { registerPushNotifications } from '@/lib/push-notifications';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -61,6 +66,7 @@ interface ResidentNotifications {
   emergencyAlerts: boolean;
   pushNotifications: boolean;
   emailDigest: boolean;
+  weeklyDigest: boolean;
   smsAlerts: boolean;
 }
 
@@ -85,6 +91,18 @@ const navigationItems: { id: SettingsSection; label: string; icon: typeof User; 
   { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Theme and display' },
   { id: 'security', label: 'Security', icon: Lock, description: 'Password and authentication' },
 ];
+
+const DEFAULT_NOTIFICATIONS: ResidentNotifications = {
+  bookingReminders: true,
+  communityUpdates: true,
+  maintenanceAlerts: true,
+  eventNotifications: true,
+  emergencyAlerts: true,
+  pushNotifications: false,
+  emailDigest: true,
+  weeklyDigest: true,
+  smsAlerts: false,
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
@@ -117,14 +135,7 @@ export default function ResidentSettingsUI() {
   
   // Notifications state
   const [notifications, setNotifications] = useState<ResidentNotifications>({
-    bookingReminders: true,
-    communityUpdates: true,
-    maintenanceAlerts: true,
-    eventNotifications: true,
-    emergencyAlerts: true,
-    pushNotifications: false,
-    emailDigest: true,
-    smsAlerts: false,
+    ...DEFAULT_NOTIFICATIONS,
   });
   
   const [originalNotifications, setOriginalNotifications] = useState<ResidentNotifications | null>(null);
@@ -152,46 +163,115 @@ export default function ResidentSettingsUI() {
   // ─────────────────────────────────────────────────────────────────────────────
   
   useEffect(() => {
-    if (session?.user?.email) {
+    if (!session?.user?.email) return;
+
+    const loadSettings = async () => {
+      const initialProfile: ResidentProfile = {
+        name: session.user?.name || '',
+        email: session.user?.email || '',
+        phone: '',
+        flatNumber: '',
+        emergencyContact: '',
+        bio: '',
+        avatar: session.user?.image || '',
+      };
+
       const storageKey = `resident-settings-${session.user.email}`;
-      const savedSettings = localStorage.getItem(storageKey);
-      
-      if (savedSettings) {
-        try {
-          const parsed = JSON.parse(savedSettings);
-          if (parsed.profile) {
-            setProfile(parsed.profile);
-            setOriginalProfile(parsed.profile);
+      let loadedFromFirestore = false;
+
+      try {
+        const userRef = doc(db, 'users', session.user.email);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const userData = userSnap.data() as any;
+          const persistedSettings = userData.residentSettings;
+          const persistedNotifications = userData.notificationPreferences;
+
+          if (persistedSettings?.profile) {
+            const nextProfile = {
+              ...initialProfile,
+              ...persistedSettings.profile,
+            } as ResidentProfile;
+            setProfile(nextProfile);
+            setOriginalProfile(nextProfile);
+            loadedFromFirestore = true;
           }
-          if (parsed.notifications) {
-            setNotifications(parsed.notifications);
-            setOriginalNotifications(parsed.notifications);
+
+          if (persistedSettings?.notifications || persistedNotifications) {
+            const nextNotifications = {
+              ...DEFAULT_NOTIFICATIONS,
+              ...(persistedSettings?.notifications || {}),
+              ...(persistedNotifications || {}),
+            } as ResidentNotifications;
+            setNotifications(nextNotifications);
+            setOriginalNotifications(nextNotifications);
+            loadedFromFirestore = true;
           }
-          if (parsed.privacy) {
-            setPrivacy(parsed.privacy);
-            setOriginalPrivacy(parsed.privacy);
+
+          if (persistedSettings?.privacy) {
+            const nextPrivacy = {
+              ...privacy,
+              ...persistedSettings.privacy,
+            } as ResidentPrivacy;
+            setPrivacy(nextPrivacy);
+            setOriginalPrivacy(nextPrivacy);
+            loadedFromFirestore = true;
           }
-        } catch (e) {
-          console.error('Failed to load settings:', e);
         }
-      } else {
-        // Initialize with session data
-        const initialProfile = {
-          name: session.user.name || '',
-          email: session.user.email || '',
-          phone: '',
-          flatNumber: '',
-          emergencyContact: '',
-          bio: '',
-          avatar: session.user.image || '',
-        };
-        setProfile(initialProfile);
-        setOriginalProfile(initialProfile);
-        setOriginalNotifications(notifications);
-        setOriginalPrivacy(privacy);
+      } catch (error) {
+        console.error('Failed to load settings from Firestore:', error);
       }
-    }
-  }, [session]);
+
+      if (!loadedFromFirestore) {
+        const savedSettings = localStorage.getItem(storageKey);
+        if (savedSettings) {
+          try {
+            const parsed = JSON.parse(savedSettings);
+            if (parsed.profile) {
+              const nextProfile = { ...initialProfile, ...parsed.profile };
+              setProfile(nextProfile);
+              setOriginalProfile(nextProfile);
+            } else {
+              setProfile(initialProfile);
+              setOriginalProfile(initialProfile);
+            }
+
+            if (parsed.notifications) {
+              const nextNotifications = { ...DEFAULT_NOTIFICATIONS, ...parsed.notifications };
+              setNotifications(nextNotifications);
+              setOriginalNotifications(nextNotifications);
+            } else {
+              setNotifications(DEFAULT_NOTIFICATIONS);
+              setOriginalNotifications(DEFAULT_NOTIFICATIONS);
+            }
+
+            if (parsed.privacy) {
+              setPrivacy(parsed.privacy);
+              setOriginalPrivacy(parsed.privacy);
+            } else {
+              setOriginalPrivacy(privacy);
+            }
+          } catch (e) {
+            console.error('Failed to load local settings:', e);
+            setProfile(initialProfile);
+            setOriginalProfile(initialProfile);
+            setNotifications(DEFAULT_NOTIFICATIONS);
+            setOriginalNotifications(DEFAULT_NOTIFICATIONS);
+            setOriginalPrivacy(privacy);
+          }
+        } else {
+          setProfile(initialProfile);
+          setOriginalProfile(initialProfile);
+          setNotifications(DEFAULT_NOTIFICATIONS);
+          setOriginalNotifications(DEFAULT_NOTIFICATIONS);
+          setOriginalPrivacy(privacy);
+        }
+      }
+    };
+
+    void loadSettings();
+  }, [session?.user?.email]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Dirty state detection
@@ -235,6 +315,37 @@ export default function ResidentSettingsUI() {
           setIsLoading(false);
           return;
         }
+
+        const currentUser = auth.currentUser;
+        if (!currentUser || !currentUser.email) {
+          toast.error('Could not verify your account. Please sign in again.');
+          setIsLoading(false);
+          return;
+        }
+
+        const providerIds = (currentUser.providerData || []).map((item) => item.providerId);
+        if (!providerIds.includes('password')) {
+          toast.error('Password change is only available for email/password sign-ins.');
+          setIsLoading(false);
+          return;
+        }
+
+        try {
+          const credential = EmailAuthProvider.credential(currentUser.email, passwords.current);
+          await reauthenticateWithCredential(currentUser, credential);
+          await updatePassword(currentUser, passwords.new);
+        } catch (passwordError: any) {
+          const code = String(passwordError?.code || '');
+          if (code.includes('auth/wrong-password')) {
+            toast.error('Current password is incorrect.');
+          } else if (code.includes('auth/too-many-requests')) {
+            toast.error('Too many attempts. Please wait and try again.');
+          } else {
+            toast.error('Failed to update password.');
+          }
+          setIsLoading(false);
+          return;
+        }
       }
       
       // Simulate API delay
@@ -248,6 +359,26 @@ export default function ResidentSettingsUI() {
         privacy,
         updatedAt: new Date().toISOString(),
       }));
+
+      // Persist in Firestore as source of truth for notification jobs
+      await setDoc(
+        doc(db, 'users', session.user.email),
+        {
+          residentSettings: {
+            profile,
+            notifications,
+            privacy,
+            updatedAt: new Date().toISOString(),
+          },
+          notificationPreferences: notifications,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      if (notifications.pushNotifications) {
+        await registerPushNotifications();
+      }
       
       // Update original states
       setOriginalProfile(profile);
@@ -305,14 +436,28 @@ export default function ResidentSettingsUI() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900/50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Settings</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Manage your account preferences and settings
-          </p>
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Settings</h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Manage your account preferences and settings
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2 w-full sm:w-auto"
+            onClick={() => {
+              window.dispatchEvent(new Event('circlein-restart-tour'));
+              toast.success('Onboarding tour restarted');
+            }}
+          >
+            <Compass className="w-4 h-4" />
+            Restart Tour
+          </Button>
         </div>
 
         {/* Main Layout: Sidebar + Content */}
@@ -604,7 +749,8 @@ function NotificationsSection({
       description: 'How you want to receive notifications',
       items: [
         { key: 'pushNotifications', label: 'Push Notifications', description: 'Browser and mobile push alerts' },
-        { key: 'emailDigest', label: 'Email Digest', description: 'Daily summary of notifications' },
+        { key: 'emailDigest', label: 'Email Notifications', description: 'Important updates by email' },
+        { key: 'weeklyDigest', label: 'Weekly Digest', description: 'Weekly snapshot of bookings and community news' },
         { key: 'smsAlerts', label: 'SMS Alerts', description: 'Text message notifications' },
       ],
     },

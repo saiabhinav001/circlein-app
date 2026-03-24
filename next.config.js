@@ -1,70 +1,74 @@
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development' && process.env.ENABLE_PWA_DEV !== 'true',
+  fallbacks: {
+    document: '/offline',
+  },
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Production optimizations
   reactStrictMode: true,
   swcMinify: true,
-  
-  // Suppress all warnings
+
   onDemandEntries: {
     maxInactiveAge: 25 * 1000,
     pagesBufferLength: 2,
   },
-  
-  // TypeScript and ESLint - ignore errors in production build
+
   typescript: {
-    ignoreBuildErrors: false, // Keep type checking
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true, // Suppress ESLint warnings
+    ignoreDuringBuilds: false,
   },
-  
-  // Webpack configuration to suppress warnings
-  webpack: (config, { isServer }) => {
+
+  webpack: (config) => {
     config.infrastructureLogging = {
       level: 'error',
     };
     config.stats = 'errors-only';
     return config;
   },
-  
-  // Security headers
+
   headers: async () => [
     {
       source: '/:path*',
       headers: [
         {
           key: 'X-DNS-Prefetch-Control',
-          value: 'on'
+          value: 'on',
         },
         {
           key: 'Strict-Transport-Security',
-          value: 'max-age=63072000; includeSubDomains; preload'
+          value: 'max-age=63072000; includeSubDomains; preload',
         },
         {
           key: 'X-Content-Type-Options',
-          value: 'nosniff'
+          value: 'nosniff',
         },
         {
           key: 'X-Frame-Options',
-          value: 'SAMEORIGIN'
+          value: 'SAMEORIGIN',
         },
         {
           key: 'X-XSS-Protection',
-          value: '1; mode=block'
+          value: '1; mode=block',
         },
         {
           key: 'Referrer-Policy',
-          value: 'strict-origin-when-cross-origin'
+          value: 'strict-origin-when-cross-origin',
         },
         {
           key: 'Permissions-Policy',
-          value: 'camera=(), microphone=(), geolocation=()'
-        }
+          value: 'camera=(), geolocation=(), microphone=(self), notifications=(self)',
+        },
       ],
     },
   ],
-  
-  // Image optimization
+
   images: {
     remotePatterns: [
       {
@@ -84,25 +88,18 @@ const nextConfig = {
     minimumCacheTTL: 60,
     unoptimized: false,
   },
-  
-  // Compiler options
+
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn'],
-    } : false,
+    removeConsole:
+      process.env.NODE_ENV === 'production'
+        ? {
+            exclude: ['error', 'warn'],
+          }
+        : false,
   },
-  
-  // Build optimizations
+
   poweredByHeader: false,
   compress: true,
-  
-  // Only for development - remove in production
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
-  typescript: {
-    ignoreBuildErrors: false,
-  },
 };
 
-module.exports = nextConfig;
+module.exports = withPWA(nextConfig);

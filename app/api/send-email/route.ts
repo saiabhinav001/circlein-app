@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
                 <p style="margin: 5px 0;"><strong>Role:</strong> <span style="background: ${roleColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${roleLabel}</span></p>
                 <p style="margin: 5px 0;"><strong>Community:</strong> ${communityName || 'Not specified'}</p>
                 <p style="margin: 5px 0;"><strong>Subject:</strong> ${subject}</p>
-                <p style="margin: 5px 0;"><strong>Sent:</strong> ${new Date().toLocaleString()}</p>
+                <p style="margin: 5px 0;"><strong>Sent:</strong> ${new Date().toISOString()}</p>
               </div>
               <div class="message-box">
                 <h3 style="margin-top: 0;">Message:</h3>

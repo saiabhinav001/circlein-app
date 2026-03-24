@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // TEMPORARY: Open during NextAuth-only phase; tighten when Firebase Auth is enforced.
+    match /{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}

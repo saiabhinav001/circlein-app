@@ -64,7 +64,7 @@ async function handleWaitlistExpiry(request: NextRequest) {
         console.log(`   ⏰ Expiring waitlist booking ${doc.id}`);
         console.log(`      User: ${booking.userEmail}`);
         console.log(`      Amenity: ${booking.amenityName}`);
-        console.log(`      End Time: ${booking.endTime.toDate().toLocaleString()}`);
+        console.log(`      End Time: ${booking.endTime.toDate().toISOString()}`);
         console.log(`      Status: ${booking.status}`);
 
         // Update booking status to expired

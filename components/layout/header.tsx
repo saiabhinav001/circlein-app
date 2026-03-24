@@ -40,9 +40,9 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
   // Keyboard shortcut for search (Cmd/Ctrl + K)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        searchRef.current?.focus();
+        window.dispatchEvent(new Event('circlein-open-command-palette'));
       }
     };
     
@@ -94,7 +94,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
         </div>
 
         {/* Search Bar */}
-        <div className="relative flex-1 max-w-[240px] md:max-w-md lg:max-w-lg ml-auto md:ml-4">
+        <div data-tour="header-search" className="relative flex-1 max-w-[240px] md:max-w-md lg:max-w-lg ml-auto md:ml-4">
           <div className="relative">
             <Search className={cn(
               "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors duration-100",

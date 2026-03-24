@@ -48,6 +48,7 @@ export default withAuth(
 
     // Ensure user has a communityId for protected routes
     if (pathname.startsWith('/dashboard') || 
+      pathname.startsWith('/community') ||
         pathname.startsWith('/amenity') || 
         pathname.startsWith('/bookings') ||
         pathname.startsWith('/profile') ||

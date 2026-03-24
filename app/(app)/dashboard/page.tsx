@@ -26,6 +26,7 @@ import Link from 'next/link';
 import { useUserCreation } from '@/hooks/useUserCreation';
 import { useSearch } from '@/components/providers/search-provider';
 import { cn } from '@/lib/utils';
+import { SmartSuggestionsCard } from '@/components/booking/SmartSuggestionsCard';
 
 interface Amenity {
   id: string;
@@ -516,6 +517,9 @@ export default function Dashboard() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* AI Suggestions */}
+        <SmartSuggestionsCard />
 
         {/* Empty States */}
         {amenities.length === 0 && !loading && (

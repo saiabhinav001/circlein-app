@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { formatDateInTimeZone, formatDateTimeInTimeZone, resolveTimeZone } from '@/lib/timezone';
 
 /**
  * AUTO-CANCELLATION CRON JOB
@@ -209,15 +210,20 @@ export async function GET(request: NextRequest) {
           // Send email (non-critical)
           try {
             const { emailTemplates, sendEmail } = await import('@/lib/email-service');
+            const settingsSnapshot = booking.communityId
+              ? await getDoc(doc(db, 'settings', booking.communityId))
+              : null;
+            const settingsData = settingsSnapshot?.data() as any;
+            const communityTimeZone = resolveTimeZone(settingsData?.community?.timezone || settingsData?.timezone);
             
             const emailTemplate = emailTemplates.waitlistPromotion({
               userName: nextInLine.userName || 'Resident',
               amenityName: booking.amenityName,
-              date: booking.startTime.toDate().toLocaleDateString('en-US', { 
+              date: formatDateInTimeZone(booking.startTime.toDate(), communityTimeZone, {
                 weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
               }),
               timeSlot: nextInLine.selectedSlot || 'Time slot',
-              confirmationDeadline: confirmationDeadline.toLocaleString(),
+              confirmationDeadline: formatDateTimeInTimeZone(confirmationDeadline, communityTimeZone),
               bookingId: nextInLine.id,
               flatNumber: nextInLine.userFlatNumber || ''
             });

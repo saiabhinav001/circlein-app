@@ -1,10 +1,13 @@
 import './globals.css';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import dynamic from 'next/dynamic';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
+import { CommunityBrandingProvider } from '@/components/providers/community-branding-provider';
 import { NotificationProvider } from '@/components/notifications/NotificationSystem';
+import PushNotificationsManager from '@/components/notifications/PushNotificationsManager';
+import AppInstallBanner from '@/components/pwa/AppInstallBanner';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import LoadingScreen from '@/components/LoadingScreen';
@@ -44,7 +47,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  manifest: '/manifest.json',
+  manifest: '/manifest.webmanifest',
   metadataBase: new URL('https://circlein-app.vercel.app'),
   icons: {
     icon: [
@@ -90,16 +93,17 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
   ],
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-  },
 };
 
 export default function RootLayout({
@@ -136,11 +140,15 @@ export default function RootLayout({
         <LoadingScreen />
         <AuthProvider>
           <ThemeProvider defaultTheme="dark" storageKey="circlein-theme">
-            <NotificationProvider>
-              {children}
-              <ToastContainer />
-              <Toaster />
-            </NotificationProvider>
+            <CommunityBrandingProvider>
+              <NotificationProvider>
+                {children}
+                <PushNotificationsManager />
+                <AppInstallBanner />
+                <ToastContainer />
+                <Toaster />
+              </NotificationProvider>
+            </CommunityBrandingProvider>
           </ThemeProvider>
         </AuthProvider>
         <Analytics />

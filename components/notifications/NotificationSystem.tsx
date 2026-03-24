@@ -8,6 +8,8 @@ import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { collection, query, where, onSnapshot, orderBy, limit, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateInTimeZone } from '@/lib/timezone';
 
 // Simplified, enterprise-grade notification type
 export interface Notification {
@@ -47,11 +49,12 @@ export const useNotifications = () => {
 // Notification item component with clean design
 interface NotificationItemProps {
   notification: Notification;
+  timeZone: string;
   onClick: () => void;
   onDelete: (e: React.MouseEvent) => void;
 }
 
-const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onClick, onDelete }) => {
+const NotificationItem: React.FC<NotificationItemProps> = ({ notification, timeZone, onClick, onDelete }) => {
   const formatTimeAgo = (timestamp: number) => {
     const now = Date.now();
     const diffInSeconds = Math.floor((now - timestamp) / 1000);
@@ -63,7 +66,11 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onCli
     if (diffInHours < 24) return `${diffInHours}h ago`;
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
-    return new Date(timestamp).toLocaleDateString();
+    return formatDateInTimeZone(new Date(timestamp), timeZone, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
   };
 
   const priorityColors = {
@@ -369,6 +376,7 @@ export function NotificationPanel() {
     removeNotification,
     unreadCount 
   } = useNotifications();
+  const timeZone = useCommunityTimeZone();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
@@ -571,6 +579,7 @@ export function NotificationPanel() {
                 <NotificationItem
                   key={notification.id}
                   notification={notification}
+                  timeZone={timeZone}
                   onClick={() => handleNotificationClick(notification)}
                   onDelete={(e) => handleDeleteClick(e, notification.id)}
                 />

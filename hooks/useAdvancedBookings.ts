@@ -121,7 +121,7 @@ export function useAdvancedBookings({ userEmail, communityId, isAdmin = false }:
 
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       try {
-        const timestamp = new Date().toLocaleTimeString();
+        const timestamp = new Date().toISOString();
         console.log(`📊 [${timestamp}] Advanced bookings snapshot:`, {
           totalDocs: querySnapshot.size,
           changes: querySnapshot.docChanges().length,

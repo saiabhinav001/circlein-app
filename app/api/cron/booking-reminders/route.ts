@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { emailTemplates, sendEmail } from '@/lib/email-service';
+import { sendPushToUserByEmail } from '@/lib/push-service';
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,8 +48,18 @@ export async function GET(request: NextRequest) {
             to: user.email,
             subject: template.subject,
             html: template.html,
-          }).then(async (result) => {
+          }).then(async (result: Awaited<ReturnType<typeof sendEmail>>) => {
             if (result.success) {
+              await sendPushToUserByEmail(user.email, {
+                title: `Upcoming booking: ${booking.amenityName || 'Amenity'}`,
+                body: `Starts at ${booking.startTime}. Tap to view details.`,
+                url: '/bookings',
+                data: {
+                  type: 'booking-reminder',
+                  bookingId: doc.id,
+                },
+              });
+
               // Mark reminder as sent
               await adminDb.collection('bookings').doc(doc.id).update({
                 reminderSent: true,

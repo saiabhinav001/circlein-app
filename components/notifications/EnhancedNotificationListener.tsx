@@ -3,6 +3,8 @@
 import { useEffect, useRef, useCallback, createContext, useContext } from 'react';
 import { useSession } from 'next-auth/react';
 import { useNotifications } from './NotificationSystem';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateInTimeZone } from '@/lib/timezone';
 
 // ============================================================================
 // ENHANCED NOTIFICATION LISTENER
@@ -44,8 +46,17 @@ export function useRealNotificationTriggers() {
 export function EnhancedNotificationListener() {
   const { data: session } = useSession();
   const { addNotification } = useNotifications();
+  const timeZone = useCommunityTimeZone();
   const mountedRef = useRef(true);
   const welcomeShownRef = useRef(false);
+
+  const formatDate = useCallback((date: Date) => (
+    formatDateInTimeZone(date, timeZone, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  ), [timeZone]);
 
   // Show welcome notification once per session
   const showWelcomeNotification = useCallback(() => {
@@ -107,42 +118,42 @@ export function EnhancedNotificationListener() {
   const triggerBookingConfirmation = useCallback((amenityName: string, date: Date) => {
     addNotification({
       title: 'Booking Confirmed',
-      message: `Your ${amenityName} booking for ${date.toLocaleDateString()} has been confirmed.`,
+      message: `Your ${amenityName} booking for ${formatDate(date)} has been confirmed.`,
       type: 'booking',
       priority: 'normal',
       autoHide: false
     });
-  }, [addNotification]);
+  }, [addNotification, formatDate]);
 
   const triggerBookingReminder = useCallback((amenityName: string, date: Date) => {
     addNotification({
       title: 'Booking Reminder',
-      message: `Your ${amenityName} booking is scheduled for ${date.toLocaleDateString()}.`,
+      message: `Your ${amenityName} booking is scheduled for ${formatDate(date)}.`,
       type: 'booking',
       priority: 'important',
       autoHide: false
     });
-  }, [addNotification]);
+  }, [addNotification, formatDate]);
 
   const triggerBookingCancelled = useCallback((amenityName: string, date: Date) => {
     addNotification({
       title: 'Booking Cancelled',
-      message: `Your ${amenityName} booking for ${date.toLocaleDateString()} has been cancelled.`,
+      message: `Your ${amenityName} booking for ${formatDate(date)} has been cancelled.`,
       type: 'booking',
       priority: 'normal',
       autoHide: false
     });
-  }, [addNotification]);
+  }, [addNotification, formatDate]);
 
   const triggerPaymentReminder = useCallback((amount: number, dueDate: Date) => {
     addNotification({
       title: 'Payment Due',
-      message: `Payment of $${amount} is due on ${dueDate.toLocaleDateString()}.`,
+      message: `Payment of $${amount} is due on ${formatDate(dueDate)}.`,
       type: 'payment',
       priority: 'important',
       autoHide: false
     });
-  }, [addNotification]);
+  }, [addNotification, formatDate]);
 
   const triggerCommunityEvent = useCallback((eventName: string, eventTime: string) => {
     addNotification({

@@ -44,6 +44,8 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateInTimeZone } from '@/lib/timezone';
 import { collection, query, where, getDocs, doc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
@@ -687,9 +689,10 @@ interface CodeRowProps {
 }
 
 function CodeRow({ code, onCopy, onReplace, onRevoke, isLoading }: CodeRowProps) {
-  const createdDate = code.createdAt?.toDate?.()?.toLocaleDateString('en-US', { 
+  const timeZone = useCommunityTimeZone();
+  const createdDate = code.createdAt?.toDate?.() ? formatDateInTimeZone(code.createdAt.toDate(), timeZone, {
     month: 'short', day: 'numeric' 
-  }) || 'Unknown';
+  }) : 'Unknown';
 
   return (
     <div className={cn(
@@ -843,9 +846,10 @@ interface UserRowProps {
 
 function UserRow({ user, onDelete, isLoading }: UserRowProps) {
   const isAdmin = user.role === 'admin';
-  const joinDate = user.createdAt?.toDate?.()?.toLocaleDateString('en-US', { 
+  const timeZone = useCommunityTimeZone();
+  const joinDate = user.createdAt?.toDate?.() ? formatDateInTimeZone(user.createdAt.toDate(), timeZone, {
     month: 'short', day: 'numeric', year: 'numeric' 
-  }) || 'Unknown';
+  }) : 'Unknown';
   const initials = (user.name?.charAt(0) || user.email.charAt(0)).toUpperCase();
 
   return (

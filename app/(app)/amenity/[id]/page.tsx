@@ -15,12 +15,17 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import AmenityGalleryReviews from '@/components/amenity/AmenityGalleryReviews';
+import { enqueueOfflineBooking, flushOfflineBookings } from '@/lib/offline-booking-queue';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateInTimeZone } from '@/lib/timezone';
 
 interface Amenity {
   id: string;
   name: string;
   description: string;
   imageUrl: string;
+  gallery?: string[];
   category?: string;
   isBlocked?: boolean;
   blockReason?: string;
@@ -71,6 +76,7 @@ export default function AmenityBooking() {
   const params = useParams();
   const router = useRouter();
   const { data: session } = useSession();
+  const timeZone = useCommunityTimeZone();
   const [amenity, setAmenity] = useState<Amenity | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -224,6 +230,18 @@ export default function AmenityBooking() {
       }
     }
   }, [selectedDate, params.id]);
+
+  useEffect(() => {
+    const onOnline = async () => {
+      const processed = await flushOfflineBookings();
+      if (processed > 0) {
+        toast.success(`${processed} offline booking${processed > 1 ? 's were' : ' was'} synced.`);
+      }
+    };
+
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, []);
 
   // Update time slots based on selected date (weekday vs weekend)
   const updateTimeSlotsForDate = (amenityData: Amenity, date: Date) => {
@@ -392,18 +410,17 @@ export default function AmenityBooking() {
       return;
     }
 
-    try {
-      // Calculate booking time from the actual slot times
-      const [slotStartTime, slotEndTime] = selectedSlot.split('-');
-      const [startHours, startMinutes] = slotStartTime.split(':').map(Number);
-      const [endHours, endMinutes] = slotEndTime.split(':').map(Number);
-      
-      const bookingStart = new Date(selectedDate);
-      bookingStart.setHours(startHours, startMinutes, 0, 0);
-      
-      const bookingEnd = new Date(selectedDate);
-      bookingEnd.setHours(endHours, endMinutes, 0, 0);
+    const [slotStartTime, slotEndTime] = selectedSlot.split('-');
+    const [startHours, startMinutes] = slotStartTime.split(':').map(Number);
+    const [endHours, endMinutes] = slotEndTime.split(':').map(Number);
 
+    const bookingStart = new Date(selectedDate);
+    bookingStart.setHours(startHours, startMinutes, 0, 0);
+
+    const bookingEnd = new Date(selectedDate);
+    bookingEnd.setHours(endHours, endMinutes, 0, 0);
+
+    try {
       // 🔥 NEW: Use transaction-based API
       console.log('🚀 Creating booking via transaction API...');
       
@@ -453,6 +470,26 @@ export default function AmenityBooking() {
       
     } catch (error) {
       console.error('❌ Booking error:', error);
+
+      const offlinePayload = {
+        amenityId: amenity.id,
+        amenityName: amenity.name,
+        startTime: bookingStart.toISOString(),
+        endTime: bookingEnd.toISOString(),
+        attendees: attendees.filter(name => name.trim() !== ''),
+        selectedDate: selectedDate.toISOString(),
+        selectedSlot,
+        userName: session.user.name || session.user.email.split('@')[0],
+        userFlatNumber: (session.user as any).flatNumber || '',
+      };
+
+      if (!navigator.onLine || error instanceof TypeError) {
+        enqueueOfflineBooking(offlinePayload);
+        toast.success('No internet. Booking was queued and will sync automatically when online.');
+        setShowBookingModal(false);
+        return;
+      }
+
       toast.error(
         error instanceof Error 
           ? error.message 
@@ -618,6 +655,13 @@ export default function AmenityBooking() {
                 )}
               </div>
             </div>
+
+            <AmenityGalleryReviews
+              amenityId={amenity.id}
+              amenityName={amenity.name}
+              imageUrl={amenity.imageUrl}
+              gallery={amenity.gallery || []}
+            />
             
             {/* Booking Rules Card */}
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5">
@@ -794,7 +838,7 @@ export default function AmenityBooking() {
                         Available Slots
                       </h3>
                       <span className="text-xs font-medium px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                        {selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        {formatDateInTimeZone(selectedDate, timeZone, { weekday: 'short', month: 'short', day: 'numeric' })}
                       </span>
                     </div>
                     
@@ -873,7 +917,7 @@ export default function AmenityBooking() {
                           <DialogHeader>
                             <DialogTitle className="text-lg">Confirm Your Booking</DialogTitle>
                             <DialogDescription className="text-slate-500 dark:text-slate-400">
-                              {amenity.name} • {selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} • {selectedSlot}
+                              {amenity.name} • {formatDateInTimeZone(selectedDate, timeZone, { weekday: 'short', month: 'short', day: 'numeric' })} • {selectedSlot}
                             </DialogDescription>
                           </DialogHeader>
                           
@@ -927,7 +971,7 @@ export default function AmenityBooking() {
                               </div>
                               <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
                                 <li>• {amenity.name}</li>
-                                <li>• {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</li>
+                                <li>• {formatDateInTimeZone(selectedDate, timeZone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</li>
                                 <li>• Time: {selectedSlot}</li>
                                 <li>• {attendees.filter(a => a.trim()).length || 1} attendee(s)</li>
                               </ul>

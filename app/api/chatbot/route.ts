@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { collection, doc, getDoc, getDocs, limit, query, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { formatDateInTimeZone, resolveTimeZone } from '@/lib/timezone';
 
 // CircleIn Knowledge Base - Dynamic and Role-Aware
 const CIRCLEIN_KNOWLEDGE_BASE = `
@@ -57,7 +62,50 @@ CircleIn helps communities manage amenity bookings, stay connected, and simplify
 let modelInstance: any = null;
 let genAIInstance: any = null;
 
+interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface ParsedBookingIntent {
+  isBookingIntent: boolean;
+  amenityQuery: string | null;
+  datePhrase: string | null;
+  timePhrase: string | null;
+}
+
+interface AmenityDoc {
+  id: string;
+  name?: string;
+  title?: string;
+  category?: string;
+  communityId?: string;
+  timeSlots?: string[];
+  weekdaySlots?: string[];
+  weekendSlots?: string[];
+  booking?: {
+    slotDuration?: number;
+  };
+  operatingHours?: {
+    start: string;
+    end: string;
+  };
+  weekdayHours?: {
+    start: string;
+    end: string;
+  };
+  weekendHours?: {
+    start: string;
+    end: string;
+  };
+}
+
 function getModelInstance() {
+  const externalAiEnabled = process.env.ENABLE_EXTERNAL_AI === 'true';
+  if (!externalAiEnabled) {
+    throw new Error('External AI disabled by configuration');
+  }
+
   if (!modelInstance || !genAIInstance) {
     let apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey || apiKey.trim() === '') {
@@ -79,6 +127,373 @@ function getModelInstance() {
     });
   }
   return modelInstance;
+}
+
+function parseBookingIntent(message: string): ParsedBookingIntent {
+  const isBookingIntent = /(book|reserve|schedule)\b/i.test(message);
+  if (!isBookingIntent) {
+    return {
+      isBookingIntent: false,
+      amenityQuery: null,
+      datePhrase: null,
+      timePhrase: null,
+    };
+  }
+
+  const amenityMatch = message.match(/(?:book|reserve|schedule)\s+(?:the\s+)?([a-zA-Z\s]+?)(?:\s+(?:for|at|on)\b|$)/i);
+  const dateMatch = message.match(/\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i);
+  const timeMatch =
+    message.match(/(?:at|for)\s+(\d{1,2}(?::\d{2})?\s*(?:a\.?\s*m\.?|p\.?\s*m\.?)?)/i) ||
+    message.match(/\b(\d{1,2}(?::\d{2})?\s*(?:a\.?\s*m\.?|p\.?\s*m\.?))\b/i);
+
+  return {
+    isBookingIntent,
+    amenityQuery: amenityMatch?.[1]?.trim() || null,
+    datePhrase: dateMatch?.[1]?.trim() || null,
+    timePhrase: timeMatch?.[1]?.trim() || null,
+  };
+}
+
+function parseDatePhrase(datePhrase: string | null): Date {
+  const now = new Date();
+  const lower = (datePhrase || 'tomorrow').toLowerCase();
+  const target = new Date(now);
+  target.setHours(0, 0, 0, 0);
+
+  if (lower === 'today') {
+    return target;
+  }
+
+  if (lower === 'tomorrow') {
+    target.setDate(target.getDate() + 1);
+    return target;
+  }
+
+  const dayMap: Record<string, number> = {
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
+  };
+
+  const requestedDay = dayMap[lower];
+  if (requestedDay === undefined) {
+    target.setDate(target.getDate() + 1);
+    return target;
+  }
+
+  const currentDay = target.getDay();
+  let diff = (requestedDay - currentDay + 7) % 7;
+  if (diff === 0) {
+    diff = 7;
+  }
+  target.setDate(target.getDate() + diff);
+  return target;
+}
+
+function parseTimePhrase(timePhrase: string | null): { hour: number; minute: number } | null {
+  if (!timePhrase) {
+    return null;
+  }
+
+  // Normalize voice variants like "3 p.m.", "3 P M", "3pm" into a predictable token.
+  const normalizedTime = timePhrase
+    .trim()
+    .toLowerCase()
+    .replace(/\./g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/\b([ap])\s*m\b/g, '$1m');
+
+  const match = normalizedTime.match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]m)?$/i);
+  if (!match) {
+    return null;
+  }
+
+  let hour = Number(match[1]);
+  const minute = Number(match[2] || 0);
+  const suffix = match[3];
+
+  if (Number.isNaN(hour) || Number.isNaN(minute) || minute > 59) {
+    return null;
+  }
+
+  if (suffix === 'pm' && hour < 12) {
+    hour += 12;
+  }
+  if (suffix === 'am' && hour === 12) {
+    hour = 0;
+  }
+
+  if (hour > 23) {
+    return null;
+  }
+
+  return { hour, minute };
+}
+
+function generateTimeSlots(startHour: string, endHour: string, durationHours: number): string[] {
+  const [startH, startM] = startHour.split(':').map(Number);
+  const [endH, endM] = endHour.split(':').map(Number);
+  const slotDurationMinutes = Math.max(30, Math.round((durationHours || 1) * 60));
+  const slots: string[] = [];
+
+  let currentMinutes = startH * 60 + (startM || 0);
+  const endMinutes = endH * 60 + (endM || 0);
+
+  while (currentMinutes + slotDurationMinutes <= endMinutes) {
+    const slotStartHour = Math.floor(currentMinutes / 60);
+    const slotStartMinute = currentMinutes % 60;
+    const slotEndMinutes = currentMinutes + slotDurationMinutes;
+    const slotEndHour = Math.floor(slotEndMinutes / 60);
+    const slotEndMinute = slotEndMinutes % 60;
+
+    slots.push(
+      `${String(slotStartHour).padStart(2, '0')}:${String(slotStartMinute).padStart(2, '0')}-${String(slotEndHour).padStart(2, '0')}:${String(slotEndMinute).padStart(2, '0')}`
+    );
+
+    currentMinutes += slotDurationMinutes;
+  }
+
+  return slots;
+}
+
+function getAmenitySlotsForDate(amenity: AmenityDoc, date: Date): string[] {
+  const day = date.getDay();
+  const isWeekend = day === 0 || day === 6;
+
+  if (isWeekend && amenity.weekendSlots?.length) {
+    return amenity.weekendSlots;
+  }
+  if (!isWeekend && amenity.weekdaySlots?.length) {
+    return amenity.weekdaySlots;
+  }
+  if (amenity.timeSlots?.length) {
+    return amenity.timeSlots;
+  }
+
+  const duration = amenity.booking?.slotDuration || 1;
+  if (isWeekend && amenity.weekendHours) {
+    return generateTimeSlots(amenity.weekendHours.start, amenity.weekendHours.end, duration);
+  }
+  if (!isWeekend && amenity.weekdayHours) {
+    return generateTimeSlots(amenity.weekdayHours.start, amenity.weekdayHours.end, duration);
+  }
+  if (amenity.operatingHours) {
+    return generateTimeSlots(amenity.operatingHours.start, amenity.operatingHours.end, duration);
+  }
+
+  return [];
+}
+
+function resolveAmenity(amenities: AmenityDoc[], amenityQuery: string | null): AmenityDoc | null {
+  if (!amenityQuery) {
+    return null;
+  }
+
+  const normalized = amenityQuery.toLowerCase().trim();
+  if (!normalized) {
+    return null;
+  }
+
+  let bestMatch: AmenityDoc | null = null;
+  let bestScore = -1;
+
+  for (const amenity of amenities) {
+    const name = (amenity.name || amenity.title || '').toLowerCase();
+    const category = (amenity.category || '').toLowerCase();
+    let score = 0;
+
+    if (name === normalized || category === normalized) {
+      score = 100;
+    } else if (name.includes(normalized) || normalized.includes(name)) {
+      score = 70;
+    } else if (category && (category.includes(normalized) || normalized.includes(category))) {
+      score = 60;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = amenity;
+    }
+  }
+
+  return bestScore >= 60 ? bestMatch : null;
+}
+
+function pickBestSlot(slots: string[], targetHour: number, targetMinute: number): string | null {
+  if (!slots.length) {
+    return null;
+  }
+
+  const targetTotalMinutes = targetHour * 60 + targetMinute;
+  let bestSlot: string | null = null;
+  let bestDiff = Number.POSITIVE_INFINITY;
+
+  for (const slot of slots) {
+    const [slotStart] = slot.split('-');
+    if (!slotStart) {
+      continue;
+    }
+    const [h, m] = slotStart.split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) {
+      continue;
+    }
+    const slotMinutes = h * 60 + m;
+    const diff = Math.abs(slotMinutes - targetTotalMinutes);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestSlot = slot;
+    }
+  }
+
+  return bestSlot;
+}
+
+function parseSlotRange(selectedDate: Date, selectedSlot: string): { start: Date; end: Date } | null {
+  const [slotStart, slotEnd] = selectedSlot.split('-');
+  if (!slotStart || !slotEnd) {
+    return null;
+  }
+
+  const [startHours, startMinutes] = slotStart.split(':').map(Number);
+  const [endHours, endMinutes] = slotEnd.split(':').map(Number);
+
+  if (
+    Number.isNaN(startHours) || Number.isNaN(startMinutes) ||
+    Number.isNaN(endHours) || Number.isNaN(endMinutes)
+  ) {
+    return null;
+  }
+
+  const start = new Date(selectedDate);
+  const end = new Date(selectedDate);
+  start.setHours(startHours, startMinutes, 0, 0);
+  end.setHours(endHours, endMinutes, 0, 0);
+
+  return { start, end };
+}
+
+async function tryCreateBookingFromIntent(
+  request: NextRequest,
+  intent: ParsedBookingIntent,
+  session: any
+): Promise<{ response: string; actionUrl?: string } | null> {
+  if (!intent.isBookingIntent) {
+    return null;
+  }
+
+  if (!session?.user?.email || !session?.user?.communityId) {
+    return {
+      response: 'Please sign in again before I can create bookings for you.',
+    };
+  }
+
+  const amenitiesSnapshot = await getDocs(
+    query(
+      collection(db, 'amenities'),
+      where('communityId', '==', session.user.communityId),
+      limit(100)
+    )
+  );
+
+  const amenities = amenitiesSnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...(doc.data() as Omit<AmenityDoc, 'id'>),
+  }));
+
+  if (!amenities.length) {
+    return {
+      response: 'I could not find any amenities in your community yet. Please ask your admin to set them up first.',
+    };
+  }
+
+  const amenity = resolveAmenity(amenities, intent.amenityQuery);
+  if (!amenity) {
+    const sampleNames = amenities
+      .slice(0, 4)
+      .map((a) => a.name || a.title || 'Amenity')
+      .join(', ');
+    return {
+      response: `I could not identify that amenity. Try one of these: ${sampleNames}.`,
+    };
+  }
+
+  const desiredTime = parseTimePhrase(intent.timePhrase);
+  if (!desiredTime) {
+    return {
+      response: 'I can do that. What time should I book it for? For example: 3 PM.',
+    };
+  }
+
+  const bookingDate = parseDatePhrase(intent.datePhrase);
+  const slots = getAmenitySlotsForDate(amenity, bookingDate);
+
+  if (!slots.length) {
+    return {
+      response: `I could not find configured time slots for ${amenity.name || amenity.title || 'that amenity'} right now.`,
+    };
+  }
+
+  const selectedSlot = pickBestSlot(slots, desiredTime.hour, desiredTime.minute);
+  if (!selectedSlot) {
+    return {
+      response: 'I could not map that time to an available slot. Please try another time.',
+    };
+  }
+
+  const range = parseSlotRange(bookingDate, selectedSlot);
+  if (!range) {
+    return {
+      response: 'I could not parse the booking slot format. Please try again.',
+    };
+  }
+
+  const bookingResponse = await fetch(`${request.nextUrl.origin}/api/bookings/create`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      cookie: request.headers.get('cookie') || '',
+    },
+    body: JSON.stringify({
+      amenityId: amenity.id,
+      amenityName: amenity.name || amenity.title || 'Amenity',
+      startTime: range.start.toISOString(),
+      endTime: range.end.toISOString(),
+      attendees: [],
+      selectedDate: range.start.toISOString(),
+      selectedSlot,
+      userName: session.user.name || session.user.email.split('@')[0],
+      userFlatNumber: (session.user as any).flatNumber || '',
+    }),
+  });
+
+  const bookingData = await bookingResponse.json();
+
+  if (!bookingResponse.ok) {
+    const errorMessage = bookingData?.message || bookingData?.error || 'Booking failed.';
+    return {
+      response: `I tried booking ${amenity.name || amenity.title || 'that amenity'}, but it failed: ${errorMessage}`,
+    };
+  }
+
+  if (bookingData?.status === 'waitlist') {
+    return {
+      response: `Done. I added you to the waitlist for ${(amenity.name || amenity.title || 'the amenity')} at ${selectedSlot}. You are #${bookingData?.position || '?'}.`,
+      actionUrl: '/bookings',
+    };
+  }
+
+  const settingsSnapshot = await getDoc(doc(db, 'settings', session.user.communityId));
+  const settingsData = settingsSnapshot.data() as any;
+  const communityTimeZone = resolveTimeZone(settingsData?.community?.timezone || settingsData?.timezone);
+
+  return {
+    response: `Booked successfully. ${(amenity.name || amenity.title || 'Amenity')} is reserved for ${selectedSlot} on ${formatDateInTimeZone(bookingDate, communityTimeZone, { month: 'long', day: 'numeric', year: 'numeric' })}.`,
+    actionUrl: '/bookings',
+  };
 }
 
 // Fallback responses for when AI is unavailable - ensures chatbot ALWAYS responds
@@ -137,6 +552,7 @@ function getFallbackResponse(message: string, isAdmin: boolean): string {
 export async function POST(request: NextRequest) {
   try {
     const { message, userRole, conversationHistory } = await request.json();
+    const session = await getServerSession(authOptions);
 
     // Quick validation
     if (!message?.trim()) {
@@ -147,6 +563,18 @@ export async function POST(request: NextRequest) {
     }
 
     const isAdmin = userRole === 'admin';
+
+    const parsedIntent = parseBookingIntent(message);
+    if (parsedIntent.isBookingIntent) {
+      try {
+        const bookingResult = await tryCreateBookingFromIntent(request, parsedIntent, session);
+        if (bookingResult) {
+          return NextResponse.json(bookingResult);
+        }
+      } catch (bookingError: any) {
+        console.error('Booking intent execution failed:', bookingError?.message || bookingError);
+      }
+    }
 
     // Try AI response first, with multiple fallback layers
     try {
@@ -159,9 +587,9 @@ export async function POST(request: NextRequest) {
         : '\n\n**USER ROLE: RESIDENT** - This is a regular community member. Focus on resident features (booking amenities, viewing calendar, managing their profile).';
 
       // Build minimal conversation context (last 3 messages only for speed)
-      const conversationContext = conversationHistory
+      const conversationContext = (conversationHistory as ConversationMessage[] | undefined)
         ?.slice(-3)
-        .map((msg: any) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .map((msg) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
         .join('\n') || '';
 
       // Optimized prompt for instant responses
@@ -201,14 +629,15 @@ Assistant:`;
           ? "I notice your question involves technical details. For security, I can only help with using CircleIn features. Try rephrasing or contact support via email."
           : text;
 
-        return NextResponse.json({ response: sanitizedResponse });
+        return NextResponse.json({ response: sanitizedResponse, actionUrl: undefined });
       } catch (genError: any) {
         clearTimeout(timeoutId);
         
         // Timeout or generation error - use intelligent fallback
         console.log('⚠️ AI generation failed, using fallback:', genError.name);
         return NextResponse.json({ 
-          response: getFallbackResponse(message, isAdmin)
+          response: getFallbackResponse(message, isAdmin),
+          actionUrl: undefined,
         });
       }
 
@@ -216,7 +645,8 @@ Assistant:`;
       // Model initialization failed - use fallback
       console.log('⚠️ Model initialization failed, using fallback');
       return NextResponse.json({ 
-        response: getFallbackResponse(message, isAdmin)
+        response: getFallbackResponse(message, isAdmin),
+        actionUrl: undefined,
       });
     }
 
@@ -229,7 +659,8 @@ Assistant:`;
       response: getFallbackResponse(
         error.message || "help", 
         isAdmin || false
-      )
+      ),
+      actionUrl: undefined,
     });
   }
 }

@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNotifications } from '@/components/notifications/NotificationSystem';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateTimeInTimeZone } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 
 export default function NotificationsPage() {
@@ -25,6 +27,7 @@ export default function NotificationsPage() {
     markAllAsRead, 
     removeNotification
   } = useNotifications();
+  const timeZone = useCommunityTimeZone();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'unread'>('all');
@@ -85,7 +88,7 @@ export default function NotificationsPage() {
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
     
-    return date.toLocaleDateString('en-US', {
+    return formatDateTimeInTimeZone(date, timeZone, {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',

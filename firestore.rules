@@ -20,6 +20,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if true;
     }
+
+    // User badges sub-collection (gamification)
+    match /users/{userId}/badges/{badgeId} {
+      allow read, write: if true;
+    }
     
     // Amenities collection
     match /amenities/{amenityId} {
@@ -58,6 +63,26 @@ service cloud.firestore {
     
     // Notifications collection (user notifications)
     match /notifications/{notificationId} {
+      allow read, write: if true;
+    }
+
+    // Community announcements feed
+    match /announcements/{announcementId} {
+      allow read, write: if true;
+    }
+
+    // Community polls
+    match /polls/{pollId} {
+      allow read, write: if true;
+    }
+
+    // Maintenance requests
+    match /maintenanceRequests/{requestId} {
+      allow read, write: if true;
+    }
+
+    // Amenity reviews
+    match /reviews/{reviewId} {
       allow read, write: if true;
     }
     

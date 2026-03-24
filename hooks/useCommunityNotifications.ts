@@ -2,8 +2,10 @@
 
 import { useSession } from 'next-auth/react';
 import { useNotifications } from '@/components/notifications/NotificationSystem';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { formatDateInTimeZone } from '@/lib/timezone';
 
 // ============================================================================
 // COMMUNITY NOTIFICATIONS HOOK
@@ -23,6 +25,7 @@ export interface CommunityNotificationData {
 export function useCommunityNotifications() {
   const { data: session } = useSession();
   const { addNotification } = useNotifications();
+  const timeZone = useCommunityTimeZone();
 
   const sendCommunityNotification = async (
     notificationData: CommunityNotificationData & { targetUser?: string }
@@ -79,9 +82,15 @@ export function useCommunityNotifications() {
     blockedDates: Date[], 
     reason: string
   ) => {
+    const formatDate = (date: Date) => formatDateInTimeZone(date, timeZone, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+
     const dateRange = blockedDates.length === 1 
-      ? blockedDates[0].toLocaleDateString()
-      : `${blockedDates[0].toLocaleDateString()} - ${blockedDates[blockedDates.length - 1].toLocaleDateString()}`;
+      ? formatDate(blockedDates[0])
+      : `${formatDate(blockedDates[0])} - ${formatDate(blockedDates[blockedDates.length - 1])}`;
 
     return await sendCommunityNotification({
       title: `${amenityName} Blocked`,

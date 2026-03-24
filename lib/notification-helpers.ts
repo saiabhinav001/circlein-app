@@ -1,5 +1,6 @@
 // Notification Helper Functions
 // Import these functions in your booking/admin components to trigger real-time notifications
+import { formatDateInTimeZone, resolveTimeZone } from '@/lib/timezone';
 
 // Type definitions for notification events
 export interface NotificationEvent {
@@ -79,11 +80,19 @@ export const notifyAmenityBlocked = async (
 export const notifyDateSpecificBlock = async (
   amenityName: string,
   blockedDates: Date[],
-  reason: string
+  reason: string,
+  timeZone: string = 'UTC'
 ) => {
+  const normalizedTimeZone = resolveTimeZone(timeZone);
+  const formatDate = (date: Date) => formatDateInTimeZone(date, normalizedTimeZone, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+
   const dateRange = blockedDates.length === 1 
-    ? blockedDates[0].toLocaleDateString()
-    : `${blockedDates[0].toLocaleDateString()} - ${blockedDates[blockedDates.length - 1].toLocaleDateString()}`;
+    ? formatDate(blockedDates[0])
+    : `${formatDate(blockedDates[0])} - ${formatDate(blockedDates[blockedDates.length - 1])}`;
     
   await triggerRealTimeNotification({
     type: 'amenity_blocked',

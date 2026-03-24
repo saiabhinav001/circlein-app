@@ -8,6 +8,9 @@ import { EnhancedNotificationListener } from '@/components/notifications/Enhance
 import { RealtimeNotificationListener } from '@/components/notifications/RealtimeNotificationListener';
 import { FirebaseAuthSync } from '@/components/firebase-auth-sync';
 import { UserValidationGuard } from '@/components/auth/UserValidationGuard';
+import { ChatWidget } from '@/components/chatbot/ChatWidget';
+import { GlobalCommandPalette } from '@/components/layout/GlobalCommandPalette';
+import { ProductTour } from '@/components/onboarding/ProductTour';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReminderChecker } from '@/hooks/useReminderChecker';
 import { SidebarContext } from '@/hooks/useSidebarContext';
@@ -30,7 +33,7 @@ export default function AppLayout({
           {/* User Validation Guard - Forces logout if user is deleted */}
           <UserValidationGuard />
           
-          <div className="flex h-screen bg-slate-100/50 dark:bg-slate-950 overflow-hidden">
+          <div className="flex h-[100dvh] min-h-screen bg-slate-100/50 dark:bg-slate-950 overflow-hidden overflow-x-hidden">
             {/* Desktop Sidebar */}
             <div className="hidden lg:block shrink-0">
               <Sidebar onCollapseChange={setSidebarCollapsed} />
@@ -56,7 +59,7 @@ export default function AppLayout({
                     animate={{ x: 0 }}
                     exit={{ x: '-100%' }}
                     transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                    className="fixed inset-y-0 left-0 z-[100001] w-[85vw] max-w-[300px] lg:hidden shadow-2xl shadow-slate-900/20 dark:shadow-black/40"
+                    className="fixed inset-y-0 left-0 z-[100001] w-[88vw] max-w-[320px] lg:hidden shadow-2xl shadow-slate-900/20 dark:shadow-black/40"
                   >
                     <Sidebar onClose={() => setMobileMenuOpen(false)} />
                   </motion.div>
@@ -65,7 +68,7 @@ export default function AppLayout({
             </AnimatePresence>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col overflow-hidden min-w-0 bg-white/40 dark:bg-transparent">
+            <div className="flex-1 flex flex-col overflow-hidden overflow-x-hidden min-w-0 bg-white/40 dark:bg-transparent">
               <Header 
                 onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
                 isMenuOpen={mobileMenuOpen}
@@ -85,6 +88,9 @@ export default function AppLayout({
             {/* Notification Listeners */}
             <EnhancedNotificationListener />
             <RealtimeNotificationListener />
+            <GlobalCommandPalette />
+            <ChatWidget />
+            <ProductTour />
           </div>
         </SidebarContext.Provider>
       </SearchProvider>

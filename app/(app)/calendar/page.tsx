@@ -34,6 +34,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/useToast';
 import { useCommunityNotifications } from '@/hooks/useCommunityNotifications';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateInTimeZone, formatTimeInTimeZone } from '@/lib/timezone';
 import Link from 'next/link';
 import { CalendarErrorBoundary } from '@/components/calendar/CalendarErrorBoundary';
 
@@ -41,24 +43,21 @@ import { CalendarErrorBoundary } from '@/components/calendar/CalendarErrorBounda
 // UTILITIES
 // ============================================================================
 
-const formatDateConsistently = (date: Date): string => {
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
+const formatDateConsistently = (date: Date, timeZone?: string): string => {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
 };
 
-const formatTimeConsistently = (date: Date): string => {
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-  const displayMinutes = String(minutes).padStart(2, '0');
-  return `${displayHour}:${displayMinutes} ${ampm}`;
+const formatTimeConsistently = (date: Date, timeZone?: string): string => {
+  return formatTimeInTimeZone(date, timeZone || 'UTC');
 };
 
-const isSameDay = (date1: Date, date2: Date): boolean => {
-  return formatDateConsistently(date1) === formatDateConsistently(date2);
+const isSameDay = (date1: Date, date2: Date, timeZone?: string): boolean => {
+  return formatDateConsistently(date1, timeZone) === formatDateConsistently(date2, timeZone);
 };
 
 // ============================================================================
@@ -83,6 +82,18 @@ interface Booking {
   userEmail?: string;
 }
 
+interface AmenityOption {
+  id: string;
+  name: string;
+  category?: string;
+}
+
+interface QuickBookDraft {
+  date: Date;
+  hour: number;
+  amenityId: string;
+}
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -95,6 +106,18 @@ const amenityTypes = [
   'Tennis Court',
   'Basketball Court',
   'Playground'
+];
+
+const GRID_HOURS = Array.from({ length: 17 }, (_, index) => index + 6); // 06:00-22:00
+
+const AMENITY_COLOR_PALETTE = [
+  'bg-indigo-500',
+  'bg-emerald-500',
+  'bg-cyan-500',
+  'bg-fuchsia-500',
+  'bg-amber-500',
+  'bg-rose-500',
+  'bg-violet-500',
 ];
 
 // Status configurations - minimal, functional
@@ -147,6 +170,7 @@ export default function CalendarPage() {
   const { data: session } = useSession();
   const { toast } = useToast();
   const { sendCommunityNotification } = useCommunityNotifications();
+  const timeZone = useCommunityTimeZone();
   
   const isAdmin = session?.user?.role === 'admin';
   
@@ -163,6 +187,10 @@ export default function CalendarPage() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showBookingDialog, setShowBookingDialog] = useState(false);
+  const [amenityOptions, setAmenityOptions] = useState<AmenityOption[]>([]);
+  const [draggingBookingId, setDraggingBookingId] = useState<string | null>(null);
+  const [quickBookDraft, setQuickBookDraft] = useState<QuickBookDraft | null>(null);
+  const [showQuickBookDialog, setShowQuickBookDialog] = useState(false);
 
   // Hydration
   useEffect(() => {
@@ -173,8 +201,33 @@ export default function CalendarPage() {
   useEffect(() => {
     if (session?.user?.email && session?.user?.communityId) {
       fetchBookings();
+      fetchAmenities();
     }
   }, [session]);
+
+  const fetchAmenities = async () => {
+    if (!session?.user?.communityId) return;
+
+    try {
+      const amenitiesQuery = query(
+        collection(db, 'amenities'),
+        where('communityId', '==', session.user.communityId)
+      );
+      const snapshot = await getDocs(amenitiesQuery);
+      const list = snapshot.docs.map((docSnapshot) => {
+        const data = docSnapshot.data() as any;
+        return {
+          id: docSnapshot.id,
+          name: String(data.name || 'Amenity'),
+          category: String(data.category || ''),
+        } satisfies AmenityOption;
+      });
+      setAmenityOptions(list);
+    } catch (error) {
+      console.error('Error fetching amenities:', error);
+      setAmenityOptions([]);
+    }
+  };
 
   const fetchBookings = async (isRefresh = false) => {
     if (!session?.user?.email || !session?.user?.communityId) return;
@@ -243,8 +296,43 @@ export default function CalendarPage() {
   // Selected date bookings
   const selectedDateBookings = useMemo(() => {
     if (!selectedDate) return [];
-    return filteredBookings.filter(booking => isSameDay(new Date(booking.startTime), selectedDate));
-  }, [selectedDate, filteredBookings]);
+    return filteredBookings.filter(booking => isSameDay(new Date(booking.startTime), selectedDate, timeZone));
+  }, [selectedDate, filteredBookings, timeZone]);
+
+  const weekDays = useMemo(() => {
+    const base = selectedDate || new Date();
+    const start = new Date(base);
+    const day = start.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    start.setDate(start.getDate() + diffToMonday);
+    start.setHours(0, 0, 0, 0);
+
+    return Array.from({ length: 7 }, (_, index) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + index);
+      return d;
+    });
+  }, [selectedDate]);
+
+  const amenityColorMap = useMemo(() => {
+    const uniqueAmenities = Array.from(new Set(bookings.map((booking) => booking.amenityName).filter(Boolean)));
+    const map = new Map<string, string>();
+    uniqueAmenities.forEach((amenityName, index) => {
+      map.set(amenityName, AMENITY_COLOR_PALETTE[index % AMENITY_COLOR_PALETTE.length]);
+    });
+    return map;
+  }, [bookings]);
+
+  const getAmenityColorClass = (amenityName: string) => {
+    return amenityColorMap.get(amenityName) || 'bg-slate-500';
+  };
+
+  const getBookingsForSlot = (date: Date, hour: number) => {
+    return filteredBookings.filter((booking) => {
+      const bookingDate = new Date(booking.startTime);
+      return isSameDay(bookingDate, date, timeZone) && bookingDate.getHours() === hour;
+    });
+  };
 
   // Booking dates for calendar highlights
   const bookingDates = useMemo(() => {
@@ -292,6 +380,115 @@ export default function CalendarPage() {
     }
   };
 
+  const handleDropReschedule = async (bookingId: string, targetDate: Date, targetHour: number) => {
+    if (!isAdmin) return;
+
+    const booking = bookings.find((item) => item.id === bookingId);
+    if (!booking) return;
+
+    const durationMs = booking.endTime.getTime() - booking.startTime.getTime();
+    const nextStart = new Date(targetDate);
+    nextStart.setHours(targetHour, 0, 0, 0);
+    const nextEnd = new Date(nextStart.getTime() + durationMs);
+
+    try {
+      const response = await fetch(`/api/bookings/reschedule/${bookingId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startTime: nextStart.toISOString(),
+          endTime: nextEnd.toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to reschedule booking');
+      }
+
+      toast({
+        title: 'Booking Rescheduled',
+        description: `${booking.amenityName} moved to ${formatDateConsistently(nextStart, timeZone)} ${formatTimeConsistently(nextStart, timeZone)}.`,
+      });
+      fetchBookings(true);
+    } catch (error: any) {
+      toast({
+        title: 'Reschedule failed',
+        description: error?.message || 'Unable to reschedule booking.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const openQuickBook = (date: Date, hour: number) => {
+    if (!amenityOptions.length) {
+      toast({
+        title: 'No amenities found',
+        description: 'Create an amenity first before quick booking.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setQuickBookDraft({
+      date,
+      hour,
+      amenityId: amenityOptions[0].id,
+    });
+    setShowQuickBookDialog(true);
+  };
+
+  const submitQuickBook = async () => {
+    if (!quickBookDraft || !session?.user?.email) return;
+
+    const selectedAmenityOption = amenityOptions.find((amenity) => amenity.id === quickBookDraft.amenityId);
+    if (!selectedAmenityOption) return;
+
+    const bookingStart = new Date(quickBookDraft.date);
+    bookingStart.setHours(quickBookDraft.hour, 0, 0, 0);
+    const bookingEnd = new Date(bookingStart);
+    bookingEnd.setHours(bookingStart.getHours() + 1);
+
+    const slotStart = `${String(bookingStart.getHours()).padStart(2, '0')}:00`;
+    const slotEnd = `${String(bookingEnd.getHours()).padStart(2, '0')}:00`;
+
+    try {
+      const response = await fetch('/api/bookings/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amenityId: selectedAmenityOption.id,
+          amenityName: selectedAmenityOption.name,
+          startTime: bookingStart.toISOString(),
+          endTime: bookingEnd.toISOString(),
+          attendees: [session.user.name || session.user.email.split('@')[0]],
+          selectedDate: bookingStart.toISOString(),
+          selectedSlot: `${slotStart}-${slotEnd}`,
+          userName: session.user.name || session.user.email.split('@')[0],
+          userFlatNumber: (session.user as any).flatNumber || '',
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Quick booking failed');
+      }
+
+      toast({
+        title: 'Quick booking complete',
+        description: `${selectedAmenityOption.name} booked for ${formatTimeConsistently(bookingStart, timeZone)}.`,
+      });
+      setShowQuickBookDialog(false);
+      fetchBookings(true);
+    } catch (error: any) {
+      toast({
+        title: 'Quick booking failed',
+        description: error?.message || 'Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleCancelBooking = async (booking: Booking) => {
     try {
       if (booking.checkInTime || booking.checkOutTime) {
@@ -327,7 +524,7 @@ export default function CalendarPage() {
         const confirmed = window.confirm(
           `Cancel this booking for ${booking.userName || booking.userId}?\n\n` +
           `${booking.amenityName}\n` +
-          `${formatDateConsistently(booking.startTime)} · ${formatTimeConsistently(booking.startTime)}`
+          `${formatDateConsistently(booking.startTime, timeZone)} · ${formatTimeConsistently(booking.startTime, timeZone)}`
         );
         if (!confirmed) return;
       }
@@ -432,7 +629,7 @@ export default function CalendarPage() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
-                  {formatTimeConsistently(booking.startTime)} – {formatTimeConsistently(booking.endTime)}
+                  {formatTimeConsistently(booking.startTime, timeZone)} – {formatTimeConsistently(booking.endTime, timeZone)}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5" />
@@ -727,7 +924,7 @@ export default function CalendarPage() {
                   {/* Month navigation */}
                   <div className="flex items-center justify-between mb-3 sm:mb-4">
                     <h2 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-white">
-                      {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      {formatDateInTimeZone(currentMonth, timeZone, { month: 'long', year: 'numeric' })}
                     </h2>
                     <div className="flex items-center gap-1">
                       <Button
@@ -859,14 +1056,25 @@ export default function CalendarPage() {
                   <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800">
                     <div>
                       <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">
-                        {selectedDate?.toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          month: 'long', 
-                          day: 'numeric' 
+                        {viewMode === 'month' && selectedDate && formatDateInTimeZone(selectedDate, timeZone, {
+                          weekday: 'long',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                        {viewMode === 'week' && `Week of ${weekDays[0] ? formatDateInTimeZone(weekDays[0], timeZone, {
+                          month: 'short',
+                          day: 'numeric'
+                        }) : ''}`}
+                        {viewMode === 'day' && selectedDate && formatDateInTimeZone(selectedDate, timeZone, {
+                          weekday: 'long',
+                          month: 'long',
+                          day: 'numeric'
                         })}
                       </h2>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {selectedDateBookings.length} booking{selectedDateBookings.length !== 1 ? 's' : ''}
+                        {viewMode === 'month' && `${selectedDateBookings.length} booking${selectedDateBookings.length !== 1 ? 's' : ''}`}
+                        {viewMode === 'week' && `${filteredBookings.filter((booking) => weekDays.some((day) => isSameDay(day, booking.startTime, timeZone))).length} booking${filteredBookings.filter((booking) => weekDays.some((day) => isSameDay(day, booking.startTime, timeZone))).length !== 1 ? 's' : ''} this week`}
+                        {viewMode === 'day' && `${selectedDateBookings.length} booking${selectedDateBookings.length !== 1 ? 's' : ''} today`}
                       </p>
                     </div>
                     
@@ -895,7 +1103,7 @@ export default function CalendarPage() {
                         >
                           <div className="animate-spin rounded-full h-6 w-6 border-2 border-slate-900 dark:border-white border-t-transparent" />
                         </motion.div>
-                      ) : selectedDateBookings.length === 0 ? (
+                      ) : viewMode === 'month' && selectedDateBookings.length === 0 ? (
                         <motion.div
                           key="empty"
                           {...fadeIn}
@@ -922,7 +1130,7 @@ export default function CalendarPage() {
                             </Button>
                           </Link>
                         </motion.div>
-                      ) : (
+                      ) : viewMode === 'month' ? (
                         <motion.div
                           key="bookings"
                           {...fadeIn}
@@ -931,6 +1139,165 @@ export default function CalendarPage() {
                           {selectedDateBookings.map((booking) => (
                             <BookingCard key={booking.id} booking={booking} />
                           ))}
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key={`grid-${viewMode}`}
+                          {...fadeIn}
+                          className="space-y-3"
+                        >
+                          <div className="overflow-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                            {viewMode === 'week' && (
+                              <div className="min-w-[820px]">
+                                <div className="grid grid-cols-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                                  <div className="p-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Time</div>
+                                  {weekDays.map((day) => (
+                                    <div key={day.toISOString()} className="p-3 text-center border-l border-slate-200 dark:border-slate-800">
+                                      <div className="text-xs text-slate-500 uppercase">{formatDateInTimeZone(day, timeZone, { weekday: 'short' })}</div>
+                                      <div className="text-sm font-semibold text-slate-900 dark:text-white">{formatDateInTimeZone(day, timeZone, { day: 'numeric' })}</div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {GRID_HOURS.map((hour) => (
+                                  <div key={`week-hour-${hour}`} className="grid grid-cols-8 border-b border-slate-100 dark:border-slate-800/80 last:border-b-0">
+                                    <div className="p-3 text-xs font-medium text-slate-500 bg-slate-50/70 dark:bg-slate-900/30">
+                                      {`${String(hour).padStart(2, '0')}:00`}
+                                    </div>
+                                    {weekDays.map((day) => {
+                                      const slotBookings = getBookingsForSlot(day, hour);
+
+                                      return (
+                                        <div
+                                          key={`${day.toISOString()}-${hour}`}
+                                          className={cn(
+                                            'relative min-h-[72px] border-l border-slate-100 dark:border-slate-800/80 p-1.5',
+                                            isAdmin && 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/40'
+                                          )}
+                                          onClick={() => {
+                                            if (isAdmin && slotBookings.length === 0) {
+                                              openQuickBook(day, hour);
+                                            }
+                                          }}
+                                          onDragOver={(event) => {
+                                            if (!isAdmin) return;
+                                            event.preventDefault();
+                                          }}
+                                          onDrop={() => {
+                                            if (!isAdmin || !draggingBookingId) return;
+                                            handleDropReschedule(draggingBookingId, day, hour);
+                                            setDraggingBookingId(null);
+                                          }}
+                                        >
+                                          <div className="space-y-1">
+                                            {slotBookings.map((booking) => (
+                                              <button
+                                                key={booking.id}
+                                                type="button"
+                                                draggable={isAdmin}
+                                                onDragStart={() => setDraggingBookingId(booking.id)}
+                                                onDragEnd={() => setDraggingBookingId(null)}
+                                                onClick={(event) => {
+                                                  event.stopPropagation();
+                                                  setSelectedBooking(booking);
+                                                  setShowBookingDialog(true);
+                                                }}
+                                                className={cn(
+                                                  'w-full rounded-md px-2 py-1.5 text-left text-white text-[11px] leading-tight shadow-sm',
+                                                  getAmenityColorClass(booking.amenityName),
+                                                  isAdmin && 'cursor-grab active:cursor-grabbing'
+                                                )}
+                                              >
+                                                <p className="font-semibold truncate">{booking.amenityName}</p>
+                                                <p className="opacity-90 truncate">{booking.userName || booking.userId}</p>
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {viewMode === 'day' && selectedDate && (
+                              <div>
+                                <div className="grid grid-cols-[96px_1fr] border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                                  <div className="p-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Time</div>
+                                  <div className="p-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Bookings</div>
+                                </div>
+
+                                {GRID_HOURS.map((hour) => {
+                                  const slotBookings = getBookingsForSlot(selectedDate, hour);
+
+                                  return (
+                                    <div key={`day-hour-${hour}`} className="grid grid-cols-[96px_1fr] border-b border-slate-100 dark:border-slate-800/80 last:border-b-0">
+                                      <div className="p-3 text-xs font-medium text-slate-500 bg-slate-50/70 dark:bg-slate-900/30">
+                                        {`${String(hour).padStart(2, '0')}:00`}
+                                      </div>
+                                      <div
+                                        className={cn(
+                                          'min-h-[72px] p-2',
+                                          isAdmin && 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/40'
+                                        )}
+                                        onClick={() => {
+                                          if (isAdmin && slotBookings.length === 0) {
+                                            openQuickBook(selectedDate, hour);
+                                          }
+                                        }}
+                                        onDragOver={(event) => {
+                                          if (!isAdmin) return;
+                                          event.preventDefault();
+                                        }}
+                                        onDrop={() => {
+                                          if (!isAdmin || !draggingBookingId) return;
+                                          handleDropReschedule(draggingBookingId, selectedDate, hour);
+                                          setDraggingBookingId(null);
+                                        }}
+                                      >
+                                        {slotBookings.length === 0 ? (
+                                          <p className="text-xs text-slate-400">Open slot</p>
+                                        ) : (
+                                          <div className="space-y-1.5">
+                                            {slotBookings.map((booking) => (
+                                              <button
+                                                key={booking.id}
+                                                type="button"
+                                                draggable={isAdmin}
+                                                onDragStart={() => setDraggingBookingId(booking.id)}
+                                                onDragEnd={() => setDraggingBookingId(null)}
+                                                onClick={(event) => {
+                                                  event.stopPropagation();
+                                                  setSelectedBooking(booking);
+                                                  setShowBookingDialog(true);
+                                                }}
+                                                className={cn(
+                                                  'w-full rounded-md px-2.5 py-2 text-left text-white text-xs leading-tight shadow-sm',
+                                                  getAmenityColorClass(booking.amenityName),
+                                                  isAdmin && 'cursor-grab active:cursor-grabbing'
+                                                )}
+                                              >
+                                                <p className="font-semibold">{booking.amenityName}</p>
+                                                <p className="opacity-90">{formatTimeConsistently(booking.startTime, timeZone)} - {formatTimeConsistently(booking.endTime, timeZone)}</p>
+                                                <p className="opacity-90 truncate">{booking.userName || booking.userId}</p>
+                                              </button>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          {!isAdmin && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              Tip: Switch to month view to quickly browse your bookings. Admins can drag bookings across slots in week/day view.
+                            </p>
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -986,7 +1353,7 @@ export default function CalendarPage() {
                       <div className="flex items-center gap-3 text-sm">
                         <CalendarIcon className="w-4 h-4 text-slate-400 shrink-0" />
                         <span className="text-slate-900 dark:text-white">
-                          {selectedBooking.startTime.toLocaleDateString('en-US', { 
+                          {formatDateInTimeZone(selectedBooking.startTime, timeZone, { 
                             weekday: 'long', 
                             year: 'numeric', 
                             month: 'long', 
@@ -997,7 +1364,7 @@ export default function CalendarPage() {
                       <div className="flex items-center gap-3 text-sm">
                         <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                         <span className="text-slate-900 dark:text-white">
-                          {formatTimeConsistently(selectedBooking.startTime)} – {formatTimeConsistently(selectedBooking.endTime)}
+                          {formatTimeConsistently(selectedBooking.startTime, timeZone)} – {formatTimeConsistently(selectedBooking.endTime, timeZone)}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-sm">
@@ -1069,6 +1436,64 @@ export default function CalendarPage() {
                           Admin access: Managing booking for {selectedBooking.userName || 'resident'}
                         </p>
                       )}
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={showQuickBookDialog} onOpenChange={setShowQuickBookDialog}>
+              <DialogContent className={cn(
+                "max-w-md rounded-2xl",
+                "bg-white dark:bg-slate-900",
+                "border-slate-200 dark:border-slate-800"
+              )}>
+                <DialogHeader>
+                  <DialogTitle className="text-lg font-semibold text-slate-900 dark:text-white">Quick Book Slot</DialogTitle>
+                  <DialogDescription className="text-sm text-slate-500 dark:text-slate-400">
+                    Create a one-hour reservation directly from the calendar grid.
+                  </DialogDescription>
+                </DialogHeader>
+
+                {quickBookDraft && (
+                  <div className="space-y-4 py-2">
+                    <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 p-3 text-sm text-slate-700 dark:text-slate-300">
+                      {formatDateInTimeZone(quickBookDraft.date, timeZone, {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                      <span className="mx-2">·</span>
+                      {`${String(quickBookDraft.hour).padStart(2, '0')}:00 - ${String(quickBookDraft.hour + 1).padStart(2, '0')}:00`}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Amenity</label>
+                      <Select
+                        value={quickBookDraft.amenityId}
+                        onValueChange={(value) => setQuickBookDraft((draft) => draft ? { ...draft, amenityId: value } : draft)}
+                      >
+                        <SelectTrigger className="h-10 rounded-lg">
+                          <SelectValue placeholder="Select amenity" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {amenityOptions.map((amenity) => (
+                            <SelectItem key={amenity.id} value={amenity.id}>
+                              {amenity.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                      <Button variant="outline" onClick={() => setShowQuickBookDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={submitQuickBook}>
+                        Confirm Booking
+                      </Button>
                     </div>
                   </div>
                 )}

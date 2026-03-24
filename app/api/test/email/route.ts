@@ -65,7 +65,7 @@ export async function GET() {
                   <li>🎉 Festive block notifications</li>
                 </ul>
                 <p style="margin-top: 30px; color: #666; font-size: 12px;">
-                  Test email sent at ${new Date().toLocaleString()}<br>
+                  Test email sent at ${new Date().toISOString()}<br>
                   From: CircleIn Email System
                 </p>
               </div>

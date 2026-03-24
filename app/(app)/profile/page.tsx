@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
+import { collection, getDocs } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,12 +25,17 @@ import {
   Save,
   X,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Sunrise,
+  Waves,
+  Star,
+  Trophy
 } from 'lucide-react';
 import Link from 'next/link';
 import useBookingStats from '@/hooks/useBookingStats';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { db } from '@/lib/firebase';
 
 // ============================================================================
 // TYPES
@@ -43,6 +49,15 @@ interface ProfileData {
   company: string;
   bio: string;
   flatNumber?: string;
+}
+
+interface UserBadge {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  icon: string;
+  earnedAt?: Date;
 }
 
 // ============================================================================
@@ -76,6 +91,8 @@ export default function ProfilePage() {
     flatNumber: '',
   });
   const [originalData, setOriginalData] = useState<ProfileData | null>(null);
+  const [badges, setBadges] = useState<UserBadge[]>([]);
+  const [badgesLoading, setBadgesLoading] = useState(true);
 
   // Initialize profile data from session
   useEffect(() => {
@@ -93,6 +110,42 @@ export default function ProfilePage() {
       setOriginalData(data);
     }
   }, [session, userFlatNumber]);
+
+  useEffect(() => {
+    const loadBadges = async () => {
+      if (!session?.user?.email) {
+        setBadges([]);
+        setBadgesLoading(false);
+        return;
+      }
+
+      try {
+        const snapshot = await getDocs(collection(db, 'users', session.user.email, 'badges'));
+        const loaded = snapshot.docs.map((docSnapshot) => {
+          const data = docSnapshot.data() as any;
+          const earnedAt = data.earnedAt?.toDate ? data.earnedAt.toDate() : undefined;
+
+          return {
+            id: docSnapshot.id,
+            key: data.key || docSnapshot.id,
+            name: data.name || 'Badge',
+            description: data.description || '',
+            icon: data.icon || 'star',
+            earnedAt,
+          } as UserBadge;
+        });
+
+        loaded.sort((a, b) => (b.earnedAt?.getTime() || 0) - (a.earnedAt?.getTime() || 0));
+        setBadges(loaded);
+      } catch (error) {
+        console.error('Failed to load badges:', error);
+      } finally {
+        setBadgesLoading(false);
+      }
+    };
+
+    loadBadges();
+  }, [session?.user?.email]);
 
   // Dirty state detection
   const isDirty = useMemo(() => {
@@ -521,6 +574,64 @@ export default function ProfilePage() {
         </motion.section>
 
         {/* ================================================================
+            BADGES
+        ================================================================ */}
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.27, duration, ease: easeOut }}
+          className="mb-6"
+        >
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-amber-500" />
+                  Reputation Badges
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Earn badges through bookings and community participation
+                </p>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {badges.length} earned
+              </Badge>
+            </div>
+
+            <div className="p-6">
+              {badgesLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16 rounded-lg" />
+                  ))}
+                </div>
+              ) : badges.length === 0 ? (
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  No badges yet. Join polls and keep booking amenities to unlock them.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {badges.map((badge) => (
+                    <div
+                      key={badge.id}
+                      className="flex items-start gap-3 rounded-lg border border-gray-200 dark:border-gray-800 px-3.5 py-3"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <BadgeIcon icon={badge.icon} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{badge.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{badge.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ================================================================
             QUICK ACTIONS
         ================================================================ */}
         <motion.section
@@ -692,4 +803,16 @@ function QuickAction({ href, icon: Icon, label }: QuickActionProps) {
       </div>
     </Link>
   );
+}
+
+function BadgeIcon({ icon }: { icon: string }) {
+  if (icon === 'sunrise') {
+    return <Sunrise className="w-4 h-4" />;
+  }
+
+  if (icon === 'waves') {
+    return <Waves className="w-4 h-4" />;
+  }
+
+  return <Star className="w-4 h-4" />;
 }

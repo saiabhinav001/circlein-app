@@ -4,6 +4,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/components/providers/theme-provider';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { resolveTimeZone } from '@/lib/timezone';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,6 +47,7 @@ import {
   Clock,
   Globe,
   AlertTriangle,
+  Compass,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -95,6 +100,13 @@ interface CommunitySettings {
   weekendBookings: boolean;
 }
 
+interface CommunityBrandTheme {
+  primaryColor: string;
+  accentColor: string;
+  logoUrl: string;
+  communityName: string;
+}
+
 type SettingsSection = 
   | 'account' 
   | 'community' 
@@ -117,6 +129,40 @@ const navigationItems: { id: SettingsSection; label: string; icon: typeof User; 
   { id: 'security', label: 'Security', icon: Shield, description: 'Access and authentication' },
   { id: 'system', label: 'System', icon: Database, description: 'Data and maintenance' },
 ];
+
+const DEFAULT_ADMIN_NOTIFICATIONS: AdminNotifications = {
+  newResidentAlerts: true,
+  maintenanceRequests: true,
+  securityAlerts: true,
+  bookingIssues: true,
+  systemUpdates: true,
+  emergencyNotifications: true,
+  reportAlerts: true,
+  complianceNotifications: true,
+  criticalSystemAlerts: true,
+};
+
+const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
+  autoApproveBookings: true,
+  requireBookingApproval: false,
+  allowGuestBookings: false,
+  enableMaintenanceMode: false,
+  backupFrequency: 'daily',
+  dataRetention: '90',
+  auditLogging: true,
+  twoFactorRequired: false,
+};
+
+const DEFAULT_COMMUNITY_SETTINGS: CommunitySettings = {
+  maxBookingDuration: '4',
+  advanceBookingDays: '14',
+  cancellationDeadline: '24',
+  maxActiveBookings: '3',
+  communityName: '',
+  timezone: 'America/New_York',
+  businessHours: '6:00 AM - 10:00 PM',
+  weekendBookings: true,
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
@@ -149,46 +195,31 @@ export default function AdminSettingsUI() {
   
   // Notifications state
   const [notifications, setNotifications] = useState<AdminNotifications>({
-    newResidentAlerts: true,
-    maintenanceRequests: true,
-    securityAlerts: true,
-    bookingIssues: true,
-    systemUpdates: true,
-    emergencyNotifications: true,
-    reportAlerts: true,
-    complianceNotifications: true,
-    criticalSystemAlerts: true,
+    ...DEFAULT_ADMIN_NOTIFICATIONS,
   });
   
   const [originalNotifications, setOriginalNotifications] = useState<AdminNotifications | null>(null);
   
   // System Settings state
   const [systemSettings, setSystemSettings] = useState<SystemSettings>({
-    autoApproveBookings: true,
-    requireBookingApproval: false,
-    allowGuestBookings: false,
-    enableMaintenanceMode: false,
-    backupFrequency: 'daily',
-    dataRetention: '90',
-    auditLogging: true,
-    twoFactorRequired: false,
+    ...DEFAULT_SYSTEM_SETTINGS,
   });
   
   const [originalSystemSettings, setOriginalSystemSettings] = useState<SystemSettings | null>(null);
   
   // Community Settings state
   const [communitySettings, setCommunitySettings] = useState<CommunitySettings>({
-    maxBookingDuration: '4',
-    advanceBookingDays: '14',
-    cancellationDeadline: '24',
-    maxActiveBookings: '3',
-    communityName: '',
-    timezone: 'America/New_York',
-    businessHours: '6:00 AM - 10:00 PM',
-    weekendBookings: true,
+    ...DEFAULT_COMMUNITY_SETTINGS,
   });
   
   const [originalCommunitySettings, setOriginalCommunitySettings] = useState<CommunitySettings | null>(null);
+  const [communityTheme, setCommunityTheme] = useState<CommunityBrandTheme>({
+    primaryColor: '#10b981',
+    accentColor: '#0ea5e9',
+    logoUrl: '',
+    communityName: '',
+  });
+  const [originalCommunityTheme, setOriginalCommunityTheme] = useState<CommunityBrandTheme | null>(null);
   
   // Password state
   const [passwords, setPasswords] = useState({
@@ -198,56 +229,137 @@ export default function AdminSettingsUI() {
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Load settings from localStorage
+  // Load settings from Firestore (with local fallback)
   // ─────────────────────────────────────────────────────────────────────────────
   
   useEffect(() => {
-    if (session?.user?.email) {
+    const loadAdminSettings = async () => {
+      if (!session?.user?.email) {
+        return;
+      }
+
+      const communityId = (session?.user as any)?.communityId;
+      const initialProfile: AdminProfile = {
+        name: session.user.name || '',
+        email: session.user.email || '',
+        phone: '',
+        title: 'Administrator',
+        department: 'Property Management',
+        emergencyContact: '',
+        bio: '',
+        avatar: session.user.image || '',
+      };
+
+      let nextProfile: AdminProfile = initialProfile;
+      let nextNotifications: AdminNotifications = { ...DEFAULT_ADMIN_NOTIFICATIONS };
+      let nextSystemSettings: SystemSettings = { ...DEFAULT_SYSTEM_SETTINGS };
+      let nextCommunitySettings: CommunitySettings = {
+        ...DEFAULT_COMMUNITY_SETTINGS,
+        communityName: (session?.user as any)?.communityName || DEFAULT_COMMUNITY_SETTINGS.communityName,
+        timezone: resolveTimeZone(
+          DEFAULT_COMMUNITY_SETTINGS.timezone,
+          Intl.DateTimeFormat().resolvedOptions().timeZone
+        ),
+      };
+      let nextTheme: CommunityBrandTheme = {
+        primaryColor: '#10b981',
+        accentColor: '#0ea5e9',
+        logoUrl: '',
+        communityName: (session?.user as any)?.communityName || '',
+      };
+
       const storageKey = `admin-settings-${session.user.email}`;
-      const savedSettings = localStorage.getItem(storageKey);
-      
-      if (savedSettings) {
+      const localRaw = localStorage.getItem(storageKey);
+      if (localRaw) {
         try {
-          const parsed = JSON.parse(savedSettings);
-          if (parsed.profile) {
-            setProfile(parsed.profile);
-            setOriginalProfile(parsed.profile);
-          }
-          if (parsed.notifications) {
-            setNotifications(parsed.notifications);
-            setOriginalNotifications(parsed.notifications);
-          }
-          if (parsed.systemSettings) {
-            setSystemSettings(parsed.systemSettings);
-            setOriginalSystemSettings(parsed.systemSettings);
-          }
-          if (parsed.communitySettings) {
-            setCommunitySettings(parsed.communitySettings);
-            setOriginalCommunitySettings(parsed.communitySettings);
+          const parsed = JSON.parse(localRaw) as any;
+          nextProfile = { ...nextProfile, ...(parsed?.profile || {}) };
+          nextNotifications = { ...nextNotifications, ...(parsed?.notifications || {}) };
+          nextSystemSettings = { ...nextSystemSettings, ...(parsed?.systemSettings || {}) };
+          nextCommunitySettings = { ...nextCommunitySettings, ...(parsed?.communitySettings || {}) };
+          if (parsed?.theme) {
+            nextTheme = { ...nextTheme, ...parsed.theme };
           }
         } catch (e) {
-          console.error('Failed to load settings:', e);
+          console.error('Failed to parse local admin settings:', e);
         }
-      } else {
-        // Initialize with session data
-        const initialProfile = {
-          name: session.user.name || '',
-          email: session.user.email || '',
-          phone: '',
-          title: 'Administrator',
-          department: 'Property Management',
-          emergencyContact: '',
-          bio: '',
-          avatar: session.user.image || '',
-        };
-        setProfile(initialProfile);
-        setOriginalProfile(initialProfile);
-        setOriginalNotifications(notifications);
-        setOriginalSystemSettings(systemSettings);
-        setOriginalCommunitySettings(communitySettings);
       }
-    }
-  }, [session]);
+
+      try {
+        const userSnap = await getDoc(doc(db, 'users', session.user.email));
+        const userData = (userSnap.data() as any) || {};
+        const persistedAdmin = userData.adminSettings || {};
+
+        nextProfile = { ...nextProfile, ...(persistedAdmin.profile || {}) };
+        nextNotifications = { ...nextNotifications, ...(persistedAdmin.notifications || {}) };
+        nextSystemSettings = { ...nextSystemSettings, ...(persistedAdmin.systemSettings || {}) };
+        nextCommunitySettings = { ...nextCommunitySettings, ...(persistedAdmin.communitySettings || {}) };
+
+        if (persistedAdmin.theme) {
+          nextTheme = { ...nextTheme, ...persistedAdmin.theme };
+        }
+      } catch (e) {
+        console.error('Failed to load admin settings from user profile:', e);
+      }
+
+      if (communityId) {
+        try {
+          const settingsSnap = await getDoc(doc(db, 'settings', communityId));
+          const settingsData = (settingsSnap.data() as any) || {};
+          const communityData = settingsData.community || {};
+          const bookingRules = settingsData.bookingRules || {};
+
+          nextCommunitySettings = {
+            ...nextCommunitySettings,
+            ...bookingRules,
+            communityName: communityData.communityName || nextCommunitySettings.communityName,
+            timezone: resolveTimeZone(
+              communityData.timezone || settingsData.timezone || nextCommunitySettings.timezone,
+              Intl.DateTimeFormat().resolvedOptions().timeZone
+            ),
+            businessHours: communityData.businessHours || nextCommunitySettings.businessHours,
+          };
+
+          nextTheme = {
+            ...nextTheme,
+            ...(settingsData.theme || {}),
+            communityName:
+              settingsData.theme?.communityName ||
+              communityData.communityName ||
+              nextTheme.communityName ||
+              (session?.user as any)?.communityName ||
+              '',
+          };
+
+          nextNotifications = {
+            ...nextNotifications,
+            ...(settingsData.adminNotifications || {}),
+          };
+
+          nextSystemSettings = {
+            ...nextSystemSettings,
+            ...(settingsData.systemSettings || {}),
+          };
+        } catch (e) {
+          console.error('Failed to load community settings:', e);
+        }
+      }
+
+      setProfile(nextProfile);
+      setNotifications(nextNotifications);
+      setSystemSettings(nextSystemSettings);
+      setCommunitySettings(nextCommunitySettings);
+      setCommunityTheme(nextTheme);
+
+      setOriginalProfile(nextProfile);
+      setOriginalNotifications(nextNotifications);
+      setOriginalSystemSettings(nextSystemSettings);
+      setOriginalCommunitySettings(nextCommunitySettings);
+      setOriginalCommunityTheme(nextTheme);
+    };
+
+    void loadAdminSettings();
+  }, [session?.user]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Dirty state detection
@@ -262,10 +374,25 @@ export default function AdminSettingsUI() {
     const notificationsDirty = JSON.stringify(notifications) !== JSON.stringify(originalNotifications);
     const systemDirty = JSON.stringify(systemSettings) !== JSON.stringify(originalSystemSettings);
     const communityDirty = JSON.stringify(communitySettings) !== JSON.stringify(originalCommunitySettings);
+    const themeDirty = originalCommunityTheme
+      ? JSON.stringify(communityTheme) !== JSON.stringify(originalCommunityTheme)
+      : false;
     const passwordDirty = passwords.current || passwords.new || passwords.confirm;
     
-    return profileDirty || notificationsDirty || systemDirty || communityDirty || !!passwordDirty;
-  }, [profile, originalProfile, notifications, originalNotifications, systemSettings, originalSystemSettings, communitySettings, originalCommunitySettings, passwords]);
+    return profileDirty || notificationsDirty || systemDirty || communityDirty || themeDirty || !!passwordDirty;
+  }, [
+    profile,
+    originalProfile,
+    notifications,
+    originalNotifications,
+    systemSettings,
+    originalSystemSettings,
+    communitySettings,
+    originalCommunitySettings,
+    communityTheme,
+    originalCommunityTheme,
+    passwords,
+  ]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Save handler
@@ -294,6 +421,37 @@ export default function AdminSettingsUI() {
           setIsLoading(false);
           return;
         }
+
+        const currentUser = auth.currentUser;
+        if (!currentUser || !currentUser.email) {
+          toast.error('Could not verify your account. Please sign in again.');
+          setIsLoading(false);
+          return;
+        }
+
+        const providerIds = (currentUser.providerData || []).map((item) => item.providerId);
+        if (!providerIds.includes('password')) {
+          toast.error('Password change is only available for email/password sign-ins.');
+          setIsLoading(false);
+          return;
+        }
+
+        try {
+          const credential = EmailAuthProvider.credential(currentUser.email, passwords.current);
+          await reauthenticateWithCredential(currentUser, credential);
+          await updatePassword(currentUser, passwords.new);
+        } catch (passwordError: any) {
+          const code = String(passwordError?.code || '');
+          if (code.includes('auth/wrong-password')) {
+            toast.error('Current password is incorrect.');
+          } else if (code.includes('auth/too-many-requests')) {
+            toast.error('Too many attempts. Please wait and try again.');
+          } else {
+            toast.error('Failed to update password.');
+          }
+          setIsLoading(false);
+          return;
+        }
       }
       
       // Simulate API delay
@@ -306,14 +464,79 @@ export default function AdminSettingsUI() {
         notifications,
         systemSettings,
         communitySettings,
+        theme: communityTheme,
         updatedAt: new Date().toISOString(),
       }));
+
+      await setDoc(
+        doc(db, 'users', session.user.email),
+        {
+          adminSettings: {
+            profile,
+            notifications,
+            systemSettings,
+            communitySettings,
+            theme: communityTheme,
+            updatedAt: new Date().toISOString(),
+          },
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+
+      const communityId = (session?.user as any)?.communityId;
+      if (communityId) {
+        try {
+          await setDoc(
+            doc(db, 'settings', communityId),
+            {
+              communityId,
+              community: {
+                communityName: communityTheme.communityName || communitySettings.communityName,
+                timezone: resolveTimeZone(
+                  communitySettings.timezone,
+                  Intl.DateTimeFormat().resolvedOptions().timeZone
+                ),
+                businessHours: communitySettings.businessHours,
+              },
+              timezone: resolveTimeZone(
+                communitySettings.timezone,
+                Intl.DateTimeFormat().resolvedOptions().timeZone
+              ),
+              theme: {
+                primaryColor: communityTheme.primaryColor,
+                accentColor: communityTheme.accentColor,
+                logoUrl: communityTheme.logoUrl,
+                communityName: communityTheme.communityName || communitySettings.communityName,
+              },
+              bookingRules: {
+                maxBookingDuration: communitySettings.maxBookingDuration,
+                advanceBookingDays: communitySettings.advanceBookingDays,
+                cancellationDeadline: communitySettings.cancellationDeadline,
+                maxActiveBookings: communitySettings.maxActiveBookings,
+                weekendBookings: communitySettings.weekendBookings,
+              },
+              adminNotifications: notifications,
+              systemSettings,
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+        } catch (themeError: any) {
+          if (String(themeError?.code || '').includes('permission-denied')) {
+            toast.error('Branding permissions are not enabled yet in Firestore for this project.');
+          } else {
+            toast.error('Failed to sync community branding.');
+          }
+        }
+      }
       
       // Update original states
       setOriginalProfile(profile);
       setOriginalNotifications(notifications);
       setOriginalSystemSettings(systemSettings);
       setOriginalCommunitySettings(communitySettings);
+      setOriginalCommunityTheme(communityTheme);
       setPasswords({ current: '', new: '', confirm: '' });
       
       toast.success('Admin settings saved successfully');
@@ -334,6 +557,7 @@ export default function AdminSettingsUI() {
     if (originalNotifications) setNotifications(originalNotifications);
     if (originalSystemSettings) setSystemSettings(originalSystemSettings);
     if (originalCommunitySettings) setCommunitySettings(originalCommunitySettings);
+    if (originalCommunityTheme) setCommunityTheme(originalCommunityTheme);
     setPasswords({ current: '', new: '', confirm: '' });
     toast.info('Changes discarded');
   };
@@ -353,7 +577,15 @@ export default function AdminSettingsUI() {
       case 'notifications':
         return <NotificationsSection notifications={notifications} setNotifications={setNotifications} />;
       case 'appearance':
-        return <AppearanceSection theme={theme} setTheme={setTheme} />;
+        return (
+          <AppearanceSection
+            theme={theme}
+            setTheme={setTheme}
+            communityTheme={communityTheme}
+            setCommunityTheme={setCommunityTheme}
+            fallbackCommunityName={communitySettings.communityName || (session?.user as any)?.communityName || 'CircleIn Community'}
+          />
+        );
       case 'security':
         return (
           <SecuritySection 
@@ -373,19 +605,33 @@ export default function AdminSettingsUI() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900/50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Admin Settings</h1>
-            <span className="px-2 py-0.5 text-xs font-medium bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded">
-              Admin
-            </span>
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Admin Settings</h1>
+              <span className="px-2 py-0.5 text-xs font-medium bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded">
+                Admin
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Manage your account, community, and system settings
+            </p>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Manage your account, community, and system settings
-          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2 w-full sm:w-auto"
+            onClick={() => {
+              window.dispatchEvent(new Event('circlein-restart-tour'));
+              toast.success('Onboarding tour restarted');
+            }}
+          >
+            <Compass className="w-4 h-4" />
+            Restart Tour
+          </Button>
         </div>
 
         {/* Main Layout: Sidebar + Content */}
@@ -931,10 +1177,16 @@ function NotificationsSection({
 
 function AppearanceSection({ 
   theme, 
-  setTheme 
+  setTheme,
+  communityTheme,
+  setCommunityTheme,
+  fallbackCommunityName,
 }: { 
   theme: string | undefined; 
   setTheme: (t: 'light' | 'dark' | 'system') => void;
+  communityTheme: CommunityBrandTheme;
+  setCommunityTheme: (value: CommunityBrandTheme) => void;
+  fallbackCommunityName: string;
 }) {
   const themes = [
     { value: 'light', label: 'Light', icon: Sun, description: 'A clean, bright interface' },
@@ -987,6 +1239,84 @@ function AppearanceSection({
               </button>
             );
           })}
+        </div>
+      </div>
+
+      <Separator className="my-6" />
+
+      <div className="space-y-4">
+        <div>
+          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Community Branding</Label>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            White-label this app for your community with custom colors, logo, and title.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="primary-color" className="text-sm text-gray-700 dark:text-gray-300">Primary Color</Label>
+            <Input
+              id="primary-color"
+              type="color"
+              value={communityTheme.primaryColor}
+              onChange={(e) => setCommunityTheme({ ...communityTheme, primaryColor: e.target.value })}
+              className="mt-1.5 h-11 p-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="accent-color" className="text-sm text-gray-700 dark:text-gray-300">Accent Color</Label>
+            <Input
+              id="accent-color"
+              type="color"
+              value={communityTheme.accentColor}
+              onChange={(e) => setCommunityTheme({ ...communityTheme, accentColor: e.target.value })}
+              className="mt-1.5 h-11 p-1"
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="logo-url" className="text-sm text-gray-700 dark:text-gray-300">Logo URL</Label>
+          <Input
+            id="logo-url"
+            value={communityTheme.logoUrl}
+            onChange={(e) => setCommunityTheme({ ...communityTheme, logoUrl: e.target.value })}
+            className="mt-1.5"
+            placeholder="https://your-community.com/logo.png"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="community-name" className="text-sm text-gray-700 dark:text-gray-300">Community Name</Label>
+          <Input
+            id="community-name"
+            value={communityTheme.communityName}
+            onChange={(e) => setCommunityTheme({ ...communityTheme, communityName: e.target.value })}
+            className="mt-1.5"
+            placeholder="Your Community Name"
+          />
+        </div>
+
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <p className="mb-3 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Live Preview</p>
+          <div
+            className="rounded-lg p-4 text-white"
+            style={{
+              backgroundImage: `linear-gradient(135deg, ${communityTheme.primaryColor}, ${communityTheme.accentColor})`,
+            }}
+          >
+            <div className="flex items-center gap-3">
+              {communityTheme.logoUrl ? (
+                <img src={communityTheme.logoUrl} alt="Community logo" className="h-10 w-10 rounded-md bg-white object-cover p-1" />
+              ) : (
+                <div className="h-10 w-10 rounded-md bg-white/20" />
+              )}
+              <div>
+                <p className="text-xs text-white/80">Powered by CircleIn</p>
+                <p className="text-base font-semibold">{communityTheme.communityName || fallbackCommunityName}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

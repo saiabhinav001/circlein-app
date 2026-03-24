@@ -111,6 +111,82 @@ export async function POST(request: NextRequest) {
         });
         break;
 
+      case 'maintenance_status_update':
+      case 'maintenanceStatusUpdate':
+        template = emailTemplates.maintenanceStatusUpdate({
+          userName: data.userName,
+          requestTitle: data.requestTitle,
+          status: data.status,
+          updateNote: data.updateNote,
+          category: data.category,
+          priority: data.priority,
+        });
+        break;
+
+      case 'booking_rescheduled':
+      case 'bookingRescheduled':
+        template = emailTemplates.bookingRescheduled({
+          userName: data.userName,
+          amenityName: data.amenityName,
+          oldDateTime: data.oldDateTime,
+          newDateTime: data.newDateTime,
+          updatedBy: data.updatedBy,
+        });
+        break;
+
+      case 'community_announcement':
+      case 'communityAnnouncement':
+        template = emailTemplates.communityAnnouncement({
+          userName: data.userName,
+          title: data.title,
+          previewText: data.previewText,
+          authorName: data.authorName,
+          communityName: data.communityName,
+          actionUrl: data.actionUrl,
+        });
+        break;
+
+      case 'weekly_digest':
+      case 'weeklyDigest':
+        template = emailTemplates.weeklyDigest({
+          userName: data.userName,
+          communityName: data.communityName,
+          upcomingBookings: data.upcomingBookings || [],
+        });
+        break;
+
+      case 'no_show_warning':
+      case 'noShowWarning':
+        template = emailTemplates.noShowWarning({
+          userName: data.userName,
+          amenityName: data.amenityName,
+          incidentDate: data.incidentDate,
+          noShowCount: data.noShowCount,
+          suspensionUntil: data.suspensionUntil,
+        });
+        break;
+
+      case 'security_alert':
+      case 'securityAlert':
+        template = emailTemplates.securityAlert({
+          userName: data.userName,
+          alertTitle: data.alertTitle,
+          alertDetails: data.alertDetails,
+          occurredAt: data.occurredAt,
+          actionUrl: data.actionUrl,
+        });
+        break;
+
+      case 'monthly_pulse':
+      case 'monthlyCommunityPulse':
+        template = emailTemplates.monthlyCommunityPulse({
+          userName: data.userName,
+          communityName: data.communityName,
+          highlights: data.highlights || [],
+          actionUrl: data.actionUrl,
+        });
+        break;
+
       default:
         return NextResponse.json(
           { error: 'Invalid notification type' },

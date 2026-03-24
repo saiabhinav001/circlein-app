@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
+import { formatDateTimeInTimeZone, resolveTimeZone } from '@/lib/timezone';
 
 /**
  * 🎯 BOOKING CONFIRMATION ENDPOINT
@@ -217,6 +218,10 @@ export async function POST(
     // 7. SEND CONFIRMATION EMAIL WITH QR CODE
     try {
       console.log('   📧 Sending confirmation email...');
+
+      const settingsSnapshot = await adminDb.collection('settings').doc(communityId).get();
+      const settingsData = settingsSnapshot.data() as any;
+      const communityTimeZone = resolveTimeZone(settingsData?.community?.timezone || settingsData?.timezone);
       
       const emailResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/notifications/email`, {
         method: 'POST',
@@ -226,8 +231,8 @@ export async function POST(
           type: 'booking_confirmed',
           data: {
             amenityName: bookingData.amenityName,
-            startTime: bookingData.startTime.toDate().toLocaleString(),
-            endTime: bookingData.endTime.toDate().toLocaleString(),
+            startTime: formatDateTimeInTimeZone(bookingData.startTime.toDate(), communityTimeZone),
+            endTime: formatDateTimeInTimeZone(bookingData.endTime.toDate(), communityTimeZone),
             qrId: bookingData.qrId,
             userName: session.user.name || 'Resident',
           },

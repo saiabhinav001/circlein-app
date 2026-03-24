@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { emailTemplates, sendEmail } from '@/lib/email-service';
+import { formatDateInTimeZone, formatTimeInTimeZone, resolveTimeZone } from '@/lib/timezone';
 
 /**
  * 🚫 BOOKING CANCELLATION ENDPOINT WITH AUTO-WAITLIST PROMOTION
@@ -119,6 +120,36 @@ export async function POST(
       );
     }
 
+    let settingsData: any = {};
+    try {
+      const settingsSnapshot = await getDoc(doc(db, 'settings', communityId));
+      settingsData = settingsSnapshot.data() || {};
+    } catch (settingsError) {
+      console.error('   ⚠️ Failed to read community settings, continuing with defaults:', settingsError);
+    }
+
+    const cancellationDeadlineRaw = Number(settingsData?.bookingRules?.cancellationDeadline);
+    const cancellationDeadlineHours =
+      Number.isFinite(cancellationDeadlineRaw) && cancellationDeadlineRaw >= 0
+        ? cancellationDeadlineRaw
+        : null;
+
+    if (!isAdmin && cancellationDeadlineHours !== null) {
+      const bookingStartTime = bookingData.startTime?.toDate?.();
+      if (bookingStartTime) {
+        const hoursUntilStart =
+          (bookingStartTime.getTime() - Date.now()) / (1000 * 60 * 60);
+        if (hoursUntilStart < cancellationDeadlineHours) {
+          return NextResponse.json(
+            {
+              error: `Cancellations must be made at least ${cancellationDeadlineHours} hour${cancellationDeadlineHours === 1 ? '' : 's'} before start time`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     // 5. UPDATE BOOKING TO CANCELLED
     console.log('   🔄 Updating booking status to cancelled...');
     
@@ -134,23 +165,19 @@ export async function POST(
 
     // 6. SEND CANCELLATION EMAIL TO BOOKING OWNER
     console.log('   📧 Sending cancellation email...');
+
+    const communityTimeZone = resolveTimeZone(settingsData?.community?.timezone || settingsData?.timezone);
     
     const cancellationTemplate = emailTemplates.bookingCancellation({
       userName: bookingData.userName || 'Resident',
       amenityName: bookingData.amenityName,
-      date: bookingData.startTime.toDate().toLocaleDateString('en-US', {
+      date: formatDateInTimeZone(bookingData.startTime.toDate(), communityTimeZone, {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       }),
-      timeSlot: `${bookingData.startTime.toDate().toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit' 
-      })} - ${bookingData.endTime.toDate().toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit' 
-      })}`,
+      timeSlot: `${formatTimeInTimeZone(bookingData.startTime.toDate(), communityTimeZone)} - ${formatTimeInTimeZone(bookingData.endTime.toDate(), communityTimeZone)}`,
       bookingId: bookingId,
       cancelledBy: isAdmin && bookingData.userEmail !== currentUserEmail ? 'Administration' : 'You',
       isAdminCancellation: isAdmin && bookingData.userEmail !== currentUserEmail,

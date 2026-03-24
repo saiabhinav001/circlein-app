@@ -7,10 +7,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Trash2, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateTimeInTimeZone } from '@/lib/timezone';
 
 export default function ClearBookingsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const timeZone = useCommunityTimeZone();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; stats?: any } | null>(null);
@@ -142,7 +145,7 @@ export default function ClearBookingsPage() {
                   <div className="mt-2 text-sm">
                     <p>Bookings deleted: {result.stats.bookingsDeleted}</p>
                     <p>Events deleted: {result.stats.eventsDeleted}</p>
-                    <p>Timestamp: {new Date(result.stats.timestamp).toLocaleString()}</p>
+                    <p>Timestamp: {formatDateTimeInTimeZone(new Date(result.stats.timestamp), timeZone)}</p>
                   </div>
                 )}
               </AlertDescription>

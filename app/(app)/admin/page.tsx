@@ -41,6 +41,8 @@ import { db } from '@/lib/firebase';
 import { notifyDateSpecificBlock } from '@/lib/notification-helpers';
 import { useNotifications } from '@/components/notifications/NotificationSystem';
 import { useCommunityNotifications } from '@/hooks/useCommunityNotifications';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateInTimeZone } from '@/lib/timezone';
 
 // ============================================================================
 // SCHEMA & TYPES
@@ -100,6 +102,7 @@ const staggerContainer = {
 export default function AdminPanel() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const timeZone = useCommunityTimeZone();
   const { addNotification } = useNotifications();
   const { sendAmenityBlockNotification, sendAmenityUnblockNotification, sendInstantBlockNotification } = useCommunityNotifications();
   
@@ -112,6 +115,9 @@ export default function AdminPanel() {
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [festiveReason, setFestiveReason] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const formatDateLabel = (date: Date, options: Intl.DateTimeFormatOptions = {}) =>
+    formatDateInTimeZone(date, timeZone, options);
 
   // ============================================================================
   // AUTH & DATA FETCHING
@@ -268,7 +274,7 @@ export default function AdminPanel() {
             body: JSON.stringify({
               amenityName: name,
               reason: reason,
-              startDate: new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+              startDate: formatDateLabel(new Date(), { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
               endDate: 'Until further notice',
               communityId: session?.user?.communityId,
               communityName: (session?.user as any)?.communityName || 'Your Community',
@@ -391,12 +397,12 @@ export default function AdminPanel() {
         updatedAt: new Date(),
       });
 
-      await notifyDateSpecificBlock(selectedAmenityForBlock.name, selectedDates, reason);
+      await notifyDateSpecificBlock(selectedAmenityForBlock.name, selectedDates, reason, timeZone);
       await sendAmenityBlockNotification(selectedAmenityForBlock.name, selectedDates, reason);
 
       try {
-        const startDate = selectedDates[0].toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        const endDate = selectedDates[selectedDates.length - 1].toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const startDate = formatDateLabel(selectedDates[0], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const endDate = formatDateLabel(selectedDates[selectedDates.length - 1], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         
         await fetch('/api/notifications/amenity-block', {
           method: 'POST',
@@ -444,18 +450,18 @@ export default function AdminPanel() {
       try {
         if (dateToRemove?.date) {
           if (dateToRemove.date instanceof Date) {
-            removedDateDisplay = dateToRemove.date.toLocaleDateString();
+            removedDateDisplay = formatDateLabel(dateToRemove.date, { year: 'numeric', month: 'short', day: 'numeric' });
           } else if (dateToRemove.date.seconds) {
-            removedDateDisplay = new Date(dateToRemove.date.seconds * 1000).toLocaleDateString();
+            removedDateDisplay = formatDateLabel(new Date(dateToRemove.date.seconds * 1000), { year: 'numeric', month: 'short', day: 'numeric' });
           } else {
-            removedDateDisplay = new Date(dateToRemove.date).toLocaleDateString();
+            removedDateDisplay = formatDateLabel(new Date(dateToRemove.date), { year: 'numeric', month: 'short', day: 'numeric' });
           }
         } else if (dateToRemove instanceof Date) {
-          removedDateDisplay = dateToRemove.toLocaleDateString();
+          removedDateDisplay = formatDateLabel(dateToRemove, { year: 'numeric', month: 'short', day: 'numeric' });
         } else if (dateToRemove?.seconds) {
-          removedDateDisplay = new Date(dateToRemove.seconds * 1000).toLocaleDateString();
+          removedDateDisplay = formatDateLabel(new Date(dateToRemove.seconds * 1000), { year: 'numeric', month: 'short', day: 'numeric' });
         } else {
-          removedDateDisplay = new Date(dateToRemove).toLocaleDateString();
+          removedDateDisplay = formatDateLabel(new Date(dateToRemove), { year: 'numeric', month: 'short', day: 'numeric' });
         }
       } catch {
         removedDateDisplay = 'Selected date';
@@ -1017,25 +1023,31 @@ interface BlackoutDateBadgeProps {
 }
 
 function BlackoutDateBadge({ blackoutItem, onRemove }: BlackoutDateBadgeProps) {
+  const timeZone = useCommunityTimeZone();
   let displayDate = '';
+
+  const formatDate = (date: Date) => formatDateInTimeZone(date, timeZone, {
+    month: 'short',
+    day: 'numeric',
+  });
   
   try {
     if (blackoutItem?.date) {
       if (blackoutItem.date instanceof Date) {
-        displayDate = blackoutItem.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        displayDate = formatDate(blackoutItem.date);
       } else if (blackoutItem.date.seconds) {
-        displayDate = new Date(blackoutItem.date.seconds * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        displayDate = formatDate(new Date(blackoutItem.date.seconds * 1000));
       } else {
         const parsedDate = new Date(blackoutItem.date);
-        displayDate = !isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Invalid';
+        displayDate = !isNaN(parsedDate.getTime()) ? formatDate(parsedDate) : 'Invalid';
       }
     } else if (blackoutItem instanceof Date) {
-      displayDate = blackoutItem.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      displayDate = formatDate(blackoutItem);
     } else if (blackoutItem?.seconds) {
-      displayDate = new Date(blackoutItem.seconds * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      displayDate = formatDate(new Date(blackoutItem.seconds * 1000));
     } else if (typeof blackoutItem === 'string') {
       const parsedDate = new Date(blackoutItem);
-      displayDate = !isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : blackoutItem;
+      displayDate = !isNaN(parsedDate.getTime()) ? formatDate(parsedDate) : blackoutItem;
     } else {
       displayDate = 'Invalid';
     }
@@ -1085,6 +1097,7 @@ function DateBlockDialog({
   onConfirm,
   isLoading
 }: DateBlockDialogProps) {
+  const timeZone = useCommunityTimeZone();
   const quickReasons = [
     { emoji: '🎆', label: 'Diwali' },
     { emoji: '🎄', label: 'Christmas' },
@@ -1194,7 +1207,7 @@ function DateBlockDialog({
                             <div className="flex items-center gap-2.5">
                               <CalendarIcon className="w-4 h-4 text-amber-500" />
                               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                {date.toLocaleDateString('en-US', { 
+                                {formatDateInTimeZone(date, timeZone, {
                                   weekday: 'short', 
                                   month: 'short', 
                                   day: 'numeric',

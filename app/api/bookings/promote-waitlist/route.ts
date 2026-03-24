@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
+import { formatDateInTimeZone, formatTimeInTimeZone, resolveTimeZone } from '@/lib/timezone';
 
 /**
  * 🚀 WAITLIST AUTO-PROMOTION ENDPOINT
@@ -56,6 +57,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         { status: 400 }
       );
     }
+
+    const settingsSnapshot = await adminDb.collection('settings').doc(communityId).get();
+    const settingsData = settingsSnapshot.data() as any;
+    const communityTimeZone = resolveTimeZone(settingsData?.community?.timezone || settingsData?.timezone);
 
     // 2. PARSE REQUEST
     const body: PromoteWaitlistRequest = await req.json();
@@ -188,19 +193,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             type: 'waitlist_auto_promoted',
             data: {
               amenityName: amenityName,
-              date: startDate.toLocaleDateString('en-US', {
+              date: formatDateInTimeZone(startDate, communityTimeZone, {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
               }),
-              timeSlot: `${startDate.toLocaleTimeString('en-US', { 
-                hour: 'numeric', 
-                minute: '2-digit' 
-              })} - ${endDate.toLocaleTimeString('en-US', { 
-                hour: 'numeric', 
-                minute: '2-digit' 
-              })}`,
+              timeSlot: `${formatTimeInTimeZone(startDate, communityTimeZone)} - ${formatTimeInTimeZone(endDate, communityTimeZone)}`,
               bookingUrl: bookingUrl,
               userName: nextBooking.userName || 'Resident',
               flatNumber: nextBooking.flatNumber,
@@ -215,7 +214,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           communityId: communityId,
           type: 'waitlist_promoted',
           title: '🎉 Great News! You\'re Confirmed',
-          message: `A slot opened up for ${amenityName} on ${startDate.toLocaleDateString()} at ${startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}. You've been automatically confirmed!`,
+          message: `A slot opened up for ${amenityName} on ${formatDateInTimeZone(startDate, communityTimeZone, { month: 'short', day: 'numeric', year: 'numeric' })} at ${formatTimeInTimeZone(startDate, communityTimeZone)}. You've been automatically confirmed!`,
           data: {
             bookingId: waitlistDoc.id,
             amenityId: amenityId,

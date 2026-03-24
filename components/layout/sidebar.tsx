@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, ChevronRight, Sparkles, Bell, LogOut, MessageCircle } from 'lucide-react';
+import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, ChevronRight, Sparkles, Bell, LogOut, MessageCircle, Wrench, BarChart3, Megaphone, ClipboardList } from 'lucide-react';
 import { useTheme } from '../providers/theme-provider';
 import { Button } from '@/components/ui/button';
 import { signOut } from 'next-auth/react';
@@ -85,8 +85,10 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
 
   const baseNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home, color: 'from-blue-500 to-cyan-500' },
+    { name: 'Community', href: '/community', icon: Megaphone, color: 'from-rose-500 to-orange-500' },
     { name: 'My Bookings', href: '/bookings', icon: BookOpen, color: 'from-purple-500 to-pink-500' },
     { name: 'Calendar', href: '/calendar', icon: Calendar, color: 'from-green-500 to-emerald-500' },
+    { name: 'Maintenance', href: '/maintenance', icon: Wrench, color: 'from-amber-500 to-orange-500' },
     { name: 'Notifications', href: '/notifications', icon: Bell, color: 'from-orange-500 to-yellow-500' },
     { name: 'Contact Us', href: '/contact', icon: MessageCircle, color: 'from-teal-500 to-cyan-500' },
     { name: 'Settings', href: '/settings', icon: Settings, color: 'from-gray-500 to-slate-600' },
@@ -100,13 +102,31 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
   const adminNavigation = [
     { name: 'Admin Panel', href: '/admin', icon: Shield, color: 'from-orange-500 to-red-500' },
     { name: 'Manage Users', href: '/admin/users', icon: Users, color: 'from-indigo-500 to-purple-500' },
+    { name: 'Maintenance Desk', href: '/admin/maintenance', icon: ClipboardList, color: 'from-amber-500 to-orange-500' },
+    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, color: 'from-sky-500 to-indigo-500' },
     { name: 'Settings', href: '/admin/settings', icon: Settings, color: 'from-gray-500 to-slate-600' },
   ];
+
+  const getTourTarget = (itemName: string, isAdminSection = false) => {
+    if (!isAdminSection) {
+      if (itemName === 'Dashboard') return 'sidebar-dashboard';
+      if (itemName === 'My Bookings') return 'sidebar-bookings';
+      if (itemName === 'Calendar') return 'sidebar-calendar';
+      if (itemName === 'Settings') return 'sidebar-settings';
+      return undefined;
+    }
+
+    if (itemName === 'Admin Panel') return 'sidebar-admin-panel';
+    if (itemName === 'Manage Users') return 'sidebar-admin-users';
+    if (itemName === 'Analytics') return 'sidebar-admin-analytics';
+    if (itemName === 'Settings') return 'sidebar-admin-settings';
+    return undefined;
+  };
 
   // Show basic layout during SSR to prevent hydration mismatch
   if (!mounted) {
     return (
-      <div className="h-screen w-[280px] bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col relative z-50 shadow-xl">
+      <div className="h-[100dvh] min-h-screen w-[280px] bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col relative z-50 shadow-xl">
         <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center space-x-3">
             <div style={{ width: '48px', height: '48px', flexShrink: 0 }}>
@@ -137,7 +157,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
       <motion.div
         variants={sidebarVariants}
         animate={isCollapsed ? 'closed' : 'open'}
-        className="h-screen bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col relative w-full sm:w-[280px] lg:w-auto overflow-hidden"
+        className="h-[100dvh] min-h-screen bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col relative w-full sm:w-[280px] lg:w-auto overflow-hidden"
         style={{ zIndex: 50 }}
       >
         {/* Header */}
@@ -271,6 +291,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   <TooltipTrigger asChild>
                     <Link
                       href={item.href}
+                      data-tour={getTourTarget(item.name)}
                       onClick={() => onClose?.()}
                       className={cn(
                         'relative flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-150',
@@ -294,6 +315,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
               ) : (
                 <Link
                   href={item.href}
+                  data-tour={getTourTarget(item.name)}
                   onClick={() => onClose?.()}
                   className={cn(
                     'group relative flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 overflow-hidden',
@@ -394,6 +416,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                       <TooltipTrigger asChild>
                         <Link
                           href={item.href}
+                          data-tour={getTourTarget(item.name, true)}
                           onClick={() => onClose?.()}
                           className={cn(
                             'relative flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-150',
@@ -417,6 +440,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   ) : (
                     <Link
                       href={item.href}
+                      data-tour={getTourTarget(item.name, true)}
                       onClick={() => onClose?.()}
                       className={cn(
                         'group relative flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 overflow-hidden',

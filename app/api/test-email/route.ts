@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
                   <li><strong>Sender:</strong> CircleIn &lt;${process.env.EMAIL_USER}&gt;</li>
                   <li><strong>Service:</strong> Gmail SMTP</li>
                   <li><strong>Status:</strong> Connected and Operational</li>
-                  <li><strong>Test Time:</strong> ${new Date().toLocaleString()}</li>
+                  <li><strong>Test Time:</strong> ${new Date().toISOString()}</li>
                 </ul>
                 <h3>Active Features:</h3>
                 <ul>

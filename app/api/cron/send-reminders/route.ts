@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, Timestamp, updateDoc, doc as docRef } from 'firebase/firestore';
+import { collection, query, where, getDoc, getDocs, Timestamp, updateDoc, doc as docRef } from 'firebase/firestore';
 import { emailTemplates, sendEmail } from '@/lib/email-service';
+import { formatDateInTimeZone, formatDateTimeInTimeZone, formatTimeInTimeZone, resolveTimeZone } from '@/lib/timezone';
 
 /**
  * 🔔 1-HOUR BOOKING REMINDER ENDPOINT
@@ -31,7 +32,7 @@ async function handleReminderCheck(request: NextRequest) {
     const maxTime = new Date(now.getTime() + 75 * 60 * 1000); // 75 minutes
 
     console.log(`   📊 Checking bookings between:`);
-    console.log(`      ${minTime.toLocaleString()} - ${maxTime.toLocaleString()}`);
+    console.log(`      ${minTime.toISOString()} - ${maxTime.toISOString()}`);
 
     // 2. QUERY CONFIRMED BOOKINGS IN TIME WINDOW
     const bookingsRef = collection(db, 'bookings');
@@ -60,6 +61,7 @@ async function handleReminderCheck(request: NextRequest) {
     let sent = 0;
     let failed = 0;
     const errors: string[] = [];
+    const timeZoneCache = new Map<string, string>();
 
     for (const doc of snapshot.docs) {
       const booking = doc.data();
@@ -68,19 +70,33 @@ async function handleReminderCheck(request: NextRequest) {
         console.log(`   📧 Sending reminder for booking ${doc.id}`);
         console.log(`      User: ${booking.userEmail}`);
         console.log(`      Amenity: ${booking.amenityName}`);
-        console.log(`      Time: ${booking.startTime.toDate().toLocaleString()}`);
+
+        const communityId = booking.communityId || 'default';
+        let communityTimeZone = timeZoneCache.get(communityId);
+        if (!communityTimeZone) {
+          if (booking.communityId) {
+            const settingsSnapshot = await getDoc(docRef(db, 'settings', booking.communityId));
+            const settingsData = settingsSnapshot.data() as any;
+            communityTimeZone = resolveTimeZone(settingsData?.community?.timezone || settingsData?.timezone);
+          } else {
+            communityTimeZone = 'UTC';
+          }
+          timeZoneCache.set(communityId, communityTimeZone);
+        }
+
+        console.log(`      Time: ${formatDateTimeInTimeZone(booking.startTime.toDate(), communityTimeZone)}`);
 
         // Get amenity details if needed
         const amenityName = booking.amenityName || 'Amenity';
         const startTime = booking.startTime.toDate();
         const timeSlot = booking.timeSlot || 
-          `${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+          `${formatTimeInTimeZone(startTime, communityTimeZone)}`;
 
         // Generate email template
         const template = emailTemplates.bookingReminder({
           userName: booking.userName || booking.userEmail.split('@')[0],
           amenityName: amenityName,
-          date: startTime.toLocaleDateString('en-US', {
+          date: formatDateInTimeZone(startTime, communityTimeZone, {
             weekday: 'long',
             year: 'numeric',
             month: 'long',

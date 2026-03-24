@@ -6,12 +6,15 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateTimeInTimeZone } from '@/lib/timezone';
 
 export default function BookingConfirmPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
+  const timeZone = useCommunityTimeZone();
 
   const bookingId = params?.id as string;
   const action = searchParams?.get('action'); // 'confirm' or 'decline'
@@ -233,13 +236,13 @@ export default function BookingConfirmPage() {
               <div className="flex justify-between">
                 <span className="text-slate-600 dark:text-slate-400">Start Time:</span>
                 <span className="font-semibold">
-                  {bookingData.startTime?.toDate?.()?.toLocaleString() || 'N/A'}
+                  {bookingData.startTime?.toDate?.() ? formatDateTimeInTimeZone(bookingData.startTime.toDate(), timeZone) : 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600 dark:text-slate-400">End Time:</span>
                 <span className="font-semibold">
-                  {bookingData.endTime?.toDate?.()?.toLocaleString() || 'N/A'}
+                  {bookingData.endTime?.toDate?.() ? formatDateTimeInTimeZone(bookingData.endTime.toDate(), timeZone) : 'N/A'}
                 </span>
               </div>
             </div>
@@ -257,7 +260,7 @@ export default function BookingConfirmPage() {
                 You have <strong>{timeRemaining} hours</strong> remaining to confirm this booking.
               </p>
               <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                Deadline: {deadline.toLocaleString()}
+                Deadline: {formatDateTimeInTimeZone(deadline, timeZone)}
               </p>
             </div>
           )}
