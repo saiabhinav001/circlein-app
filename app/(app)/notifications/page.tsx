@@ -147,11 +147,11 @@ export default function NotificationsPage() {
             {/* Top row on mobile: Toggle + Mark all read */}
             <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
               {/* All/Unread Toggle */}
-              <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-900 rounded-lg">
+              <div className="flex flex-1 sm:flex-none gap-1 p-1 bg-slate-100 dark:bg-slate-900 rounded-lg min-w-0">
                 <button
                   onClick={() => setFilterType('all')}
                   className={cn(
-                    "px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors",
+                    "flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors",
                     filterType === 'all'
                       ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
@@ -162,7 +162,7 @@ export default function NotificationsPage() {
                 <button
                   onClick={() => setFilterType('unread')}
                   className={cn(
-                    "px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center",
+                    "flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center justify-center",
                     filterType === 'unread'
                       ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
@@ -195,7 +195,7 @@ export default function NotificationsPage() {
             <div className="flex items-center gap-2 w-full sm:w-auto">
               {/* Category */}
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="flex-1 sm:flex-none sm:w-[140px] h-9 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs sm:text-sm">
+                <SelectTrigger className="flex-1 sm:flex-none xs:w-[150px] sm:w-[140px] h-9 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -209,7 +209,7 @@ export default function NotificationsPage() {
 
               {/* Sort */}
               <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'newest' | 'oldest')}>
-                <SelectTrigger className="flex-1 sm:flex-none sm:w-[120px] h-9 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs sm:text-sm">
+                <SelectTrigger className="flex-1 sm:flex-none xs:w-[130px] sm:w-[120px] h-9 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -277,7 +277,7 @@ export default function NotificationsPage() {
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 sm:gap-3 mb-0.5 sm:mb-1">
+                      <div className="flex flex-col xs:flex-row xs:items-start xs:justify-between gap-1.5 xs:gap-2 sm:gap-3 mb-0.5 sm:mb-1">
                         <h3 className={cn(
                           "text-sm sm:text-base leading-snug line-clamp-2",
                           notification.read

@@ -519,7 +519,7 @@ export default function ProfilePage() {
           className="mb-6"
         >
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between gap-2">
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                   Booking Activity
@@ -529,7 +529,7 @@ export default function ProfilePage() {
                 </p>
               </div>
               <Link href="/bookings">
-                <Button variant="ghost" size="sm" className="h-8 text-xs">
+                <Button variant="ghost" size="sm" className="h-8 text-xs px-2 sm:px-3 whitespace-nowrap">
                   View all
                   <ExternalLink className="w-3 h-3 ml-1.5" />
                 </Button>

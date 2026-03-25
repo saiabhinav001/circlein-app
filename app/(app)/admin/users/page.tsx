@@ -357,7 +357,7 @@ export default function ManageUsers() {
             </div>
             
             {/* Search + Primary Action */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
               {/* Global Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -597,13 +597,13 @@ export default function ManageUsers() {
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+            className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1.5rem)] sm:w-auto max-w-md"
           >
             <Button
               onClick={clearFilters}
               variant="outline"
               size="sm"
-              className="h-9 px-4 bg-white dark:bg-gray-900 shadow-lg border-gray-200 dark:border-gray-700"
+              className="h-9 w-full sm:w-auto px-4 bg-white dark:bg-gray-900 shadow-lg border-gray-200 dark:border-gray-700"
             >
               <X className="w-3.5 h-3.5 mr-2" />
               Clear all filters
