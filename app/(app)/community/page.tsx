@@ -1212,11 +1212,12 @@ export default function CommunityPage() {
                           </div>
 
                           {isAdmin && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center justify-end gap-2">
                               <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
+                                className="w-full xs:w-auto"
                                 onClick={() => togglePin(announcement)}
                               >
                                 <Pin className="w-3.5 h-3.5 mr-1.5" />
@@ -1226,6 +1227,7 @@ export default function CommunityPage() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
+                                className="w-full xs:w-auto"
                                 onClick={() => startEditingAnnouncement(announcement)}
                               >
                                 <Pencil className="w-3.5 h-3.5 mr-1.5" />
@@ -1235,7 +1237,7 @@ export default function CommunityPage() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-900/40 dark:text-red-300 dark:hover:bg-red-900/20"
+                                className="w-full xs:w-auto border-red-300 text-red-700 hover:bg-red-50 dark:border-red-900/40 dark:text-red-300 dark:hover:bg-red-900/20"
                                 disabled={deletingAnnouncementId === announcement.id}
                                 onClick={() => deleteAnnouncement(announcement)}
                               >

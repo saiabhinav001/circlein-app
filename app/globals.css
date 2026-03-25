@@ -48,6 +48,25 @@ iframe {
   max-width: 100%;
 }
 
+input,
+textarea,
+select,
+button {
+  max-width: 100%;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+label {
+  overflow-wrap: anywhere;
+}
+
 /* Accessibility: Respect user's motion preferences */
 @media (prefers-reduced-motion: no-preference) {
   * {

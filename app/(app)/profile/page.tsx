@@ -538,7 +538,7 @@ export default function ProfilePage() {
             
             <div className="p-6">
               {bookingStats.loading ? (
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 xs:grid-cols-3 gap-4">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="text-center">
                       <Skeleton className="h-8 w-12 mx-auto mb-2" />
@@ -551,7 +551,7 @@ export default function ProfilePage() {
                   <p className="text-sm text-gray-500 dark:text-gray-400">Unable to load statistics</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 xs:grid-cols-3 gap-4">
                   <StatCard label="Total" value={bookingStats.totalBookings} />
                   <StatCard label="Active" value={bookingStats.activeBookings} variant="success" />
                   <StatCard label="Favorites" value={bookingStats.favoriteAmenities} variant="highlight" />

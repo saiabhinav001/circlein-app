@@ -72,7 +72,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
 
   return (
     <header
-      className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex items-center justify-between px-4 md:px-6 lg:px-8 relative z-40"
+      className="h-14 sm:h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 relative z-40"
     >
       <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
         {/* Hamburger Menu - Only on mobile/tablet */}
@@ -94,7 +94,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
         </div>
 
         {/* Search Bar */}
-        <div data-tour="header-search" className="relative flex-1 max-w-[240px] md:max-w-md lg:max-w-lg ml-auto md:ml-4">
+        <div data-tour="header-search" className="relative flex-1 min-w-0 max-w-none md:max-w-md lg:max-w-lg ml-auto md:ml-4">
           <div className="relative">
             <Search className={cn(
               "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors duration-100",
@@ -103,7 +103,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
             <input
               ref={searchRef}
               type="text"
-              placeholder="Search amenities..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={handleSearchChange}
               onFocus={() => setIsSearchFocused(true)}
@@ -156,7 +156,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 md:gap-2 shrink-0 ml-3">
+      <div className="flex items-center gap-1 md:gap-2 shrink-0 ml-2 sm:ml-3">
         {/* Notifications */}
         <NotificationBell />
         <NotificationPanel />

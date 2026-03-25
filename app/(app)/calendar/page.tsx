@@ -1148,7 +1148,7 @@ export default function CalendarPage() {
                         >
                           <div className="overflow-auto rounded-lg border border-slate-200 dark:border-slate-800">
                             {viewMode === 'week' && (
-                              <div className="min-w-[820px]">
+                              <div className="min-w-[700px] sm:min-w-[820px]">
                                 <div className="grid grid-cols-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
                                   <div className="p-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Time</div>
                                   {weekDays.map((day) => (
