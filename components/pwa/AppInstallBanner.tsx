@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button';
 
 const INSTALL_BANNER_DISMISS_UNTIL_KEY = 'circlein-install-banner-dismissed-until';
 const INSTALL_BANNER_INSTALLED_KEY = 'circlein-pwa-installed';
-const BANNER_COOLDOWN_MS = 1000 * 60 * 60 * 24 * 7;
+const INSTALL_BANNER_LAST_SHOWN_AT_KEY = 'circlein-install-banner-last-shown-at';
+const INSTALL_BANNER_SESSION_SUPPRESS_KEY = 'circlein-install-banner-suppressed-session';
+const BANNER_COOLDOWN_MS = 1000 * 60 * 60 * 24 * 30;
+const REPEAT_GUARD_MS = 1000 * 60 * 60 * 24 * 3;
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -18,6 +21,34 @@ export default function AppInstallBanner() {
   const [hidden, setHidden] = useState(true);
 
   useEffect(() => {
+    const shouldSuppress = () => {
+      const sessionSuppressed = sessionStorage.getItem(INSTALL_BANNER_SESSION_SUPPRESS_KEY) === 'true';
+      if (sessionSuppressed) {
+        return true;
+      }
+
+      const dismissedUntilRaw = localStorage.getItem(INSTALL_BANNER_DISMISS_UNTIL_KEY);
+      const dismissedUntil = dismissedUntilRaw ? Number(dismissedUntilRaw) : 0;
+      if (dismissedUntil && Date.now() < dismissedUntil) {
+        return true;
+      }
+
+      const lastShownAtRaw = localStorage.getItem(INSTALL_BANNER_LAST_SHOWN_AT_KEY);
+      const lastShownAt = lastShownAtRaw ? Number(lastShownAtRaw) : 0;
+      if (lastShownAt && Date.now() - lastShownAt < REPEAT_GUARD_MS) {
+        return true;
+      }
+
+      return false;
+    };
+
+    const showBanner = (event: BeforeInstallPromptEvent) => {
+      setDeferredPrompt(event);
+      setHidden(false);
+      localStorage.setItem(INSTALL_BANNER_LAST_SHOWN_AT_KEY, String(Date.now()));
+      sessionStorage.setItem(INSTALL_BANNER_SESSION_SUPPRESS_KEY, 'true');
+    };
+
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
     if (isStandalone) {
       localStorage.setItem(INSTALL_BANNER_INSTALLED_KEY, 'true');
@@ -29,20 +60,27 @@ export default function AppInstallBanner() {
       return;
     }
 
-    const dismissedUntilRaw = localStorage.getItem(INSTALL_BANNER_DISMISS_UNTIL_KEY);
-    const dismissedUntil = dismissedUntilRaw ? Number(dismissedUntilRaw) : 0;
-    if (dismissedUntil && Date.now() < dismissedUntil) {
-      return;
+    const existingDeferred = (window as any).__circleinDeferredInstallPrompt as BeforeInstallPromptEvent | null;
+    if (existingDeferred && !shouldSuppress()) {
+      showBanner(existingDeferred);
     }
 
     const handler = (event: Event) => {
       event.preventDefault();
-      setDeferredPrompt(event as BeforeInstallPromptEvent);
-      setHidden(false);
+      (window as any).__circleinDeferredInstallPrompt = event as BeforeInstallPromptEvent;
+
+      if (shouldSuppress()) {
+        return;
+      }
+
+      showBanner(event as BeforeInstallPromptEvent);
     };
 
     const installedHandler = () => {
       localStorage.setItem(INSTALL_BANNER_INSTALLED_KEY, 'true');
+      localStorage.removeItem(INSTALL_BANNER_DISMISS_UNTIL_KEY);
+      localStorage.removeItem(INSTALL_BANNER_LAST_SHOWN_AT_KEY);
+      (window as any).__circleinDeferredInstallPrompt = null;
       setHidden(true);
       setDeferredPrompt(null);
     };
@@ -76,11 +114,16 @@ export default function AppInstallBanner() {
               const result = await deferredPrompt.userChoice;
               if (result.outcome === 'accepted') {
                 localStorage.setItem(INSTALL_BANNER_INSTALLED_KEY, 'true');
+                localStorage.removeItem(INSTALL_BANNER_DISMISS_UNTIL_KEY);
+                localStorage.removeItem(INSTALL_BANNER_LAST_SHOWN_AT_KEY);
+                (window as any).__circleinDeferredInstallPrompt = null;
                 setHidden(true);
                 setDeferredPrompt(null);
               } else {
                 localStorage.setItem(INSTALL_BANNER_DISMISS_UNTIL_KEY, String(Date.now() + BANNER_COOLDOWN_MS));
+                (window as any).__circleinDeferredInstallPrompt = null;
                 setHidden(true);
+                setDeferredPrompt(null);
               }
             }}
           >
@@ -92,7 +135,9 @@ export default function AppInstallBanner() {
             className="h-8 w-8 text-slate-300 hover:text-white"
             onClick={() => {
               localStorage.setItem(INSTALL_BANNER_DISMISS_UNTIL_KEY, String(Date.now() + BANNER_COOLDOWN_MS));
+              (window as any).__circleinDeferredInstallPrompt = null;
               setHidden(true);
+              setDeferredPrompt(null);
             }}
           >
             <X className="h-4 w-4" />

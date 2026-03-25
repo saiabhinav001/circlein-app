@@ -130,6 +130,24 @@ export default function RootLayout({
                   // Set theme immediately to prevent flash
                   const theme = localStorage.getItem('circlein-theme') || 'dark';
                   document.documentElement.classList.add(theme);
+
+                  // Capture install prompt early to avoid repetitive browser-level prompting
+                  if (!window.__circleinInstallPromptInterceptorRegistered) {
+                    window.__circleinInstallPromptInterceptorRegistered = true;
+                    window.__circleinDeferredInstallPrompt = null;
+
+                    window.addEventListener('beforeinstallprompt', function(event) {
+                      event.preventDefault();
+                      window.__circleinDeferredInstallPrompt = event;
+                    });
+
+                    window.addEventListener('appinstalled', function() {
+                      try {
+                        localStorage.setItem('circlein-pwa-installed', 'true');
+                      } catch (e) {}
+                      window.__circleinDeferredInstallPrompt = null;
+                    });
+                  }
                 }
               } catch (e) {}
             `,
