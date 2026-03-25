@@ -204,33 +204,33 @@ export function EnhancedQRDisplay({
             )}
 
             {/* Action buttons - Enhanced for better visibility */}
-            <div className="flex gap-3 w-full">
+            <div className="grid grid-cols-1 xs:grid-cols-3 gap-2.5 sm:gap-3 w-full">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleDownload}
-                className="flex-1 rounded-xl border-gray-200 hover:bg-gray-50 dark:border-slate-600 dark:hover:bg-slate-700 px-4 py-2"
+                className="w-full justify-center rounded-xl border-gray-200 hover:bg-gray-50 dark:border-slate-600 dark:hover:bg-slate-700 px-4 py-2"
                 title="Download QR Code as PNG"
               >
                 <Download className="w-4 h-4 mr-2" />
-                <span className="whitespace-nowrap">Download</span>
+                <span>Download</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleCopy}
-                className="flex-1 rounded-xl border-gray-200 hover:bg-gray-50 dark:border-slate-600 dark:hover:bg-slate-700 px-4 py-2"
+                className="w-full justify-center rounded-xl border-gray-200 hover:bg-gray-50 dark:border-slate-600 dark:hover:bg-slate-700 px-4 py-2"
                 title="Copy QR data to clipboard"
               >
                 {copied ? (
                   <>
                     <Check className="w-4 h-4 mr-2 text-emerald-500" />
-                    <span className="whitespace-nowrap">Copied</span>
+                    <span>Copied</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-4 h-4 mr-2" />
-                    <span className="whitespace-nowrap">Copy</span>
+                    <span>Copy</span>
                   </>
                 )}
               </Button>
@@ -238,11 +238,11 @@ export function EnhancedQRDisplay({
                 variant="outline"
                 size="sm"
                 onClick={handleShare}
-                className="flex-1 rounded-xl border-gray-200 hover:bg-gray-50 dark:border-slate-600 dark:hover:bg-slate-700 px-4 py-2"
+                className="w-full justify-center rounded-xl border-gray-200 hover:bg-gray-50 dark:border-slate-600 dark:hover:bg-slate-700 px-4 py-2"
                 title="Share QR Code"
               >
                 <Share2 className="w-4 h-4 mr-2" />
-                <span className="whitespace-nowrap">Share</span>
+                <span>Share</span>
               </Button>
             </div>
           </div>

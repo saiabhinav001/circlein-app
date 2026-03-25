@@ -112,7 +112,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, timeZ
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex flex-col xs:flex-row xs:items-start xs:justify-between gap-1 xs:gap-2 mb-1">
             <h4 className={cn(
               "text-sm leading-snug",
               notification.read 
@@ -121,7 +121,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, timeZ
             )}>
               {notification.title}
             </h4>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap flex-shrink-0">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 xs:whitespace-nowrap flex-shrink-0">
               {formatTimeAgo(notification.createdAt)}
             </span>
           </div>

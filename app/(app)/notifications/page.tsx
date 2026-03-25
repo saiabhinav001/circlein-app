@@ -286,7 +286,7 @@ export default function NotificationsPage() {
                         )}>
                           {notification.title}
                         </h3>
-                        <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap flex-shrink-0">
+                        <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 xs:whitespace-nowrap flex-shrink-0">
                           {formatTime(notification.createdAt)}
                         </span>
                       </div>

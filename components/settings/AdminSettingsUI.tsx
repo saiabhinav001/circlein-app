@@ -699,11 +699,11 @@ export default function AdminSettingsUI() {
                   exit={{ opacity: 0, y: 20 }}
                   className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3 sm:p-4"
                 >
-                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-start sm:items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    <span className="whitespace-nowrap">You have unsaved changes</span>
+                    <span>You have unsaved changes</span>
                   </div>
-                  <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                     <Button
                       variant="outline"
                       onClick={handleCancel}
@@ -727,7 +727,7 @@ export default function AdminSettingsUI() {
                       ) : (
                         <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       )}
-                      <span className="whitespace-nowrap">Save Changes</span>
+                      <span>Save Changes</span>
                     </Button>
                   </div>
                 </motion.div>

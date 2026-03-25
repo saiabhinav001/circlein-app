@@ -381,8 +381,8 @@ export default function ManageUsers() {
               <Button
                 onClick={generateAccessCode}
                 disabled={actionLoading === 'generate'}
-                className="h-10 px-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 
-                         hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors whitespace-nowrap"
+                className="h-10 px-4 w-full sm:w-auto bg-gray-900 dark:bg-white text-white dark:text-gray-900
+                         hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
               >
                 {actionLoading === 'generate' ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
