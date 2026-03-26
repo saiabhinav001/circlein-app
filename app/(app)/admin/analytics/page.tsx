@@ -396,11 +396,11 @@ export default function AdminAnalyticsPage() {
 
           <div className="relative flex flex-col gap-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-indigo-600 text-white flex items-center justify-center shadow-lg">
-                  <BarChart3 className="w-6 h-6" />
+              <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-indigo-600 text-white flex items-center justify-center shadow-lg ring-1 ring-cyan-200/70 dark:ring-cyan-500/30 shrink-0">
+                  <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">Operations Intelligence</p>
                   <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">Analytics Command Center</h1>
                   <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 max-w-2xl">
@@ -409,11 +409,11 @@ export default function AdminAnalyticsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button onClick={loadBookings} variant="outline" className="border-slate-300 dark:border-slate-600">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 w-full sm:w-auto">
+                <Button onClick={loadBookings} variant="outline" className="border-slate-300 dark:border-slate-600 w-full">
                   Refresh
                 </Button>
-                <Button onClick={exportCsv} className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white">
+                <Button onClick={exportCsv} className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white w-full">
                   <Download className="w-4 h-4 mr-2" /> Export CSV
                 </Button>
               </div>
@@ -508,8 +508,8 @@ export default function AdminAnalyticsPage() {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" opacity={0.2} />
-                      <XAxis dataKey="dayLabel" tick={{ fontSize: 11 }} />
-                      <YAxis allowDecimals={false} />
+                      <XAxis dataKey="dayLabel" tick={{ fontSize: 11 }} interval="preserveStartEnd" minTickGap={22} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={26} />
                       <Tooltip content={<AnalyticsTooltip />} />
                       <Area type="monotone" dataKey="bookings" stroke="#0891b2" fill="url(#bookingsGradient)" strokeWidth={2.5} />
                       <Area type="monotone" dataKey="completed" stroke="#059669" fill="url(#completedGradient)" strokeWidth={2} />
@@ -589,8 +589,8 @@ export default function AdminAnalyticsPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={peakHourData} margin={{ top: 8, right: 10, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" opacity={0.2} />
-                      <XAxis dataKey="hour" tick={{ fontSize: 10 }} interval={2} />
-                      <YAxis allowDecimals={false} />
+                      <XAxis dataKey="hour" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={16} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={26} />
                       <Tooltip content={<AnalyticsTooltip />} />
                       <Bar dataKey="count" radius={[6, 6, 0, 0]}>
                         {peakHourData.map((item, idx) => {
@@ -606,12 +606,12 @@ export default function AdminAnalyticsPage() {
 
             <Card className="rounded-2xl border-slate-200/90 dark:border-slate-700/70 bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm">
               <CardHeader>
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2">
                   <div>
                     <CardTitle className="text-base">Executive highlights</CardTitle>
                     <CardDescription>AI-style summary cards for quick operations decisions</CardDescription>
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-cyan-100 dark:bg-cyan-900/40 px-3 py-1 text-xs font-semibold text-cyan-700 dark:text-cyan-300">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-cyan-100 dark:bg-cyan-900/40 px-3 py-1 text-xs font-semibold text-cyan-700 dark:text-cyan-300 self-start xs:self-auto whitespace-nowrap shrink-0">
                     <Sparkles className="w-3.5 h-3.5" />
                     Snapshot
                   </span>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Wrench, User, Clock3, CircleCheckBig, AlertTriangle } from 'lucide-react';
+import { ClipboardList, Wrench, User, Clock3, CircleCheckBig, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface MaintenanceRequest {
@@ -112,13 +112,13 @@ export default function AdminMaintenancePage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 space-y-6">
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-slate-50 via-white to-amber-50/70 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800/70 p-5 sm:p-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 flex items-center justify-center">
-              <Wrench className="w-5 h-5" />
+          <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 text-white dark:text-slate-900 flex items-center justify-center shadow-lg ring-1 ring-slate-200/70 dark:ring-slate-700/60 shrink-0">
+              <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Maintenance Operations</h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Kanban workflow for all community maintenance issues.</p>
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 dark:text-slate-100 leading-tight">Maintenance Desk</h1>
+              <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 leading-relaxed">Kanban workflow for all community maintenance issues.</p>
             </div>
           </div>
         </div>
