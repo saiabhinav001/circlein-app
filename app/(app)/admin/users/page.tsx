@@ -67,7 +67,7 @@ interface AccessCode {
 
 interface User {
   id: string;
-  name: string;
+  name?: string;
   email: string;
   role: string;
   communityId: string;
@@ -84,6 +84,25 @@ type RoleFilter = 'all' | 'admin' | 'resident';
 
 const easeOut = "easeOut";
 const duration = 0.2;
+
+const toTitleCase = (value: string) =>
+  value
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+
+const getFallbackNameFromEmail = (email?: string) => {
+  if (!email) return 'Unknown User';
+  const local = email.split('@')[0] || '';
+  const cleaned = local.replace(/[._-]+/g, ' ').trim();
+  return cleaned ? toTitleCase(cleaned) : 'Unknown User';
+};
+
+const getUserDisplayName = (user: User) => {
+  const preferred = user.name?.trim();
+  return preferred || getFallbackNameFromEmail(user.email);
+};
 
 // ============================================================================
 // MAIN COMPONENT
@@ -128,7 +147,25 @@ export default function ManageUsers() {
       ]);
       
       setAccessCodes(codesSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as AccessCode)));
-      setUsers(usersSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as User)));
+      setUsers(
+        usersSnapshot.docs.map((d) => {
+          const raw = d.data() as any;
+          const email = String(raw.email || d.id || '').trim();
+          const preferredName =
+            raw.name ||
+            raw.displayName ||
+            raw.fullName ||
+            raw.userName ||
+            (email && email === session?.user?.email ? session?.user?.name : '');
+
+          return {
+            id: d.id,
+            ...raw,
+            email,
+            name: typeof preferredName === 'string' ? preferredName.trim() : '',
+          } as User;
+        })
+      );
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load data');
@@ -183,7 +220,7 @@ export default function ManageUsers() {
     if (globalSearch.trim()) {
       const search = globalSearch.toLowerCase();
       result = result.filter(u => 
-        u.name?.toLowerCase().includes(search) ||
+        getUserDisplayName(u).toLowerCase().includes(search) ||
         u.email.toLowerCase().includes(search)
       );
     }
@@ -191,7 +228,7 @@ export default function ManageUsers() {
     return result.sort((a, b) => {
       // Admins first, then by name
       if (a.role !== b.role) return a.role === 'admin' ? -1 : 1;
-      return (a.name || a.email).localeCompare(b.name || b.email);
+      return getUserDisplayName(a).localeCompare(getUserDisplayName(b));
     });
   }, [users, roleFilter, globalSearch]);
 
@@ -847,10 +884,11 @@ interface UserRowProps {
 function UserRow({ user, onDelete, isLoading }: UserRowProps) {
   const isAdmin = user.role === 'admin';
   const timeZone = useCommunityTimeZone();
+  const displayName = getUserDisplayName(user);
   const joinDate = user.createdAt?.toDate?.() ? formatDateInTimeZone(user.createdAt.toDate(), timeZone, {
     month: 'short', day: 'numeric', year: 'numeric' 
   }) : 'Unknown';
-  const initials = (user.name?.charAt(0) || user.email.charAt(0)).toUpperCase();
+  const initials = (displayName.charAt(0) || user.email.charAt(0) || 'U').toUpperCase();
 
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
@@ -867,7 +905,7 @@ function UserRow({ user, onDelete, isLoading }: UserRowProps) {
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-              {user.name || 'No name set'}
+              {displayName}
             </p>
             <Badge 
               variant="secondary"
@@ -913,7 +951,7 @@ function UserRow({ user, onDelete, isLoading }: UserRowProps) {
                     Remove User
                   </AlertDialogTitle>
                   <AlertDialogDescription className="text-sm space-y-2">
-                    <p>Remove <strong>{user.name || user.email}</strong>?</p>
+                    <p>Remove <strong>{displayName || user.email}</strong>?</p>
                     <p className="text-red-600 text-xs">
                       This permanently deletes the user, all bookings, and notifications.
                     </p>
