@@ -357,7 +357,7 @@ export function NotificationBell() {
       
       {/* Clean badge */}
       {unreadCount > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold text-white bg-red-500 rounded-full">
+        <span className="absolute -top-1 -right-1 min-w-[20px] h-[20px] sm:min-w-[22px] sm:h-[22px] px-1 flex items-center justify-center text-[10px] sm:text-[11px] font-semibold text-white bg-red-500 rounded-full">
           {unreadCount > 99 ? '99+' : unreadCount}
         </span>
       )}
@@ -481,8 +481,8 @@ export function NotificationPanel() {
           "fixed z-[100] bg-white dark:bg-slate-900 rounded-xl overflow-hidden",
           "border border-slate-200 dark:border-slate-800",
           "shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50",
-          "w-[380px] max-w-[calc(100vw-2rem)]",
-          "top-[4.5rem] right-4 sm:right-6"
+          "w-[380px] max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)]",
+          "top-[4.2rem] right-2 sm:right-6"
         )}
         style={{
           animation: 'notification-panel-in 150ms ease-out'

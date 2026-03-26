@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Sparkles, TrendingUp, Clock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface SmartBookingSuggestion {
@@ -141,17 +142,17 @@ export function SmartSuggestionsCard() {
 
   return (
     <section className="mb-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 p-4 sm:p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <div className="rounded-full bg-amber-100 p-2 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
+      <div className="mb-4 flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3">
+        <div className="flex items-start xs:items-center gap-2.5 min-w-0">
+          <div className="rounded-full bg-amber-100 p-2 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 shrink-0">
             <Sparkles className="h-4 w-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100">Smart Suggestions</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Personalized from your booking patterns and crowd trends</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed break-words">Personalized from your booking patterns and crowd trends</p>
           </div>
         </div>
-        <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
+        <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300 self-start xs:self-auto whitespace-normal text-center">
           Free local AI
         </Badge>
       </div>
@@ -161,15 +162,15 @@ export function SmartSuggestionsCard() {
           const inProgress = bookingIdInProgress === suggestion.id;
           return (
             <article key={suggestion.id} className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/70 p-3 sm:p-4">
-              <div className="mb-2 flex items-start justify-between gap-2">
-                <p className="text-sm text-slate-800 dark:text-slate-200">{suggestion.text}</p>
-                <Badge className={suggestion.type === 'habit' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'}>
+              <div className="mb-2 flex flex-col xs:flex-row xs:items-start xs:justify-between gap-2">
+                <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed break-words">{suggestion.text}</p>
+                <Badge className={cn('self-start xs:self-auto whitespace-nowrap', suggestion.type === 'habit' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300')}>
                   {suggestion.type === 'habit' ? <TrendingUp className="mr-1 h-3 w-3" /> : <Clock className="mr-1 h-3 w-3" />}
                   {suggestion.type === 'habit' ? 'Habit' : 'Best time'}
                 </Badge>
               </div>
 
-              <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
                 <span>{suggestion.amenityName}</span>
                 <span>•</span>
                 <span>{suggestion.selectedDate}</span>
@@ -181,11 +182,11 @@ export function SmartSuggestionsCard() {
 
               <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{suggestion.reason}</p>
 
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
                 <Button
                   onClick={() => handleQuickBook(suggestion)}
                   disabled={inProgress}
-                  className="h-9 rounded-lg bg-slate-900 px-4 text-sm text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                  className="h-9 w-full rounded-lg bg-slate-900 px-4 text-sm text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
                 >
                   {inProgress ? (
                     <span className="inline-flex items-center gap-2">
@@ -199,7 +200,7 @@ export function SmartSuggestionsCard() {
 
                 <Button
                   variant="outline"
-                  className="h-9 rounded-lg text-sm"
+                  className="h-9 w-full rounded-lg text-sm"
                   onClick={() => router.push(`/amenity/${suggestion.amenityId}`)}
                 >
                   Review slot

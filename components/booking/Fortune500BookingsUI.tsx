@@ -687,7 +687,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
 
         {/* Silent Status Overview - Inline indicators, not cards */}
         <div className="mb-6 sm:mb-8 overflow-x-auto">
-          <div className="inline-flex items-center gap-4 sm:gap-6 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 min-w-max">
+          <div className="inline-flex items-center gap-2.5 sm:gap-4 md:gap-6 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 min-w-max">
             <div className="flex items-center gap-1.5 sm:gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
@@ -857,7 +857,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
                               {/* Facility Name */}
-                              <h3 className="font-medium text-slate-900 dark:text-white truncate">
+                              <h3 className="font-medium text-slate-900 dark:text-white truncate min-w-0">
                                 {booking.amenityName || 'Community Facility'}
                               </h3>
                               
@@ -918,7 +918,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                                     toast.error('Confirmation error');
                                   }
                                 }}
-                                className="h-8 px-3 text-xs font-medium bg-sky-600 hover:bg-sky-700 text-white rounded-lg w-full sm:w-auto"
+                                className="h-8 px-3 text-xs font-medium bg-sky-600 hover:bg-sky-700 text-white rounded-lg w-full sm:w-auto sm:min-w-[110px]"
                               >
                                 Confirm
                               </Button>
@@ -934,7 +934,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                               <Button
                                 size="sm"
                                 onClick={() => handleBookingAction(booking, 'checkin')}
-                                className="h-8 px-3 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg w-full sm:w-auto"
+                                className="h-8 px-3 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg w-full sm:w-auto sm:min-w-[110px]"
                               >
                                 <LogIn className="w-3.5 h-3.5 mr-1" />
                                 Check In

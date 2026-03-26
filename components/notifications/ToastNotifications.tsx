@@ -85,30 +85,30 @@ export function ToastNotification({ notification, onClose, index }: ToastNotific
         scale: 0.95,
         transition: { duration: 0.2 }
       }}
-      className="w-full max-w-sm"
+      className="w-full max-w-[min(26rem,calc(100vw-1.5rem))]"
     >
       <div className={cn(
-        'relative rounded-xl border border-gray-200 dark:border-gray-800 shadow-lg overflow-hidden',
+        'relative rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-800 shadow-lg overflow-hidden',
         'border-l-4',
         style.border,
         style.bg
       )}>
         {/* Content */}
-        <div className="p-4 pr-10">
+        <div className="p-3.5 sm:p-4 pr-10">
           <div className="flex items-start gap-3">
             {/* Icon */}
             <div className="flex-shrink-0 mt-0.5">
-              <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                 <Icon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </div>
             </div>
 
             {/* Text */}
             <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white leading-snug break-words">
                 {notification.title}
               </h4>
-              <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+              <p className="mt-0.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400 line-clamp-2 break-words">
                 {notification.message}
               </p>
             </div>
@@ -160,7 +160,7 @@ export function ToastContainer() {
     .slice(0, 3);
 
   return (
-    <div className="fixed top-4 right-4 z-[9999] space-y-2 pointer-events-none">
+    <div className="fixed z-[9999] space-y-2 pointer-events-none left-3 right-3 top-[max(0.75rem,env(safe-area-inset-top))] sm:left-auto sm:right-4 sm:top-4">
       <AnimatePresence mode="popLayout">
         {toastNotifications.map((notification, index) => (
           <div key={notification.id} className="pointer-events-auto">
