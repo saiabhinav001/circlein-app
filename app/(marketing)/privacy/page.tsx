@@ -242,7 +242,7 @@ export default function PrivacyPolicyPage() {
           <div className="flex items-center justify-between h-16 md:h-20">
             <Link href="/" className="flex items-center gap-3 group">
               <CircleInLogo className="w-9 h-9 md:w-10 md:h-10" />
-              <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-teal-600 via-emerald-600 to-emerald-600 bg-clip-text text-transparent">
                 CircleIn
               </span>
             </Link>
@@ -267,9 +267,9 @@ export default function PrivacyPolicyPage() {
             transition={{ duration: 0.5 }}
             className="max-w-3xl mb-12 md:mb-16"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/50 dark:border-indigo-800/50 mb-6">
-              <Shield className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-950/50 border border-teal-200/50 dark:border-teal-800/50 mb-6">
+              <Shield className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+              <span className="text-sm font-medium text-teal-700 dark:text-teal-300">
                 Your Privacy Matters
               </span>
             </div>
@@ -312,7 +312,7 @@ export default function PrivacyPolicyPage() {
                         onClick={() => scrollToSection(section.id)}
                         className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-colors ${
                           activeSection === section.id
-                            ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-medium'
+                            ? 'bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 font-medium'
                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                         }`}
                       >
@@ -337,7 +337,7 @@ export default function PrivacyPolicyPage() {
                         onClick={() => scrollToSection(section.id)}
                         className={`group w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${
                           activeSection === section.id
-                            ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-medium'
+                            ? 'bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 font-medium'
                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
@@ -368,8 +368,8 @@ export default function PrivacyPolicyPage() {
                     <div className="bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-6 md:p-8">
                       {/* Section Header */}
                       <div className="flex items-center gap-4 mb-6 pb-6 border-b border-slate-100 dark:border-slate-800">
-                        <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center flex-shrink-0">
-                          <section.icon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                        <div className="w-11 h-11 rounded-xl bg-teal-50 dark:bg-teal-950/50 flex items-center justify-center flex-shrink-0">
+                          <section.icon className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                         </div>
                         <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
                           {section.title}
@@ -399,25 +399,25 @@ export default function PrivacyPolicyPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4 }}
-                  className="bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 rounded-2xl p-6 md:p-8 text-white"
+                  className="bg-gradient-to-br from-teal-600 via-emerald-600 to-emerald-700 rounded-2xl p-6 md:p-8 text-white"
                 >
                   <h2 className="text-xl md:text-2xl font-semibold mb-4">
                     Questions About Your Privacy?
                   </h2>
-                  <p className="text-indigo-100 mb-6 leading-relaxed">
+                  <p className="text-teal-100 mb-6 leading-relaxed">
                     If you have any questions about this Privacy Policy, your data, or our privacy practices, please don't hesitate to contact us.
                   </p>
                   <div className="grid sm:grid-cols-3 gap-4 text-sm">
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                      <p className="text-indigo-200 mb-1">Email</p>
+                      <p className="text-teal-200 mb-1">Email</p>
                       <p className="font-medium">privacy@circlein.app</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                      <p className="text-indigo-200 mb-1">Data Protection Officer</p>
+                      <p className="text-teal-200 mb-1">Data Protection Officer</p>
                       <p className="font-medium">dpo@circlein.app</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                      <p className="text-indigo-200 mb-1">Response Time</p>
+                      <p className="text-teal-200 mb-1">Response Time</p>
                       <p className="font-medium">Within 48 hours</p>
                     </div>
                   </div>
@@ -454,7 +454,7 @@ export default function PrivacyPolicyPage() {
               © 2026 CircleIn. All rights reserved.
             </p>
             <div className="flex items-center gap-6 text-sm">
-              <Link href="/privacy" className="text-indigo-600 dark:text-indigo-400 font-medium">
+              <Link href="/privacy" className="text-teal-600 dark:text-teal-400 font-medium">
                 Privacy
               </Link>
               <Link href="/terms" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">

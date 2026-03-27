@@ -211,7 +211,7 @@ export default function SecurityPage() {
           <div className="flex items-center justify-between h-16 md:h-20">
             <Link href="/" className="flex items-center gap-3 group">
               <CircleInLogo className="w-9 h-9 md:w-10 md:h-10" />
-              <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-teal-600 via-emerald-600 to-emerald-600 bg-clip-text text-transparent">
                 CircleIn
               </span>
             </Link>

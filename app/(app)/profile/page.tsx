@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -96,8 +96,10 @@ export default function ProfilePage() {
 
   // Initialize profile data from session
   useEffect(() => {
-    if (session?.user) {
-      const data: ProfileData = {
+    const loadProfile = async () => {
+      if (!session?.user?.email) return;
+
+      const fallback: ProfileData = {
         name: session.user.name || '',
         email: session.user.email || '',
         phone: '',
@@ -106,9 +108,29 @@ export default function ProfilePage() {
         bio: '',
         flatNumber: userFlatNumber || '',
       };
-      setProfileData(data);
-      setOriginalData(data);
-    }
+
+      try {
+        const userRef = doc(db, 'users', session.user.email);
+        const userSnap = await getDoc(userRef);
+        const savedProfile = userSnap.data()?.residentSettings?.profile as Partial<ProfileData> | undefined;
+
+        const nextData: ProfileData = {
+          ...fallback,
+          ...(savedProfile || {}),
+          email: session.user.email || fallback.email,
+          flatNumber: savedProfile?.flatNumber || userFlatNumber || '',
+        };
+
+        setProfileData(nextData);
+        setOriginalData(nextData);
+      } catch (error) {
+        console.error('Failed to load profile settings:', error);
+        setProfileData(fallback);
+        setOriginalData(fallback);
+      }
+    };
+
+    void loadProfile();
   }, [session, userFlatNumber]);
 
   useEffect(() => {
@@ -166,10 +188,25 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
+    if (!session?.user?.email) return;
+
     setIsSaving(true);
     try {
-      // Simulate API call - replace with actual save logic
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await setDoc(
+        doc(db, 'users', session.user.email),
+        {
+          residentSettings: {
+            profile: {
+              ...profileData,
+              email: session.user.email,
+            },
+            updatedAt: new Date().toISOString(),
+          },
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
       setOriginalData(profileData);
       setIsEditing(false);
       toast.success('Profile updated successfully');
@@ -281,7 +318,7 @@ export default function ProfilePage() {
                   <AvatarFallback className={cn(
                     "text-2xl sm:text-3xl font-semibold",
                     isAdmin 
-                      ? "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400"
+                      ? "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400"
                       : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
                   )}>
                     {initials}
@@ -319,7 +356,7 @@ export default function ProfilePage() {
                     className={cn(
                       "text-xs font-medium px-2.5 py-0.5",
                       isAdmin 
-                        ? "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400"
+                        ? "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400"
                         : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
                     )}
                   >
@@ -328,7 +365,7 @@ export default function ProfilePage() {
                   </Badge>
                   
                   {!isAdmin && userFlatNumber && (
-                    <Badge variant="secondary" className="text-xs font-medium px-2.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400">
+                    <Badge variant="secondary" className="text-xs font-medium px-2.5 py-0.5 bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400">
                       <Building className="w-3 h-3 mr-1" />
                       Flat {userFlatNumber}
                     </Badge>
@@ -747,7 +784,7 @@ function AccountRow({ label, value, description, status, highlight }: AccountRow
       </div>
       <span className={cn(
         "text-sm font-medium flex-shrink-0",
-        status ? statusColors[status] : highlight ? "text-violet-600 dark:text-violet-400" : "text-gray-700 dark:text-gray-300"
+        status ? statusColors[status] : highlight ? "text-teal-600 dark:text-teal-400" : "text-gray-700 dark:text-gray-300"
       )}>
         {value}
       </span>
@@ -769,7 +806,7 @@ function StatCard({ label, value, variant = 'default' }: StatCardProps) {
   const variants = {
     default: 'text-gray-900 dark:text-white',
     success: 'text-emerald-600 dark:text-emerald-400',
-    highlight: 'text-violet-600 dark:text-violet-400',
+    highlight: 'text-teal-600 dark:text-teal-400',
   };
 
   return (

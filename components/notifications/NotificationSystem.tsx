@@ -20,6 +20,8 @@ export interface Notification {
   priority: 'normal' | 'important' | 'urgent';
   read: boolean;
   createdAt: number;
+  actionUrl?: string;
+  source?: string;
   autoHide?: boolean;
   duration?: number;
 }

@@ -18,10 +18,19 @@ interface MaintenanceRequest {
   id: string;
   title: string;
   description: string;
+  location?: string;
   category: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'new' | 'in_progress' | 'resolved';
+  status: 'new' | 'in_progress' | 'resolved' | 'closed';
   imageUrls: string[];
+  history?: Array<{
+    id: string;
+    status: string;
+    note?: string;
+    updatedByName?: string;
+    assignedTo?: string | null;
+    timestamp?: any;
+  }>;
   createdAt?: any;
   updatedAt?: any;
 }
@@ -35,6 +44,7 @@ export default function MaintenancePage() {
   const [requests, setRequests] = useState<MaintenanceRequest[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
   const [category, setCategory] = useState('plumbing');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
   const [files, setFiles] = useState<File[]>([]);
@@ -121,6 +131,7 @@ export default function MaintenancePage() {
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),
+          location: location.trim(),
           category,
           priority,
           imageUrls,
@@ -134,6 +145,7 @@ export default function MaintenancePage() {
 
       setTitle('');
       setDescription('');
+      setLocation('');
       setCategory('plumbing');
       setPriority('medium');
       setFiles([]);
@@ -148,6 +160,7 @@ export default function MaintenancePage() {
 
   const statusBadge = (status: string) => {
     if (status === 'resolved') return <Badge className="bg-emerald-600">Resolved</Badge>;
+    if (status === 'closed') return <Badge className="bg-slate-700">Closed</Badge>;
     if (status === 'in_progress') return <Badge className="bg-blue-600">In Progress</Badge>;
     return <Badge className="bg-amber-600">New</Badge>;
   };
@@ -199,6 +212,12 @@ export default function MaintenancePage() {
               className="min-h-[120px]"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+            />
+
+            <Input
+              placeholder="Location (e.g., Tower B - Floor 4 - Corridor)"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
             />
 
             <div className="grid sm:grid-cols-2 gap-3">
@@ -278,12 +297,34 @@ export default function MaintenancePage() {
                   <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{request.description}</p>
                   <div className="text-xs text-slate-500 mt-2 flex items-center gap-3">
                     <span className="inline-flex items-center gap-1"><Clock3 className="w-3.5 h-3.5" /> {String(request.category || 'general')}</span>
-                    {request.status === 'resolved' ? (
+                    {request.status === 'resolved' || request.status === 'closed' ? (
                       <span className="inline-flex items-center gap-1"><CircleCheckBig className="w-3.5 h-3.5" /> Resolved</span>
                     ) : (
                       <span className="inline-flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" /> In queue</span>
                     )}
                   </div>
+                  {request.location && (
+                    <p className="text-xs text-slate-500 mt-1">Location: {request.location}</p>
+                  )}
+
+                  {request.history && request.history.length > 0 && (
+                    <div className="mt-3 rounded-md border border-slate-200 dark:border-slate-800 p-2.5 bg-slate-50/70 dark:bg-slate-900/40">
+                      <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">Timeline</p>
+                      <div className="space-y-2">
+                        {[...request.history].slice(-3).reverse().map((event) => (
+                          <div key={event.id} className="text-xs text-slate-600 dark:text-slate-400">
+                            <p className="font-medium text-slate-700 dark:text-slate-300">{String(event.status || '').replace('_', ' ')}</p>
+                            {event.note && <p>{event.note}</p>}
+                            <p>
+                              {event.updatedByName || 'Admin'}
+                              {event.assignedTo ? ` • Assigned: ${event.assignedTo}` : ''}
+                              {event.timestamp ? ` • ${new Date(event.timestamp?.seconds ? event.timestamp.seconds * 1000 : event.timestamp).toLocaleString()}` : ''}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {request.imageUrls?.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-3">
                       {request.imageUrls.map((url, idx) => (

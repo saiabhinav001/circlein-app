@@ -166,7 +166,7 @@ export default function FlatNumberSetup({ userEmail, onComplete }: FlatNumberSet
           className="text-center"
         >
           <CircleInLogo className="w-16 h-16 mx-auto mb-4" />
-          <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-8 h-8 border-2 border-teal-500/30 border-t-teal-500 rounded-full animate-spin mx-auto mb-4" />
           <p className="text-slate-600 dark:text-slate-400">
             {userRole === 'admin' ? 'Redirecting to admin dashboard...' : 'Loading your profile...'}
           </p>
@@ -181,7 +181,7 @@ export default function FlatNumberSetup({ userEmail, onComplete }: FlatNumberSet
       <div className="flex items-center justify-between p-4 sm:p-6">
         <Link href="/" className="flex items-center gap-2">
           <CircleInLogo className="w-8 h-8" />
-          <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
+          <span className="text-lg font-bold bg-gradient-to-r from-teal-600 to-emerald-600 dark:from-teal-400 dark:to-emerald-400 bg-clip-text text-transparent">
             CircleIn
           </span>
         </Link>
@@ -192,7 +192,7 @@ export default function FlatNumberSetup({ userEmail, onComplete }: FlatNumberSet
           aria-label="Toggle theme"
         >
           <Sun className="w-5 h-5 text-amber-500 rotate-0 scale-100 transition-all dark:rotate-90 dark:scale-0" />
-          <Moon className="absolute w-5 h-5 text-indigo-400 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" style={{ marginTop: '-20px' }} />
+          <Moon className="absolute w-5 h-5 text-teal-400 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" style={{ marginTop: '-20px' }} />
         </button>
       </div>
 
@@ -214,10 +214,10 @@ export default function FlatNumberSetup({ userEmail, onComplete }: FlatNumberSet
             </div>
             <div className="w-8 sm:w-12 h-px bg-slate-300 dark:bg-slate-700" />
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center ring-4 ring-indigo-500/20">
+              <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center ring-4 ring-teal-500/20">
                 <Building2 className="w-4 h-4 text-white" />
               </div>
-              <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hidden sm:inline">Add Flat Number</span>
+              <span className="text-sm font-medium text-teal-600 dark:text-teal-400 hidden sm:inline">Add Flat Number</span>
             </div>
             <div className="w-8 sm:w-12 h-px bg-slate-300 dark:bg-slate-700" />
             <div className="flex items-center gap-2">
@@ -233,7 +233,7 @@ export default function FlatNumberSetup({ userEmail, onComplete }: FlatNumberSet
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 15 }}
-            className="mx-auto mb-6 w-20 h-20 rounded-2xl flex items-center justify-center bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/25"
+            className="mx-auto mb-6 w-20 h-20 rounded-2xl flex items-center justify-center bg-gradient-to-br from-teal-500 to-emerald-600 shadow-lg shadow-teal-500/25"
           >
             <Home className="w-10 h-10 text-white" />
           </motion.div>
@@ -267,14 +267,14 @@ export default function FlatNumberSetup({ userEmail, onComplete }: FlatNumberSet
             className="space-y-6"
           >
             {/* Info Card */}
-            <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/20">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-500/10">
-                  <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <div className="p-4 sm:p-5 rounded-xl bg-teal-50 dark:bg-teal-500/5 border border-teal-200 dark:border-teal-500/20">
+              <div className="flex items-start gap-3.5 sm:gap-4">
+                <div className="p-2.5 sm:p-3 rounded-xl bg-teal-100 dark:bg-teal-500/10 ring-1 ring-teal-200/80 dark:ring-teal-500/25 shadow-sm shrink-0">
+                  <Building2 className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-teal-600 dark:text-teal-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-indigo-900 dark:text-indigo-200 mb-1 text-sm">Why do we need this?</h3>
-                  <p className="text-sm text-indigo-700 dark:text-indigo-300/80 leading-relaxed">
+                  <h3 className="font-semibold text-teal-900 dark:text-teal-200 mb-1.5 text-base">Why do we need this?</h3>
+                  <p className="text-sm text-teal-700 dark:text-teal-300/80 leading-relaxed">
                     Your flat number helps us provide personalized community services and ensures your bookings are correctly attributed.
                   </p>
                 </div>
@@ -290,7 +290,7 @@ export default function FlatNumberSetup({ userEmail, onComplete }: FlatNumberSet
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
                   <Home className={`w-[18px] h-[18px] transition-colors duration-200 ${
                     isFocused 
-                      ? 'text-indigo-500 dark:text-indigo-400' 
+                      ? 'text-teal-500 dark:text-teal-400' 
                       : 'text-slate-400 dark:text-slate-500'
                   }`} />
                 </div>
@@ -312,8 +312,8 @@ export default function FlatNumberSetup({ userEmail, onComplete }: FlatNumberSet
                     rounded-xl
                     transition-all duration-200
                     focus:bg-white dark:focus:bg-slate-900
-                    focus:border-indigo-500 dark:focus:border-indigo-500
-                    focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-500/20
+                    focus:border-teal-500 dark:focus:border-teal-500
+                    focus:ring-2 focus:ring-teal-500/20 dark:focus:ring-teal-500/20
                     hover:border-slate-300 dark:hover:border-slate-700
                     disabled:opacity-50
                   `}

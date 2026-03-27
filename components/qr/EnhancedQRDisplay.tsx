@@ -166,14 +166,14 @@ export function EnhancedQRDisplay({
       >
         <div className="bg-white p-6 rounded-3xl shadow-2xl border border-gray-100 relative overflow-hidden">
           {/* Background decoration */}
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-purple-50" />
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-200/30 to-purple-200/30 rounded-full -translate-y-16 translate-x-16" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-indigo-200/20 to-purple-200/20 rounded-full translate-y-12 -translate-x-12" />
+          <div className="absolute inset-0 bg-gradient-to-br from-teal-50 via-white to-emerald-50" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-teal-200/30 to-emerald-200/30 rounded-full -translate-y-16 translate-x-16" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-teal-200/20 to-emerald-200/20 rounded-full translate-y-12 -translate-x-12" />
           
           <div className="relative z-10 flex flex-col items-center">
             {/* Header */}
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-xl flex items-center justify-center">
                 <QrCode className="w-5 h-5 text-white" />
               </div>
               <div className="text-center">
@@ -258,7 +258,7 @@ export function EnhancedQRDisplay({
           className="space-y-4"
         >
           {/* Main info card */}
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-4 border border-indigo-100">
+          <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-4 border border-teal-100">
             <div className="flex items-start gap-4">
               <div className="text-3xl">{getAmenityIcon(booking.amenityType || 'general')}</div>
               <div className="flex-1">

@@ -34,7 +34,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/useToast';
 import { useCommunityNotifications } from '@/hooks/useCommunityNotifications';
-import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone, formatTimeInTimeZone } from '@/lib/timezone';
 import Link from 'next/link';
 import { CalendarErrorBoundary } from '@/components/calendar/CalendarErrorBoundary';
@@ -52,12 +52,26 @@ const formatDateConsistently = (date: Date, timeZone?: string): string => {
   }).format(date);
 };
 
-const formatTimeConsistently = (date: Date, timeZone?: string): string => {
-  return formatTimeInTimeZone(date, timeZone || 'UTC');
+const formatTimeConsistently = (date: Date, timeZone?: string, timeFormat: '12h' | '24h' = '12h'): string => {
+  return formatTimeInTimeZone(date, timeZone || 'UTC', { hour12: timeFormat !== '24h' });
 };
 
 const isSameDay = (date1: Date, date2: Date, timeZone?: string): boolean => {
   return formatDateConsistently(date1, timeZone) === formatDateConsistently(date2, timeZone);
+};
+
+const getHourInTimeZone = (date: Date, timeZone?: string): number => {
+  const formatted = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour: '2-digit',
+    hour12: false,
+  }).format(date);
+  return Number.parseInt(formatted, 10);
+};
+
+const toLocalDateTimeInputValue = (date: Date): string => {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
 // ============================================================================
@@ -94,6 +108,17 @@ interface QuickBookDraft {
   amenityId: string;
 }
 
+interface RescheduleDraft {
+  startTimeLocal: string;
+  durationHours: number;
+}
+
+interface DropRescheduleDraft {
+  booking: Booking;
+  nextStart: Date;
+  nextEnd: Date;
+}
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -111,13 +136,13 @@ const amenityTypes = [
 const GRID_HOURS = Array.from({ length: 17 }, (_, index) => index + 6); // 06:00-22:00
 
 const AMENITY_COLOR_PALETTE = [
-  'bg-indigo-500',
+  'bg-teal-500',
   'bg-emerald-500',
   'bg-cyan-500',
-  'bg-fuchsia-500',
+  'bg-amber-500',
   'bg-amber-500',
   'bg-rose-500',
-  'bg-violet-500',
+  'bg-slate-500',
 ];
 
 // Status configurations - minimal, functional
@@ -171,6 +196,7 @@ export default function CalendarPage() {
   const { toast } = useToast();
   const { sendCommunityNotification } = useCommunityNotifications();
   const timeZone = useCommunityTimeZone();
+  const timeFormat = useCommunityTimeFormat();
   
   const isAdmin = session?.user?.role === 'admin';
   
@@ -189,8 +215,13 @@ export default function CalendarPage() {
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [amenityOptions, setAmenityOptions] = useState<AmenityOption[]>([]);
   const [draggingBookingId, setDraggingBookingId] = useState<string | null>(null);
+  const [dragTargetKey, setDragTargetKey] = useState<string | null>(null);
   const [quickBookDraft, setQuickBookDraft] = useState<QuickBookDraft | null>(null);
   const [showQuickBookDialog, setShowQuickBookDialog] = useState(false);
+  const [rescheduleDraft, setRescheduleDraft] = useState<RescheduleDraft | null>(null);
+  const [rescheduleSaving, setRescheduleSaving] = useState(false);
+  const [dropRescheduleDraft, setDropRescheduleDraft] = useState<DropRescheduleDraft | null>(null);
+  const [dropRescheduleSaving, setDropRescheduleSaving] = useState(false);
 
   // Hydration
   useEffect(() => {
@@ -204,6 +235,18 @@ export default function CalendarPage() {
       fetchAmenities();
     }
   }, [session]);
+
+  useEffect(() => {
+    if (!selectedBooking) {
+      setRescheduleDraft(null);
+      return;
+    }
+
+    setRescheduleDraft({
+      startTimeLocal: toLocalDateTimeInputValue(new Date(selectedBooking.startTime)),
+      durationHours: Math.max(1, Math.round((selectedBooking.endTime.getTime() - selectedBooking.startTime.getTime()) / (1000 * 60 * 60))),
+    });
+  }, [selectedBooking]);
 
   const fetchAmenities = async () => {
     if (!session?.user?.communityId) return;
@@ -245,6 +288,7 @@ export default function CalendarPage() {
       );
 
       const querySnapshot = await getDocs(q);
+
       const bookingList: Booking[] = [];
 
       querySnapshot.forEach((doc) => {
@@ -327,17 +371,36 @@ export default function CalendarPage() {
     return amenityColorMap.get(amenityName) || 'bg-slate-500';
   };
 
+  const formatHourLabel = useCallback((hour: number) => {
+    if (timeFormat === '24h') {
+      return `${String(hour).padStart(2, '0')}:00`;
+    }
+
+    const normalizedHour = ((hour + 11) % 12) + 1;
+    const meridiem = hour >= 12 ? 'PM' : 'AM';
+    return `${normalizedHour}:00 ${meridiem}`;
+  }, [timeFormat]);
+
   const getBookingsForSlot = (date: Date, hour: number) => {
     return filteredBookings.filter((booking) => {
       const bookingDate = new Date(booking.startTime);
-      return isSameDay(bookingDate, date, timeZone) && bookingDate.getHours() === hour;
+      return isSameDay(bookingDate, date, timeZone) && getHourInTimeZone(bookingDate, timeZone) === hour;
     });
+  };
+
+  const getSlotHeatClass = (count: number) => {
+    if (count >= 3) return 'bg-rose-50 dark:bg-rose-500/10';
+    if (count === 2) return 'bg-amber-50 dark:bg-amber-500/10';
+    if (count === 1) return 'bg-emerald-50 dark:bg-emerald-500/10';
+    return '';
   };
 
   // Booking dates for calendar highlights
   const bookingDates = useMemo(() => {
-    return filteredBookings.map(booking => new Date(booking.startTime));
-  }, [filteredBookings]);
+    return filteredBookings
+      .map((booking) => new Date(booking.startTime))
+      .filter((date) => date.getMonth() === currentMonth.getMonth() && date.getFullYear() === currentMonth.getFullYear());
+  }, [filteredBookings, currentMonth]);
 
   // Stats
   const stats = useMemo(() => ({
@@ -380,7 +443,151 @@ export default function CalendarPage() {
     }
   };
 
-  const handleDropReschedule = async (bookingId: string, targetDate: Date, targetHour: number) => {
+  const jumpToToday = useCallback(() => {
+    const now = new Date();
+    setSelectedDate(now);
+    setCurrentMonth(new Date(now));
+  }, []);
+
+  const jumpToNextBooking = useCallback(() => {
+    const now = new Date();
+    const nextBooking = [...filteredBookings]
+      .filter((booking) => new Date(booking.startTime) >= now)
+      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())[0];
+
+    if (!nextBooking) {
+      toast({
+        title: 'No upcoming bookings',
+        description: 'There are no upcoming bookings in this filtered view.',
+      });
+      return;
+    }
+
+    const targetDate = new Date(nextBooking.startTime);
+    setSelectedDate(targetDate);
+    setCurrentMonth(new Date(targetDate));
+    toast({
+      title: 'Jumped to next booking',
+      description: `${nextBooking.amenityName} at ${formatTimeConsistently(targetDate, timeZone, timeFormat)}.`,
+    });
+  }, [filteredBookings, timeZone, timeFormat, toast]);
+
+  const shiftSelectedPeriod = useCallback((direction: 'prev' | 'next') => {
+    const delta = direction === 'prev' ? -1 : 1;
+    const base = selectedDate ? new Date(selectedDate) : new Date();
+
+    if (viewMode === 'week') {
+      base.setDate(base.getDate() + (7 * delta));
+    } else {
+      base.setDate(base.getDate() + delta);
+    }
+
+    setSelectedDate(base);
+    setCurrentMonth(new Date(base));
+  }, [selectedDate, viewMode]);
+
+  const submitAdminReschedule = async () => {
+    if (!isAdmin || !selectedBooking || !rescheduleDraft) return;
+
+    const nextStart = new Date(rescheduleDraft.startTimeLocal);
+    if (Number.isNaN(nextStart.getTime())) {
+      toast({
+        title: 'Invalid date',
+        description: 'Pick a valid new start date and time.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const nextEnd = new Date(nextStart);
+    nextEnd.setHours(nextEnd.getHours() + rescheduleDraft.durationHours);
+
+    const hasClientConflict = bookings.some((booking) => {
+      if (booking.id === selectedBooking.id) return false;
+      if (booking.amenityId !== selectedBooking.amenityId) return false;
+      if (booking.status === 'cancelled') return false;
+
+      const existingStart = new Date(booking.startTime);
+      const existingEnd = new Date(booking.endTime);
+      return nextStart < existingEnd && nextEnd > existingStart;
+    });
+
+    if (hasClientConflict) {
+      toast({
+        title: 'Conflicting slot',
+        description: 'This slot overlaps an existing booking for the same amenity.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setRescheduleSaving(true);
+      const response = await fetch(`/api/bookings/reschedule/${selectedBooking.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startTime: nextStart.toISOString(),
+          endTime: nextEnd.toISOString(),
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to reschedule booking');
+      }
+
+      toast({
+        title: 'Booking rescheduled',
+        description: `${selectedBooking.amenityName} moved to ${formatDateConsistently(nextStart, timeZone)} ${formatTimeConsistently(nextStart, timeZone, timeFormat)}.`,
+      });
+      setShowBookingDialog(false);
+      setRescheduleDraft(null);
+      fetchBookings(true);
+    } catch (error: any) {
+      toast({
+        title: 'Reschedule failed',
+        description: error?.message || 'Unable to reschedule booking.',
+        variant: 'destructive',
+      });
+    } finally {
+      setRescheduleSaving(false);
+    }
+  };
+
+  const adminReschedulePreview = useMemo(() => {
+    if (!isAdmin || !selectedBooking || !rescheduleDraft?.startTimeLocal) return null;
+
+    const nextStart = new Date(rescheduleDraft.startTimeLocal);
+    if (Number.isNaN(nextStart.getTime())) {
+      return { invalid: true, hasConflict: false, startsInPast: false, nextStart: null as Date | null, nextEnd: null as Date | null };
+    }
+
+    const nextEnd = new Date(nextStart);
+    nextEnd.setHours(nextEnd.getHours() + rescheduleDraft.durationHours);
+
+    const hasConflict = bookings.some((booking) => {
+      if (booking.id === selectedBooking.id) return false;
+      if (booking.amenityId !== selectedBooking.amenityId) return false;
+      if (booking.status === 'cancelled') return false;
+
+      const existingStart = new Date(booking.startTime);
+      const existingEnd = new Date(booking.endTime);
+      return nextStart < existingEnd && nextEnd > existingStart;
+    });
+
+    const startsInPast = nextStart.getTime() < Date.now();
+
+    return {
+      invalid: false,
+      hasConflict,
+      startsInPast,
+      nextStart,
+      nextEnd,
+    };
+  }, [isAdmin, selectedBooking, rescheduleDraft, bookings]);
+
+  const handleDropReschedule = (bookingId: string, targetDate: Date, targetHour: number) => {
     if (!isAdmin) return;
 
     const booking = bookings.find((item) => item.id === bookingId);
@@ -391,13 +598,39 @@ export default function CalendarPage() {
     nextStart.setHours(targetHour, 0, 0, 0);
     const nextEnd = new Date(nextStart.getTime() + durationMs);
 
+    const hasConflict = bookings.some((item) => {
+      if (item.id === booking.id) return false;
+      if (item.amenityId !== booking.amenityId) return false;
+      if (item.status === 'cancelled') return false;
+
+      const existingStart = new Date(item.startTime);
+      const existingEnd = new Date(item.endTime);
+      return nextStart < existingEnd && nextEnd > existingStart;
+    });
+
+    if (hasConflict) {
+      toast({
+        title: 'Conflicting slot',
+        description: 'This slot overlaps an existing booking for the same amenity.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDropRescheduleDraft({ booking, nextStart, nextEnd });
+  };
+
+  const confirmDropReschedule = async () => {
+    if (!dropRescheduleDraft) return;
+
     try {
-      const response = await fetch(`/api/bookings/reschedule/${bookingId}`, {
+      setDropRescheduleSaving(true);
+      const response = await fetch(`/api/bookings/reschedule/${dropRescheduleDraft.booking.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          startTime: nextStart.toISOString(),
-          endTime: nextEnd.toISOString(),
+          startTime: dropRescheduleDraft.nextStart.toISOString(),
+          endTime: dropRescheduleDraft.nextEnd.toISOString(),
         }),
       });
 
@@ -407,9 +640,11 @@ export default function CalendarPage() {
       }
 
       toast({
-        title: 'Booking Rescheduled',
-        description: `${booking.amenityName} moved to ${formatDateConsistently(nextStart, timeZone)} ${formatTimeConsistently(nextStart, timeZone)}.`,
+        title: 'Booking rescheduled',
+        description: `${dropRescheduleDraft.booking.amenityName} moved to ${formatDateConsistently(dropRescheduleDraft.nextStart, timeZone)} ${formatTimeConsistently(dropRescheduleDraft.nextStart, timeZone, timeFormat)}.`,
       });
+
+      setDropRescheduleDraft(null);
       fetchBookings(true);
     } catch (error: any) {
       toast({
@@ -417,6 +652,8 @@ export default function CalendarPage() {
         description: error?.message || 'Unable to reschedule booking.',
         variant: 'destructive',
       });
+    } finally {
+      setDropRescheduleSaving(false);
     }
   };
 
@@ -476,7 +713,7 @@ export default function CalendarPage() {
 
       toast({
         title: 'Quick booking complete',
-        description: `${selectedAmenityOption.name} booked for ${formatTimeConsistently(bookingStart, timeZone)}.`,
+        description: `${selectedAmenityOption.name} booked for ${formatTimeConsistently(bookingStart, timeZone, timeFormat)}.`,
       });
       setShowQuickBookDialog(false);
       fetchBookings(true);
@@ -524,7 +761,7 @@ export default function CalendarPage() {
         const confirmed = window.confirm(
           `Cancel this booking for ${booking.userName || booking.userId}?\n\n` +
           `${booking.amenityName}\n` +
-          `${formatDateConsistently(booking.startTime, timeZone)} · ${formatTimeConsistently(booking.startTime, timeZone)}`
+          `${formatDateConsistently(booking.startTime, timeZone)} · ${formatTimeConsistently(booking.startTime, timeZone, timeFormat)}`
         );
         if (!confirmed) return;
       }
@@ -629,7 +866,7 @@ export default function CalendarPage() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
-                  {formatTimeConsistently(booking.startTime, timeZone)} – {formatTimeConsistently(booking.endTime, timeZone)}
+                  {formatTimeConsistently(booking.startTime, timeZone, timeFormat)} – {formatTimeConsistently(booking.endTime, timeZone, timeFormat)}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5" />
@@ -651,7 +888,7 @@ export default function CalendarPage() {
                     </span>
                   )}
                   {isAdmin && !isOwn && (
-                    <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded">
+                    <span className="text-xs text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/10 px-2 py-0.5 rounded">
                       Admin view
                     </span>
                   )}
@@ -810,12 +1047,12 @@ export default function CalendarPage() {
                 transition={{ duration: 0.15, delay: 0.1 }}
                 className={cn(
                   "flex items-center gap-3 px-4 py-2.5 rounded-xl",
-                  "bg-blue-50 dark:bg-blue-500/10",
-                  "border border-blue-100 dark:border-blue-500/20"
+                  "bg-teal-50 dark:bg-teal-500/10",
+                  "border border-teal-100 dark:border-teal-500/20"
                 )}
               >
-                <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                <span className="text-sm text-blue-700 dark:text-blue-300">
+                <Shield className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                <span className="text-sm text-teal-700 dark:text-teal-300">
                   Admin access · View and manage all community bookings
                 </span>
               </motion.div>
@@ -954,11 +1191,8 @@ export default function CalendarPage() {
                     month={currentMonth}
                     onMonthChange={setCurrentMonth}
                     modifiers={{ hasBooking: bookingDates }}
-                    modifiersStyles={{
-                      hasBooking: {
-                        backgroundColor: 'rgb(59 130 246 / 0.1)',
-                        fontWeight: '600'
-                      }
+                    modifiersClassNames={{
+                      hasBooking: 'calendar-day-has-booking',
                     }}
                     className="w-full"
                     classNames={{
@@ -972,7 +1206,7 @@ export default function CalendarPage() {
                       row: "flex w-full mt-1",
                       cell: "text-center text-sm p-0 relative w-full aspect-square",
                       day: cn(
-                        "h-full w-full p-0 font-normal rounded-lg text-sm",
+                        "h-full w-full p-0 font-normal rounded-lg text-sm relative",
                         "hover:bg-slate-100 dark:hover:bg-slate-800",
                         "transition-colors duration-100"
                       ),
@@ -1079,16 +1313,54 @@ export default function CalendarPage() {
                     </div>
                     
                     {/* Tab switcher */}
-                    <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                      <button
-                        className={cn(
-                          "px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-150",
-                          "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                        )}
-                      >
-                        <span className="hidden sm:inline">Selected Date</span>
-                        <span className="sm:hidden">Day</span>
-                      </button>
+                    <div className="flex items-center gap-2">
+                      {(viewMode === 'week' || viewMode === 'day') && (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={jumpToToday}
+                            className="h-8 rounded-lg text-xs px-2.5"
+                          >
+                            Today
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={jumpToNextBooking}
+                            className="h-8 rounded-lg text-xs px-2.5"
+                          >
+                            Next Booking
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => shiftSelectedPeriod('prev')}
+                            className="h-8 w-8 p-0 rounded-lg"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => shiftSelectedPeriod('next')}
+                            className="h-8 w-8 p-0 rounded-lg"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                      <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                        <button
+                          className={cn(
+                            "px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-150",
+                            "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                          )}
+                        >
+                          <span className="hidden sm:inline">Selected Date</span>
+                          <span className="sm:hidden">Day</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                   
@@ -1162,7 +1434,7 @@ export default function CalendarPage() {
                                 {GRID_HOURS.map((hour) => (
                                   <div key={`week-hour-${hour}`} className="grid grid-cols-8 border-b border-slate-100 dark:border-slate-800/80 last:border-b-0">
                                     <div className="p-3 text-xs font-medium text-slate-500 bg-slate-50/70 dark:bg-slate-900/30">
-                                      {`${String(hour).padStart(2, '0')}:00`}
+                                      {formatHourLabel(hour)}
                                     </div>
                                     {weekDays.map((day) => {
                                       const slotBookings = getBookingsForSlot(day, hour);
@@ -1172,7 +1444,9 @@ export default function CalendarPage() {
                                           key={`${day.toISOString()}-${hour}`}
                                           className={cn(
                                             'relative min-h-[72px] border-l border-slate-100 dark:border-slate-800/80 p-1.5',
-                                            isAdmin && 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/40'
+                                            isAdmin && 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/40',
+                                            getSlotHeatClass(slotBookings.length),
+                                            dragTargetKey === `${day.toISOString()}-${hour}` && 'ring-2 ring-teal-300 dark:ring-teal-500/60'
                                           )}
                                           onClick={() => {
                                             if (isAdmin && slotBookings.length === 0) {
@@ -1182,13 +1456,21 @@ export default function CalendarPage() {
                                           onDragOver={(event) => {
                                             if (!isAdmin) return;
                                             event.preventDefault();
+                                            setDragTargetKey(`${day.toISOString()}-${hour}`);
                                           }}
+                                          onDragLeave={() => setDragTargetKey((current) => (current === `${day.toISOString()}-${hour}` ? null : current))}
                                           onDrop={() => {
                                             if (!isAdmin || !draggingBookingId) return;
                                             handleDropReschedule(draggingBookingId, day, hour);
+                                            setDragTargetKey(null);
                                             setDraggingBookingId(null);
                                           }}
                                         >
+                                          {slotBookings.length > 0 && (
+                                            <span className="absolute right-1.5 top-1.5 rounded-full bg-slate-900/85 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                                              {slotBookings.length}
+                                            </span>
+                                          )}
                                           <div className="space-y-1">
                                             {slotBookings.map((booking) => (
                                               <button
@@ -1196,7 +1478,10 @@ export default function CalendarPage() {
                                                 type="button"
                                                 draggable={isAdmin}
                                                 onDragStart={() => setDraggingBookingId(booking.id)}
-                                                onDragEnd={() => setDraggingBookingId(null)}
+                                                onDragEnd={() => {
+                                                  setDraggingBookingId(null);
+                                                  setDragTargetKey(null);
+                                                }}
                                                 onClick={(event) => {
                                                   event.stopPropagation();
                                                   setSelectedBooking(booking);
@@ -1234,12 +1519,14 @@ export default function CalendarPage() {
                                   return (
                                     <div key={`day-hour-${hour}`} className="grid grid-cols-[96px_1fr] border-b border-slate-100 dark:border-slate-800/80 last:border-b-0">
                                       <div className="p-3 text-xs font-medium text-slate-500 bg-slate-50/70 dark:bg-slate-900/30">
-                                        {`${String(hour).padStart(2, '0')}:00`}
+                                        {formatHourLabel(hour)}
                                       </div>
                                       <div
                                         className={cn(
-                                          'min-h-[72px] p-2',
-                                          isAdmin && 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/40'
+                                          'min-h-[72px] p-2 relative',
+                                          isAdmin && 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/40',
+                                          getSlotHeatClass(slotBookings.length),
+                                          dragTargetKey === `day-${selectedDate.toISOString()}-${hour}` && 'ring-2 ring-teal-300 dark:ring-teal-500/60 rounded-md'
                                         )}
                                         onClick={() => {
                                           if (isAdmin && slotBookings.length === 0) {
@@ -1249,13 +1536,21 @@ export default function CalendarPage() {
                                         onDragOver={(event) => {
                                           if (!isAdmin) return;
                                           event.preventDefault();
+                                          setDragTargetKey(`day-${selectedDate.toISOString()}-${hour}`);
                                         }}
+                                        onDragLeave={() => setDragTargetKey((current) => (current === `day-${selectedDate.toISOString()}-${hour}` ? null : current))}
                                         onDrop={() => {
                                           if (!isAdmin || !draggingBookingId) return;
                                           handleDropReschedule(draggingBookingId, selectedDate, hour);
+                                          setDragTargetKey(null);
                                           setDraggingBookingId(null);
                                         }}
                                       >
+                                        {slotBookings.length > 0 && (
+                                          <span className="absolute right-2 top-2 rounded-full bg-slate-900/85 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                                            {slotBookings.length}
+                                          </span>
+                                        )}
                                         {slotBookings.length === 0 ? (
                                           <p className="text-xs text-slate-400">Open slot</p>
                                         ) : (
@@ -1266,7 +1561,10 @@ export default function CalendarPage() {
                                                 type="button"
                                                 draggable={isAdmin}
                                                 onDragStart={() => setDraggingBookingId(booking.id)}
-                                                onDragEnd={() => setDraggingBookingId(null)}
+                                                onDragEnd={() => {
+                                                  setDraggingBookingId(null);
+                                                  setDragTargetKey(null);
+                                                }}
                                                 onClick={(event) => {
                                                   event.stopPropagation();
                                                   setSelectedBooking(booking);
@@ -1279,7 +1577,7 @@ export default function CalendarPage() {
                                                 )}
                                               >
                                                 <p className="font-semibold">{booking.amenityName}</p>
-                                                <p className="opacity-90">{formatTimeConsistently(booking.startTime, timeZone)} - {formatTimeConsistently(booking.endTime, timeZone)}</p>
+                                                <p className="opacity-90">{formatTimeConsistently(booking.startTime, timeZone, timeFormat)} - {formatTimeConsistently(booking.endTime, timeZone, timeFormat)}</p>
                                                 <p className="opacity-90 truncate">{booking.userName || booking.userId}</p>
                                               </button>
                                             ))}
@@ -1364,7 +1662,7 @@ export default function CalendarPage() {
                       <div className="flex items-center gap-3 text-sm">
                         <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                         <span className="text-slate-900 dark:text-white">
-                          {formatTimeConsistently(selectedBooking.startTime, timeZone)} – {formatTimeConsistently(selectedBooking.endTime, timeZone)}
+                          {formatTimeConsistently(selectedBooking.startTime, timeZone, timeFormat)} – {formatTimeConsistently(selectedBooking.endTime, timeZone, timeFormat)}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-sm">
@@ -1423,6 +1721,72 @@ export default function CalendarPage() {
                           Cancel Booking
                         </Button>
                       )}
+
+                      {isAdmin && selectedBooking.status !== 'cancelled' && (
+                        <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-3">
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">Reschedule booking</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <Input
+                              type="datetime-local"
+                              value={rescheduleDraft?.startTimeLocal || ''}
+                              onChange={(event) => setRescheduleDraft((draft) => ({
+                                startTimeLocal: event.target.value,
+                                durationHours: draft?.durationHours || 1,
+                              }))}
+                              className="h-10"
+                            />
+                            <Select
+                              value={String(rescheduleDraft?.durationHours || 1)}
+                              onValueChange={(value) => setRescheduleDraft((draft) => ({
+                                startTimeLocal: draft?.startTimeLocal || toLocalDateTimeInputValue(selectedBooking.startTime),
+                                durationHours: Number(value),
+                              }))}
+                            >
+                              <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Duration" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="1">1 hour</SelectItem>
+                                <SelectItem value="2">2 hours</SelectItem>
+                                <SelectItem value="3">3 hours</SelectItem>
+                                <SelectItem value="4">4 hours</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {adminReschedulePreview && (
+                            <div
+                              className={cn(
+                                'rounded-md border px-3 py-2 text-xs',
+                                adminReschedulePreview.invalid
+                                  ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300'
+                                  : adminReschedulePreview.hasConflict
+                                  ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300'
+                                  : adminReschedulePreview.startsInPast
+                                  ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300'
+                                  : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300'
+                              )}
+                            >
+                              {adminReschedulePreview.invalid && 'Choose a valid date and time.'}
+                              {!adminReschedulePreview.invalid && adminReschedulePreview.hasConflict && 'Conflicts with an existing booking for this amenity.'}
+                              {!adminReschedulePreview.invalid && !adminReschedulePreview.hasConflict && adminReschedulePreview.startsInPast && 'Selected slot starts in the past. Choose a future slot.'}
+                              {!adminReschedulePreview.invalid && !adminReschedulePreview.hasConflict && !adminReschedulePreview.startsInPast && `Slot is available: ${formatDateConsistently(adminReschedulePreview.nextStart as Date, timeZone)} ${formatTimeConsistently(adminReschedulePreview.nextStart as Date, timeZone, timeFormat)} - ${formatTimeConsistently(adminReschedulePreview.nextEnd as Date, timeZone, timeFormat)}.`}
+                            </div>
+                          )}
+                          <Button
+                            onClick={submitAdminReschedule}
+                            disabled={
+                              rescheduleSaving ||
+                              !rescheduleDraft?.startTimeLocal ||
+                              !!adminReschedulePreview?.invalid ||
+                              !!adminReschedulePreview?.hasConflict ||
+                              !!adminReschedulePreview?.startsInPast
+                            }
+                            className="h-10 w-full"
+                          >
+                            {rescheduleSaving ? 'Saving...' : 'Apply reschedule'}
+                          </Button>
+                        </div>
+                      )}
                       
                       {/* Info notices */}
                       {!isAdmin && selectedBooking.userId !== session?.user?.email && (
@@ -1432,7 +1796,7 @@ export default function CalendarPage() {
                       )}
                       
                       {isAdmin && selectedBooking.userId !== session?.user?.email && (
-                        <p className="text-xs text-blue-600 dark:text-blue-400 p-3 bg-blue-50 dark:bg-blue-500/10 rounded-lg">
+                        <p className="text-xs text-teal-600 dark:text-teal-400 p-3 bg-teal-50 dark:bg-teal-500/10 rounded-lg">
                           Admin access: Managing booking for {selectedBooking.userName || 'resident'}
                         </p>
                       )}
@@ -1465,7 +1829,7 @@ export default function CalendarPage() {
                         year: 'numeric'
                       })}
                       <span className="mx-2">·</span>
-                      {`${String(quickBookDraft.hour).padStart(2, '0')}:00 - ${String(quickBookDraft.hour + 1).padStart(2, '0')}:00`}
+                      {`${formatHourLabel(quickBookDraft.hour)} - ${formatHourLabel(quickBookDraft.hour + 1)}`}
                     </div>
 
                     <div className="space-y-2">
@@ -1493,6 +1857,61 @@ export default function CalendarPage() {
                       </Button>
                       <Button onClick={submitQuickBook}>
                         Confirm Booking
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            <Dialog
+              open={!!dropRescheduleDraft}
+              onOpenChange={(open) => {
+                if (!open && !dropRescheduleSaving) {
+                  setDropRescheduleDraft(null);
+                }
+              }}
+            >
+              <DialogContent className={cn(
+                "max-w-md rounded-2xl",
+                "bg-white dark:bg-slate-900",
+                "border-slate-200 dark:border-slate-800"
+              )}>
+                <DialogHeader>
+                  <DialogTitle className="text-lg font-semibold text-slate-900 dark:text-white">
+                    Confirm Reschedule
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-slate-500 dark:text-slate-400">
+                    Review the new slot before applying this drag-and-drop change.
+                  </DialogDescription>
+                </DialogHeader>
+
+                {dropRescheduleDraft && (
+                  <div className="space-y-4 py-2">
+                    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-3 text-sm">
+                      <p className="font-medium text-slate-900 dark:text-white">{dropRescheduleDraft.booking.amenityName}</p>
+                      <p className="mt-1 text-slate-500 dark:text-slate-400">
+                        Resident: {dropRescheduleDraft.booking.userName || dropRescheduleDraft.booking.userId}
+                      </p>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <p className="text-slate-600 dark:text-slate-300">
+                        Current: {formatDateConsistently(dropRescheduleDraft.booking.startTime, timeZone)} {formatTimeConsistently(dropRescheduleDraft.booking.startTime, timeZone, timeFormat)} - {formatTimeConsistently(dropRescheduleDraft.booking.endTime, timeZone, timeFormat)}
+                      </p>
+                      <p className="text-slate-900 dark:text-white font-medium">
+                        New: {formatDateConsistently(dropRescheduleDraft.nextStart, timeZone)} {formatTimeConsistently(dropRescheduleDraft.nextStart, timeZone, timeFormat)} - {formatTimeConsistently(dropRescheduleDraft.nextEnd, timeZone, timeFormat)}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setDropRescheduleDraft(null)}
+                        disabled={dropRescheduleSaving}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={confirmDropReschedule} disabled={dropRescheduleSaving}>
+                        {dropRescheduleSaving ? 'Applying...' : 'Confirm Reschedule'}
                       </Button>
                     </div>
                   </div>

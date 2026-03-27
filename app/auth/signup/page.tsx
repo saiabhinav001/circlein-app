@@ -105,7 +105,7 @@ export default function SignUp() {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Branding (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 dark:from-emerald-900 dark:via-teal-900 dark:to-cyan-950">
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-slate-900 to-emerald-600 dark:from-[#141416] dark:to-[#1f2937]">
         {/* Subtle pattern overlay */}
         <div 
           className="absolute inset-0 opacity-10"
@@ -170,7 +170,7 @@ export default function SignUp() {
         <div className="flex items-center justify-between p-4 sm:p-6">
           <Link href="/" className="flex items-center gap-2 lg:hidden">
             <CircleInLogo className="w-8 h-8" />
-            <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
               CircleIn
             </span>
           </Link>
@@ -182,7 +182,7 @@ export default function SignUp() {
               aria-label="Toggle theme"
             >
               <Sun className="w-5 h-5 text-amber-500 rotate-0 scale-100 transition-all dark:rotate-90 dark:scale-0" />
-              <Moon className="absolute w-5 h-5 text-indigo-400 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" style={{ marginTop: '-20px' }} />
+              <Moon className="absolute w-5 h-5 text-emerald-400 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" style={{ marginTop: '-20px' }} />
             </button>
           </div>
         </div>
@@ -309,7 +309,7 @@ export default function SignUp() {
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
                     <Mail className={`w-[18px] h-[18px] transition-colors duration-200 ${
                       focusedField === 'email' 
-                        ? 'text-blue-500 dark:text-blue-400' 
+                        ? 'text-emerald-500 dark:text-emerald-400' 
                         : 'text-slate-400 dark:text-slate-500'
                     }`} />
                   </div>
@@ -331,8 +331,8 @@ export default function SignUp() {
                       rounded-xl
                       transition-all duration-200
                       focus:bg-white dark:focus:bg-slate-900
-                      focus:border-blue-500 dark:focus:border-blue-500
-                      focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-500/20
+                      focus:border-slate-900 dark:focus:border-slate-200
+                      focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10
                       hover:border-slate-300 dark:hover:border-slate-700
                     `}
                     required
@@ -371,7 +371,7 @@ export default function SignUp() {
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
                     <Lock className={`w-[18px] h-[18px] transition-colors duration-200 ${
                       focusedField === 'password' 
-                        ? 'text-violet-500 dark:text-violet-400' 
+                        ? 'text-emerald-500 dark:text-emerald-400' 
                         : 'text-slate-400 dark:text-slate-500'
                     }`} />
                   </div>
@@ -393,8 +393,8 @@ export default function SignUp() {
                       rounded-xl
                       transition-all duration-200
                       focus:bg-white dark:focus:bg-slate-900
-                      focus:border-violet-500 dark:focus:border-violet-500
-                      focus:ring-2 focus:ring-violet-500/20 dark:focus:ring-violet-500/20
+                      focus:border-slate-900 dark:focus:border-slate-200
+                      focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10
                       hover:border-slate-300 dark:hover:border-slate-700
                     `}
                     required
@@ -423,7 +423,7 @@ export default function SignUp() {
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
                     <Lock className={`w-[18px] h-[18px] transition-colors duration-200 ${
                       focusedField === 'confirmPassword' 
-                        ? 'text-violet-500 dark:text-violet-400' 
+                        ? 'text-emerald-500 dark:text-emerald-400' 
                         : 'text-slate-400 dark:text-slate-500'
                     }`} />
                   </div>
@@ -445,8 +445,8 @@ export default function SignUp() {
                       rounded-xl
                       transition-all duration-200
                       focus:bg-white dark:focus:bg-slate-900
-                      focus:border-violet-500 dark:focus:border-violet-500
-                      focus:ring-2 focus:ring-violet-500/20 dark:focus:ring-violet-500/20
+                      focus:border-slate-900 dark:focus:border-slate-200
+                      focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-slate-100/10
                       hover:border-slate-300 dark:hover:border-slate-700
                     `}
                     required

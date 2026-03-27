@@ -12,10 +12,8 @@ const withPWA = require('next-pwa')({
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-
-  onDemandEntries: {
-    maxInactiveAge: 25 * 1000,
-    pagesBufferLength: 2,
+  experimental: {
+    esmExternals: false,
   },
 
   typescript: {

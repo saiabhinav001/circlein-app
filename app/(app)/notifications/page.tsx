@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Bell, 
   Search, 
@@ -20,6 +21,7 @@ import { formatDateTimeInTimeZone } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const { 
     notifications, 
     unreadCount,
@@ -42,7 +44,7 @@ export default function NotificationsPage() {
 
   // Filter and sort notifications
   const filteredNotifications = useMemo(() => {
-    let filtered = notifications;
+    let filtered = [...notifications];
 
     // Filter by read/unread
     if (filterType === 'unread') {
@@ -64,16 +66,30 @@ export default function NotificationsPage() {
     }
 
     // Sort
-    filtered.sort((a, b) => {
+    return filtered.sort((a, b) => {
       if (sortBy === 'newest') {
         return b.createdAt - a.createdAt;
       } else {
         return a.createdAt - b.createdAt;
       }
     });
-
-    return filtered;
   }, [notifications, filterType, category, searchQuery, sortBy]);
+
+  const groupedNotifications = useMemo(() => {
+    return filteredNotifications.reduce((acc, item) => {
+      if (!acc[item.type]) {
+        acc[item.type] = [];
+      }
+      acc[item.type].push(item);
+      return acc;
+    }, {} as Record<string, typeof filteredNotifications>);
+  }, [filteredNotifications]);
+
+  const markTypeAsRead = (type: string) => {
+    filteredNotifications
+      .filter((notification) => notification.type === type && !notification.read)
+      .forEach((notification) => markAsRead(notification.id));
+  };
 
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -252,77 +268,120 @@ export default function NotificationsPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {filteredNotifications.map((notification) => {
-              const Icon = typeIcons[notification.type] || Bell;
-              
+          <div className="space-y-4">
+            {Object.entries(groupedNotifications).map(([type, items]) => {
+              const groupUnread = items.filter((item) => !item.read).length;
+
               return (
-                <div
-                  key={notification.id}
-                  className={cn(
-                    "group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg sm:rounded-xl",
-                    "hover:border-slate-300 dark:hover:border-slate-700 transition-colors",
-                    !notification.read && "bg-blue-50/30 dark:bg-blue-900/5"
-                  )}
-                  onClick={() => !notification.read && markAsRead(notification.id)}
-                >
-                  {/* Priority accent */}
-                  <div className={cn("absolute left-0 top-0 bottom-0 w-0.5 sm:w-1 rounded-l-lg sm:rounded-l-xl", priorityColors[notification.priority])} />
-
-                  <div className="pl-3 sm:pl-5 pr-3 sm:pr-4 py-3 sm:py-4 flex items-start gap-2.5 sm:gap-4">
-                    {/* Icon - smaller on mobile */}
-                    <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                      <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-slate-600 dark:text-slate-400" />
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col xs:flex-row xs:items-start xs:justify-between gap-1.5 xs:gap-2 sm:gap-3 mb-0.5 sm:mb-1">
-                        <h3 className={cn(
-                          "text-sm sm:text-base leading-snug line-clamp-2",
-                          notification.read
-                            ? "font-medium text-slate-700 dark:text-slate-300"
-                            : "font-semibold text-slate-900 dark:text-slate-100"
-                        )}>
-                          {notification.title}
-                        </h3>
-                        <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 xs:whitespace-nowrap flex-shrink-0">
-                          {formatTime(notification.createdAt)}
+                <section key={type} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/30 p-2 sm:p-3">
+                  <div className="px-2 sm:px-3 py-1.5 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{type}</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">{items.length} total</span>
+                      {groupUnread > 0 && (
+                        <span className="text-[11px] text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded">
+                          {groupUnread} unread
                         </span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
-                        {notification.message}
-                      </p>
-                      <div className="mt-1.5 sm:mt-2 flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                        <span className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-md">
-                          {notification.type}
-                        </span>
-                        {notification.priority !== 'normal' && (
-                          <span className={cn(
-                            "px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded-md",
-                            notification.priority === 'urgent'
-                              ? "text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30"
-                              : "text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30"
-                          )}>
-                            {notification.priority}
-                          </span>
-                        )}
-                      </div>
+                      )}
                     </div>
-
-                    {/* Delete - always visible on mobile via touch */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeNotification(notification.id);
-                      }}
-                      className="flex-shrink-0 p-1.5 sm:p-2 rounded-md opacity-60 sm:opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    </button>
+                    {groupUnread > 0 && (
+                      <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => markTypeAsRead(type)}>
+                        <Check className="h-3.5 w-3.5 mr-1" />
+                        Mark type read
+                      </Button>
+                    )}
                   </div>
-                </div>
+
+                  <div className="space-y-2">
+                    {items.map((notification) => {
+                      const Icon = typeIcons[notification.type] || Bell;
+
+                      return (
+                        <div
+                          key={notification.id}
+                          className={cn(
+                            "group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg sm:rounded-xl",
+                            "hover:border-slate-300 dark:hover:border-slate-700 transition-colors",
+                            !notification.read && "bg-teal-50/30 dark:bg-teal-900/5"
+                          )}
+                          onClick={() => !notification.read && markAsRead(notification.id)}
+                        >
+                          <div className={cn("absolute left-0 top-0 bottom-0 w-0.5 sm:w-1 rounded-l-lg sm:rounded-l-xl", priorityColors[notification.priority])} />
+
+                          <div className="pl-3 sm:pl-5 pr-3 sm:pr-4 py-3 sm:py-4 flex items-start gap-2.5 sm:gap-4">
+                            <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                              <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-slate-600 dark:text-slate-400" />
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-col xs:flex-row xs:items-start xs:justify-between gap-1.5 xs:gap-2 sm:gap-3 mb-0.5 sm:mb-1">
+                                <h3 className={cn(
+                                  "text-sm sm:text-base leading-snug line-clamp-2",
+                                  notification.read
+                                    ? "font-medium text-slate-700 dark:text-slate-300"
+                                    : "font-semibold text-slate-900 dark:text-slate-100"
+                                )}>
+                                  {notification.title}
+                                </h3>
+                                <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 xs:whitespace-nowrap flex-shrink-0">
+                                  {formatTime(notification.createdAt)}
+                                </span>
+                              </div>
+                              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
+                                {notification.message}
+                              </p>
+                              <div className="mt-1.5 sm:mt-2 flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                <span className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-md">
+                                  {notification.type}
+                                </span>
+                                {notification.priority !== 'normal' && (
+                                  <span className={cn(
+                                    "px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded-md",
+                                    notification.priority === 'urgent'
+                                      ? "text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30"
+                                      : "text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-900/30"
+                                  )}>
+                                    {notification.priority}
+                                  </span>
+                                )}
+                              </div>
+
+                              {notification.actionUrl && (
+                                <div className="mt-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!notification.read) {
+                                        markAsRead(notification.id);
+                                      }
+                                      router.push(notification.actionUrl!);
+                                    }}
+                                  >
+                                    Open
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeNotification(notification.id);
+                              }}
+                              className="flex-shrink-0 p-1.5 sm:p-2 rounded-md opacity-60 sm:opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
               );
             })}
           </div>

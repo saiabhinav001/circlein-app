@@ -82,7 +82,7 @@ export default function DatabaseSetup() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Database className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
@@ -119,7 +119,7 @@ export default function DatabaseSetup() {
               <Button 
                 onClick={initializeDatabase} 
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 mb-2"
+                className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 mb-2"
                 size="lg"
               >
                 {loading ? (
@@ -192,7 +192,7 @@ export default function DatabaseSetup() {
                             <div className="text-slate-600 dark:text-slate-400">Amenities</div>
                           </div>
                           <div className="text-center">
-                            <div className="font-bold text-purple-600 text-xl">{result.collections.accessCodes}</div>
+                            <div className="font-bold text-emerald-600 text-xl">{result.collections.accessCodes}</div>
                             <div className="text-slate-600 dark:text-slate-400">Access Codes</div>
                           </div>
                           <div className="text-center">

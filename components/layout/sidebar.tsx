@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, ChevronRight, Sparkles, Bell, LogOut, MessageCircle, Wrench, BarChart3, Megaphone, ClipboardList } from 'lucide-react';
+import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, ChevronRight, Hourglass, Bell, LogOut, MessageCircle, Wrench, BarChart3, Megaphone, ClipboardList, UserX } from 'lucide-react';
 import { useTheme } from '../providers/theme-provider';
 import { Button } from '@/components/ui/button';
 import { signOut } from 'next-auth/react';
@@ -84,14 +84,14 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
   }, []);
 
   const baseNavigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home, color: 'from-blue-500 to-cyan-500' },
-    { name: 'Community', href: '/community', icon: Megaphone, color: 'from-rose-500 to-orange-500' },
-    { name: 'My Bookings', href: '/bookings', icon: BookOpen, color: 'from-purple-500 to-pink-500' },
-    { name: 'Calendar', href: '/calendar', icon: Calendar, color: 'from-green-500 to-emerald-500' },
-    { name: 'Maintenance', href: '/maintenance', icon: Wrench, color: 'from-amber-500 to-orange-500' },
-    { name: 'Notifications', href: '/notifications', icon: Bell, color: 'from-orange-500 to-yellow-500' },
-    { name: 'Contact Us', href: '/contact', icon: MessageCircle, color: 'from-teal-500 to-cyan-500' },
-    { name: 'Settings', href: '/settings', icon: Settings, color: 'from-gray-500 to-slate-600' },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Community', href: '/community', icon: Megaphone },
+    { name: 'My Bookings', href: '/bookings', icon: BookOpen },
+    { name: 'Calendar', href: '/calendar', icon: Calendar },
+    { name: 'Maintenance', href: '/maintenance', icon: Wrench },
+    { name: 'Notifications', href: '/notifications', icon: Bell },
+    { name: 'Contact Us', href: '/contact', icon: MessageCircle },
+    { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
   // Filter out Settings for admin users since they have it in admin section
@@ -100,11 +100,13 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
     : baseNavigation;
 
   const adminNavigation = [
-    { name: 'Admin Panel', href: '/admin', icon: Shield, color: 'from-orange-500 to-red-500' },
-    { name: 'Manage Users', href: '/admin/users', icon: Users, color: 'from-indigo-500 to-purple-500' },
-    { name: 'Maintenance Desk', href: '/admin/maintenance', icon: ClipboardList, color: 'from-amber-500 to-orange-500' },
-    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, color: 'from-sky-500 to-indigo-500' },
-    { name: 'Settings', href: '/admin/settings', icon: Settings, color: 'from-gray-500 to-slate-600' },
+    { name: 'Admin Panel', href: '/admin', icon: Shield },
+    { name: 'Manage Users', href: '/admin/users', icon: Users },
+    { name: 'Waitlist Manager', href: '/admin/waitlist', icon: Hourglass },
+    { name: 'Deletion Requests', href: '/admin/deletion-requests', icon: UserX },
+    { name: 'Maintenance Desk', href: '/admin/maintenance', icon: ClipboardList },
+    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+    { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
 
   const getTourTarget = (itemName: string, isAdminSection = false) => {
@@ -118,6 +120,8 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
 
     if (itemName === 'Admin Panel') return 'sidebar-admin-panel';
     if (itemName === 'Manage Users') return 'sidebar-admin-users';
+    if (itemName === 'Waitlist Manager') return 'sidebar-admin-waitlist';
+    if (itemName === 'Deletion Requests') return 'sidebar-admin-deletion-requests';
     if (itemName === 'Analytics') return 'sidebar-admin-analytics';
     if (itemName === 'Settings') return 'sidebar-admin-settings';
     return undefined;
@@ -187,7 +191,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                     <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-950" />
                   </div>
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
+                    <span className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 truncate">
                       CircleIn
                     </span>
                     <span className="text-xs text-slate-600 dark:text-slate-400 -mt-0.5 truncate">
@@ -233,7 +237,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                     className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/60"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-sm font-medium shrink-0">
+                      <div className="w-8 h-8 bg-slate-900 dark:bg-slate-100 rounded-lg flex items-center justify-center text-white dark:text-slate-900 text-sm font-medium shrink-0">
                         {session.user.name?.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">

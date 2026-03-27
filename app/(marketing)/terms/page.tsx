@@ -255,7 +255,7 @@ export default function TermsOfServicePage() {
           <div className="flex items-center justify-between h-16 md:h-20">
             <Link href="/" className="flex items-center gap-3 group">
               <CircleInLogo className="w-9 h-9 md:w-10 md:h-10" />
-              <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-teal-600 via-emerald-600 to-emerald-600 bg-clip-text text-transparent">
                 CircleIn
               </span>
             </Link>
@@ -280,9 +280,9 @@ export default function TermsOfServicePage() {
             transition={{ duration: 0.5 }}
             className="max-w-3xl mb-12 md:mb-16"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-50 dark:bg-violet-950/50 border border-violet-200/50 dark:border-violet-800/50 mb-6">
-              <Scale className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-              <span className="text-sm font-medium text-violet-700 dark:text-violet-300">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/50 dark:border-emerald-800/50 mb-6">
+              <Scale className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
                 Legal Agreement
               </span>
             </div>
@@ -325,7 +325,7 @@ export default function TermsOfServicePage() {
                         onClick={() => scrollToSection(section.id)}
                         className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-colors ${
                           activeSection === section.id
-                            ? 'bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 font-medium'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                         }`}
                       >
@@ -350,7 +350,7 @@ export default function TermsOfServicePage() {
                         onClick={() => scrollToSection(section.id)}
                         className={`group w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 flex items-center gap-2 ${
                           activeSection === section.id
-                            ? 'bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 font-medium'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-medium'
                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
@@ -392,12 +392,12 @@ export default function TermsOfServicePage() {
                         <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
                           section.isImportant 
                             ? 'bg-amber-100 dark:bg-amber-900/50'
-                            : 'bg-violet-50 dark:bg-violet-950/50'
+                            : 'bg-emerald-50 dark:bg-emerald-950/50'
                         }`}>
                           <section.icon className={`w-5 h-5 ${
                             section.isImportant 
                               ? 'text-amber-600 dark:text-amber-400'
-                              : 'text-violet-600 dark:text-violet-400'
+                              : 'text-emerald-600 dark:text-emerald-400'
                           }`} />
                         </div>
                         <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">
@@ -432,25 +432,25 @@ export default function TermsOfServicePage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4 }}
-                  className="bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 rounded-2xl p-6 md:p-8 text-white"
+                  className="bg-gradient-to-br from-emerald-600 via-teal-600 to-teal-700 rounded-2xl p-6 md:p-8 text-white"
                 >
                   <h2 className="text-xl md:text-2xl font-semibold mb-4">
                     Questions About These Terms?
                   </h2>
-                  <p className="text-violet-100 mb-6 leading-relaxed">
+                  <p className="text-emerald-100 mb-6 leading-relaxed">
                     If you have any questions about these Terms of Service, please contact our legal team.
                   </p>
                   <div className="grid sm:grid-cols-3 gap-4 text-sm">
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                      <p className="text-violet-200 mb-1">Email</p>
+                      <p className="text-emerald-200 mb-1">Email</p>
                       <p className="font-medium">legal@circlein.app</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                      <p className="text-violet-200 mb-1">Legal Department</p>
+                      <p className="text-emerald-200 mb-1">Legal Department</p>
                       <p className="font-medium">Mon-Fri, 9 AM - 5 PM EST</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                      <p className="text-violet-200 mb-1">Response Time</p>
+                      <p className="text-emerald-200 mb-1">Response Time</p>
                       <p className="font-medium">Within 72 hours</p>
                     </div>
                   </div>
@@ -497,7 +497,7 @@ export default function TermsOfServicePage() {
               <Link href="/privacy" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                 Privacy
               </Link>
-              <Link href="/terms" className="text-violet-600 dark:text-violet-400 font-medium">
+              <Link href="/terms" className="text-emerald-600 dark:text-emerald-400 font-medium">
                 Terms
               </Link>
               <Link href="/security" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">

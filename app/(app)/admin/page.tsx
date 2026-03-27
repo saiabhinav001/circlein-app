@@ -683,10 +683,10 @@ function AmenityForm({ form, onSubmit, onCancel, isLoading, title, submitLabel }
       </div>
 
       <form onSubmit={onSubmit}>
-        <CardContent className="px-5 sm:px-6 py-5 space-y-6">
+        <CardContent className="px-5 sm:px-6 py-7 sm:py-8 space-y-8">
           {/* SECTION: Basic Information */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          <div className="space-y-6">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-[0.1em]">
               Basic Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -725,8 +725,8 @@ function AmenityForm({ form, onSubmit, onCancel, isLoading, title, submitLabel }
           </div>
 
           {/* SECTION: Booking Rules */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          <div className="space-y-5 pt-1">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-[0.1em]">
               Booking Rules
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -753,8 +753,8 @@ function AmenityForm({ form, onSubmit, onCancel, isLoading, title, submitLabel }
           </div>
 
           {/* SECTION: Operating Hours */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          <div className="space-y-5 pt-1">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-[0.1em]">
               Operating Hours
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

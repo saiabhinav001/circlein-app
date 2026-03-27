@@ -57,7 +57,7 @@ const STATUS_COLORS: Record<string, string> = {
   completed: '#10b981',
   cancelled: '#f43f5e',
   pending_confirmation: '#f59e0b',
-  no_show: '#a855f7',
+  no_show: '#64748b',
 };
 
 const DAY_FORMATTER = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
@@ -392,12 +392,12 @@ export default function AdminAnalyticsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 space-y-6">
         <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/70 p-6 sm:p-8 shadow-premium backdrop-blur-sm">
           <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-cyan-300/35 blur-3xl dark:bg-cyan-500/20" />
-          <div className="absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-indigo-300/35 blur-3xl dark:bg-indigo-500/20" />
+          <div className="absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-teal-300/35 blur-3xl dark:bg-teal-500/20" />
 
           <div className="relative flex flex-col gap-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-start gap-3 sm:gap-4 min-w-0">
-                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-indigo-600 text-white flex items-center justify-center shadow-lg ring-1 ring-cyan-200/70 dark:ring-cyan-500/30 shrink-0">
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-600 text-white flex items-center justify-center shadow-lg ring-1 ring-cyan-200/70 dark:ring-cyan-500/30 shrink-0">
                   <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div className="min-w-0">
@@ -457,8 +457,12 @@ export default function AdminAnalyticsPage() {
         </section>
 
         {loading ? (
-          <Card>
-            <CardContent className="pt-6 text-sm text-slate-500">Loading analytics...</CardContent>
+          <Card className="border-slate-200/90 dark:border-slate-800/70 bg-white/85 dark:bg-slate-900/70">
+            <CardContent className="min-h-[86px] sm:min-h-[96px] px-6 py-6 sm:px-8 sm:py-7 flex items-center justify-center text-center">
+              <p className="text-sm sm:text-base font-medium text-slate-600 dark:text-slate-300 leading-relaxed">
+                Loading analytics...
+              </p>
+            </CardContent>
           </Card>
         ) : (
           <>
@@ -660,19 +664,23 @@ function MetricCard({
   const positive = inverseDelta ? delta <= 0 : delta >= 0;
 
   return (
-    <Card className="rounded-2xl border-slate-200/90 dark:border-slate-700/70 bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm">
-      <CardContent className="pt-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
-            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{value}</p>
-            <div className={cn('mt-1 inline-flex items-center gap-1 text-xs font-semibold', positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
-              {positive ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-              {Math.abs(delta).toFixed(1)}% vs previous period
+    <Card className="rounded-2xl border-slate-200/90 dark:border-slate-700/70 bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm h-full">
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex flex-col gap-3.5 sm:gap-4 h-full">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-[10px] sm:text-[11px] leading-[1.4] font-semibold uppercase tracking-[0.09em] text-slate-500 dark:text-slate-400 max-w-[70%] min-h-[2.05rem]">
+              {label}
+            </p>
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 text-white flex items-center justify-center shadow-md shrink-0">
+              {icon}
             </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 text-white flex items-center justify-center shadow-md">
-            {icon}
+
+          <p className="text-3xl sm:text-4xl leading-none font-bold text-slate-900 dark:text-slate-100">{value}</p>
+
+          <div className={cn('flex items-start gap-1.5 max-w-full text-xs sm:text-[13px] font-semibold leading-5', positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
+            {positive ? <ArrowUpRight className="w-3.5 h-3.5 shrink-0 mt-0.5" /> : <ArrowDownRight className="w-3.5 h-3.5 shrink-0 mt-0.5" />}
+            <span className="break-words">{Math.abs(delta).toFixed(1)}% vs previous period</span>
           </div>
         </div>
       </CardContent>

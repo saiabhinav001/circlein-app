@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import dynamic from 'next/dynamic';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
@@ -8,6 +9,7 @@ import { CommunityBrandingProvider } from '@/components/providers/community-bran
 import { NotificationProvider } from '@/components/notifications/NotificationSystem';
 import PushNotificationsManager from '@/components/notifications/PushNotificationsManager';
 import AppInstallBanner from '@/components/pwa/AppInstallBanner';
+import DevServiceWorkerCleanup from '@/components/pwa/DevServiceWorkerCleanup';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import LoadingScreen from '@/components/LoadingScreen';
@@ -21,16 +23,6 @@ const ToastContainer = dynamic(
   { ssr: false, loading: () => null }
 );
 const Toaster = dynamic(() => import('@/components/ui/sonner').then(mod => ({ default: mod.Toaster })), { ssr: false, loading: () => null });
-
-// Optimize font loading with minimal subsetting
-const inter = Inter({ 
-  subsets: ['latin'],
-  display: 'swap',
-  preload: true,
-  adjustFontFallback: true,
-  fallback: ['system-ui', 'arial'],
-  variable: '--font-inter',
-});
 
 export const metadata: Metadata = {
   title: {
@@ -101,8 +93,8 @@ export const viewport: Viewport = {
   maximumScale: 5,
   userScalable: true,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
+    { media: '(prefers-color-scheme: light)', color: '#FAFAF9' },
+    { media: '(prefers-color-scheme: dark)', color: '#0C0C0D' },
   ],
 };
 
@@ -118,7 +110,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <meta name="theme-color" content="#3B82F6" />
+        <meta name="theme-color" content="#FAFAF9" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -154,7 +146,8 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={inter.className}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable} ${GeistSans.className}`}>
+        <DevServiceWorkerCleanup />
         <LoadingScreen />
         <AuthProvider>
           <ThemeProvider defaultTheme="dark" storageKey="circlein-theme">

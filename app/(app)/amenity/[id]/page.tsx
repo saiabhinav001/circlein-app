@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import AmenityGalleryReviews from '@/components/amenity/AmenityGalleryReviews';
 import { enqueueOfflineBooking, flushOfflineBookings } from '@/lib/offline-booking-queue';
-import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone } from '@/lib/timezone';
 
 interface Amenity {
@@ -77,6 +77,7 @@ export default function AmenityBooking() {
   const router = useRouter();
   const { data: session } = useSession();
   const timeZone = useCommunityTimeZone();
+  const timeFormat = useCommunityTimeFormat();
   const [amenity, setAmenity] = useState<Amenity | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -86,6 +87,77 @@ export default function AmenityBooking() {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [isBooking, setIsBooking] = useState(false); // Prevent double booking
   const [timeSlots, setTimeSlots] = useState<string[]>(DEFAULT_TIME_SLOTS); // Dynamic time slots
+
+  const getDateKeyInTimeZone = (date: Date) => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(date);
+
+    const year = parts.find((part) => part.type === 'year')?.value || '0000';
+    const month = parts.find((part) => part.type === 'month')?.value || '01';
+    const day = parts.find((part) => part.type === 'day')?.value || '01';
+    return `${year}-${month}-${day}`;
+  };
+
+  const getMinutesInTimeZone = (date: Date) => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).formatToParts(date);
+
+    const hour = Number(parts.find((part) => part.type === 'hour')?.value || '0');
+    const minute = Number(parts.find((part) => part.type === 'minute')?.value || '0');
+    return (hour * 60) + minute;
+  };
+
+  const isSlotInPast = (date: Date, timeSlot: string) => {
+    const selectedDateKey = getDateKeyInTimeZone(date);
+    const now = new Date();
+    const nowDateKey = getDateKeyInTimeZone(now);
+
+    if (selectedDateKey < nowDateKey) {
+      return true;
+    }
+
+    if (selectedDateKey > nowDateKey) {
+      return false;
+    }
+
+    const [startTime] = timeSlot.split('-');
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const slotStartMinutes = (hours * 60) + minutes;
+    const nowMinutes = getMinutesInTimeZone(now);
+    return slotStartMinutes <= nowMinutes;
+  };
+
+  const formatClockTime = (hours: number, minutes: number) => {
+    if (timeFormat === '24h') {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+
+    const normalizedHour = ((hours + 11) % 12) + 1;
+    const meridiem = hours >= 12 ? 'PM' : 'AM';
+    return `${normalizedHour}:${String(minutes).padStart(2, '0')} ${meridiem}`;
+  };
+
+  const formatSlotLabel = (slot: string) => {
+    const [start, end] = slot.split('-');
+    if (!start || !end) return slot;
+
+    const [startHour, startMinute] = start.split(':').map(Number);
+    const [endHour, endMinute] = end.split(':').map(Number);
+
+    if ([startHour, startMinute, endHour, endMinute].some((value) => Number.isNaN(value))) {
+      return slot;
+    }
+
+    return `${formatClockTime(startHour, startMinute)}-${formatClockTime(endHour, endMinute)}`;
+  };
 
   // Generate time slots dynamically based on operating hours and duration
   const generateTimeSlots = (startHour: string, endHour: string, durationHours: number): string[] => {
@@ -407,6 +479,7 @@ export default function AmenityBooking() {
 
     if (isBlackoutDate) {
       toast.error('This date is blocked and not available for booking. Please select another date.');
+      setIsBooking(false);
       return;
     }
 
@@ -419,6 +492,12 @@ export default function AmenityBooking() {
 
     const bookingEnd = new Date(selectedDate);
     bookingEnd.setHours(endHours, endMinutes, 0, 0);
+
+    if (bookingStart.getTime() <= Date.now()) {
+      toast.error('You cannot book a slot that has already started. Please choose a future slot.');
+      setIsBooking(false);
+      return;
+    }
 
     try {
       // 🔥 NEW: Use transaction-based API
@@ -845,18 +924,19 @@ export default function AmenityBooking() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
                       {timeSlots.map((slot) => {
                         const booked = isSlotBooked(slot);
+                        const pastSlot = isSlotInPast(selectedDate, slot);
                         const isSelected = selectedSlot === slot;
                         
                         return (
                           <button
                             key={slot}
-                            disabled={booked}
-                            onClick={() => !booked && setSelectedSlot(slot)}
+                            disabled={booked || pastSlot}
+                            onClick={() => !booked && !pastSlot && setSelectedSlot(slot)}
                             className={cn(
                               "relative px-2 sm:px-3 py-3 sm:py-3.5 rounded-xl text-sm font-medium",
                               "border-2 transition-all duration-100",
                               "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-500",
-                              booked 
+                              (booked || pastSlot)
                                 ? "bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 border-slate-100 dark:border-slate-800 cursor-not-allowed"
                                 : isSelected
                                   ? cn(
@@ -880,11 +960,16 @@ export default function AmenityBooking() {
                                 "w-3.5 h-3.5 transition-colors",
                                 isSelected ? "text-white/80 dark:text-slate-900/80" : ""
                               )} />
-                              <span>{slot}</span>
+                              <span>{formatSlotLabel(slot)}</span>
                             </div>
                             {booked && (
                               <span className="absolute -top-2 -right-2 px-1.5 py-0.5 text-[10px] font-semibold bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-md">
                                 Taken
+                              </span>
+                            )}
+                            {pastSlot && !booked && (
+                              <span className="absolute -top-2 -right-2 px-1.5 py-0.5 text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-md">
+                                Past
                               </span>
                             )}
                             {isSelected && !booked && (
@@ -910,14 +995,14 @@ export default function AmenityBooking() {
                               "active:scale-[0.98] active:shadow-md transition-all duration-150"
                             )}
                           >
-                            Book {selectedSlot}
+                            Book {formatSlotLabel(selectedSlot)}
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-md">
                           <DialogHeader>
                             <DialogTitle className="text-lg">Confirm Your Booking</DialogTitle>
                             <DialogDescription className="text-slate-500 dark:text-slate-400">
-                              {amenity.name} • {formatDateInTimeZone(selectedDate, timeZone, { weekday: 'short', month: 'short', day: 'numeric' })} • {selectedSlot}
+                              {amenity.name} • {formatDateInTimeZone(selectedDate, timeZone, { weekday: 'short', month: 'short', day: 'numeric' })} • {formatSlotLabel(selectedSlot)}
                             </DialogDescription>
                           </DialogHeader>
                           
@@ -972,7 +1057,7 @@ export default function AmenityBooking() {
                               <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
                                 <li>• {amenity.name}</li>
                                 <li>• {formatDateInTimeZone(selectedDate, timeZone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</li>
-                                <li>• Time: {selectedSlot}</li>
+                                <li>• Time: {formatSlotLabel(selectedSlot)}</li>
                                 <li>• {attendees.filter(a => a.trim()).length || 1} attendee(s)</li>
                               </ul>
                             </div>

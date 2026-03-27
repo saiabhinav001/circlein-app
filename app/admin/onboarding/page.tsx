@@ -236,7 +236,7 @@ export default function AdminOnboarding() {
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
-        <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-teal-500/30 border-t-teal-500 rounded-full animate-spin" />
       </div>
     );
   }
@@ -250,7 +250,7 @@ export default function AdminOnboarding() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <CircleInLogo className="w-8 h-8" />
-            <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
+            <span className="text-lg font-bold bg-gradient-to-r from-teal-600 to-emerald-600 dark:from-teal-400 dark:to-emerald-400 bg-clip-text text-transparent">
               CircleIn
             </span>
             <Badge variant="secondary" className="ml-2 bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20">
@@ -264,7 +264,7 @@ export default function AdminOnboarding() {
             aria-label="Toggle theme"
           >
             <Sun className="w-5 h-5 text-amber-500 rotate-0 scale-100 transition-all dark:rotate-90 dark:scale-0" />
-            <Moon className="absolute w-5 h-5 text-indigo-400 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" style={{ marginTop: '-20px' }} />
+            <Moon className="absolute w-5 h-5 text-teal-400 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" style={{ marginTop: '-20px' }} />
           </button>
         </div>
       </div>
@@ -280,7 +280,7 @@ export default function AdminOnboarding() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 15 }}
-            className="mx-auto mb-4 w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/25"
+            className="mx-auto mb-4 w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-teal-500 to-emerald-600 shadow-lg shadow-teal-500/25"
           >
             <Building2 className="w-8 h-8 text-white" />
           </motion.div>
@@ -308,13 +308,13 @@ export default function AdminOnboarding() {
                       className={`
                         w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300
                         ${isCompleted ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' : ''}
-                        ${isActive ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/25 ring-4 ring-indigo-500/20' : ''}
+                        ${isActive ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/25 ring-4 ring-teal-500/20' : ''}
                         ${!isActive && !isCompleted ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500' : ''}
                       `}
                     >
                       {isCompleted ? <CheckCircle className="w-5 h-5" /> : <StepIcon className="w-5 h-5" />}
                     </div>
-                    <span className={`text-xs mt-2 font-medium ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                    <span className={`text-xs mt-2 font-medium ${isActive ? 'text-teal-600 dark:text-teal-400' : 'text-slate-500 dark:text-slate-400'}`}>
                       {step.title}
                     </span>
                   </div>
@@ -341,7 +341,7 @@ export default function AdminOnboarding() {
           {/* Progress Bar */}
           <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
             <motion.div 
-              className="bg-gradient-to-r from-indigo-500 to-violet-500 h-full rounded-full"
+              className="bg-gradient-to-r from-teal-500 to-emerald-500 h-full rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.3 }}
@@ -363,8 +363,8 @@ export default function AdminOnboarding() {
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                 <div className="p-6 sm:p-8 border-b border-slate-200 dark:border-slate-800">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-500/10">
-                      <Home className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-500/10">
+                      <Home className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                     </div>
                     <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Community Details</h2>
                   </div>
@@ -380,7 +380,7 @@ export default function AdminOnboarding() {
                       id="communityName"
                       placeholder="e.g., Sunny Meadows Residences"
                       {...communityForm.register('communityName')}
-                      className="h-12 text-base bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl focus:border-indigo-500 focus:ring-indigo-500/20"
+                      className="h-12 text-base bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl focus:border-teal-500 focus:ring-teal-500/20"
                     />
                     {communityForm.formState.errors.communityName && (
                       <p className="text-red-500 text-sm">{communityForm.formState.errors.communityName.message}</p>
@@ -418,8 +418,8 @@ export default function AdminOnboarding() {
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                 <div className="p-6 sm:p-8 border-b border-slate-200 dark:border-slate-800">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-500/10">
-                      <Sparkles className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                    <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-500/10">
+                      <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Add Amenities</h2>
                   </div>
@@ -436,7 +436,7 @@ export default function AdminOnboarding() {
                     >
                       <div className="flex items-center justify-between">
                         <h4 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-sm flex items-center justify-center">
+                          <span className="w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 text-sm flex items-center justify-center">
                             {index + 1}
                           </span>
                           Amenity {index + 1}
@@ -570,7 +570,7 @@ export default function AdminOnboarding() {
                       weekendStartTime: '08:00',
                       weekendEndTime: '22:00'
                     })}
-                    className="w-full h-11 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/5 rounded-xl"
+                    className="w-full h-11 border-dashed border-slate-300 dark:border-slate-700 hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-500/5 rounded-xl"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Another Amenity
@@ -718,7 +718,7 @@ export default function AdminOnboarding() {
                           variant="ghost"
                           size="sm"
                           onClick={copyAllCodes}
-                          className="text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10"
+                          className="text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-500/10"
                         >
                           <Copy className="w-4 h-4 mr-2" />
                           Copy All

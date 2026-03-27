@@ -60,10 +60,10 @@ service cloud.firestore {
           transition={{ duration: 0.5 }}
         >
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Database className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-500 to-emerald-600 bg-clip-text text-transparent mb-2">
               Database Setup
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-lg">
@@ -122,7 +122,7 @@ service cloud.firestore {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <span className="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-bold">2</span>
+                  <span className="w-6 h-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-sm font-bold">2</span>
                   Initialize Database Collections
                 </CardTitle>
                 <CardDescription>
@@ -153,7 +153,7 @@ service cloud.firestore {
                     <p className="text-xs text-slate-600 dark:text-slate-400">2 samples</p>
                   </div>
                   <div className="text-center">
-                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                    <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center mx-auto mb-2">
                       <span className="text-lg">🔑</span>
                     </div>
                     <p className="text-sm font-medium">Access Codes</p>
@@ -227,7 +227,7 @@ service cloud.firestore {
                             <p className="text-sm text-slate-600 dark:text-slate-400">Bookings</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-2xl font-bold text-purple-600">{result.details.summary.accessCodes}</p>
+                            <p className="text-2xl font-bold text-emerald-600">{result.details.summary.accessCodes}</p>
                             <p className="text-sm text-slate-600 dark:text-slate-400">Codes</p>
                           </div>
                           <div className="text-center">

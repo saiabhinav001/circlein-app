@@ -1,57 +1,8 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="pwaGradient512" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
-      <stop offset="35%" style="stop-color:#6366F1;stop-opacity:1" />
-      <stop offset="70%" style="stop-color:#8B5CF6;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#A855F7;stop-opacity:1" />
-    </linearGradient>
-    <linearGradient id="pwaAccent512" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FBBF24;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:1" />
-    </linearGradient>
-    <filter id="pwaShadow512">
-      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
-      <feColorMatrix in="coloredBlur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="glow"/>
-      <feBlend in="SourceGraphic" in2="glow"/>
-    </filter>
-  </defs>
-  
-  <!-- Premium background -->
-  <rect width="512" height="512" rx="110" fill="url(#pwaGradient512)"/>
-  
-  <!-- Glow layers -->
-  <circle cx="256" cy="256" r="215" fill="white" opacity="0.1"/>
-  <circle cx="256" cy="256" r="185" fill="white" opacity="0.08"/>
-  
-  <!-- Modern "C" lettermark -->
-  <path 
-    d="M 374 256 A 118 118 0 1 1 256 138 L 256 187 A 69 69 0 1 0 325 256 Z" 
-    fill="white" 
-    opacity="0.98"
-    filter="url(#pwaShadow512)"
-  />
-  
-  <!-- Three community dots with golden accent -->
-  <g opacity="0.95">
-    <circle cx="200" cy="205" r="20" fill="white"/>
-    <circle cx="200" cy="205" r="13" fill="url(#pwaAccent512)"/>
-    
-    <circle cx="312" cy="205" r="20" fill="white"/>
-    <circle cx="312" cy="205" r="13" fill="url(#pwaAccent512)"/>
-    
-    <circle cx="256" cy="307" r="20" fill="white"/>
-    <circle cx="256" cy="307" r="13" fill="url(#pwaAccent512)"/>
-  </g>
-  
-  <!-- Connection lines -->
-  <g opacity="0.4" stroke="white" stroke-width="8" stroke-linecap="round">
-    <line x1="200" y1="205" x2="312" y2="205"/>
-    <line x1="200" y1="205" x2="256" y2="307"/>
-    <line x1="312" y1="205" x2="256" y2="307"/>
-  </g>
-  
-  <!-- Accent rings -->
-  <circle cx="256" cy="256" r="152" fill="none" stroke="white" stroke-width="5" opacity="0.25"/>
-  <circle cx="256" cy="256" r="220" fill="none" stroke="white" stroke-width="4" opacity="0.15"/>
+  <rect width="512" height="512" rx="110" fill="#18181B"/>
+  <circle cx="256" cy="256" r="176" fill="none" stroke="#10B981" stroke-width="24"/>
+  <path d="M336 256C336 300.183 300.183 336 256 336C211.817 336 176 300.183 176 256C176 211.817 211.817 176 256 176" stroke="#FAFAF9" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="222" cy="222" r="12" fill="#10B981"/>
+  <circle cx="290" cy="222" r="12" fill="#10B981"/>
+  <circle cx="256" cy="290" r="12" fill="#10B981"/>
 </svg>

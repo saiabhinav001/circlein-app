@@ -26,7 +26,7 @@ import {
   Settings,
   Shield,
   Bell,
-  Sparkles,
+  Hourglass,
   Clock,
   Search,
 } from 'lucide-react';
@@ -162,7 +162,7 @@ export function GlobalCommandPalette() {
         keywords: 'preferences notifications',
       },
       { id: 'admin-panel', label: 'Admin Panel', href: '/admin', group: 'admin', icon: Shield, keywords: 'users moderation', hint: 'Admin only' },
-      { id: 'admin-waitlist', label: 'Waitlist Manager', href: '/admin/waitlist', group: 'admin', icon: Sparkles, keywords: 'promote queue', hint: 'Admin only' },
+      { id: 'admin-waitlist', label: 'Waitlist Manager', href: '/admin/waitlist', group: 'admin', icon: Hourglass, keywords: 'promote queue', hint: 'Admin only' },
       { id: 'admin-maintenance', label: 'Maintenance Board', href: '/admin/maintenance', group: 'admin', icon: Building2, keywords: 'tickets requests', hint: 'Admin only' },
     ],
     [isAdmin]

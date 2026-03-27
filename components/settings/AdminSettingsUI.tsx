@@ -48,6 +48,7 @@ import {
   Globe,
   AlertTriangle,
   Compass,
+  Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -96,6 +97,7 @@ interface CommunitySettings {
   maxActiveBookings: string;
   communityName: string;
   timezone: string;
+  timeFormat: '12h' | '24h';
   businessHours: string;
   weekendBookings: boolean;
 }
@@ -153,13 +155,37 @@ const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   twoFactorRequired: false,
 };
 
+function getPasswordValidationError(password: string, minLength: number): string | null {
+  if (password.length < minLength) {
+    return `Admin password must be at least ${minLength} characters.`;
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    return 'Admin password must include at least one uppercase letter.';
+  }
+
+  if (!/[a-z]/.test(password)) {
+    return 'Admin password must include at least one lowercase letter.';
+  }
+
+  if (!/[0-9]/.test(password)) {
+    return 'Admin password must include at least one number.';
+  }
+
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    return 'Admin password must include at least one special character.';
+  }
+
+  return null;
+}
 const DEFAULT_COMMUNITY_SETTINGS: CommunitySettings = {
   maxBookingDuration: '4',
   advanceBookingDays: '14',
   cancellationDeadline: '24',
   maxActiveBookings: '3',
   communityName: '',
-  timezone: 'America/New_York',
+  timezone: 'Asia/Kolkata',
+  timeFormat: '12h',
   businessHours: '6:00 AM - 10:00 PM',
   weekendBookings: true,
 };
@@ -314,9 +340,10 @@ export default function AdminSettingsUI() {
             ...bookingRules,
             communityName: communityData.communityName || nextCommunitySettings.communityName,
             timezone: resolveTimeZone(
-              communityData.timezone || settingsData.timezone || nextCommunitySettings.timezone,
-              Intl.DateTimeFormat().resolvedOptions().timeZone
+              'Asia/Kolkata',
+              'Asia/Kolkata'
             ),
+            timeFormat: communityData.timeFormat === '24h' || settingsData.timeFormat === '24h' ? '24h' : nextCommunitySettings.timeFormat,
             businessHours: communityData.businessHours || nextCommunitySettings.businessHours,
           };
 
@@ -416,8 +443,9 @@ export default function AdminSettingsUI() {
           setIsLoading(false);
           return;
         }
-        if (passwords.new.length < 12) {
-          toast.error('Admin password must be at least 12 characters');
+        const passwordValidationError = getPasswordValidationError(passwords.new, 12);
+        if (passwordValidationError) {
+          toast.error(passwordValidationError);
           setIsLoading(false);
           return;
         }
@@ -494,15 +522,17 @@ export default function AdminSettingsUI() {
               community: {
                 communityName: communityTheme.communityName || communitySettings.communityName,
                 timezone: resolveTimeZone(
-                  communitySettings.timezone,
-                  Intl.DateTimeFormat().resolvedOptions().timeZone
+                  'Asia/Kolkata',
+                  'Asia/Kolkata'
                 ),
+                timeFormat: communitySettings.timeFormat,
                 businessHours: communitySettings.businessHours,
               },
               timezone: resolveTimeZone(
-                communitySettings.timezone,
-                Intl.DateTimeFormat().resolvedOptions().timeZone
+                'Asia/Kolkata',
+                'Asia/Kolkata'
               ),
+              timeFormat: communitySettings.timeFormat,
               theme: {
                 primaryColor: communityTheme.primaryColor,
                 accentColor: communityTheme.accentColor,
@@ -854,7 +884,7 @@ function AccountSection({
                 value={profile.phone}
                 onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
                 className="pl-10"
-                placeholder="+1 (555) 000-0000"
+                placeholder="+91 98765 43210"
               />
             </div>
           </div>
@@ -933,7 +963,7 @@ function CommunitySection({
         </div>
 
         {/* Timezone & Business Hours */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Timezone
@@ -941,17 +971,32 @@ function CommunitySection({
             <Select
               value={settings.timezone}
               onValueChange={(value) => setSettings({ ...settings, timezone: value })}
+              disabled
             >
               <SelectTrigger className="mt-1.5">
                 <Globe className="w-4 h-4 mr-2 text-gray-400" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
-                <SelectItem value="UTC">UTC</SelectItem>
+                <SelectItem value="Asia/Kolkata">India Standard Time (IST)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Time Format
+            </Label>
+            <Select
+              value={settings.timeFormat}
+              onValueChange={(value: '12h' | '24h') => setSettings({ ...settings, timeFormat: value })}
+            >
+              <SelectTrigger className="mt-1.5">
+                <Clock className="w-4 h-4 mr-2 text-gray-400" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="12h">12-hour (AM/PM)</SelectItem>
+                <SelectItem value="24h">24-hour</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1342,6 +1387,40 @@ function SecuritySection({
   systemSettings: SystemSettings;
   setSystemSettings: (s: SystemSettings) => void;
 }) {
+  const [isExportingAuditLogs, setIsExportingAuditLogs] = useState(false);
+
+  const handleExportAuditLogs = async () => {
+    setIsExportingAuditLogs(true);
+    try {
+      const response = await fetch('/api/admin/audit-logs/export?format=csv', {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        toast.error(errorBody?.error || 'Failed to export community audit logs');
+        return;
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `circlein-audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      toast.success('Community audit logs exported');
+    } catch (error) {
+      console.error('Audit log export error:', error);
+      toast.error('Failed to export community audit logs');
+    } finally {
+      setIsExportingAuditLogs(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -1418,7 +1497,6 @@ function SecuritySection({
             <li>• Minimum 12 characters</li>
             <li>• Include uppercase and lowercase letters</li>
             <li>• Include numbers and special characters</li>
-            <li>• Cannot reuse last 5 passwords</li>
           </ul>
         </div>
 
@@ -1451,6 +1529,24 @@ function SecuritySection({
                 checked={systemSettings.auditLogging}
                 onCheckedChange={(checked) => setSystemSettings({ ...systemSettings, auditLogging: checked })}
               />
+            </div>
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Export Community Audit Logs</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Download a clean CSV containing account, booking, maintenance, access code, and notification audit events.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleExportAuditLogs}
+                disabled={isExportingAuditLogs}
+                className="gap-2"
+              >
+                <Download className="w-5 h-5" />
+                {isExportingAuditLogs ? 'Preparing Export...' : 'Export Audit Logs'}
+              </Button>
             </div>
           </div>
         </div>

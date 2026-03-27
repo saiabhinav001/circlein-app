@@ -14,19 +14,21 @@ interface MaintenanceRequest {
   id: string;
   title: string;
   description: string;
+  location?: string;
   category: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'new' | 'in_progress' | 'resolved';
+  status: 'new' | 'in_progress' | 'resolved' | 'closed';
   imageUrls: string[];
   userId: string;
   userName: string;
   assignedTo?: string | null;
 }
 
-const columns: Array<{ key: 'new' | 'in_progress' | 'resolved'; title: string }> = [
+const columns: Array<{ key: 'new' | 'in_progress' | 'resolved' | 'closed'; title: string }> = [
   { key: 'new', title: 'New' },
   { key: 'in_progress', title: 'In Progress' },
   { key: 'resolved', title: 'Resolved' },
+  { key: 'closed', title: 'Closed' },
 ];
 
 export default function AdminMaintenancePage() {
@@ -37,6 +39,7 @@ export default function AdminMaintenancePage() {
   const [requests, setRequests] = useState<MaintenanceRequest[]>([]);
   const [actionId, setActionId] = useState('');
   const [updateNote, setUpdateNote] = useState<Record<string, string>>({});
+  const [assignedToDraft, setAssignedToDraft] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -66,7 +69,7 @@ export default function AdminMaintenancePage() {
     }
   };
 
-  const updateStatus = async (requestId: string, nextStatus: 'new' | 'in_progress' | 'resolved') => {
+  const updateStatus = async (requestId: string, nextStatus: 'new' | 'in_progress' | 'resolved' | 'closed') => {
     setActionId(requestId + nextStatus);
     try {
       const response = await fetch(`/api/maintenance/admin/${requestId}/status`, {
@@ -74,6 +77,7 @@ export default function AdminMaintenancePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: nextStatus,
+          assignedTo: (assignedToDraft[requestId] || '').trim() || session?.user?.email,
           updateNote: updateNote[requestId] || '',
         }),
       });
@@ -94,7 +98,7 @@ export default function AdminMaintenancePage() {
   };
 
   const grouped = useMemo(() => {
-    const buckets: Record<string, MaintenanceRequest[]> = { new: [], in_progress: [], resolved: [] };
+    const buckets: Record<string, MaintenanceRequest[]> = { new: [], in_progress: [], resolved: [], closed: [] };
     requests.forEach((request) => {
       buckets[request.status || 'new'].push(request);
     });
@@ -124,8 +128,12 @@ export default function AdminMaintenancePage() {
         </div>
 
         {loading ? (
-          <Card>
-            <CardContent className="pt-6 text-sm text-slate-500">Loading maintenance board...</CardContent>
+          <Card className="border-slate-200/90 dark:border-slate-800/70 bg-white/85 dark:bg-slate-900/70">
+            <CardContent className="min-h-[86px] sm:min-h-[96px] px-6 py-6 sm:px-8 sm:py-7 flex items-center">
+              <p className="text-sm sm:text-base font-medium text-slate-600 dark:text-slate-300 leading-relaxed">
+                Loading maintenance board...
+              </p>
+            </CardContent>
           </Card>
         ) : (
           <div className="grid lg:grid-cols-3 gap-4">
@@ -140,6 +148,7 @@ export default function AdminMaintenancePage() {
                     {column.key === 'new' && 'Fresh requests waiting for assignment'}
                     {column.key === 'in_progress' && 'Requests actively being resolved'}
                     {column.key === 'resolved' && 'Completed requests'}
+                    {column.key === 'closed' && 'Archived and fully closed requests'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -157,6 +166,13 @@ export default function AdminMaintenancePage() {
                           <span className="inline-flex items-center gap-1"><User className="w-3.5 h-3.5" /> {request.userName || request.userId}</span>
                           <span className="inline-flex items-center gap-1"><Clock3 className="w-3.5 h-3.5" /> {request.category}</span>
                         </div>
+                        {request.location && <p className="text-xs text-slate-500">Location: {request.location}</p>}
+                        <Input
+                          value={assignedToDraft[request.id] ?? request.assignedTo ?? ''}
+                          onChange={(e) => setAssignedToDraft((current) => ({ ...current, [request.id]: e.target.value }))}
+                          placeholder="Assign to (email)"
+                          className="h-8 text-xs"
+                        />
 
                         {request.imageUrls?.length > 0 && (
                           <div className="flex flex-wrap gap-2">
@@ -203,6 +219,16 @@ export default function AdminMaintenancePage() {
                               disabled={actionId === request.id + 'resolved'}
                             >
                               <CircleCheckBig className="w-3.5 h-3.5 mr-1" /> Resolve
+                            </Button>
+                          )}
+                          {request.status !== 'closed' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateStatus(request.id, 'closed')}
+                              disabled={actionId === request.id + 'closed'}
+                            >
+                              <CircleCheckBig className="w-3.5 h-3.5 mr-1" /> Close
                             </Button>
                           )}
                         </div>

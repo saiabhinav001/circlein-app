@@ -18,7 +18,7 @@ export default function CommunityRequired() {
       <div className="flex items-center justify-between p-4 sm:p-6">
         <Link href="/" className="flex items-center gap-2">
           <CircleInLogo className="w-8 h-8" />
-          <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
+          <span className="text-lg font-bold bg-gradient-to-r from-teal-600 to-emerald-600 dark:from-teal-400 dark:to-emerald-400 bg-clip-text text-transparent">
             CircleIn
           </span>
         </Link>
@@ -29,7 +29,7 @@ export default function CommunityRequired() {
           aria-label="Toggle theme"
         >
           <Sun className="w-5 h-5 text-amber-500 rotate-0 scale-100 transition-all dark:rotate-90 dark:scale-0" />
-          <Moon className="absolute w-5 h-5 text-indigo-400 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" style={{ marginTop: '-20px' }} />
+          <Moon className="absolute w-5 h-5 text-teal-400 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" style={{ marginTop: '-20px' }} />
         </button>
       </div>
 

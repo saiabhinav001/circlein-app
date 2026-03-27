@@ -25,15 +25,15 @@ export default function MyBookings() {
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="absolute inset-0 rounded-xl bg-gradient-to-tr from-blue-500 to-purple-600 opacity-20"
+              className="absolute inset-0 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 opacity-20"
             />
             <motion.div
               animate={{ rotate: -360 }}
               transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              className="absolute inset-1 rounded-lg bg-gradient-to-br from-blue-400 to-purple-500 opacity-40"
+              className="absolute inset-1 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 opacity-40"
             />
             <div className="absolute inset-0 flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <Calendar className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             </div>
           </div>
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">

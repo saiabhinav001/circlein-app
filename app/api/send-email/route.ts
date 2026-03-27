@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // HTML email template
     const roleLabel = senderRole === 'admin' ? 'Admin' : 'Resident';
-    const roleColor = senderRole === 'admin' ? '#3B82F6' : '#10B981';
+    const roleColor = senderRole === 'admin' ? '#18181B' : '#10B981';
     
     const htmlContent = `
       <!DOCTYPE html>
@@ -36,9 +36,9 @@ export async function POST(request: NextRequest) {
           <style>
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb; }
-            .header { background: linear-gradient(135deg, #3B82F6, #8B5CF6); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }
+            .header { background: #18181B; color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; border-bottom: 4px solid #10B981; }
             .content { background: white; padding: 30px; border-radius: 0 0 10px 10px; }
-            .info-box { background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3B82F6; }
+            .info-box { background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10B981; }
             .message-box { background: #fefce8; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #eab308; }
             .role-badge { background: ${roleColor}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }
             .footer { margin-top: 20px; padding: 15px; text-align: center; color: #6b7280; font-size: 12px; }

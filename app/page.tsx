@@ -27,25 +27,25 @@ const features = [
     icon: Calendar,
     title: 'Smart Booking System',
     description: 'Intuitive calendar interface with real-time availability, automated confirmations, and intelligent scheduling.',
-    gradient: 'from-blue-500 to-cyan-400',
-    iconBg: 'bg-blue-500/10',
-    iconColor: 'text-blue-500',
+    gradient: 'from-emerald-500 to-emerald-400',
+    iconBg: 'bg-emerald-500/10',
+    iconColor: 'text-emerald-500',
   },
   {
     icon: Users,
     title: 'Community Management',
     description: 'Manage residents, groups, and permissions with enterprise-grade role-based access control.',
-    gradient: 'from-violet-500 to-purple-400',
-    iconBg: 'bg-violet-500/10',
-    iconColor: 'text-violet-500',
+    gradient: 'from-zinc-700 to-zinc-500',
+    iconBg: 'bg-zinc-500/10',
+    iconColor: 'text-zinc-600 dark:text-zinc-300',
   },
   {
     icon: Brain,
     title: 'AI-Powered Chatbot',
     description: 'Instant assistance with Gemini AI integration for booking help, FAQs, and community support.',
-    gradient: 'from-fuchsia-500 to-pink-400',
-    iconBg: 'bg-fuchsia-500/10',
-    iconColor: 'text-fuchsia-500',
+    gradient: 'from-zinc-800 to-emerald-600',
+    iconBg: 'bg-zinc-500/10',
+    iconColor: 'text-zinc-600 dark:text-zinc-300',
   },
   {
     icon: Lock,
@@ -110,7 +110,7 @@ function PremiumBackground() {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
       {/* Base gradient - sophisticated neutral */}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-100/50 dark:from-[#0a0a0f] dark:via-[#0d0d14] dark:to-[#0a0a0f]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-stone-50 via-white to-stone-100/60 dark:from-[#0c0c0d] dark:via-[#141416] dark:to-[#0c0c0d]" />
       
       {/* Primary gradient orb - hero area */}
       <motion.div 
@@ -118,7 +118,7 @@ function PremiumBackground() {
         style={{ 
           y: y1, 
           opacity: opacity1,
-          background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.08) 40%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(16,185,129,0.08) 40%, transparent 70%)',
           filter: 'blur(80px)',
         }}
       />
@@ -129,7 +129,7 @@ function PremiumBackground() {
         style={{ 
           y: y2, 
           opacity: opacity2,
-          background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, rgba(236,72,153,0.06) 50%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(24,24,27,0.12) 0%, rgba(24,24,27,0.06) 50%, transparent 70%)',
           filter: 'blur(100px)',
         }}
       />
@@ -139,7 +139,7 @@ function PremiumBackground() {
         className="absolute bottom-[10%] left-[20%] w-[min(600px,80vw)] h-[600px] rounded-full will-change-transform"
         style={{ 
           y: y3,
-          background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(99,102,241,0.05) 50%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(16,185,129,0.1) 0%, rgba(16,185,129,0.05) 50%, transparent 70%)',
           filter: 'blur(90px)',
         }}
       />
@@ -148,7 +148,7 @@ function PremiumBackground() {
       <div 
         className="absolute inset-0 opacity-[0.4] dark:opacity-[0.15]"
         style={{
-          backgroundImage: 'radial-gradient(rgba(99,102,241,0.5) 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(rgba(24,24,27,0.35) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
         }}
       />
@@ -182,7 +182,7 @@ function PremiumButton({
   const baseClasses = "relative overflow-hidden font-semibold rounded-xl transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950 select-none";
   
   const variants = {
-    primary: "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 focus-visible:ring-slate-900 dark:focus-visible:ring-white shadow-lg shadow-slate-900/10 dark:shadow-white/10",
+    primary: "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 focus-visible:ring-slate-900 dark:focus-visible:ring-white shadow-lg shadow-black/15 dark:shadow-black/35",
     secondary: "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 focus-visible:ring-slate-400 shadow-sm",
     ghost: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-slate-400"
   };
@@ -193,16 +193,13 @@ function PremiumButton({
   };
   
   return (
-    <motion.button
+      <motion.button
       className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => { setIsHovered(false); setIsPressed(false); }}
       onMouseDown={() => setIsPressed(true)}
       onMouseUp={() => setIsPressed(false)}
-      animate={{
-        scale: isPressed ? 0.97 : isHovered ? 1.02 : 1,
-        y: isPressed ? 1 : 0,
-      }}
+      animate={{ y: isPressed ? 1 : 0 }}
       transition={{ 
         type: 'spring', 
         stiffness: 500, 
@@ -278,15 +275,15 @@ ${formData.message}
     }
   };
 
-  const inputClasses = "h-14 bg-slate-50/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:border-indigo-500 dark:focus-visible:border-indigo-400 focus-visible:ring-2 focus-visible:ring-indigo-500/20 transition-all duration-300 text-base rounded-xl placeholder:text-slate-400 premium-input hover:border-slate-300 dark:hover:border-slate-600";
+  const inputClasses = "h-12 sm:h-14 bg-slate-50/50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 focus-visible:border-violet-600 dark:focus-visible:border-violet-400 focus-visible:ring-2 focus-visible:ring-violet-500/20 dark:focus-visible:ring-violet-300/20 transition-all duration-300 text-sm sm:text-base rounded-xl placeholder:text-slate-400 premium-input hover:border-slate-300 dark:hover:border-slate-600";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
         {/* Name Field */}
         <div className="space-y-2">
           <Label htmlFor="name" className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-            <User className="w-4 h-4 text-indigo-500" />
+            <User className="w-4 h-4 text-violet-500" />
             <span>Full Name</span>
           </Label>
           <Input
@@ -303,7 +300,7 @@ ${formData.message}
         {/* Email Field */}
         <div className="space-y-2">
           <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-            <Mail className="w-4 h-4 text-violet-500" />
+            <Mail className="w-4 h-4 text-violet-500 dark:text-violet-300" />
             <span>Email Address</span>
           </Label>
           <Input
@@ -321,7 +318,7 @@ ${formData.message}
       {/* Company Field */}
       <div className="space-y-2">
         <Label htmlFor="company" className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-          <Building2 className="w-4 h-4 text-fuchsia-500" />
+          <Building2 className="w-4 h-4 text-violet-500" />
           <span>Company / Community Name</span>
         </Label>
         <Input
@@ -337,7 +334,7 @@ ${formData.message}
       {/* Message Field */}
       <div className="space-y-2">
         <Label htmlFor="message" className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-cyan-500" />
+          <MessageSquare className="w-4 h-4 text-violet-500" />
           <span>Your Message</span>
         </Label>
         <Textarea
@@ -347,7 +344,7 @@ ${formData.message}
           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
           placeholder="Tell us about your community and how we can help..."
           rows={5}
-          className="bg-slate-50/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus-visible:border-indigo-500 dark:focus-visible:border-indigo-400 focus-visible:ring-2 focus-visible:ring-indigo-500/20 transition-all duration-300 resize-none text-base rounded-xl placeholder:text-slate-400"
+          className="bg-slate-50/50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 focus-visible:border-violet-600 dark:focus-visible:border-violet-400 focus-visible:ring-2 focus-visible:ring-violet-500/20 dark:focus-visible:ring-violet-300/20 transition-all duration-300 resize-none text-sm sm:text-base rounded-xl placeholder:text-slate-400"
         />
       </div>
 
@@ -356,7 +353,7 @@ ${formData.message}
         <motion.button
           type="submit"
           disabled={isSubmitting}
-          className="w-full h-14 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:from-indigo-500 hover:via-violet-500 hover:to-fuchsia-500 text-white text-base font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/35 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl btn-shine premium-btn-glow relative overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          className="w-full h-12 sm:h-14 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-sm sm:text-base font-semibold shadow-lg shadow-black/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl relative overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900"
           whileHover={{ scale: 1.01, y: -1 }}
           whileTap={{ scale: 0.99, y: 0 }}
         >
@@ -432,7 +429,7 @@ function FeatureCard({ feature, index }: { feature: typeof features[0], index: n
       className="group"
     >
       {/* Card - single clean hover state */}
-      <div className="relative h-full p-6 rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 transition-all duration-200 group-hover:border-slate-300 dark:group-hover:border-slate-600 group-hover:shadow-lg group-hover:shadow-slate-900/5 dark:group-hover:shadow-black/20">
+      <div className="relative h-full p-6 rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 transition-all duration-200 group-hover:border-slate-300 dark:group-hover:border-slate-600 group-hover:shadow-lg group-hover:shadow-black/10 dark:group-hover:shadow-black/25">
         
         {/* Icon */}
         <div className={`w-11 h-11 rounded-lg ${feature.iconBg} flex items-center justify-center mb-4`}>
@@ -473,12 +470,12 @@ function TeamMemberCard({ member, index }: { member: typeof team[0], index: numb
         animate={{ y: isHovered ? -4 : 0 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       >
-        <div className="relative h-full p-6 sm:p-8 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 text-center">
+        <div className="relative h-full p-6 sm:p-8 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-black/10 dark:hover:shadow-black/35 text-center">
           
           {/* Avatar */}
           <div className="w-20 h-20 mx-auto mb-5 relative">
-            <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
-              <span className="text-xl font-bold text-white">
+            <div className="w-full h-full rounded-full bg-slate-900 dark:bg-slate-100 flex items-center justify-center shadow-lg">
+              <span className="text-xl font-bold text-white dark:text-slate-900">
                 {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
               </span>
             </div>
@@ -488,7 +485,7 @@ function TeamMemberCard({ member, index }: { member: typeof team[0], index: numb
           <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1 tracking-tight">
             {member.name}
           </h3>
-          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-3">
+          <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 mb-3">
             {member.role}
           </p>
           <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-5">
@@ -605,7 +602,7 @@ export default function LandingPage() {
                 >
                   <CircleInLogo className="w-9 h-9 md:w-10 md:h-10" />
                 </motion.div>
-                <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                <span className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100">
                   CircleIn
                 </span>
               </Link>
@@ -625,7 +622,7 @@ export default function LandingPage() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Button className="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:from-indigo-500 hover:via-violet-500 hover:to-fuchsia-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 font-medium px-6 h-10 rounded-xl transition-all duration-300 btn-shine">
+                    <Button className="bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 shadow-lg shadow-black/15 font-medium px-6 h-10 rounded-xl transition-all duration-300">
                       Get Started
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
@@ -697,7 +694,7 @@ export default function LandingPage() {
                     </Button>
                   </Link>
                   <Link href="/auth/signup" className="block" onClick={() => setMobileMenuOpen(false)}>
-                    <Button className="w-full bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:from-indigo-500 hover:via-violet-500 hover:to-fuchsia-500 text-white h-12 rounded-xl font-medium">
+                    <Button className="w-full bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 h-12 rounded-xl font-medium">
                       Get Started
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
@@ -717,10 +714,10 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/50 dark:border-indigo-800/50 mb-6 md:mb-8"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-800/50 mb-6 md:mb-8"
               >
-                <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
                   Now available for communities
                 </span>
               </motion.div>
@@ -734,7 +731,7 @@ export default function LandingPage() {
               >
                 The modern way to
                 <br />
-                <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-slate-900 to-emerald-600 dark:from-slate-100 dark:to-emerald-400 bg-clip-text text-transparent">
                   manage communities
                 </span>
               </motion.h1>
@@ -807,7 +804,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="text-center mb-12 md:mb-16"
             >
-              <span className="inline-block text-sm font-semibold not-italic text-indigo-600 dark:text-indigo-400 mb-3 tracking-wide uppercase">
+              <span className="inline-block text-sm font-semibold not-italic text-emerald-600 dark:text-emerald-400 mb-3 tracking-wide uppercase">
                 Features
               </span>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold not-italic tracking-tight text-slate-900 dark:text-white mb-4">
@@ -833,30 +830,33 @@ export default function LandingPage() {
         </div>
 
         {/* CTA Section */}
-        <section className="relative py-16 md:py-24 px-4 sm:px-6">
-          <div className="max-w-3xl mx-auto">
+        <section className="relative py-12 sm:py-16 md:py-24 px-4 sm:px-6">
+          <div className="max-w-4xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5 }}
-              className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700"
+                className="relative rounded-2xl md:rounded-3xl overflow-hidden border border-violet-200/20 bg-gradient-to-br from-[#130b2f] via-[#2a1360] to-[#6d28d9]"
             >
-              {/* Subtle overlay for depth */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+              {/* Premium layered glow */}
+              <div className="absolute -top-20 -left-16 w-72 h-72 rounded-full bg-violet-400/30 blur-3xl" />
+              <div className="absolute -bottom-24 -right-12 w-80 h-80 rounded-full bg-fuchsia-400/30 blur-3xl" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.18),transparent_45%),radial-gradient(circle_at_80%_80%,rgba(255,255,255,0.12),transparent_40%)]" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
               
               {/* Content */}
-              <div className="relative px-6 py-12 md:px-12 md:py-16 text-center">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">
+              <div className="relative px-4 py-8 sm:px-8 sm:py-10 md:px-12 md:py-14 text-center">
+                <h2 className="text-[1.75rem] sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4 tracking-tight leading-tight">
                   Ready to get started?
                 </h2>
-                <p className="text-base md:text-lg text-white/90 mb-8 max-w-md mx-auto">
+                <p className="text-sm sm:text-base md:text-lg text-violet-100 mb-6 sm:mb-7 md:mb-8 max-w-xl mx-auto leading-relaxed">
                   Transform how your community manages amenities. Free to try, easy to set up.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Link href="/auth/signup">
+                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                  <Link href="/auth/signup" className="w-full sm:w-auto">
                     <motion.button
-                      className="w-full sm:w-auto bg-white text-indigo-700 px-6 h-12 rounded-xl font-semibold hover:bg-indigo-50 transition-colors duration-200"
+                      className="w-full sm:w-auto sm:min-w-[220px] bg-white text-violet-900 px-6 h-11 sm:h-12 rounded-xl text-sm sm:text-base font-semibold hover:bg-violet-50 transition-colors duration-200"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
@@ -866,9 +866,9 @@ export default function LandingPage() {
                       </span>
                     </motion.button>
                   </Link>
-                  <Link href="/auth/signin">
+                  <Link href="/auth/signin" className="w-full sm:w-auto">
                     <motion.button
-                      className="w-full sm:w-auto text-white border border-white/30 px-6 h-12 rounded-xl font-semibold hover:bg-white/10 transition-colors duration-200"
+                      className="w-full sm:w-auto sm:min-w-[220px] text-white border border-violet-200/50 px-6 h-11 sm:h-12 rounded-xl text-sm sm:text-base font-semibold hover:bg-white/10 transition-colors duration-200"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
@@ -897,7 +897,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="text-center mb-12 md:mb-16"
             >
-              <span className="inline-block text-sm font-semibold not-italic text-indigo-600 dark:text-indigo-400 mb-3 tracking-wide uppercase">
+              <span className="inline-block text-sm font-semibold not-italic text-emerald-600 dark:text-emerald-400 mb-3 tracking-wide uppercase">
                 Our Team
               </span>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold not-italic tracking-tight text-slate-900 dark:text-white mb-4">
@@ -923,21 +923,21 @@ export default function LandingPage() {
         </div>
 
         {/* Contact Section */}
-        <section className="relative py-16 md:py-24 px-4 sm:px-6">
-          <div className="max-w-xl mx-auto">
+        <section className="relative py-12 sm:py-16 md:py-24 px-4 sm:px-6">
+          <div className="max-w-2xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.5 }}
             >
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 p-6 md:p-10">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/60 shadow-xl shadow-black/10 dark:shadow-black/35 p-5 sm:p-6 md:p-9 lg:p-10">
                 {/* Header */}
-                <div className="text-center mb-8">
-                  <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
-                    <Mail className="w-6 h-6 text-white" />
+                <div className="text-center mb-6 sm:mb-8">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 mx-auto mb-4 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-black/25">
+                    <Mail className="w-6 h-6 text-white dark:text-white" />
                   </div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
                     Get in touch
                   </h2>
                   <p className="text-slate-600 dark:text-slate-400">

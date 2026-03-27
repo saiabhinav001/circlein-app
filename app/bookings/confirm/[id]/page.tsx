@@ -226,7 +226,7 @@ export default function BookingConfirmPage() {
             </p>
           </div>
 
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-6 mb-8">
+          <div className="bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 rounded-xl p-6 mb-8">
             <h2 className="text-xl font-semibold mb-4">Booking Details</h2>
             <div className="space-y-3">
               <div className="flex justify-between">

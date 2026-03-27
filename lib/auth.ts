@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs
 import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
-  debug: process.env.NODE_ENV === 'development', // Enable debug mode only in development
+  debug: process.env.NEXTAUTH_DEBUG === 'true',
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,

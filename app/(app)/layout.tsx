@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { SearchProvider } from '@/components/providers/search-provider';
@@ -20,11 +21,20 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const mainContentRef = useRef<HTMLElement | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   // Check for booking reminders every 15 minutes
   useReminderChecker();
+
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo({ top: 0, behavior: 'auto' });
+    }
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [pathname]);
 
   return (
     <FirebaseAuthSync>
@@ -33,7 +43,7 @@ export default function AppLayout({
           {/* User Validation Guard - Forces logout if user is deleted */}
           <UserValidationGuard />
           
-          <div className="flex h-[100dvh] min-h-screen bg-slate-100/50 dark:bg-slate-950 overflow-hidden overflow-x-hidden">
+          <div className="flex h-[100dvh] min-h-screen bg-background overflow-hidden overflow-x-hidden">
             {/* Desktop Sidebar */}
             <div className="hidden lg:block shrink-0">
               <Sidebar onCollapseChange={setSidebarCollapsed} />
@@ -68,17 +78,17 @@ export default function AppLayout({
             </AnimatePresence>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col overflow-hidden overflow-x-hidden min-w-0 bg-white/40 dark:bg-transparent">
+            <div className="flex-1 flex flex-col overflow-hidden overflow-x-hidden min-w-0 bg-background/60">
               <Header 
                 onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
                 isMenuOpen={mobileMenuOpen}
               />
-              <main className="flex-1 overflow-auto bg-gradient-to-br from-slate-50/80 via-white/60 to-slate-100/40 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900/50">
+              <main ref={mainContentRef} className="flex-1 overflow-auto bg-background">
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.25 }}
-                  className="min-h-full"
+                  className="min-h-full bg-gradient-to-b from-background via-background to-muted/30 dark:to-muted/10"
                 >
                   {children}
                 </motion.div>

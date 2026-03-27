@@ -10,6 +10,7 @@ const STATUS_LABELS: Record<string, string> = {
   new: 'New',
   in_progress: 'In Progress',
   resolved: 'Resolved',
+  closed: 'Closed',
 };
 
 export async function PATCH(
@@ -39,7 +40,7 @@ export async function PATCH(
     const assignedTo = String(body?.assignedTo || session.user.email).trim();
     const updateNote = String(body?.updateNote || '').trim();
 
-    if (!['new', 'in_progress', 'resolved'].includes(status)) {
+    if (!['new', 'in_progress', 'resolved', 'closed'].includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
@@ -57,13 +58,28 @@ export async function PATCH(
     }
 
     const now = new Date();
+    const existingHistory = Array.isArray(requestData.history) ? requestData.history : [];
+    const nextAssignedTo = assignedTo || requestData.assignedTo || null;
 
     await requestRef.update({
       status,
-      assignedTo,
+      assignedTo: nextAssignedTo,
       updateNote,
       updatedAt: now,
-      resolvedAt: status === 'resolved' ? now : null,
+      resolvedAt: status === 'resolved' || status === 'closed' ? now : requestData.resolvedAt || null,
+      closedAt: status === 'closed' ? now : requestData.closedAt || null,
+      history: [
+        ...existingHistory,
+        {
+          id: `evt_${Date.now()}`,
+          status,
+          note: updateNote || `Status changed to ${STATUS_LABELS[status] || status}`,
+          updatedBy: session.user.email,
+          updatedByName: session.user.name || session.user.email,
+          assignedTo: nextAssignedTo,
+          timestamp: now,
+        },
+      ],
     });
 
     const notificationRef = adminDb.collection('notifications').doc();

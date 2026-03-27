@@ -72,7 +72,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
 
   return (
     <header
-      className="h-14 sm:h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 relative z-40"
+      className="h-14 sm:h-16 border-b border-border bg-card/95 dark:bg-card/95 backdrop-blur-sm flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 relative z-40"
     >
       <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
         {/* Hamburger Menu - Only on mobile/tablet */}
@@ -82,7 +82,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
 
         {/* Page Title - Hidden on mobile */}
         <div className="hidden md:flex items-center gap-2.5 shrink-0">
-          <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          <h1 className="text-h4 text-slate-900 dark:text-slate-100">
             {getPageTitle()}
           </h1>
           {isAdminUser && pathname?.includes('/admin') && (
@@ -112,13 +112,13 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
                 "w-full h-9 pl-9 pr-12 rounded-lg",
                 "text-sm text-slate-900 dark:text-slate-100",
                 "placeholder:text-slate-400 dark:placeholder:text-slate-500",
-                "bg-slate-100 dark:bg-slate-800/80",
-                "border border-slate-200/80 dark:border-slate-700/80",
-                "hover:bg-slate-50 dark:hover:bg-slate-800",
-                "hover:border-slate-300 dark:hover:border-slate-600",
+                "bg-white dark:bg-slate-900",
+                "border border-slate-200 dark:border-slate-500/70",
+                "hover:border-slate-300 dark:hover:border-slate-300/70",
                 "focus:bg-white dark:focus:bg-slate-900",
-                "focus:border-slate-300 dark:focus:border-slate-600",
-                "focus:ring-1 focus:ring-slate-200 dark:focus:ring-slate-700",
+                "focus:border-slate-400 dark:focus:border-slate-100",
+                "focus:ring-2 focus:ring-slate-300/90 dark:focus:ring-slate-100/85",
+                "focus:shadow-[0_0_0_3px_rgba(148,163,184,0.2)] dark:focus:shadow-[0_0_0_3px_rgba(248,250,252,0.16)]",
                 "outline-none transition-colors duration-100"
               )}
             />

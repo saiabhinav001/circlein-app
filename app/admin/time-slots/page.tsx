@@ -241,7 +241,7 @@ export default function AdminTimeSlotsPage() {
               transition={{ delay: index * 0.1 }}
             >
               <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                <CardHeader className="bg-gradient-to-r from-teal-500 to-emerald-600 text-white">
                   <CardTitle className="flex items-center justify-between">
                     <span>{amenity.name}</span>
                     {amenity.category && (
@@ -400,7 +400,7 @@ export default function AdminTimeSlotsPage() {
                         <Button
                           onClick={() => handleSaveTimeSlots(amenity.id)}
                           disabled={saving === amenity.id}
-                          className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                          className="flex-1 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white"
                         >
                           {saving === amenity.id ? (
                             <span className="flex items-center">
@@ -449,7 +449,7 @@ export default function AdminTimeSlotsPage() {
 
                       <Button
                         onClick={() => handleEditAmenity(amenity)}
-                        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                        className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white"
                       >
                         <Clock className="w-4 h-4 mr-2" />
                         Edit Time Slots

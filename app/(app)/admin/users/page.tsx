@@ -3,21 +3,18 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,7 +38,10 @@ import {
   MoreHorizontal,
   Clock,
   Filter,
-  ChevronDown
+  ChevronDown,
+  History,
+  ExternalLink,
+  Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
@@ -49,6 +49,7 @@ import { formatDateInTimeZone } from '@/lib/timezone';
 import { collection, query, where, getDocs, doc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
+import TypedConfirmDialog from '@/components/ui/typed-confirm-dialog';
 
 // ============================================================================
 // TYPES
@@ -75,8 +76,31 @@ interface User {
   lastLogin: any;
 }
 
+interface DeletionRequest {
+  id: string;
+  userEmail?: string;
+  userName?: string;
+  status?: string;
+  reason?: string;
+  requestedAt?: string;
+  reviewNote?: string | null;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  deletionExecuted?: boolean;
+  deletionExecutionResult?: {
+    bookings?: number;
+    notifications?: number;
+    [key: string]: any;
+  } | null;
+}
+
 type CodeFilter = 'all' | 'available' | 'used';
 type RoleFilter = 'all' | 'admin' | 'resident';
+
+type PendingTypedAction =
+  | { kind: 'revoke-code'; codeId: string }
+  | { kind: 'delete-user'; userId: string; userEmail: string }
+  | { kind: 'approve-delete-now'; requestId: string; userEmail: string; reviewNote: string };
 
 // ============================================================================
 // ANIMATION CONFIG
@@ -115,8 +139,15 @@ export default function ManageUsers() {
   // Data state
   const [accessCodes, setAccessCodes] = useState<AccessCode[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [deletionRequests, setDeletionRequests] = useState<DeletionRequest[]>([]);
+  const [deletionReviewNotes, setDeletionReviewNotes] = useState<Record<string, string>>({});
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyRequests, setHistoryRequests] = useState<DeletionRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [pendingTypedAction, setPendingTypedAction] = useState<PendingTypedAction | null>(null);
   
   // Filter & search state
   const [globalSearch, setGlobalSearch] = useState('');
@@ -145,6 +176,14 @@ export default function ManageUsers() {
         getDocs(query(collection(db, 'accessCodes'), where('communityId', '==', session.user.communityId))),
         getDocs(query(collection(db, 'users'), where('communityId', '==', session.user.communityId)))
       ]);
+
+      const deletionResponse = await fetch('/api/account/delete-request/admin?status=requested', {
+        cache: 'no-store',
+      });
+      const deletionData = await deletionResponse.json().catch(() => ({}));
+      if (!deletionResponse.ok) {
+        throw new Error(deletionData?.error || 'Failed to load deletion requests');
+      }
       
       setAccessCodes(codesSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as AccessCode)));
       setUsers(
@@ -166,6 +205,18 @@ export default function ManageUsers() {
           } as User;
         })
       );
+      const requests = Array.isArray(deletionData?.requests) ? deletionData.requests : [];
+      setDeletionRequests(requests);
+      setDeletionReviewNotes((prev) => {
+        const next = { ...prev };
+        for (const item of requests) {
+          const existing = next[item.id];
+          if (typeof existing !== 'string') {
+            next[item.id] = String(item.reviewNote || '');
+          }
+        }
+        return next;
+      });
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load data');
@@ -234,6 +285,25 @@ export default function ManageUsers() {
 
   const hasActiveFilters = codeFilter !== 'all' || roleFilter !== 'all' || globalSearch.trim();
 
+  const reviewedHistory = useMemo(
+    () =>
+      historyRequests
+        .filter((item) => item.status === 'approved' || item.status === 'rejected')
+        .sort((a, b) => {
+          const aTs = new Date(a.reviewedAt || a.requestedAt || 0).getTime();
+          const bTs = new Date(b.reviewedAt || b.requestedAt || 0).getTime();
+          return bTs - aTs;
+        }),
+    [historyRequests]
+  );
+
+  const formatDateTime = (value?: string) => {
+    if (!value) return 'Unknown';
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return 'Unknown';
+    return dt.toLocaleString();
+  };
+
   // ============================================================================
   // ACTIONS
   // ============================================================================
@@ -264,15 +334,22 @@ export default function ManageUsers() {
     }
   };
 
-  const deleteAccessCode = async (codeId: string) => {
+  const executeDeleteAccessCode = async (codeId: string, confirmationText: string) => {
+    if (confirmationText.trim().toUpperCase() !== 'DELETE') {
+      toast.error('Confirmation text mismatch. Type DELETE to continue.');
+      return false;
+    }
+
     setActionLoading(codeId);
     try {
       await deleteDoc(doc(db, 'accessCodes', codeId));
       toast.success('Access code revoked');
       fetchData();
+      return true;
     } catch (error) {
       console.error('Error deleting access code:', error);
       toast.error('Failed to revoke access code');
+      return false;
     } finally {
       setActionLoading(null);
     }
@@ -304,7 +381,12 @@ export default function ManageUsers() {
     }
   };
 
-  const deleteUser = async (userId: string, userEmail: string) => {
+  const executeDeleteUser = async (userId: string, userEmail: string, confirmationText: string) => {
+    if (confirmationText.trim().toUpperCase() !== 'DELETE') {
+      toast.error('Confirmation text mismatch. Type DELETE to continue.');
+      return false;
+    }
+
     setActionLoading(userId);
     const loadingToast = toast.loading(`Removing ${userEmail}...`);
     
@@ -312,7 +394,7 @@ export default function ManageUsers() {
       const response = await fetch('/api/admin/delete-resident', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, userEmail }),
+        body: JSON.stringify({ userId, userEmail, confirmationText }),
       });
       const data = await response.json();
       toast.dismiss(loadingToast);
@@ -320,13 +402,16 @@ export default function ManageUsers() {
       if (response.ok) {
         toast.success(`User removed (${data.deletedData.bookings} bookings deleted)`);
         fetchData();
+        return true;
       } else {
         toast.error(data.error || 'Failed to remove user');
+        return false;
       }
     } catch (error) {
       toast.dismiss(loadingToast);
       console.error('Error deleting user:', error);
       toast.error('Failed to remove user');
+      return false;
     } finally {
       setActionLoading(null);
     }
@@ -341,6 +426,172 @@ export default function ManageUsers() {
     setGlobalSearch('');
     setCodeFilter('all');
     setRoleFilter('all');
+  };
+
+  const exportAuditLogs = async () => {
+    setActionLoading('audit-export');
+    try {
+      const response = await fetch('/api/admin/audit-logs/export?format=csv');
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody?.error || 'Failed to export audit logs');
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `circlein-audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      toast.success('Audit logs exported');
+    } catch (error: any) {
+      console.error('Audit export failed:', error);
+      toast.error(error?.message || 'Failed to export audit logs');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const reviewDeletionRequest = async (
+    requestId: string,
+    status: 'approved' | 'rejected',
+    options?: { executeDeletion?: boolean; reviewNote?: string; confirmationText?: string }
+  ) => {
+    const executeDeletion = Boolean(options?.executeDeletion);
+    const reviewNote = String(options?.reviewNote || '').trim();
+    const confirmationText = String(options?.confirmationText || '').trim();
+    const loadingKey = `deletion-${requestId}-${status}${executeDeletion ? '-execute' : ''}`;
+    setActionLoading(loadingKey);
+
+    try {
+      const response = await fetch(`/api/account/delete-request/admin/${requestId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status,
+          executeDeletion,
+          confirmationText,
+          reviewNote:
+            reviewNote ||
+            (executeDeletion
+              ? 'Approved and executed from user management panel.'
+              : 'Reviewed from user management panel.'),
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        toast.error(data?.error || 'Failed to review deletion request');
+        return false;
+      }
+
+      const successMessage =
+        status === 'approved'
+          ? executeDeletion
+            ? 'Request approved and deletion executed'
+            : 'Deletion request approved'
+          : 'Deletion request rejected';
+
+      toast.success(successMessage);
+      setDeletionReviewNotes((prev) => ({ ...prev, [requestId]: '' }));
+      fetchData();
+      return true;
+    } catch (error) {
+      console.error('Error reviewing deletion request:', error);
+      toast.error('Failed to review deletion request');
+      return false;
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const requestTypedConfirmation = (action: PendingTypedAction) => {
+    setPendingTypedAction(action);
+  };
+
+  const handleTypedConfirmation = async (confirmationText: string) => {
+    if (!pendingTypedAction) {
+      return;
+    }
+
+    let success = false;
+
+    if (pendingTypedAction.kind === 'revoke-code') {
+      success = await executeDeleteAccessCode(pendingTypedAction.codeId, confirmationText);
+    }
+
+    if (pendingTypedAction.kind === 'delete-user') {
+      success = await executeDeleteUser(
+        pendingTypedAction.userId,
+        pendingTypedAction.userEmail,
+        confirmationText
+      );
+    }
+
+    if (pendingTypedAction.kind === 'approve-delete-now') {
+      success = await reviewDeletionRequest(pendingTypedAction.requestId, 'approved', {
+        executeDeletion: true,
+        confirmationText,
+        reviewNote: pendingTypedAction.reviewNote,
+      });
+    }
+
+    if (success) {
+      setPendingTypedAction(null);
+    }
+  };
+
+  const typedConfirmationTitle =
+    pendingTypedAction?.kind === 'revoke-code'
+      ? 'Revoke Access Code'
+      : pendingTypedAction?.kind === 'delete-user'
+      ? 'Delete User'
+      : pendingTypedAction?.kind === 'approve-delete-now'
+      ? 'Approve And Delete Account'
+      : '';
+
+  const typedConfirmationDescription =
+    pendingTypedAction?.kind === 'revoke-code'
+      ? `This will permanently revoke code ${pendingTypedAction.codeId}.`
+      : pendingTypedAction?.kind === 'delete-user'
+      ? `This will permanently remove ${pendingTypedAction.userEmail} and associated data.`
+      : pendingTypedAction?.kind === 'approve-delete-now'
+      ? `This will approve and permanently delete ${pendingTypedAction.userEmail || 'this user'} immediately.`
+      : '';
+
+  const typedConfirmationActionKey =
+    pendingTypedAction?.kind === 'revoke-code'
+      ? pendingTypedAction.codeId
+      : pendingTypedAction?.kind === 'delete-user'
+      ? pendingTypedAction.userId
+      : pendingTypedAction?.kind === 'approve-delete-now'
+      ? `deletion-${pendingTypedAction.requestId}-approved-execute`
+      : '';
+
+  const openHistoryDrawer = async () => {
+    setHistoryOpen(true);
+    setHistoryLoading(true);
+    setHistoryError(null);
+
+    try {
+      const response = await fetch('/api/account/delete-request/admin?status=all', {
+        cache: 'no-store',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to load request history');
+      }
+      setHistoryRequests(Array.isArray(data?.requests) ? data.requests : []);
+    } catch (error: any) {
+      console.error('Error loading deletion request history:', error);
+      setHistoryError(error?.message || 'Failed to load request history');
+    } finally {
+      setHistoryLoading(false);
+    }
   };
 
   // ============================================================================
@@ -453,6 +704,250 @@ export default function ManageUsers() {
         </motion.div>
 
         {/* ================================================================
+            PENDING DELETION REQUESTS (Inline Admin Review)
+        ================================================================ */}
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08, duration, ease: easeOut }}
+          className="mb-8 sm:mb-10"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500" />
+                Pending Deletion Requests
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {deletionRequests.length} request{deletionRequests.length === 1 ? '' : 's'} waiting for review
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={exportAuditLogs}
+                disabled={Boolean(actionLoading)}
+              >
+                {actionLoading === 'audit-export' ? (
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-1.5" />
+                )}
+                Export Audit Logs
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={openHistoryDrawer}
+                disabled={historyLoading}
+              >
+                {historyLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <History className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                History
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={fetchData}
+                disabled={Boolean(actionLoading)}
+              >
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+            {deletionRequests.length > 0 ? (
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {deletionRequests.slice(0, 6).map((item) => {
+                  const requester = item.userName || item.userEmail || 'Unknown user';
+                  const reasonText = item.reason?.trim() || 'No reason provided';
+                  const rowActionLoading = Boolean(actionLoading?.startsWith(`deletion-${item.id}-`));
+
+                  return (
+                    <div key={item.id} className="px-4 py-3">
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{requester}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.userEmail || 'No email'}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{reasonText}</p>
+                          <Input
+                            value={deletionReviewNotes[item.id] || ''}
+                            onChange={(e) =>
+                              setDeletionReviewNotes((prev) => ({
+                                ...prev,
+                                [item.id]: e.target.value,
+                              }))
+                            }
+                            placeholder="Optional review note (shared with resident)"
+                            className="mt-2 h-8 text-xs bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                            disabled={rowActionLoading}
+                          />
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs"
+                            disabled={rowActionLoading}
+                            onClick={() =>
+                              reviewDeletionRequest(item.id, 'rejected', {
+                                reviewNote: deletionReviewNotes[item.id] || '',
+                              })
+                            }
+                          >
+                            {actionLoading === `deletion-${item.id}-rejected` ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                            ) : null}
+                            Reject
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                            disabled={rowActionLoading}
+                            onClick={() =>
+                              reviewDeletionRequest(item.id, 'approved', {
+                                reviewNote: deletionReviewNotes[item.id] || '',
+                              })
+                            }
+                          >
+                            {actionLoading === `deletion-${item.id}-approved` ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                            ) : null}
+                            Approve
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            className="h-8 text-xs bg-red-600 hover:bg-red-700 text-white"
+                            disabled={rowActionLoading}
+                            onClick={() => {
+                              requestTypedConfirmation({
+                                kind: 'approve-delete-now',
+                                requestId: item.id,
+                                userEmail: item.userEmail || 'this user',
+                                reviewNote: deletionReviewNotes[item.id] || '',
+                              });
+                            }}
+                          >
+                            {actionLoading === `deletion-${item.id}-approved-execute` ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                            ) : null}
+                            Approve + Delete Now
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <EmptyState
+                icon={CheckCircle}
+                title="No pending deletion requests"
+                description="All account deletion requests are up to date."
+              />
+            )}
+          </div>
+        </motion.section>
+
+        <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-xl p-0">
+            <div className="h-full flex flex-col">
+              <SheetHeader className="px-6 py-5 border-b border-gray-200 dark:border-gray-800">
+                <SheetTitle className="text-left">Deletion Request History</SheetTitle>
+                <SheetDescription className="text-left">
+                  Reviewed requests with reviewer notes and deletion execution details.
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+                {historyError ? (
+                  <div className="rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 p-3">
+                    <p className="text-sm text-red-700 dark:text-red-300">{historyError}</p>
+                  </div>
+                ) : historyLoading ? (
+                  <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 text-center">
+                    <Loader2 className="w-5 h-5 mx-auto mb-2 animate-spin text-gray-500" />
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Loading history...</p>
+                  </div>
+                ) : reviewedHistory.length > 0 ? (
+                  reviewedHistory.map((item) => {
+                    const status = item.status === 'approved' ? 'Approved' : 'Rejected';
+                    const reviewer = item.reviewedBy || 'Unknown reviewer';
+                    const note = item.reviewNote?.trim() || 'No note provided';
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                              {item.userName || item.userEmail || 'Unknown user'}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.userEmail || 'No email'}</p>
+                          </div>
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              'text-[10px] px-2 py-0.5',
+                              item.status === 'approved'
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                            )}
+                          >
+                            {status}
+                          </Badge>
+                        </div>
+
+                        <div className="mt-3 space-y-1.5 text-xs text-gray-600 dark:text-gray-300">
+                          <p><span className="font-medium">Requested:</span> {formatDateTime(item.requestedAt)}</p>
+                          <p><span className="font-medium">Reviewed:</span> {formatDateTime(item.reviewedAt)}</p>
+                          <p><span className="font-medium">Reviewed by:</span> {reviewer}</p>
+                          <p><span className="font-medium">Reason:</span> {item.reason?.trim() || 'No reason provided'}</p>
+                          <p><span className="font-medium">Note:</span> {note}</p>
+                          {item.status === 'approved' && (
+                            <p>
+                              <span className="font-medium">Execution:</span>{' '}
+                              {item.deletionExecuted
+                                ? `Deletion executed${item.deletionExecutionResult?.bookings !== undefined ? ` (${item.deletionExecutionResult.bookings} bookings removed)` : ''}`
+                                : 'Approved, awaiting execution'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 text-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No reviewed deletion requests yet.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800">
+                <Link href="/admin/deletion-requests" className="inline-flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                  Open full deletion requests page
+                  <ExternalLink className="w-4 h-4 ml-1.5" />
+                </Link>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* ================================================================
             ACCESS CODES SECTION
         ================================================================ */}
         <motion.section
@@ -523,7 +1018,7 @@ export default function ManageUsers() {
                     code={code}
                     onCopy={() => copyToClipboard(code.id)}
                     onReplace={() => replaceUsedCode(code.id)}
-                    onRevoke={() => deleteAccessCode(code.id)}
+                    onRevoke={() => requestTypedConfirmation({ kind: 'revoke-code', codeId: code.id })}
                     isLoading={actionLoading === code.id}
                   />
                 ))}
@@ -612,7 +1107,9 @@ export default function ManageUsers() {
                   <UserRow
                     key={user.id}
                     user={user}
-                    onDelete={() => deleteUser(user.id, user.email)}
+                    onDelete={() =>
+                      requestTypedConfirmation({ kind: 'delete-user', userId: user.id, userEmail: user.email })
+                    }
                     isLoading={actionLoading === user.id}
                   />
                 ))}
@@ -647,6 +1144,20 @@ export default function ManageUsers() {
             </Button>
           </motion.div>
         )}
+
+        <TypedConfirmDialog
+          open={Boolean(pendingTypedAction)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPendingTypedAction(null);
+            }
+          }}
+          title={typedConfirmationTitle}
+          description={typedConfirmationDescription}
+          confirmLabel="Type DELETE And Continue"
+          isLoading={actionLoading === typedConfirmationActionKey}
+          onConfirm={handleTypedConfirmation}
+        />
       </div>
     </div>
   );
@@ -667,7 +1178,7 @@ function StatChip({ label, value, variant = 'default' }: StatChipProps) {
     default: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
     success: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400',
     muted: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500',
-    highlight: 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400',
+    highlight: 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400',
   };
 
   return (
@@ -805,36 +1316,16 @@ function CodeRow({ code, onCopy, onReplace, onRevoke, isLoading }: CodeRowProps)
               Replace
             </Button>
           )}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                title="Revoke code"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="max-w-sm">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Revoke Access Code</AlertDialogTitle>
-                <AlertDialogDescription className="text-sm">
-                  Delete code <span className="font-mono font-semibold">{code.id}</span>?
-                  {code.isUsed && " This code has already been used."}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="text-sm">Cancel</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={onRevoke}
-                  className="bg-red-600 hover:bg-red-700 text-sm"
-                >
-                  Revoke
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRevoke}
+            disabled={isLoading}
+            className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+            title="Revoke code"
+          >
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+          </Button>
         </div>
 
         {/* Mobile Actions */}
@@ -897,7 +1388,7 @@ function UserRow({ user, onDelete, isLoading }: UserRowProps) {
         <div className={cn(
           "w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-semibold",
           isAdmin 
-            ? "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400" 
+            ? "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400" 
             : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
         )}>
           {initials}
@@ -912,7 +1403,7 @@ function UserRow({ user, onDelete, isLoading }: UserRowProps) {
               className={cn(
                 "text-[10px] px-1.5 py-0 h-4",
                 isAdmin 
-                  ? "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400" 
+                  ? "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400" 
                   : "bg-gray-100 dark:bg-gray-800 text-gray-500"
               )}
             >
@@ -933,43 +1424,16 @@ function UserRow({ user, onDelete, isLoading }: UserRowProps) {
         {/* Desktop Delete */}
         {!isAdmin && (
           <div className="hidden sm:block">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                  title="Remove user"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="max-w-sm">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-red-600" />
-                    Remove User
-                  </AlertDialogTitle>
-                  <AlertDialogDescription className="text-sm space-y-2">
-                    <p>Remove <strong>{displayName || user.email}</strong>?</p>
-                    <p className="text-red-600 text-xs">
-                      This permanently deletes the user, all bookings, and notifications.
-                    </p>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="text-sm">Cancel</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={onDelete}
-                    disabled={isLoading}
-                    className="bg-red-600 hover:bg-red-700 text-sm"
-                  >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    Remove
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDelete}
+              disabled={isLoading}
+              className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+              title="Remove user"
+            >
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            </Button>
           </div>
         )}
 

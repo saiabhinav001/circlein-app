@@ -105,6 +105,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const now = new Date();
+    if (bookingStart.getTime() <= now.getTime()) {
+      return NextResponse.json(
+        { error: 'You cannot book a slot that has already started' },
+        { status: 400 }
+      );
+    }
+
     // 4.5 Resolve community settings once so rule checks and notifications stay consistent
     let settingsData: any = {};
     if (session.user.communityId) {
@@ -163,7 +171,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (advanceBookingDays !== null) {
-      const now = new Date();
       const maxAllowedDate = new Date(now);
       maxAllowedDate.setDate(maxAllowedDate.getDate() + advanceBookingDays);
 
@@ -319,6 +326,36 @@ export async function POST(request: NextRequest) {
     console.log(`   📧 Preparing email notification (${result.status})...`);
 
     const communityTimeZone = resolveTimeZone(settingsData?.community?.timezone || settingsData?.timezone);
+    const communityTimeFormat = settingsData?.community?.timeFormat === '24h' || settingsData?.timeFormat === '24h' ? '24h' : '12h';
+
+    const formatSlotForEmail = (slot: string) => {
+      const [start, end] = slot.split('-');
+      if (!start || !end) return slot;
+
+      const parseClock = (value: string) => {
+        const [hourRaw, minuteRaw] = value.split(':');
+        const hour = Number(hourRaw);
+        const minute = Number(minuteRaw);
+        if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+        return { hour, minute };
+      };
+
+      const formatClock = (hour: number, minute: number) => {
+        if (communityTimeFormat === '24h') {
+          return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+
+        const normalizedHour = ((hour + 11) % 12) + 1;
+        const meridiem = hour >= 12 ? 'PM' : 'AM';
+        return `${normalizedHour}:${String(minute).padStart(2, '0')} ${meridiem}`;
+      };
+
+      const startParsed = parseClock(start);
+      const endParsed = parseClock(end);
+      if (!startParsed || !endParsed) return slot;
+
+      return `${formatClock(startParsed.hour, startParsed.minute)}-${formatClock(endParsed.hour, endParsed.minute)}`;
+    };
     
     // Import email service and enhancements
     const { emailTemplates, sendEmail } = await import('@/lib/email-service');
@@ -341,7 +378,7 @@ export async function POST(request: NextRequest) {
           month: 'long', 
           day: 'numeric' 
         }),
-        timeSlot: selectedSlot,
+        timeSlot: formatSlotForEmail(selectedSlot),
         bookingId: result.bookingId,
         bookingReference: result.bookingReference,
         communityName: (session.user as any).communityName || 'Your Community',

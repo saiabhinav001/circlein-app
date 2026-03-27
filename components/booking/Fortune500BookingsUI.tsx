@@ -41,7 +41,7 @@ import { useSimpleBookings, SimpleBooking } from '@/hooks/useSimpleBookings';
 import { toast } from 'sonner';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone, formatDateTimeInTimeZone, formatTimeInTimeZone } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +52,7 @@ interface Fortune500BookingsUIProps {
 export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIProps) {
   const { data: session } = useSession();
   const timeZone = useCommunityTimeZone();
+  const timeFormat = useCommunityTimeFormat();
   const [selectedBooking, setSelectedBooking] = useState<SimpleBooking | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
@@ -106,9 +107,59 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
     (booking.qrId || booking.id.slice(-8)).toUpperCase()
   ), []);
 
+  const formatClockTime = useCallback((hours: number, minutes: number) => {
+    if (timeFormat === '24h') {
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+
+    const normalizedHour = ((hours + 11) % 12) + 1;
+    const meridiem = hours >= 12 ? 'PM' : 'AM';
+    return `${normalizedHour}:${String(minutes).padStart(2, '0')} ${meridiem}`;
+  }, [timeFormat]);
+
+  const formatSlotLabel = useCallback((slot?: string) => {
+    if (!slot) return '';
+
+    // If slot already contains AM/PM text, normalize only when 24h is requested.
+    const hasMeridiem = /\b(AM|PM)\b/i.test(slot);
+    if (hasMeridiem && timeFormat !== '24h') {
+      return slot;
+    }
+
+    const [start, end] = slot.split('-');
+    if (!start || !end) return slot;
+
+    const parseTime = (value: string) => {
+      const trimmed = value.trim().toUpperCase();
+      const meridiemMatch = trimmed.match(/\b(AM|PM)\b/);
+      const clockMatch = trimmed.match(/(\d{1,2}):(\d{2})/);
+      if (!clockMatch) return null;
+
+      let hour = Number(clockMatch[1]);
+      const minute = Number(clockMatch[2]);
+      if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+
+      if (meridiemMatch) {
+        const meridiem = meridiemMatch[1];
+        if (meridiem === 'AM' && hour === 12) hour = 0;
+        if (meridiem === 'PM' && hour !== 12) hour += 12;
+      }
+
+      return { hour, minute };
+    };
+
+    const startParsed = parseTime(start);
+    const endParsed = parseTime(end);
+    if (!startParsed || !endParsed) return slot;
+
+    return `${formatClockTime(startParsed.hour, startParsed.minute)}-${formatClockTime(endParsed.hour, endParsed.minute)}`;
+  }, [formatClockTime, timeFormat]);
+
   const getBookingTimeLabel = useCallback((booking: SimpleBooking) => (
-    booking.selectedSlot || booking.timeSlot || `${formatTimeInTimeZone(booking.startTime, timeZone)} - ${formatTimeInTimeZone(booking.endTime, timeZone)}`
-  ), [timeZone]);
+    formatSlotLabel(booking.selectedSlot) ||
+    formatSlotLabel(booking.timeSlot) ||
+    `${formatTimeInTimeZone(booking.startTime, timeZone, { hour12: timeFormat !== '24h' })} - ${formatTimeInTimeZone(booking.endTime, timeZone, { hour12: timeFormat !== '24h' })}`
+  ), [formatSlotLabel, timeZone, timeFormat]);
 
   useEffect(() => {
     setMounted(true);
@@ -156,9 +207,9 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
       case 'upcoming':
         return { 
           label: 'Upcoming', 
-          color: 'text-blue-600 dark:text-blue-400',
-          bg: 'bg-blue-50 dark:bg-blue-500/10',
-          dot: 'bg-blue-500'
+          color: 'text-cyan-600 dark:text-cyan-400',
+          bg: 'bg-cyan-50 dark:bg-cyan-500/10',
+          dot: 'bg-cyan-500'
         };
       case 'active':
         return { 
@@ -198,9 +249,9 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
       case 'completed':
         return { 
           label: 'Completed', 
-          color: 'text-violet-600 dark:text-violet-400',
-          bg: 'bg-violet-50 dark:bg-violet-500/10',
-          dot: 'bg-violet-500'
+          color: 'text-teal-600 dark:text-teal-400',
+          bg: 'bg-teal-50 dark:bg-teal-500/10',
+          dot: 'bg-teal-500'
         };
       default:
         return { 
@@ -430,8 +481,8 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
           booking.amenityName || 'Community Facility',
           booking.amenityType || 'general',
           formatDateKey(booking.startTime),
-          formatTimeInTimeZone(booking.startTime, timeZone),
-          formatTimeInTimeZone(booking.endTime, timeZone),
+          formatTimeInTimeZone(booking.startTime, timeZone, { hour12: timeFormat !== '24h' }),
+          formatTimeInTimeZone(booking.endTime, timeZone, { hour12: timeFormat !== '24h' }),
           calculateDuration(booking.startTime, booking.endTime),
           calculatedStatus,
           getBookingAccessCode(booking),
@@ -596,8 +647,8 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
            now >= checkInWindow && now <= checkOutWindow;
   };
 
-  const formatBookingTime = (date: Date) => {
-    return `${formatShortDate(date)}, ${formatTimeInTimeZone(date, timeZone)}`;
+  const formatBookingTime = (booking: SimpleBooking) => {
+    return `${formatShortDate(booking.startTime)}, ${getBookingTimeLabel(booking)}`;
   };
 
   const calculateDuration = (startTime: Date, endTime: Date) => {
@@ -696,7 +747,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
             </div>
             <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 shrink-0" />
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="w-2 h-2 rounded-full bg-violet-500 shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0" />
               <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
                 <span className="font-medium text-slate-900 dark:text-white">{stats.completed}</span> Completed
               </span>
@@ -863,7 +914,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
                               
                               {/* Time */}
                               <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-                                {formatBookingTime(booking.startTime)} · {calculateDuration(booking.startTime, booking.endTime)}
+                                {formatBookingTime(booking)} · {calculateDuration(booking.startTime, booking.endTime)}
                               </p>
                             </div>
 

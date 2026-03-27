@@ -25,7 +25,7 @@ export default function AuthenticationStatus() {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+          <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
             <span className="text-2xl font-bold text-white">C</span>
           </div>
           <p className="text-slate-600 dark:text-slate-400">Loading authentication status...</p>
@@ -66,10 +66,10 @@ export default function AuthenticationStatus() {
           transition={{ duration: 0.5 }}
         >
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl font-bold text-white">C</span>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-500 to-emerald-600 bg-clip-text text-transparent mb-2">
               Authentication Successful!
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-lg">
@@ -162,7 +162,7 @@ export default function AuthenticationStatus() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-purple-500" />
+                  <Calendar className="h-5 w-5 text-emerald-500" />
                   Next Steps
                 </CardTitle>
               </CardHeader>

@@ -29,13 +29,13 @@ const features = [
     icon: Calendar,
     title: 'Smart Booking System',
     description: 'Effortlessly book community amenities with our intelligent scheduling system',
-    gradient: 'from-blue-500 to-cyan-500'
+    gradient: 'from-teal-500 to-cyan-500'
   },
   {
     icon: Users,
     title: 'Community Management',
     description: 'Streamline resident interactions and build a thriving community',
-    gradient: 'from-purple-500 to-pink-500'
+    gradient: 'from-emerald-500 to-pink-500'
   },
   {
     icon: MessageSquare,
@@ -59,7 +59,7 @@ const features = [
     icon: Clock,
     title: 'Smart Reminders',
     description: 'Never miss a booking with automated reminder system',
-    gradient: 'from-indigo-500 to-purple-500'
+    gradient: 'from-teal-500 to-emerald-500'
   }
 ];
 
@@ -145,10 +145,10 @@ export default function LandingPage() {
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center gap-3"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center">
                 <Building2 className="w-6 h-6 text-white" />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold bg-gradient-to-r from-teal-400 to-emerald-400 bg-clip-text text-transparent">
                 CircleIn
               </span>
             </motion.div>
@@ -164,7 +164,7 @@ export default function LandingPage() {
                 </Button>
               </Link>
               <Link href="/auth/signup">
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25">
+                <Button className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white shadow-lg shadow-teal-500/25">
                   Get Started
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -190,7 +190,7 @@ export default function LandingPage() {
             <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight">
               Your Community,
               <br />
-              <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-teal-400 via-emerald-400 to-emerald-300 bg-clip-text text-transparent">
                 Perfectly Connected
               </span>
             </h1>
@@ -202,7 +202,7 @@ export default function LandingPage() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link href="/auth/signup">
-                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-lg px-8 py-6 shadow-2xl shadow-blue-500/25 hover:shadow-blue-500/40 transition-all">
+                <Button size="lg" className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-lg px-8 py-6 shadow-2xl shadow-teal-500/25 hover:shadow-teal-500/40 transition-all">
                   Start Free Trial
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -230,7 +230,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
                 className="text-center px-2"
               >
-                <div className="text-3xl xs:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2 break-words hyphens-auto">
+                <div className="text-3xl xs:text-4xl md:text-5xl font-bold bg-gradient-to-r from-teal-400 to-emerald-400 bg-clip-text text-transparent mb-2 break-words hyphens-auto">
                   {stat.value}
                 </div>
                 <div className="text-slate-400 text-xs xs:text-sm md:text-base break-words">{stat.label}</div>
@@ -266,7 +266,7 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <Card className="bg-slate-800/50 border-slate-700/50 hover:border-slate-600 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 group cursor-pointer h-full">
+                <Card className="bg-slate-800/50 border-slate-700/50 hover:border-slate-600 transition-all duration-300 hover:shadow-2xl hover:shadow-teal-500/10 group cursor-pointer h-full">
                   <CardContent className="p-6">
                     <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
                       <feature.icon className="w-7 h-7 text-white" />
@@ -294,7 +294,7 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="max-w-4xl mx-auto"
           >
-            <Card className="bg-gradient-to-br from-blue-600 to-purple-600 border-0 overflow-hidden relative">
+            <Card className="bg-gradient-to-br from-teal-600 to-emerald-600 border-0 overflow-hidden relative">
               <div className="absolute inset-0 bg-grid-white/10" />
               <CardContent className="p-12 relative z-10">
                 <div className="text-center">
@@ -350,9 +350,9 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <Card className="bg-slate-800/50 border-slate-700/50 hover:border-slate-600 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 group">
+                <Card className="bg-slate-800/50 border-slate-700/50 hover:border-slate-600 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/10 group">
                   <CardContent className="p-6 text-center">
-                    <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-4xl font-bold text-white group-hover:scale-105 transition-transform">
+                    <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-4xl font-bold text-white group-hover:scale-105 transition-transform">
                       {dev.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                     </div>
                     <h3 className="text-xl font-semibold mb-1 text-white">
@@ -365,7 +365,7 @@ export default function LandingPage() {
                       <a href={dev.linkedin} className="text-slate-400 hover:text-blue-400 transition-colors">
                         <Linkedin className="w-5 h-5" />
                       </a>
-                      <a href={dev.github} className="text-slate-400 hover:text-purple-400 transition-colors">
+                      <a href={dev.github} className="text-slate-400 hover:text-emerald-400 transition-colors">
                         <Github className="w-5 h-5" />
                       </a>
                     </div>
@@ -397,7 +397,7 @@ export default function LandingPage() {
               <CardContent className="p-8">
                 <div className="flex flex-col md:flex-row items-center justify-center gap-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center">
                       <Mail className="w-6 h-6 text-white" />
                     </div>
                     <div className="text-left">
@@ -426,7 +426,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center">
                   <Building2 className="w-6 h-6 text-white" />
                 </div>
                 <span className="text-xl font-bold">CircleIn</span>

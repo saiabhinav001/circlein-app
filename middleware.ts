@@ -2,6 +2,8 @@ import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const ENABLE_MIDDLEWARE_DEBUG = process.env.MIDDLEWARE_DEBUG === 'true';
+
 export default withAuth(
   function middleware(req) {
     const { pathname } = req.nextUrl;
@@ -9,24 +11,30 @@ export default withAuth(
 
     // CRITICAL: Allow ALL /api/ routes through (including cron)
     if (pathname.startsWith('/api/')) {
-      console.log('✅ API ROUTE - BYPASSING AUTH:', pathname);
+      if (ENABLE_MIDDLEWARE_DEBUG) {
+        console.log('✅ API ROUTE - BYPASSING AUTH:', pathname);
+      }
       return NextResponse.next();
     }
 
     // Debug logging
-    console.log('🔍 Middleware check:', {
-      pathname,
-      email: token?.email,
-      role: token?.role,
-      communityId: token?.communityId,
-      hasToken: !!token
-    });
+    if (ENABLE_MIDDLEWARE_DEBUG) {
+      console.log('🔍 Middleware check:', {
+        pathname,
+        email: token?.email,
+        role: token?.role,
+        communityId: token?.communityId,
+        hasToken: !!token,
+      });
+    }
 
     // Allow access to setup pages (but not for admins on flat-number setup)
     if (pathname.startsWith('/setup/')) {
       // Admins should not access flat-number setup - redirect to dashboard
       if (pathname === '/setup/flat-number' && token?.role === 'admin') {
-        console.log('Admin tried to access flat-number setup, redirecting to dashboard');
+        if (ENABLE_MIDDLEWARE_DEBUG) {
+          console.log('Admin tried to access flat-number setup, redirecting to dashboard');
+        }
         return NextResponse.redirect(new URL('/dashboard', req.url));
       }
       return NextResponse.next();
@@ -35,7 +43,9 @@ export default withAuth(
     // Admin onboarding route - only for admins
     if (pathname === '/admin/onboarding') {
       if (token?.role !== 'admin') {
-        console.log('Non-admin tried to access admin onboarding, redirecting to dashboard');
+        if (ENABLE_MIDDLEWARE_DEBUG) {
+          console.log('Non-admin tried to access admin onboarding, redirecting to dashboard');
+        }
         return NextResponse.redirect(new URL('/dashboard', req.url));
       }
       return NextResponse.next();
@@ -58,7 +68,9 @@ export default withAuth(
       
       // CRITICAL: Allow admins through without communityId check
       if (token?.role === 'admin') {
-        console.log('✅ ADMIN USER - Bypassing communityId check for:', token?.email);
+        if (ENABLE_MIDDLEWARE_DEBUG) {
+          console.log('✅ ADMIN USER - Bypassing communityId check for:', token?.email);
+        }
         return NextResponse.next();
       }
       
@@ -71,7 +83,9 @@ export default withAuth(
 
       // Check if user needs to set up flat number (non-admin users only)
       if (token?.role !== 'admin' && !token?.profileCompleted) {
-        console.log('Redirecting user to flat number setup:', token?.email);
+        if (ENABLE_MIDDLEWARE_DEBUG) {
+          console.log('Redirecting user to flat number setup:', token?.email);
+        }
         return NextResponse.redirect(new URL('/setup/flat-number', req.url));
       }
     }
@@ -108,6 +122,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    '/((?!api/auth|api/cron|_next/static|_next/image|favicon.ico|manifest.json|sw.js).*)',
+    '/((?!_next|api/auth|api/cron|favicon.ico|manifest.json|manifest.webmanifest|sw.js|workbox-.*\\.js|fallback-.*\\.js|.*\\..*).*)',
   ],
 };

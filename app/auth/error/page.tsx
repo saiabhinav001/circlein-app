@@ -51,12 +51,12 @@ const errorMessages = {
     title: 'Account Not Linked',
     description: 'This email is already associated with another sign-in method.',
     message: 'Try signing in with a different method, or use a different email address.',
-    lightColor: 'text-violet-600',
-    darkColor: 'text-violet-400',
-    lightBg: 'bg-violet-50',
-    darkBg: 'bg-violet-500/10',
-    lightBorder: 'border-violet-200',
-    darkBorder: 'border-violet-500/20',
+    lightColor: 'text-emerald-600',
+    darkColor: 'text-emerald-400',
+    lightBg: 'bg-emerald-50',
+    darkBg: 'bg-emerald-500/10',
+    lightBorder: 'border-emerald-200',
+    darkBorder: 'border-emerald-500/20',
   },
   Default: {
     icon: AlertCircle,
@@ -94,7 +94,7 @@ function AuthErrorContent() {
       <div className="flex items-center justify-between p-4 sm:p-6">
         <Link href="/" className="flex items-center gap-2">
           <CircleInLogo className="w-8 h-8" />
-          <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
+          <span className="text-lg font-bold bg-gradient-to-r from-teal-600 to-emerald-600 dark:from-teal-400 dark:to-emerald-400 bg-clip-text text-transparent">
             CircleIn
           </span>
         </Link>
@@ -105,7 +105,7 @@ function AuthErrorContent() {
           aria-label="Toggle theme"
         >
           <Sun className="w-5 h-5 text-amber-500 rotate-0 scale-100 transition-all dark:rotate-90 dark:scale-0" />
-          <Moon className="absolute w-5 h-5 text-indigo-400 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" style={{ marginTop: '-20px' }} />
+          <Moon className="absolute w-5 h-5 text-teal-400 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" style={{ marginTop: '-20px' }} />
         </button>
       </div>
 
@@ -240,7 +240,7 @@ export default function AuthError() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
-        <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-teal-500/30 border-t-teal-500 rounded-full animate-spin" />
       </div>
     }>
       <AuthErrorContent />

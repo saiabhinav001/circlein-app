@@ -72,6 +72,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const description = String(body?.description || '').trim();
     const category = String(body?.category || 'general').trim();
     const priority = String(body?.priority || 'medium').trim();
+    const location = String(body?.location || '').trim();
     const imageUrls = Array.isArray(body?.imageUrls)
       ? body.imageUrls.map((url: unknown) => String(url || '').trim()).filter(Boolean)
       : [];
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       title,
       description,
       category,
+      location,
       priority,
       status: 'new',
       imageUrls,
@@ -97,9 +99,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       userId: session.user.email,
       userName: session.user.name || session.user.email,
       assignedTo: null,
+      history: [
+        {
+          id: `evt_${Date.now()}`,
+          status: 'new',
+          note: 'Request submitted',
+          updatedBy: session.user.email,
+          updatedByName: session.user.name || session.user.email,
+          assignedTo: null,
+          timestamp: now,
+        },
+      ],
       createdAt: now,
       updatedAt: now,
       resolvedAt: null,
+      closedAt: null,
     });
 
     const notificationRef = adminDb.collection('notifications').doc();

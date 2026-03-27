@@ -38,10 +38,18 @@ export async function POST(request: NextRequest) {
     // 2. Parse request body
     const body = await request.json();
     const { userId, userEmail } = body;
+    const confirmationText = String(body?.confirmationText || '').trim().toUpperCase();
 
     if (!userId || !userEmail) {
       return NextResponse.json(
         { error: 'Missing required fields: userId and userEmail' },
+        { status: 400 }
+      );
+    }
+
+    if (confirmationText !== 'DELETE') {
+      return NextResponse.json(
+        { error: 'Confirmation text required. Type DELETE to confirm this action.' },
         { status: 400 }
       );
     }

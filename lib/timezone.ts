@@ -1,4 +1,4 @@
-export const DEFAULT_TIME_ZONE = 'UTC';
+export const DEFAULT_TIME_ZONE = 'Asia/Kolkata';
 
 export function isValidTimeZone(value?: string | null): boolean {
   if (!value) {

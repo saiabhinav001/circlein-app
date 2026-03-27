@@ -111,13 +111,13 @@ const renderDetailRows = (rows: Array<{ label: string; value: string }>) => {
   }
 
   return `
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; margin-top: 18px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="ci-detail-table" style="border-collapse: collapse; margin-top: 4px;">
       ${rows
         .map(
           (row) => `
-            <tr>
-              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #334155; font-weight: 600; font-size: 13px; width: 36%; vertical-align: top;">${escapeHtml(row.label)}</td>
-              <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 600; text-align: right; vertical-align: top;">${escapeHtml(row.value)}</td>
+            <tr class="ci-detail-row">
+              <td class="ci-detail-label" style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 13px; width: 34%; vertical-align: top; letter-spacing: 0.01em;">${escapeHtml(row.label)}</td>
+              <td class="ci-detail-value" style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 15px; font-weight: 700; text-align: right; vertical-align: top;">${escapeHtml(row.value)}</td>
             </tr>
           `
         )
@@ -129,7 +129,7 @@ const renderDetailRows = (rows: Array<{ label: string; value: string }>) => {
 const renderLayout = (options: LayoutOptions): string => {
   const details = options.detailsRows?.length
     ? `
-      <section style="margin-top: 26px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 18px 12px;">
+      <section class="ci-details-card" style="margin-top: 26px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px 18px 8px;">
         ${renderDetailRows(options.detailsRows)}
       </section>
     `
@@ -137,8 +137,8 @@ const renderLayout = (options: LayoutOptions): string => {
 
   const cta = options.cta
     ? `
-      <div style="margin-top: 26px; text-align: center;">
-        <a href="${safeUrl(options.cta.url)}" style="display: inline-block; padding: 13px 26px; border-radius: 10px; text-decoration: none; color: #ffffff; font-weight: 700; font-size: 14px; background: linear-gradient(135deg, ${options.accent.from}, ${options.accent.to});">${escapeHtml(options.cta.label)}</a>
+      <div style="margin-top: 28px; text-align: center;">
+        <a href="${safeUrl(options.cta.url)}" class="ci-cta" style="display: inline-block; min-width: 240px; padding: 14px 28px; border-radius: 12px; text-decoration: none; color: #ffffff; font-weight: 700; font-size: 15px; letter-spacing: 0.01em; background: linear-gradient(135deg, ${options.accent.from}, ${options.accent.to}); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);">${escapeHtml(options.cta.label)}</a>
       </div>
     `
     : '';
@@ -150,28 +150,93 @@ const renderLayout = (options: LayoutOptions): string => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>${escapeHtml(options.title)}</title>
+        <style>
+          @media screen and (max-width: 640px) {
+            .ci-shell {
+              padding: 16px 8px !important;
+            }
+
+            .ci-card {
+              border-radius: 14px !important;
+            }
+
+            .ci-header {
+              padding: 22px 18px 18px !important;
+            }
+
+            .ci-header h1 {
+              font-size: 27px !important;
+              line-height: 1.2 !important;
+            }
+
+            .ci-content {
+              padding: 20px 18px !important;
+            }
+
+            .ci-detail-label,
+            .ci-detail-value {
+              display: block !important;
+              width: 100% !important;
+              text-align: left !important;
+              border-bottom: none !important;
+              padding: 0 !important;
+            }
+
+            .ci-detail-label {
+              font-size: 12px !important;
+              text-transform: uppercase !important;
+              letter-spacing: 0.05em !important;
+              color: #64748b !important;
+              margin-bottom: 6px !important;
+            }
+
+            .ci-detail-value {
+              font-size: 15px !important;
+              color: #0f172a !important;
+              margin-bottom: 2px !important;
+            }
+
+            .ci-detail-row {
+              display: block !important;
+              padding: 10px 0 !important;
+              border-bottom: 1px solid #e2e8f0 !important;
+            }
+
+            .ci-detail-row:last-child {
+              border-bottom: none !important;
+            }
+
+            .ci-cta {
+              display: block !important;
+              width: 100% !important;
+              min-width: 0 !important;
+              box-sizing: border-box !important;
+            }
+          }
+        </style>
       </head>
-      <body style="margin: 0; padding: 0; background: #e2e8f0; font-family: 'Segoe UI', Arial, sans-serif;">
+      <body style="margin: 0; padding: 0; background: radial-gradient(circle at top right, #e2f4ff 0%, #f1f5f9 42%, #f8fafc 100%); font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">
         <span style="display: none; max-height: 0; overflow: hidden; opacity: 0; mso-hide: all;">${escapeHtml(options.preheader)}</span>
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: radial-gradient(circle at top right, #f8fafc 0%, #e2e8f0 100%); padding: 30px 12px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="ci-shell" style="padding: 30px 12px;">
           <tr>
             <td align="center">
-              <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="width: 100%; max-width: 640px; border-collapse: collapse; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #dbe3ee; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);">
+              <table role="presentation" width="640" cellspacing="0" cellpadding="0" class="ci-card" style="width: 100%; max-width: 640px; border-collapse: collapse; background: #ffffff; border-radius: 18px; overflow: hidden; border: 1px solid #dbe3ee; box-shadow: 0 22px 54px rgba(15, 23, 42, 0.14);">
                 <tr>
-                  <td style="padding: 28px 28px 24px; background: linear-gradient(135deg, ${options.accent.from}, ${options.accent.to}); color: #ffffff;">
-                    <div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; opacity: 0.88;">${escapeHtml(options.eyebrow)}</div>
-                    <h1 style="margin: 8px 0 8px; font-size: 31px; line-height: 1.2; font-weight: 800;">${escapeHtml(options.title)}</h1>
-                    <p style="margin: 0; font-size: 14px; line-height: 1.6; opacity: 0.94;">${escapeHtml(options.subtitle)}</p>
+                  <td class="ci-header" style="padding: 28px 28px 24px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #334155 100%); border-bottom: 4px solid ${options.accent.from}; color: #f8fafc;">
+                    <div style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; opacity: 0.9;">${escapeHtml(options.eyebrow)}</div>
+                    <h1 style="margin: 8px 0 8px; font-size: 32px; line-height: 1.2; font-weight: 800;">${escapeHtml(options.title)}</h1>
+                    <p style="margin: 0; font-size: 14px; line-height: 1.7; opacity: 0.92;">${escapeHtml(options.subtitle)}</p>
                   </td>
                 </tr>
                 <tr>
-                  <td style="padding: 28px; color: #0f172a;">
-                    <div style="font-size: 15px; line-height: 1.8; color: #334155;">${options.introHtml}</div>
+                  <td class="ci-content" style="padding: 28px; color: #0f172a;">
+                    <div style="display: inline-block; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: #0f766e; background: #ecfeff; border: 1px solid #a5f3fc; border-radius: 999px; padding: 4px 10px;">CircleIn Community Hub</div>
+                    <div style="font-size: 15px; line-height: 1.8; color: #334155; margin-top: 14px;">${options.introHtml}</div>
                     ${options.statusHtml || ''}
                     ${details}
                     ${options.contentHtml || ''}
                     ${cta}
-                    <div style="margin-top: 28px; padding-top: 16px; border-top: 1px dashed #dbe3ee; color: #64748b; font-size: 12px; line-height: 1.7;">
+                    <div style="margin-top: 28px; padding-top: 16px; border-top: 1px dashed #cbd5e1; color: #64748b; font-size: 12px; line-height: 1.8;">
                       CircleIn updates are automated so your community never misses key events. If you need help, contact your community admin.
                     </div>
                   </td>
@@ -187,10 +252,10 @@ const renderLayout = (options: LayoutOptions): string => {
 };
 
 const accent = {
-  emerald: { from: '#0f766e', to: '#14b8a6', text: '#0f766e' },
+  emerald: { from: '#10b981', to: '#10b981', text: '#10b981' },
   amber: { from: '#b45309', to: '#f59e0b', text: '#b45309' },
   rose: { from: '#be123c', to: '#f43f5e', text: '#be123c' },
-  indigo: { from: '#3730a3', to: '#6366f1', text: '#3730a3' },
+  neutral: { from: '#18181b', to: '#18181b', text: '#18181b' },
   cyan: { from: '#0c4a6e', to: '#06b6d4', text: '#0c4a6e' },
 };
 
@@ -342,13 +407,13 @@ export const emailTemplates = {
         { label: 'Community', value: data.communityName },
       ],
       contentHtml: `
-        <section style="margin-top: 20px; padding: 14px 16px; border-radius: 10px; border: 1px solid #dbeafe; background: #eff6ff;">
-          <div style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #1d4ed8; font-weight: 700;">Reason</div>
-          <div style="margin-top: 6px; color: #1e3a8a; font-size: 13px; line-height: 1.7;">${escapeHtml(data.reason)}</div>
+        <section style="margin-top: 20px; padding: 14px 16px; border-radius: 10px; border: 1px solid #e4e4e7; background: #fafaf9;">
+          <div style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #3f3f46; font-weight: 700;">Reason</div>
+          <div style="margin-top: 6px; color: #27272a; font-size: 13px; line-height: 1.7;">${escapeHtml(data.reason)}</div>
         </section>
       `,
       cta: { label: 'See available amenities', url: '/dashboard' },
-      accent: data.isFestive ? accent.amber : accent.indigo,
+      accent: data.isFestive ? accent.amber : accent.neutral,
     }),
   }),
 
@@ -552,7 +617,7 @@ export const emailTemplates = {
         ? `<section style="margin-top: 20px; padding: 14px 16px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc;"><div style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #475569; font-weight: 700;">Admin note</div><div style="margin-top: 6px; color: #334155; font-size: 13px; line-height: 1.7;">${escapeHtml(data.updateNote)}</div></section>`
         : '',
       cta: { label: 'Track request', url: '/maintenance' },
-      accent: accent.indigo,
+      accent: accent.emerald,
     }),
   }),
 
@@ -654,7 +719,7 @@ export const emailTemplates = {
         </section>
       `,
       cta: { label: 'Read announcement', url: data.actionUrl || '/community' },
-      accent: accent.indigo,
+      accent: accent.emerald,
     }),
   }),
 

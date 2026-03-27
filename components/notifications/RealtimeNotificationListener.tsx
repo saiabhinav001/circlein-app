@@ -63,6 +63,8 @@ export function RealtimeNotificationListener() {
                 message: data.message || '',
                 type: mapNotificationType(data.type),
                 priority: data.priority || 'normal',
+                actionUrl: data.actionUrl || '/notifications',
+                source: data.source || data.type || 'system',
                 autoHide: false
               });
 

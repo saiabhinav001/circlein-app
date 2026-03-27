@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Sparkles,
   Building2,
+  Settings,
   ChevronRight,
   Search as SearchIcon
 } from 'lucide-react';
@@ -25,6 +26,8 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useUserCreation } from '@/hooks/useUserCreation';
 import { useSearch } from '@/components/providers/search-provider';
+import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateInTimeZone, formatTimeInTimeZone } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 import { SmartSuggestionsCard } from '@/components/booking/SmartSuggestionsCard';
 
@@ -56,6 +59,16 @@ interface Amenity {
     maxSlotsPerFamily: number;
     blackoutDates: any[];
   };
+}
+
+interface UpcomingBooking {
+  id: string;
+  amenityName?: string;
+  startTime: Date;
+  endTime: Date;
+  status?: string;
+  userEmail?: string;
+  userName?: string;
 }
 
 // Premium animation variants
@@ -228,7 +241,7 @@ function AmenityCard({ amenity, index }: { amenity: Amenity; index: number }) {
           <div className="p-4 sm:p-5">
             {/* Title & Description */}
             <div className="mb-3 sm:mb-4">
-              <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mb-1 sm:mb-1.5 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+              <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mb-1 sm:mb-1.5 line-clamp-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300">
                 {amenity.name}
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
@@ -328,10 +341,22 @@ function EmptyState({
 
 export default function Dashboard() {
   const [amenities, setAmenities] = useState<Amenity[]>([]);
+  const [upcomingBookings, setUpcomingBookings] = useState<UpcomingBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const { session, status } = useUserCreation();
   const router = useRouter();
   const { searchQuery, setSearchQuery } = useSearch();
+  const timeZone = useCommunityTimeZone();
+  const timeFormat = useCommunityTimeFormat();
+  const isAdmin = session?.user?.role === 'admin';
+  const userName = session?.user?.name?.split(' ')[0] || 'there';
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  }, []);
 
   // Filter amenities based on search query
   const filteredAmenities = useMemo(() => {
@@ -344,6 +369,42 @@ export default function Dashboard() {
       amenity.description.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [amenities, searchQuery]);
+
+  const availableAmenitiesCount = useMemo(() => amenities.filter((amenity) => !amenity.isBlocked).length, [amenities]);
+
+  const communityPulse = useMemo(() => {
+    const blocked = amenities.filter((amenity) => amenity.isBlocked).length;
+    const active = availableAmenitiesCount;
+    const upcoming = upcomingBookings.length;
+
+    return [
+      { label: 'Available Amenities', value: active, caption: 'Ready to book now' },
+      {
+        label: isAdmin ? 'Upcoming Reservations' : 'Your Upcoming Bookings',
+        value: upcoming,
+        caption: isAdmin ? 'Scheduled in your community' : 'Scheduled for your account',
+      },
+      { label: 'Temporarily Blocked', value: blocked, caption: blocked > 0 ? 'Under maintenance or paused' : 'All spaces operational' },
+    ];
+  }, [amenities, availableAmenitiesCount, isAdmin, upcomingBookings.length]);
+
+  const quickActions = useMemo(() => {
+    if (isAdmin) {
+      return [
+        { href: '/calendar', label: 'Open Calendar', icon: Calendar },
+        { href: '/bookings', label: 'Manage Bookings', icon: Clock },
+        { href: '/admin/analytics', label: 'View Analytics', icon: Sparkles },
+        { href: '/admin/settings', label: 'Update Community Setup', icon: Building2 },
+      ];
+    }
+
+    return [
+      { href: '/calendar', label: 'Open Calendar', icon: Calendar },
+      { href: '/bookings', label: 'Manage Bookings', icon: Clock },
+      { href: '/community', label: 'Community Updates', icon: Users },
+      { href: '/settings/resident', label: 'Account Settings', icon: Settings },
+    ];
+  }, [isAdmin]);
 
   // Check if admin needs onboarding
   useEffect(() => {
@@ -382,20 +443,26 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (session?.user?.communityId) {
-      fetchAmenities();
+      fetchDashboardData();
     }
   }, [session]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && session?.user?.communityId) {
-        fetchAmenities();
+        fetchDashboardData();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [session]);
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    await Promise.all([fetchAmenities(), fetchUpcomingBookings()]);
+    setLoading(false);
+  };
 
   const fetchAmenities = async () => {
     try {
@@ -420,8 +487,54 @@ export default function Dashboard() {
       setAmenities(amenityList);
     } catch (error) {
       console.error('Error fetching amenities:', error);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchUpcomingBookings = async () => {
+    try {
+      if (!session?.user?.communityId) {
+        return;
+      }
+
+      const bookingsQuery = query(
+        collection(db, 'bookings'),
+        where('communityId', '==', session.user.communityId)
+      );
+
+      const bookingsSnapshot = await getDocs(bookingsQuery);
+      const now = new Date();
+
+      const upcoming = bookingsSnapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .map((booking: any) => ({
+          id: booking.id,
+          amenityName: booking.amenityName,
+          startTime: booking.startTime?.toDate ? booking.startTime.toDate() : new Date(booking.startTime),
+          endTime: booking.endTime?.toDate ? booking.endTime.toDate() : new Date(booking.endTime),
+          status: booking.status,
+          userId: booking.userId,
+          userEmail: booking.userEmail,
+          userName: booking.userName,
+        }))
+        .filter((booking) => {
+          if (isAdmin) {
+            return true;
+          }
+
+          const bookingUserId = String((booking as any).userId || '');
+          const bookingUserEmail = String(booking.userEmail || '');
+          const sessionEmail = String(session?.user?.email || '');
+          return bookingUserId === sessionEmail || bookingUserEmail === sessionEmail;
+        })
+        .filter((booking) => booking.startTime && !Number.isNaN(booking.startTime.getTime()))
+        .filter((booking) => booking.startTime >= now)
+        .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
+        .slice(0, 4);
+
+      setUpcomingBookings(upcoming);
+    } catch (error) {
+      console.error('Error fetching upcoming bookings:', error);
+      setUpcomingBookings([]);
     }
   };
 
@@ -450,7 +563,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-slate-100/50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900/50">
       {/* Subtle background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 via-transparent to-indigo-50/15 dark:from-blue-950/20 dark:via-transparent dark:to-purple-950/10 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/20 via-transparent to-teal-50/15 dark:from-emerald-950/20 dark:via-transparent dark:to-slate-950/10 pointer-events-none" />
       
       <div className="relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         {/* Header Section */}
@@ -463,10 +576,10 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-1 sm:mb-2">
-                Community Amenities
+                {greeting}, {userName}
               </h1>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-xl">
-                Discover and book shared spaces in your community. Select an amenity to view availability and make a reservation.
+                Your operations dashboard is ready. Book shared spaces, monitor activity, and jump into key workflows.
               </p>
             </div>
             
@@ -480,12 +593,82 @@ export default function Dashboard() {
               >
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {amenities.filter(a => !a.isBlocked).length} available
+                  {availableAmenitiesCount} available
                 </span>
               </motion.div>
             )}
           </div>
         </motion.div>
+
+        <div className="grid gap-4 lg:grid-cols-3 mb-6">
+          <section className="lg:col-span-2 rounded-2xl border border-slate-200/90 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/70 p-5 sm:p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">Welcome</p>
+            <h2 className="mt-2 text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white">What do you want to do next?</h2>
+            <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-400">Choose a quick action to keep community operations moving.</p>
+
+            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Link
+                    key={action.href}
+                    href={action.href}
+                    className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/40 px-4 py-3 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <Icon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{action.label}</span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-slate-400" />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-slate-200/90 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/70 p-5 sm:p-6 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Community Pulse</h3>
+            <div className="mt-4 space-y-3">
+              {communityPulse.map((item) => (
+                <div key={item.label} className="rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-2.5">
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{item.label}</p>
+                  <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">{item.value}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{item.caption}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <section className="mb-6 rounded-2xl border border-slate-200/90 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/70 p-5 sm:p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{isAdmin ? 'Upcoming Bookings' : 'Your Upcoming Bookings'}</h3>
+            <Link href="/bookings" className="text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 inline-flex items-center gap-1">
+              View all <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {upcomingBookings.length > 0 ? (
+              upcomingBookings.map((booking) => (
+                <div key={booking.id} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-3">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{booking.amenityName || 'Amenity booking'}</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {formatDateInTimeZone(booking.startTime, timeZone, { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    {' '}•{' '}
+                    {formatTimeInTimeZone(booking.startTime, timeZone, { hour12: timeFormat !== '24h' })}
+                  </p>
+                  <Badge className="mt-2 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border-0">
+                    {(booking.status || 'confirmed').replace('_', ' ')}
+                  </Badge>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500 dark:text-slate-400 sm:col-span-2 lg:col-span-4">No upcoming bookings scheduled yet.</p>
+            )}
+          </div>
+        </section>
 
         {/* Search Results Indicator */}
         <AnimatePresence>
@@ -496,20 +679,14 @@ export default function Dashboard() {
               exit={{ opacity: 0, height: 0 }}
               className="mb-6"
             >
-              <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900/50">
-                <SearchIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-sm text-blue-700 dark:text-blue-300">
+              <div className="flex items-center gap-3 px-4 py-3 bg-teal-50 dark:bg-teal-950/20 rounded-xl border border-teal-100 dark:border-teal-900/40">
+                <SearchIcon className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                <span className="text-sm text-teal-700 dark:text-teal-300">
                   {filteredAmenities.length} result{filteredAmenities.length !== 1 ? 's' : ''} for "{searchQuery}"
                 </span>
                 <button 
-                  onClick={() => {
-                    const searchInput = document.querySelector('input[placeholder="Search..."]') as HTMLInputElement;
-                    if (searchInput) {
-                      searchInput.value = '';
-                      searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                  }}
-                  className="ml-auto text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium"
+                  onClick={() => setSearchQuery('')}
+                  className="ml-auto text-sm text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-200 font-medium"
                 >
                   Clear
                 </button>
@@ -530,8 +707,7 @@ export default function Dashboard() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   onClick={() => {
-                    setLoading(true);
-                    fetchAmenities();
+                    fetchDashboardData();
                   }}
                   variant="outline"
                   className="h-10 px-5 rounded-xl"

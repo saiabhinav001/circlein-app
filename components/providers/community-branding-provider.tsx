@@ -16,6 +16,7 @@ interface CommunityTheme {
 interface CommunityBrandingContextValue {
   theme: CommunityTheme;
   timeZone: string;
+  timeFormat: '12h' | '24h';
 }
 
 const DEFAULT_THEME: CommunityTheme = {
@@ -27,7 +28,8 @@ const DEFAULT_THEME: CommunityTheme = {
 
 const CommunityBrandingContext = createContext<CommunityBrandingContextValue>({
   theme: DEFAULT_THEME,
-  timeZone: resolveTimeZone(undefined, 'UTC'),
+  timeZone: resolveTimeZone(undefined, 'Asia/Kolkata'),
+  timeFormat: '12h',
 });
 
 export function useCommunityBranding() {
@@ -38,16 +40,22 @@ export function useCommunityTimeZone() {
   return useCommunityBranding().timeZone;
 }
 
+export function useCommunityTimeFormat() {
+  return useCommunityBranding().timeFormat;
+}
+
 export function CommunityBrandingProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const [theme, setTheme] = useState<CommunityTheme>(DEFAULT_THEME);
-  const [timeZone, setTimeZone] = useState<string>(resolveTimeZone(undefined, 'UTC'));
+  const [timeZone, setTimeZone] = useState<string>(resolveTimeZone(undefined, 'Asia/Kolkata'));
+  const [timeFormat, setTimeFormat] = useState<'12h' | '24h'>('12h');
 
   useEffect(() => {
     const communityId = (session?.user as any)?.communityId;
     if (!communityId) {
       setTheme(DEFAULT_THEME);
-      setTimeZone(resolveTimeZone(undefined, 'UTC'));
+      setTimeZone(resolveTimeZone(undefined, 'Asia/Kolkata'));
+      setTimeFormat('12h');
       return;
     }
 
@@ -57,14 +65,15 @@ export function CommunityBrandingProvider({ children }: { children: React.ReactN
       (snapshot) => {
         const data = snapshot.data() as any;
         const incoming = data?.theme || {};
-        const configuredTimeZone = data?.community?.timezone || data?.timezone;
+        const configuredTimeFormat = data?.community?.timeFormat || data?.timeFormat || '12h';
         setTheme({
           primaryColor: incoming.primaryColor || DEFAULT_THEME.primaryColor,
           accentColor: incoming.accentColor || DEFAULT_THEME.accentColor,
           logoUrl: incoming.logoUrl || DEFAULT_THEME.logoUrl,
           communityName: incoming.communityName || (session?.user as any)?.communityName || DEFAULT_THEME.communityName,
         });
-        setTimeZone(resolveTimeZone(configuredTimeZone, Intl.DateTimeFormat().resolvedOptions().timeZone));
+        setTimeZone('Asia/Kolkata');
+        setTimeFormat(configuredTimeFormat === '24h' ? '24h' : '12h');
       },
       (error) => {
         console.warn('Community branding permissions unavailable, using defaults:', error);
@@ -72,7 +81,8 @@ export function CommunityBrandingProvider({ children }: { children: React.ReactN
           ...DEFAULT_THEME,
           communityName: (session?.user as any)?.communityName || DEFAULT_THEME.communityName,
         });
-        setTimeZone(resolveTimeZone(undefined, Intl.DateTimeFormat().resolvedOptions().timeZone));
+        setTimeZone(resolveTimeZone(undefined, 'Asia/Kolkata'));
+        setTimeFormat('12h');
       }
     );
 
@@ -85,7 +95,7 @@ export function CommunityBrandingProvider({ children }: { children: React.ReactN
     root.style.setProperty('--community-accent', theme.accentColor);
   }, [theme.primaryColor, theme.accentColor]);
 
-  const value = useMemo(() => ({ theme, timeZone }), [theme, timeZone]);
+  const value = useMemo(() => ({ theme, timeZone, timeFormat }), [theme, timeZone, timeFormat]);
 
   return <CommunityBrandingContext.Provider value={value}>{children}</CommunityBrandingContext.Provider>;
 }

@@ -40,6 +40,8 @@ import {
   Home,
   UserCircle,
   Compass,
+  Download,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { registerPushNotifications } from '@/lib/push-notifications';
@@ -78,6 +80,14 @@ interface ResidentPrivacy {
   profileVisibility: string;
 }
 
+interface AccountDeletionRequestStatus {
+  status: 'requested' | 'approved' | 'rejected';
+  requestedAt?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+  reason?: string;
+}
+
 type SettingsSection = 'account' | 'notifications' | 'privacy' | 'appearance' | 'security';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -103,6 +113,30 @@ const DEFAULT_NOTIFICATIONS: ResidentNotifications = {
   weeklyDigest: true,
   smsAlerts: false,
 };
+
+function getPasswordValidationError(password: string, minLength: number): string | null {
+  if (password.length < minLength) {
+    return `Password must be at least ${minLength} characters.`;
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must include at least one uppercase letter.';
+  }
+
+  if (!/[a-z]/.test(password)) {
+    return 'Password must include at least one lowercase letter.';
+  }
+
+  if (!/[0-9]/.test(password)) {
+    return 'Password must include at least one number.';
+  }
+
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    return 'Password must include at least one special character.';
+  }
+
+  return null;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
@@ -150,6 +184,7 @@ export default function ResidentSettingsUI() {
   });
   
   const [originalPrivacy, setOriginalPrivacy] = useState<ResidentPrivacy | null>(null);
+  const [originalTheme, setOriginalTheme] = useState<string | undefined>(undefined);
   
   // Password state
   const [passwords, setPasswords] = useState({
@@ -157,6 +192,7 @@ export default function ResidentSettingsUI() {
     new: '',
     confirm: '',
   });
+  const [deletionRequestStatus, setDeletionRequestStatus] = useState<AccountDeletionRequestStatus | null>(null);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Load settings from localStorage
@@ -187,6 +223,7 @@ export default function ResidentSettingsUI() {
           const userData = userSnap.data() as any;
           const persistedSettings = userData.residentSettings;
           const persistedNotifications = userData.notificationPreferences;
+          const persistedDeletionRequest = userData.deletionRequest as AccountDeletionRequestStatus | undefined;
 
           if (persistedSettings?.profile) {
             const nextProfile = {
@@ -216,6 +253,18 @@ export default function ResidentSettingsUI() {
             } as ResidentPrivacy;
             setPrivacy(nextPrivacy);
             setOriginalPrivacy(nextPrivacy);
+            loadedFromFirestore = true;
+          }
+
+          if (persistedSettings?.appearance?.theme) {
+            const persistedTheme = String(persistedSettings.appearance.theme) as 'light' | 'dark' | 'system';
+            setTheme(persistedTheme);
+            setOriginalTheme(persistedTheme);
+            loadedFromFirestore = true;
+          }
+
+          if (persistedDeletionRequest?.status) {
+            setDeletionRequestStatus(persistedDeletionRequest);
             loadedFromFirestore = true;
           }
         }
@@ -252,6 +301,14 @@ export default function ResidentSettingsUI() {
             } else {
               setOriginalPrivacy(privacy);
             }
+
+            if (parsed.appearance?.theme) {
+              const savedTheme = String(parsed.appearance.theme) as 'light' | 'dark' | 'system';
+              setTheme(savedTheme);
+              setOriginalTheme(savedTheme);
+            } else {
+              setOriginalTheme(theme);
+            }
           } catch (e) {
             console.error('Failed to load local settings:', e);
             setProfile(initialProfile);
@@ -259,6 +316,7 @@ export default function ResidentSettingsUI() {
             setNotifications(DEFAULT_NOTIFICATIONS);
             setOriginalNotifications(DEFAULT_NOTIFICATIONS);
             setOriginalPrivacy(privacy);
+            setOriginalTheme(theme);
           }
         } else {
           setProfile(initialProfile);
@@ -266,6 +324,7 @@ export default function ResidentSettingsUI() {
           setNotifications(DEFAULT_NOTIFICATIONS);
           setOriginalNotifications(DEFAULT_NOTIFICATIONS);
           setOriginalPrivacy(privacy);
+          setOriginalTheme(theme);
         }
       }
     };
@@ -283,10 +342,11 @@ export default function ResidentSettingsUI() {
     const profileDirty = JSON.stringify(profile) !== JSON.stringify(originalProfile);
     const notificationsDirty = JSON.stringify(notifications) !== JSON.stringify(originalNotifications);
     const privacyDirty = JSON.stringify(privacy) !== JSON.stringify(originalPrivacy);
+    const themeDirty = (theme || 'system') !== (originalTheme || 'system');
     const passwordDirty = passwords.current || passwords.new || passwords.confirm;
     
-    return profileDirty || notificationsDirty || privacyDirty || !!passwordDirty;
-  }, [profile, originalProfile, notifications, originalNotifications, privacy, originalPrivacy, passwords]);
+    return profileDirty || notificationsDirty || privacyDirty || themeDirty || !!passwordDirty;
+  }, [profile, originalProfile, notifications, originalNotifications, privacy, originalPrivacy, theme, originalTheme, passwords]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Save handler
@@ -310,8 +370,9 @@ export default function ResidentSettingsUI() {
           setIsLoading(false);
           return;
         }
-        if (passwords.new.length < 8) {
-          toast.error('Password must be at least 8 characters');
+        const passwordValidationError = getPasswordValidationError(passwords.new, 8);
+        if (passwordValidationError) {
+          toast.error(passwordValidationError);
           setIsLoading(false);
           return;
         }
@@ -357,6 +418,9 @@ export default function ResidentSettingsUI() {
         profile,
         notifications,
         privacy,
+        appearance: {
+          theme: theme || 'system',
+        },
         updatedAt: new Date().toISOString(),
       }));
 
@@ -368,6 +432,9 @@ export default function ResidentSettingsUI() {
             profile,
             notifications,
             privacy,
+            appearance: {
+              theme: theme || 'system',
+            },
             updatedAt: new Date().toISOString(),
           },
           notificationPreferences: notifications,
@@ -384,6 +451,7 @@ export default function ResidentSettingsUI() {
       setOriginalProfile(profile);
       setOriginalNotifications(notifications);
       setOriginalPrivacy(privacy);
+      setOriginalTheme(theme || 'system');
       setPasswords({ current: '', new: '', confirm: '' });
       
       toast.success('Settings saved successfully');
@@ -403,6 +471,9 @@ export default function ResidentSettingsUI() {
     if (originalProfile) setProfile(originalProfile);
     if (originalNotifications) setNotifications(originalNotifications);
     if (originalPrivacy) setPrivacy(originalPrivacy);
+    if (originalTheme) {
+      setTheme(originalTheme as 'light' | 'dark' | 'system');
+    }
     setPasswords({ current: '', new: '', confirm: '' });
     toast.info('Changes discarded');
   };
@@ -428,6 +499,9 @@ export default function ResidentSettingsUI() {
             setPasswords={setPasswords}
             showPassword={showPassword}
             setShowPassword={setShowPassword}
+            userEmail={session?.user?.email || ''}
+            deletionRequestStatus={deletionRequestStatus}
+            setDeletionRequestStatus={setDeletionRequestStatus}
           />
         );
       default:
@@ -953,12 +1027,101 @@ function SecuritySection({
   setPasswords,
   showPassword,
   setShowPassword,
+  userEmail,
+  deletionRequestStatus,
+  setDeletionRequestStatus,
 }: { 
   passwords: { current: string; new: string; confirm: string };
   setPasswords: (p: { current: string; new: string; confirm: string }) => void;
   showPassword: boolean;
   setShowPassword: (s: boolean) => void;
+  userEmail: string;
+  deletionRequestStatus: AccountDeletionRequestStatus | null;
+  setDeletionRequestStatus: (value: AccountDeletionRequestStatus | null) => void;
 }) {
+  const [isExporting, setIsExporting] = useState(false);
+  const [isRequestingDeletion, setIsRequestingDeletion] = useState(false);
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/account/export', {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        toast.error(errorBody?.error || 'Failed to export account data');
+        return;
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `circlein-data-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      toast.success('Data export generated successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export account data');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeletionRequest = async () => {
+    if (!userEmail) {
+      toast.error('Could not verify your account. Please sign in again.');
+      return;
+    }
+
+    const confirmationText = window.prompt('Type DELETE to confirm account deletion request.');
+
+    if (confirmationText === null) {
+      toast.info('Deletion request cancelled');
+      return;
+    }
+
+    setIsRequestingDeletion(true);
+    try {
+      const response = await fetch('/api/account/delete-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          confirmationText,
+          reason: 'Requested by resident from settings.',
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        toast.error(data?.error || 'Failed to submit deletion request');
+        return;
+      }
+
+      setDeletionRequestStatus({
+        status: 'requested',
+        requestedAt: new Date().toISOString(),
+        reason: 'Requested by resident from settings.',
+      });
+
+      toast.success('Deletion request submitted to community admins');
+    } catch (error) {
+      console.error('Deletion request error:', error);
+      toast.error('Failed to submit deletion request');
+    } finally {
+      setIsRequestingDeletion(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -1053,6 +1216,67 @@ function SecuritySection({
             <li>• Include at least one number</li>
             <li>• Include at least one special character</li>
           </ul>
+        </div>
+
+        <Separator />
+
+        <div>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">Data Rights</h3>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Export your account data</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Download your profile, bookings, maintenance requests, and notifications as JSON.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleExportData}
+                disabled={isExporting}
+                className="gap-2"
+              >
+                <Download className="w-5 h-5" />
+                {isExporting ? 'Preparing Export...' : 'Export Data'}
+              </Button>
+            </div>
+
+            <div className="rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/20 p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-red-700 dark:text-red-300">Request account deletion</p>
+                <p className="text-xs text-red-700/80 dark:text-red-300/80 mt-1">
+                  Submit a deletion request for admin review. This action is auditable and cannot be undone automatically.
+                </p>
+                {deletionRequestStatus?.status && (
+                  <p className="mt-2 text-xs font-medium text-red-700 dark:text-red-300">
+                    Current status: {deletionRequestStatus.status}
+                    {deletionRequestStatus.requestedAt ? ` · requested ${new Date(deletionRequestStatus.requestedAt).toLocaleString()}` : ''}
+                    {deletionRequestStatus.reviewedAt ? ` · reviewed ${new Date(deletionRequestStatus.reviewedAt).toLocaleString()}` : ''}
+                  </p>
+                )}
+                {deletionRequestStatus?.reviewNote && (
+                  <p className="mt-1 text-xs text-red-700/80 dark:text-red-300/80">
+                    Admin note: {deletionRequestStatus.reviewNote}
+                  </p>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDeletionRequest}
+                disabled={isRequestingDeletion || deletionRequestStatus?.status === 'requested'}
+                className="gap-2"
+              >
+                <Trash2 className="w-5 h-5" />
+                {isRequestingDeletion
+                  ? 'Submitting...'
+                  : deletionRequestStatus?.status === 'requested'
+                  ? 'Request Pending'
+                  : 'Request Deletion'}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
