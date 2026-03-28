@@ -30,6 +30,10 @@ import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/provi
 import { formatDateInTimeZone, formatTimeInTimeZone } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 import { SmartSuggestionsCard } from '@/components/booking/smart-suggestions-card';
+import { WeatherWidget } from '@/components/dashboard/widgets/weather-widget';
+import { QuickBookingWidget } from '@/components/dashboard/widgets/quick-booking-widget';
+import { CommunityPulseWidget } from '@/components/dashboard/widgets/community-pulse-widget';
+import { StreakWidget } from '@/components/dashboard/widgets/streak-widget';
 
 interface Amenity {
   id: string;
@@ -348,7 +352,8 @@ export default function Dashboard() {
   const { searchQuery, setSearchQuery } = useSearch();
   const timeZone = useCommunityTimeZone();
   const timeFormat = useCommunityTimeFormat();
-  const isAdmin = session?.user?.role === 'admin';
+  const communityId = (session?.user as any)?.communityId as string | undefined;
+  const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 'super_admin';
   const userName = session?.user?.name?.split(' ')[0] || 'there';
 
   const greeting = useMemo(() => {
@@ -371,9 +376,10 @@ export default function Dashboard() {
   }, [amenities, searchQuery]);
 
   const availableAmenitiesCount = useMemo(() => amenities.filter((amenity) => !amenity.isBlocked).length, [amenities]);
+  const blockedAmenitiesCount = useMemo(() => amenities.filter((amenity) => amenity.isBlocked).length, [amenities]);
 
   const communityPulse = useMemo(() => {
-    const blocked = amenities.filter((amenity) => amenity.isBlocked).length;
+    const blocked = blockedAmenitiesCount;
     const active = availableAmenitiesCount;
     const upcoming = upcomingBookings.length;
 
@@ -386,7 +392,7 @@ export default function Dashboard() {
       },
       { label: 'Temporarily Blocked', value: blocked, caption: blocked > 0 ? 'Under maintenance or paused' : 'All spaces operational' },
     ];
-  }, [amenities, availableAmenitiesCount, isAdmin, upcomingBookings.length]);
+  }, [availableAmenitiesCount, blockedAmenitiesCount, isAdmin, upcomingBookings.length]);
 
   const quickActions = useMemo(() => {
     if (isAdmin) {
@@ -601,7 +607,12 @@ export default function Dashboard() {
         </motion.div>
 
         <div className="grid gap-4 lg:grid-cols-3 mb-6">
-          <section className="lg:col-span-2 rounded-2xl border border-slate-200/90 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/70 p-5 sm:p-6 shadow-sm">
+          <section
+            className={cn(
+              'rounded-2xl border border-slate-200/90 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/70 p-5 sm:p-6 shadow-sm',
+              isAdmin ? 'lg:col-span-2' : 'lg:col-span-3'
+            )}
+          >
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">Welcome</p>
             <h2 className="mt-2 text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white">What do you want to do next?</h2>
             <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-400">Choose a quick action to keep community operations moving.</p>
@@ -628,18 +639,20 @@ export default function Dashboard() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-slate-200/90 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/70 p-5 sm:p-6 shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Community Pulse</h3>
-            <div className="mt-4 space-y-3">
-              {communityPulse.map((item) => (
-                <div key={item.label} className="rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-2.5">
-                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{item.label}</p>
-                  <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">{item.value}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{item.caption}</p>
-                </div>
-              ))}
-            </div>
-          </section>
+          {isAdmin && (
+            <section className="rounded-2xl border border-slate-200/90 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/70 p-5 sm:p-6 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Community Pulse</h3>
+              <div className="mt-4 space-y-3">
+                {communityPulse.map((item) => (
+                  <div key={item.label} className="rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-2.5">
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{item.label}</p>
+                    <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">{item.value}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{item.caption}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
 
         <section className="mb-6 rounded-2xl border border-slate-200/90 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/70 p-5 sm:p-6 shadow-sm">
@@ -669,6 +682,22 @@ export default function Dashboard() {
             )}
           </div>
         </section>
+
+        {!isAdmin && (
+          <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <WeatherWidget />
+            <QuickBookingWidget />
+            <CommunityPulseWidget
+              availableAmenities={availableAmenitiesCount}
+              blockedAmenities={blockedAmenitiesCount}
+              upcomingBookings={upcomingBookings.length}
+            />
+            <StreakWidget
+              userEmail={session?.user?.email}
+              communityId={communityId}
+            />
+          </section>
+        )}
 
         {/* Search Results Indicator */}
         <AnimatePresence>

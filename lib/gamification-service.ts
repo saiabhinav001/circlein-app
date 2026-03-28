@@ -145,3 +145,93 @@ export async function evaluateAndAwardBadges(
 
   return awarded;
 }
+
+function toDate(value: unknown): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof (value as { toDate?: () => Date }).toDate === 'function') {
+    return (value as { toDate: () => Date }).toDate();
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  return null;
+}
+
+function dateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateKey(key: string): Date {
+  return new Date(`${key}T00:00:00`);
+}
+
+export async function getUserBookingStreak(
+  userEmail: string,
+  communityId: string
+): Promise<number> {
+  if (!userEmail || !communityId) {
+    return 0;
+  }
+
+  const [byUserId, byUserEmail] = await Promise.all([
+    getDocs(query(collection(db, 'bookings'), where('userId', '==', userEmail))),
+    getDocs(query(collection(db, 'bookings'), where('userEmail', '==', userEmail))),
+  ]);
+
+  const bookingMap = new Map<string, any>();
+  byUserId.docs.forEach((docSnapshot) => bookingMap.set(docSnapshot.id, docSnapshot.data()));
+  byUserEmail.docs.forEach((docSnapshot) => bookingMap.set(docSnapshot.id, docSnapshot.data()));
+
+  const qualifyingDates = Array.from(bookingMap.values())
+    .filter((booking) => booking.communityId === communityId)
+    .filter((booking) => ['confirmed', 'completed'].includes(String(booking.status || '').toLowerCase()))
+    .map((booking) => toDate(booking.startTime))
+    .filter((date): date is Date => date !== null)
+    .map((date) => dateKey(date));
+
+  if (qualifyingDates.length === 0) {
+    return 0;
+  }
+
+  const uniqueSorted = Array.from(new Set(qualifyingDates)).sort((a, b) => {
+    return parseDateKey(b).getTime() - parseDateKey(a).getTime();
+  });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const latest = parseDateKey(uniqueSorted[0]);
+  const daysFromToday = Math.floor((today.getTime() - latest.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (daysFromToday > 1) {
+    return 0;
+  }
+
+  let streak = 1;
+  for (let i = 1; i < uniqueSorted.length; i += 1) {
+    const prev = parseDateKey(uniqueSorted[i - 1]);
+    const current = parseDateKey(uniqueSorted[i]);
+    const diff = Math.floor((prev.getTime() - current.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diff === 1) {
+      streak += 1;
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+}

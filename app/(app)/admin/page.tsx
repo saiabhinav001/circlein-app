@@ -43,6 +43,7 @@ import { useNotifications } from '@/components/notifications/notification-system
 import { useResidentNotifications } from '@/hooks/use-community-notifications';
 import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone } from '@/lib/timezone';
+import type { HealthScore } from '@/lib/amenity-health-score';
 
 // ============================================================================
 // SCHEMA & TYPES
@@ -115,6 +116,7 @@ export default function AdminPanel() {
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [festiveReason, setFestiveReason] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [healthScores, setHealthScores] = useState<Record<string, HealthScore>>({});
 
   const formatDateLabel = (date: Date, options: Intl.DateTimeFormatOptions = {}) =>
     formatDateInTimeZone(date, timeZone, options);
@@ -146,6 +148,27 @@ export default function AdminPanel() {
       })) as Amenity[];
       amenityList.sort((a, b) => a.name.localeCompare(b.name));
       setAmenities(amenityList);
+
+      try {
+        const response = await fetch('/api/amenities/health-scores', { cache: 'no-store' });
+        const payload = await response.json().catch(() => ({}));
+
+        if (response.ok && Array.isArray(payload?.healthScores)) {
+          const nextScores: Record<string, HealthScore> = {};
+          payload.healthScores.forEach((entry: any) => {
+            if (!entry?.amenityId || !entry?.healthScore) {
+              return;
+            }
+
+            nextScores[String(entry.amenityId)] = entry.healthScore as HealthScore;
+          });
+          setHealthScores(nextScores);
+        } else {
+          setHealthScores({});
+        }
+      } catch {
+        setHealthScores({});
+      }
     } catch (error) {
       console.error('Error fetching amenities:', error);
       toast.error('Failed to fetch amenities');
@@ -594,6 +617,8 @@ export default function AdminPanel() {
               ) : (
                 <AmenityCard
                   amenity={amenity}
+                  healthScore={healthScores[amenity.id]}
+                  isAdmin
                   onEdit={() => startEdit(amenity)}
                   onDelete={() => deleteAmenity(amenity.id, amenity.name)}
                   onToggleBlock={() => toggleAmenityBlock(amenity.id, amenity.name, amenity.isBlocked || false)}
@@ -835,6 +860,8 @@ function FormField({ label, error, hint, children }: FormFieldProps) {
 
 interface AmenityCardProps {
   amenity: Amenity;
+  healthScore?: HealthScore;
+  isAdmin?: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onToggleBlock: () => void;
@@ -845,6 +872,8 @@ interface AmenityCardProps {
 
 function AmenityCard({ 
   amenity, 
+  healthScore,
+  isAdmin = false,
   onEdit, 
   onDelete, 
   onToggleBlock, 
@@ -853,6 +882,15 @@ function AmenityCard({
   isLoading 
 }: AmenityCardProps) {
   const blackoutDates = amenity.rules?.blackoutDates || [];
+  const healthLabel = healthScore
+    ? `${healthScore.label.charAt(0).toUpperCase()}${healthScore.label.slice(1)}`
+    : '';
+  const healthScoreClasses =
+    healthScore?.color === 'green'
+      ? 'bg-emerald-500/90 text-white'
+      : healthScore?.color === 'yellow'
+        ? 'bg-amber-500/90 text-white'
+        : 'bg-red-500/90 text-white';
 
   return (
     <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
@@ -877,6 +915,14 @@ function AmenityCard({
                 <Badge variant="destructive" className="text-xs font-medium px-2 py-0.5 shadow-sm">
                   <Ban className="w-3 h-3 mr-1" />
                   Blocked
+                </Badge>
+              </div>
+            )}
+
+            {isAdmin && healthScore && (
+              <div className="absolute top-3 right-3">
+                <Badge className={cn('text-xs font-medium px-2 py-0.5 shadow-sm border-0', healthScoreClasses)}>
+                  {healthScore.score} {healthLabel}
                 </Badge>
               </div>
             )}

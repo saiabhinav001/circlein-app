@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import AmenityGalleryReviews from '@/components/amenity/amenity-gallery-reviews';
+import UsageHeatmap from '@/components/analytics/usage-heatmap';
 import { enqueueOfflineBooking, flushOfflineBookings } from '@/lib/offline-booking-queue';
 import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone } from '@/lib/timezone';
@@ -1123,6 +1124,8 @@ export default function AmenityBooking() {
             )}
           </div>
         </div>
+
+        <UsageHeatmap amenityId={amenity.id} amenityName={amenity.name} />
       </div>
     </div>
   );
