@@ -1016,7 +1016,7 @@ function SecuritySection({
   const [isExporting, setIsExporting] = useState(false);
   const [isRequestingDeletion, setIsRequestingDeletion] = useState(false);
 
-  const handleExportData = async () => {
+  const handleDataExport = async () => {
     setIsExporting(true);
     try {
       const response = await fetch('/api/account/export', {
@@ -1199,20 +1199,20 @@ function SecuritySection({
           <div className="space-y-3">
             <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Export your account data</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Download My Data</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Download your profile, bookings, maintenance requests, and notifications as JSON.
+                  Download all your personal data as a JSON file (GDPR Article 20).
                 </p>
               </div>
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleExportData}
+                onClick={handleDataExport}
                 disabled={isExporting}
                 className="gap-2"
               >
                 <Download className="w-5 h-5" />
-                {isExporting ? 'Preparing Export...' : 'Export Data'}
+                {isExporting ? 'Exporting...' : 'Download My Data'}
               </Button>
             </div>
 

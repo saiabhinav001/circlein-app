@@ -64,6 +64,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import PollsWidget from '@/components/community/polls-widget';
 import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
@@ -1429,6 +1430,10 @@ export default function CommunityPage() {
           </TabsContent>
 
           <TabsContent value="polls" className="space-y-4">
+            <PollsWidget role={isAdmin ? 'admin' : 'resident'} />
+
+            {false && (
+              <>
             {isAdmin && (
               <Card>
                 <CardHeader>
@@ -1595,6 +1600,8 @@ export default function CommunityPage() {
                   </Card>
                 );
               })
+            )}
+              </>
             )}
           </TabsContent>
 

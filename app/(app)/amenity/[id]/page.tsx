@@ -475,7 +475,26 @@ export default function AmenityBooking() {
       return;
     }
 
+    const offlinePayload = {
+      amenityId: amenity.id,
+      amenityName: amenity.name,
+      startTime: bookingStart.toISOString(),
+      endTime: bookingEnd.toISOString(),
+      attendees: attendees.filter(name => name.trim() !== ''),
+      selectedDate: selectedDate.toISOString(),
+      selectedSlot,
+      userName: session.user.name || session.user.email.split('@')[0],
+      userFlatNumber: (session.user as any).flatNumber || '',
+    };
+
     try {
+      if (!navigator.onLine) {
+        enqueueOfflineBooking(offlinePayload);
+        toast.success('No internet. Booking was queued and will sync automatically when online.');
+        setShowBookingModal(false);
+        return;
+      }
+
       // 🔥 NEW: Use transaction-based API
       
       const response = await fetch('/api/bookings/create', {
@@ -522,19 +541,6 @@ export default function AmenityBooking() {
       fetchBookings(amenity.id, selectedDate);
       
     } catch (error) {
-
-      const offlinePayload = {
-        amenityId: amenity.id,
-        amenityName: amenity.name,
-        startTime: bookingStart.toISOString(),
-        endTime: bookingEnd.toISOString(),
-        attendees: attendees.filter(name => name.trim() !== ''),
-        selectedDate: selectedDate.toISOString(),
-        selectedSlot,
-        userName: session.user.name || session.user.email.split('@')[0],
-        userFlatNumber: (session.user as any).flatNumber || '',
-      };
-
       if (!navigator.onLine || error instanceof TypeError) {
         enqueueOfflineBooking(offlinePayload);
         toast.success('No internet. Booking was queued and will sync automatically when online.');

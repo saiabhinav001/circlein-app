@@ -5,6 +5,69 @@ import { adminDb } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
+function toIsoString(value: any): string {
+  if (!value) return new Date(0).toISOString();
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value?.toDate === 'function') {
+    return value.toDate().toISOString();
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return new Date(0).toISOString();
+  }
+
+  return parsed.toISOString();
+}
+
+export async function GET(): Promise<NextResponse> {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const communityId = (session.user as any).communityId;
+    if (!communityId) {
+      return NextResponse.json({ error: 'Community ID missing' }, { status: 400 });
+    }
+
+    const snapshot = await adminDb
+      .collection('polls')
+      .where('communityId', '==', communityId)
+      .get();
+
+    const polls = snapshot.docs
+      .map((docSnapshot) => {
+        const data = docSnapshot.data() as any;
+
+        return {
+          id: docSnapshot.id,
+          question: String(data.question || ''),
+          options: Array.isArray(data.options)
+            ? data.options.map((option: unknown) => String(option || '')).filter(Boolean)
+            : [],
+          votes: data.votes && typeof data.votes === 'object' ? data.votes : {},
+          communityId: String(data.communityId || ''),
+          createdBy: String(data.createdBy || ''),
+          createdAt: toIsoString(data.createdAt),
+          deadline: toIsoString(data.deadline),
+          status: data.status === 'closed' ? 'closed' : 'open',
+        };
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return NextResponse.json({ polls });
+  } catch (error: any) {
+    console.error('Failed to load polls:', error);
+    return NextResponse.json(
+      { error: 'Failed to load polls', details: error?.message || 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);

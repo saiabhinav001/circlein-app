@@ -1,6 +1,7 @@
 'use client';
 
 import { NotificationBell, NotificationPanel } from '@/components/notifications/notification-system';
+import OfflineIndicator from '@/components/layout/offline-indicator';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { Search, User, Settings, UserCircle, LogOut, ChevronRight, Sparkles, X } from 'lucide-react';
@@ -157,6 +158,8 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-1 md:gap-2 shrink-0 ml-2 sm:ml-3">
+        <OfflineIndicator />
+
         {/* Notifications */}
         <NotificationBell />
         <NotificationPanel />
