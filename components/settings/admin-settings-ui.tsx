@@ -7,6 +7,7 @@ import { useTheme } from '@/components/providers/theme-provider';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { resolveTimeZone } from '@/lib/timezone';
+import { getAdminPasswordValidationError } from '@/lib/validation';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -154,30 +155,6 @@ const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   auditLogging: true,
   twoFactorRequired: false,
 };
-
-function getPasswordValidationError(password: string, minLength: number): string | null {
-  if (password.length < minLength) {
-    return `Admin password must be at least ${minLength} characters.`;
-  }
-
-  if (!/[A-Z]/.test(password)) {
-    return 'Admin password must include at least one uppercase letter.';
-  }
-
-  if (!/[a-z]/.test(password)) {
-    return 'Admin password must include at least one lowercase letter.';
-  }
-
-  if (!/[0-9]/.test(password)) {
-    return 'Admin password must include at least one number.';
-  }
-
-  if (!/[^A-Za-z0-9]/.test(password)) {
-    return 'Admin password must include at least one special character.';
-  }
-
-  return null;
-}
 const DEFAULT_COMMUNITY_SETTINGS: CommunitySettings = {
   maxBookingDuration: '4',
   advanceBookingDays: '14',
@@ -443,7 +420,7 @@ export default function AdminSettingsUI() {
           setIsLoading(false);
           return;
         }
-        const passwordValidationError = getPasswordValidationError(passwords.new, 12);
+        const passwordValidationError = getAdminPasswordValidationError(passwords.new, 12);
         if (passwordValidationError) {
           toast.error(passwordValidationError);
           setIsLoading(false);
@@ -482,9 +459,6 @@ export default function AdminSettingsUI() {
         }
       }
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
       // Save to localStorage
       const storageKey = `admin-settings-${session.user.email}`;
       localStorage.setItem(storageKey, JSON.stringify({
@@ -520,24 +494,18 @@ export default function AdminSettingsUI() {
             {
               communityId,
               community: {
-                communityName: communityTheme.communityName || communitySettings.communityName,
-                timezone: resolveTimeZone(
-                  'Asia/Kolkata',
-                  'Asia/Kolkata'
-                ),
+                communityName: communitySettings.communityName,
+                timezone: communitySettings.timezone || 'Asia/Kolkata',
                 timeFormat: communitySettings.timeFormat,
                 businessHours: communitySettings.businessHours,
               },
-              timezone: resolveTimeZone(
-                'Asia/Kolkata',
-                'Asia/Kolkata'
-              ),
+              timezone: communitySettings.timezone || 'Asia/Kolkata',
               timeFormat: communitySettings.timeFormat,
               theme: {
                 primaryColor: communityTheme.primaryColor,
                 accentColor: communityTheme.accentColor,
                 logoUrl: communityTheme.logoUrl,
-                communityName: communityTheme.communityName || communitySettings.communityName,
+                communityName: communitySettings.communityName,
               },
               bookingRules: {
                 maxBookingDuration: communitySettings.maxBookingDuration,

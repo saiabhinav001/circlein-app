@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/components/providers/theme-provider';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
+import { getResidentPasswordValidationError } from '@/lib/validation';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -113,30 +114,6 @@ const DEFAULT_NOTIFICATIONS: ResidentNotifications = {
   weeklyDigest: true,
   smsAlerts: false,
 };
-
-function getPasswordValidationError(password: string, minLength: number): string | null {
-  if (password.length < minLength) {
-    return `Password must be at least ${minLength} characters.`;
-  }
-
-  if (!/[A-Z]/.test(password)) {
-    return 'Password must include at least one uppercase letter.';
-  }
-
-  if (!/[a-z]/.test(password)) {
-    return 'Password must include at least one lowercase letter.';
-  }
-
-  if (!/[0-9]/.test(password)) {
-    return 'Password must include at least one number.';
-  }
-
-  if (!/[^A-Za-z0-9]/.test(password)) {
-    return 'Password must include at least one special character.';
-  }
-
-  return null;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
@@ -370,7 +347,7 @@ export default function ResidentSettingsUI() {
           setIsLoading(false);
           return;
         }
-        const passwordValidationError = getPasswordValidationError(passwords.new, 8);
+        const passwordValidationError = getResidentPasswordValidationError(passwords.new, 8);
         if (passwordValidationError) {
           toast.error(passwordValidationError);
           setIsLoading(false);
@@ -408,9 +385,6 @@ export default function ResidentSettingsUI() {
           return;
         }
       }
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
       
       // Save to localStorage
       const storageKey = `resident-settings-${session.user.email}`;
