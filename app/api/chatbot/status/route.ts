@@ -14,7 +14,10 @@ export async function GET(request: NextRequest) {
 
     // Fetch available models directly from the API
     const modelsResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+      {
+        next: { revalidate: 3600 },
+      }
     );
     
     if (!modelsResponse.ok) {
