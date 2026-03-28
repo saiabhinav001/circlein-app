@@ -6,10 +6,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { type, data, to } = body;
 
-    console.log('📧 Email API called:', { type, recipient: to || data?.userEmail });
 
     if (!type || !data) {
-      console.error('❌ Missing required fields:', { type: !!type, data: !!data });
       return NextResponse.json(
         { success: false, error: 'Missing type or data' },
         { status: 400 }
@@ -20,7 +18,6 @@ export async function POST(request: NextRequest) {
     let recipientEmail = to || data.userEmail;
 
     if (!recipientEmail || !recipientEmail.includes('@')) {
-      console.error('❌ Invalid or missing recipient email:', recipientEmail);
       return NextResponse.json(
         { success: false, error: 'Invalid recipient email address' },
         { status: 400 }
@@ -194,7 +191,6 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    console.log(`📧 Preparing to send ${type} email to ${recipientEmail}`);
 
     const result = await sendEmail({
       to: recipientEmail,
@@ -203,7 +199,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.success) {
-      console.error(`❌ Failed to send ${type} email:`, result.error);
       return NextResponse.json(
         { 
           success: false,
@@ -215,7 +210,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`✅ Successfully sent ${type} email to ${recipientEmail}`);
     
     return NextResponse.json({ 
       success: true, 
@@ -224,7 +218,6 @@ export async function POST(request: NextRequest) {
       recipient: recipientEmail
     });
   } catch (error: any) {
-    console.error('❌ Email notification API error:', error);
     return NextResponse.json(
       { 
         success: false,

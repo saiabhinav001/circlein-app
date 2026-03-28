@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    console.log(`📧 Sending amenity unblock emails for: ${amenityName} in ${communityName}`);
 
     // Get all RESIDENTS in this community (exclude admins)
     const usersSnapshot = await adminDb
@@ -39,7 +38,6 @@ export async function POST(req: NextRequest) {
       .get();
 
     if (usersSnapshot.empty) {
-      console.log('⚠️ No residents found in this community');
       return NextResponse.json({ 
         success: true,
         message: 'No residents to notify',
@@ -71,12 +69,10 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    console.log(`📬 Sending to ${emails.length} residents in parallel batches`);
 
     // Send all emails in parallel batches (10 at a time) - MUCH FASTER!
     const results = await sendBatchEmails(emails, 'amenityUnblocked');
 
-    console.log(`✅ Sent ${results.sent}/${emails.length} amenity unblock emails (${results.failed} failed)`);
 
     return NextResponse.json({
       success: true,
@@ -87,7 +83,6 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Amenity unblock notification error:', error);
     return NextResponse.json(
       { error: 'Failed to send amenity unblock notifications', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

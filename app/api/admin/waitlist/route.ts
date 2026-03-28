@@ -24,13 +24,11 @@ const REMINDER_COOLDOWN_MINUTES = 15;
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
-    console.log('\n📊 === ADMIN WAITLIST DATA REQUEST ===');
 
     // 1. AUTHENTICATION & AUTHORIZATION CHECK
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
-      console.log('   ❌ Unauthorized: No session');
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
@@ -40,12 +38,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const userRole = (session.user as any).role;
     const communityId = (session.user as any).communityId;
 
-    console.log(`   👤 User: ${session.user.email} (${userRole})`);
-    console.log(`   🏘️  Community: ${communityId}`);
 
     // Admin check
     if (userRole !== 'admin' && userRole !== 'super_admin') {
-      console.log('   🚫 Access denied: Not an admin');
       return NextResponse.json(
         { error: 'Access denied. Admin privileges required.' },
         { status: 403 }
@@ -60,7 +55,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     }
 
     // 2. FETCH ALL WAITLIST ENTRIES FOR COMMUNITY
-    console.log('   🔍 Fetching waitlist entries...');
 
     const waitlistQuery = adminDb
       .collection('bookings')
@@ -120,9 +114,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       recentPromotions,
     };
 
-    console.log(`   ✅ Found ${waitlistEntries.length} waitlist entries`);
-    console.log(`   📊 ${Object.keys(byAmenity).length} amenities with waitlist`);
-    console.log(`   🚀 ${recentPromotions} promotions in last 7 days`);
 
     // 6. SUCCESS RESPONSE
     return NextResponse.json({
@@ -133,7 +124,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     });
 
   } catch (error) {
-    console.error('❌ Admin waitlist error:', error);
     return NextResponse.json(
       { 
         error: 'Failed to fetch waitlist data',
@@ -277,7 +267,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json({ success: true, message: 'Reminder sent successfully' });
   } catch (error) {
-    console.error('❌ Admin waitlist reminder error:', error);
     return NextResponse.json(
       {
         error: 'Failed to send waitlist reminder',

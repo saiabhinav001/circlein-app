@@ -49,7 +49,6 @@ export async function POST(request: NextRequest) {
 
     await batch.commit();
 
-    console.log(`✅ Updated ${updateCount} residents with admin email`);
 
     return NextResponse.json({
       success: true,
@@ -61,7 +60,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Error setting admin email:', error);
     return NextResponse.json(
       { error: 'Failed to set admin email', details: error.message },
       { status: 500 }
@@ -109,7 +107,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Error getting admin email:', error);
     return NextResponse.json(
       { error: 'Failed to get admin email', details: error.message },
       { status: 500 }

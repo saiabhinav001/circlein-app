@@ -236,39 +236,27 @@ const sampleData = {
 // Function to initialize the database
 export async function initializeDatabase() {
   try {
-    console.log('🚀 Starting database initialization...');
 
     // Create users
-    console.log('📝 Creating users...');
     for (const [docId, userData] of Object.entries(sampleData.users)) {
       await setDoc(doc(db, 'users', docId), userData);
-      console.log(`✅ Created user: ${userData.name}`);
     }
 
     // Create amenities
-    console.log('🏊 Creating amenities...');
     for (const [docId, amenityData] of Object.entries(sampleData.amenities)) {
       await setDoc(doc(db, 'amenities', docId), amenityData);
-      console.log(`✅ Created amenity: ${amenityData.name}`);
     }
 
     // Create access codes
-    console.log('🔑 Creating access codes...');
     for (const [docId, codeData] of Object.entries(sampleData.accessCodes)) {
       await setDoc(doc(db, 'accessCodes', docId), codeData);
-      console.log(`✅ Created access code: ${codeData.code}`);
     }
 
     // Create settings
-    console.log('⚙️ Creating app settings...');
     for (const [docId, settingsData] of Object.entries(sampleData.settings)) {
       await setDoc(doc(db, 'settings', docId), settingsData);
-      console.log(`✅ Created settings: ${settingsData.appName}`);
     }
 
-    console.log('🎉 Database initialization completed successfully!');
-    console.log('📋 Created collections: users, amenities, accessCodes, settings');
-    console.log('🎯 Your CircleIn app is now ready to use!');
 
     return {
       success: true,
@@ -277,7 +265,6 @@ export async function initializeDatabase() {
     };
 
   } catch (error) {
-    console.error('❌ Error initializing database:', error);
     return {
       success: false,
       message: 'Failed to initialize database',
@@ -289,7 +276,6 @@ export async function initializeDatabase() {
 // Function to create sample bookings (run after users and amenities are created)
 export async function createSampleBookings() {
   try {
-    console.log('📅 Creating sample bookings...');
 
     const bookings = [
       {
@@ -345,14 +331,11 @@ export async function createSampleBookings() {
     for (const bookingData of bookings) {
       const bookingRef = doc(collection(db, 'bookings'));
       await setDoc(bookingRef, bookingData);
-      console.log(`✅ Created booking: ${bookingData.bookingId}`);
     }
 
-    console.log('🎉 Sample bookings created successfully!');
     return { success: true, message: 'Sample bookings created' };
 
   } catch (error) {
-    console.error('❌ Error creating sample bookings:', error);
     return { 
       success: false, 
       message: 'Failed to create sample bookings', 

@@ -76,15 +76,11 @@ export function useEnhancedBookings({ userEmail, communityId, isAdmin = false }:
   // Real-time booking listener
   useEffect(() => {
     if (!activeUserEmail) {
-      console.log('❌ No user email available for booking listener');
       setLoading(false);
       setError('User not authenticated');
       return;
     }
 
-    if (!activeCommunityId || activeCommunityId === 'default-community') {
-      console.log('⚠️ No community ID available, using default');
-    }
 
     setLoading(true);
     setError(null);
@@ -112,45 +108,20 @@ export function useEnhancedBookings({ userEmail, communityId, isAdmin = false }:
       );
     }
 
-    console.log('🔍 Setting up advanced booking listener:', {
-      userEmail: activeUserEmail,
-      communityId: activeCommunityId,
-      isAdmin: isActualAdmin,
-      queryType: isActualAdmin ? 'admin-all-bookings' : 'user-specific-bookings'
-    });
 
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       try {
         const timestamp = new Date().toISOString();
-        console.log(`📊 [${timestamp}] Advanced bookings snapshot:`, {
-          totalDocs: querySnapshot.size,
-          changes: querySnapshot.docChanges().length,
-          fromCache: querySnapshot.metadata.fromCache
-        });
 
         // Log individual changes
         querySnapshot.docChanges().forEach((change) => {
           const data = change.doc.data();
-          console.log(`📝 [${timestamp}] Booking ${change.type}:`, {
-            id: change.doc.id,
-            status: data.status,
-            amenity: data.amenityName,
-            user: data.userId,
-            adminCancellation: data.adminCancellation
-          });
         });
 
         // Fetch amenity details for each booking
         const bookingPromises = querySnapshot.docs.map(async (bookingDoc) => {
           const bookingData = bookingDoc.data();
           
-          console.log(`📖 Processing booking ${bookingDoc.id}:`, {
-            userId: bookingData.userId,
-            userEmail: bookingData.userEmail,
-            amenityId: bookingData.amenityId,
-            amenityName: bookingData.amenityName,
-            status: bookingData.status
-          });
           
           // Get amenity name (use cached name from booking data)
           let amenityName = bookingData.amenityName || 'Unknown Amenity';
@@ -211,13 +182,6 @@ export function useEnhancedBookings({ userEmail, communityId, isAdmin = false }:
 
         const bookingList = await Promise.all(bookingPromises);
         
-        console.log(`📋 [${timestamp}] Updated bookings:`, {
-          total: bookingList.length,
-          confirmed: bookingList.filter(b => b.status === 'confirmed').length,
-          cancelled: bookingList.filter(b => b.status === 'cancelled').length,
-          completed: bookingList.filter(b => b.status === 'completed').length,
-          inProgress: bookingList.filter(b => b.status === 'in-progress').length
-        });
 
         setBookings(bookingList);
         setLoading(false);
@@ -233,34 +197,8 @@ export function useEnhancedBookings({ userEmail, communityId, isAdmin = false }:
       
       if (err.code === 'failed-precondition') {
         errorMessage = 'Database indexes required. Go to Firebase Console → Firestore → Indexes and create the required composite indexes.';
-        console.error('🚨 FIRESTORE INDEX MISSING:', {
-          error: err,
-          requiredIndexes: [
-            '1. Collection: bookings | Fields: userId(↑) + communityId(↑) + startTime(↓)',
-            '2. Collection: bookings | Fields: communityId(↑) + startTime(↓)'
-          ],
-          firebaseConsole: 'https://console.firebase.google.com → Your Project → Firestore Database → Indexes',
-          setupGuide: 'See FIRESTORE_INDEXES_SETUP.md for step-by-step instructions'
-        });
         
         // Show detailed instructions in console
-        console.log(`
-🔥 FIRESTORE INDEX CREATION REQUIRED:
-
-1. Go to: https://console.firebase.google.com
-2. Select your project → Firestore Database → Indexes
-3. Click "Create Index" and add these 2 indexes:
-
-INDEX 1 (User Bookings):
-- Collection: bookings
-- Fields: userId (Ascending) + communityId (Ascending) + startTime (Descending)
-
-INDEX 2 (Admin Bookings):  
-- Collection: bookings
-- Fields: communityId (Ascending) + startTime (Descending)
-
-Indexes take 5-15 minutes to build. App will work normally once complete.
-        `);
       } else if (err.code === 'permission-denied') {
         errorMessage = 'Permission denied. Please check Firestore rules.';
       } else if (err.code === 'unavailable') {
@@ -275,12 +213,10 @@ Indexes take 5-15 minutes to build. App will work normally once complete.
       
       // Retry logic for temporary failures
       if (err.code === 'unavailable' && retryCount < 3) {
-        console.log(`🔄 Retrying connection (${retryCount + 1}/3) in 3 seconds...`);
         setTimeout(() => {
           setRetryCount(prev => prev + 1);
         }, 3000);
       } else if (err.code === 'failed-precondition' && retryCount === 0) {
-        console.log('🔄 Trying fallback query without ordering...');
         // Try a simpler query without orderBy as fallback
         setTimeout(() => {
           setRetryCount(1); // Use retry count to switch to fallback
@@ -295,7 +231,6 @@ Indexes take 5-15 minutes to build. App will work normally once complete.
   useEffect(() => {
     if (retryCount !== 1 || !activeUserEmail) return;
 
-    console.log('🔄 Using fallback query without orderBy...');
     setLoading(true);
     setError(null);
 
@@ -314,7 +249,6 @@ Indexes take 5-15 minutes to build. App will work normally once complete.
 
     const unsubscribe = onSnapshot(fallbackQuery, async (querySnapshot) => {
       try {
-        console.log('📊 Fallback query results:', querySnapshot.size);
         
         // Filter by community ID in memory for non-admin users
         let docs = querySnapshot.docs;
@@ -325,13 +259,6 @@ Indexes take 5-15 minutes to build. App will work normally once complete.
         const bookingPromises = docs.map(async (bookingDoc) => {
           const bookingData = bookingDoc.data();
           
-          console.log(`📖 Processing booking ${bookingDoc.id}:`, {
-            userId: bookingData.userId,
-            userEmail: bookingData.userEmail,
-            amenityId: bookingData.amenityId,
-            amenityName: bookingData.amenityName,
-            status: bookingData.status
-          });
           
           // Get amenity name (use cached name from booking data)
           let amenityName = bookingData.amenityName || 'Unknown Amenity';
@@ -395,7 +322,6 @@ Indexes take 5-15 minutes to build. App will work normally once complete.
         // Sort in memory since we can't use orderBy
         bookingList.sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
         
-        console.log('📋 Fallback bookings loaded:', bookingList.length);
         
         setBookings(bookingList);
         setLoading(false);

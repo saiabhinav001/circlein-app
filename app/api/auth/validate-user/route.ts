@@ -32,7 +32,6 @@ export async function GET(request: NextRequest) {
     const userDoc = await adminDb.collection('users').doc(session.user.email).get();
     
     if (!userDoc.exists) {
-      console.log(`❌ User ${session.user.email} no longer exists in database - account was deleted`);
       return NextResponse.json(
         { exists: false, error: 'User account no longer exists', deleted: true },
         { status: 401 }

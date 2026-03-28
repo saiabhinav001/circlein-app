@@ -23,15 +23,12 @@ import { formatDateInTimeZone, formatDateTimeInTimeZone, formatTimeInTimeZone, r
 
 async function handleReminderCheck(request: NextRequest) {
   try {
-    console.log('\n🔔 === BOOKING REMINDER CHECK ===');
-    console.log(`   ⏰ Time: ${new Date().toISOString()}`);
 
     // 1. CALCULATE TIME WINDOW (45-75 minutes from now)
     const now = new Date();
     const minTime = new Date(now.getTime() + 45 * 60 * 1000); // 45 minutes
     const maxTime = new Date(now.getTime() + 75 * 60 * 1000); // 75 minutes
 
-    console.log(`   📊 Checking bookings between:`);
     console.log(`      ${minTime.toISOString()} - ${maxTime.toISOString()}`);
 
     // 2. QUERY CONFIRMED BOOKINGS IN TIME WINDOW
@@ -46,7 +43,6 @@ async function handleReminderCheck(request: NextRequest) {
 
     const snapshot = await getDocs(bookingsQuery);
 
-    console.log(`   📋 Found ${snapshot.size} bookings needing reminders`);
 
     if (snapshot.empty) {
       return NextResponse.json({
@@ -67,7 +63,6 @@ async function handleReminderCheck(request: NextRequest) {
       const booking = doc.data();
       
       try {
-        console.log(`   📧 Sending reminder for booking ${doc.id}`);
         console.log(`      User: ${booking.userEmail}`);
         console.log(`      Amenity: ${booking.amenityName}`);
 
@@ -122,17 +117,13 @@ async function handleReminderCheck(request: NextRequest) {
             reminderSentAt: Timestamp.now(),
           });
 
-          console.log(`      ✅ Reminder sent successfully`);
-          console.log(`      📨 Message ID: ${result.messageId}`);
           sent++;
         } else {
-          console.error(`      ❌ Failed to send: ${result.error}`);
           errors.push(`${booking.userEmail}: ${result.error}`);
           failed++;
         }
 
       } catch (error: any) {
-        console.error(`      ❌ Error processing booking ${doc.id}:`, error.message);
         errors.push(`${doc.id}: ${error.message}`);
         failed++;
       }
@@ -142,14 +133,7 @@ async function handleReminderCheck(request: NextRequest) {
     }
 
     // 4. SUMMARY
-    console.log('\n📊 === REMINDER SUMMARY ===');
-    console.log(`   ✅ Sent: ${sent}`);
-    console.log(`   ❌ Failed: ${failed}`);
-    console.log(`   📝 Total: ${snapshot.size}`);
     
-    if (errors.length > 0) {
-      console.log(`   ⚠️  Errors:`, errors);
-    }
 
     return NextResponse.json({
       success: true,
@@ -162,7 +146,6 @@ async function handleReminderCheck(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Reminder cron error:', error);
     return NextResponse.json(
       { 
         error: error.message,

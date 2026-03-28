@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
   try {
     const { communityId = 'default-community' } = await request.json();
     
-    console.log('🔧 Starting amenity name migration for community:', communityId);
     
     // Enhanced amenity mappings
     const enhancedMappings: { [key: string]: string } = {
@@ -154,7 +153,6 @@ export async function POST(request: NextRequest) {
 
     if (updateCount > 0) {
       await batch.commit();
-      console.log(`✅ Successfully updated ${updateCount} booking amenity names`);
       
       return NextResponse.json({ 
         success: true, 
@@ -171,7 +169,6 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Migration failed:', error);
     return NextResponse.json({ 
       error: 'Migration failed', 
       details: error instanceof Error ? error.message : 'Unknown error' 

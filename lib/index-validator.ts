@@ -50,10 +50,8 @@ export class IndexValidator {
 
       await getDocs(userQuery);
       status.userBookingsIndex = true;
-      console.log('✅ User bookings index is working');
 
     } catch (error: any) {
-      console.warn('❌ User bookings index test failed:', error.message);
       if (error.code === 'failed-precondition') {
         status.error = error.message;
       }
@@ -71,10 +69,8 @@ export class IndexValidator {
 
       await getDocs(adminQuery);
       status.adminBookingsIndex = true;
-      console.log('✅ Admin bookings index is working');
 
     } catch (error: any) {
-      console.warn('❌ Admin bookings index test failed:', error.message);
       if (error.code === 'failed-precondition') {
         status.error = error.message;
       }

@@ -5,7 +5,6 @@ import { sendPushToUserByEmail } from '@/lib/push-service';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔔 Running booking reminder check...');
 
     // Get current time and 1 hour from now
     const now = new Date();
@@ -66,7 +65,6 @@ export async function GET(request: NextRequest) {
                 reminderSentAt: new Date().toISOString(),
               });
               remindersSent++;
-              console.log(`✅ Reminder sent for booking ${doc.id}`);
             }
           });
 
@@ -77,7 +75,6 @@ export async function GET(request: NextRequest) {
 
     await Promise.all(promises);
 
-    console.log(`✅ Sent ${remindersSent} booking reminders`);
 
     return NextResponse.json({
       success: true,
@@ -86,7 +83,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Booking reminder cron error:', error);
     return NextResponse.json(
       { error: error.message },
       { status: 500 }

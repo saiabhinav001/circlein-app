@@ -88,7 +88,6 @@ const AMENITY_SAMPLES: Record<string, any> = {
 
 export async function GET() {
   try {
-    console.log('🔄 Starting amenity data migration...');
     
     const amenitiesRef = collection(db, 'amenities');
     const snapshot = await getDocs(amenitiesRef);
@@ -129,7 +128,6 @@ export async function GET() {
     });
     
   } catch (error: any) {
-    console.error('❌ Migration failed:', error);
     return NextResponse.json({
       success: false,
       error: error.message,

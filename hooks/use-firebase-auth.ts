@@ -19,12 +19,10 @@ export function useFirebaseUserAuth() {
         try {
           // Check if user is already signed in to Firebase
           if (auth.currentUser?.email === session.user.email) {
-            console.log('✅ Firebase Auth already synced:', session.user.email);
             return;
           }
 
           // Get custom token from our API
-          console.log('🔄 Syncing Firebase Auth for:', session.user.email);
           const response = await fetch('/api/auth/firebase-token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -35,18 +33,15 @@ export function useFirebaseUserAuth() {
             
             // Sign in to Firebase with custom token
             await signInWithCustomToken(auth, token);
-            console.log('✅ Firebase Auth synced successfully');
           } else {
-            console.error('❌ Failed to get Firebase custom token');
           }
         } catch (error) {
-          console.error('❌ Error syncing Firebase Auth:', error);
+                    // TODO: add error handling
         }
       } else if (status === 'unauthenticated') {
         // Sign out from Firebase when NextAuth session ends
         if (auth.currentUser) {
           await auth.signOut();
-          console.log('🚪 Signed out from Firebase Auth');
         }
       }
     }

@@ -21,13 +21,10 @@ import { collection, query, where, getDocs, Timestamp, updateDoc, doc as docRef 
 
 async function handleWaitlistExpiry(request: NextRequest) {
   try {
-    console.log('\n🕐 === WAITLIST EXPIRY CHECK ===');
-    console.log(`   ⏰ Time: ${new Date().toISOString()}`);
 
     const now = new Date();
     const nowTimestamp = Timestamp.fromDate(now);
 
-    console.log(`   📊 Checking for expired waitlist entries...`);
 
     // 1. QUERY WAITLIST BOOKINGS THAT HAVE PASSED
     const bookingsRef = collection(db, 'bookings');
@@ -41,7 +38,6 @@ async function handleWaitlistExpiry(request: NextRequest) {
 
     const snapshot = await getDocs(waitlistQuery);
 
-    console.log(`   📋 Found ${snapshot.size} expired waitlist entries`);
 
     if (snapshot.empty) {
       return NextResponse.json({
@@ -61,7 +57,6 @@ async function handleWaitlistExpiry(request: NextRequest) {
       const booking = doc.data();
       
       try {
-        console.log(`   ⏰ Expiring waitlist booking ${doc.id}`);
         console.log(`      User: ${booking.userEmail}`);
         console.log(`      Amenity: ${booking.amenityName}`);
         console.log(`      End Time: ${booking.endTime.toDate().toISOString()}`);
@@ -75,11 +70,9 @@ async function handleWaitlistExpiry(request: NextRequest) {
           expiredReason: 'Time slot passed while in waitlist',
         });
 
-        console.log(`      ✅ Expired successfully`);
         expired++;
 
       } catch (error: any) {
-        console.error(`      ❌ Error expiring booking ${doc.id}:`, error.message);
         errors.push(`${doc.id}: ${error.message}`);
         failed++;
       }
@@ -89,14 +82,7 @@ async function handleWaitlistExpiry(request: NextRequest) {
     }
 
     // 3. SUMMARY
-    console.log('\n📊 === EXPIRY SUMMARY ===');
-    console.log(`   ✅ Expired: ${expired}`);
-    console.log(`   ❌ Failed: ${failed}`);
-    console.log(`   📝 Total: ${snapshot.size}`);
     
-    if (errors.length > 0) {
-      console.log(`   ⚠️  Errors:`, errors);
-    }
 
     return NextResponse.json({
       success: true,
@@ -109,7 +95,6 @@ async function handleWaitlistExpiry(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Waitlist expiry cron error:', error);
     return NextResponse.json(
       { 
         error: 'Failed to process waitlist expiry',

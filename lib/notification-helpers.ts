@@ -13,7 +13,6 @@ export interface NotificationEvent {
 // Helper function to trigger notifications
 // In a real app, this would send notifications via your backend/WebSocket/Firebase
 export const triggerRealTimeNotification = async (event: NotificationEvent) => {
-  console.log('🔔 Real-time notification triggered:', event);
   
   // In production, you would:
   // 1. Send to your backend API
@@ -154,7 +153,6 @@ export const resetWelcomeNotifications = () => {
     }
   }
   keysToRemove.forEach(key => sessionStorage.removeItem(key));
-  console.log('🔄 Welcome notifications reset - you will see welcome message on next page refresh');
 };
 
 // Example usage in your components:

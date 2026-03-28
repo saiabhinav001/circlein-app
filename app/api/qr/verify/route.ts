@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'QR ID required' }, { status: 400 });
     }
 
-    console.log(`🔍 Verifying QR code: ${qrId}`);
 
     // Find booking by QR ID
     const bookingsRef = collection(db, 'bookings');
@@ -123,7 +122,6 @@ export async function POST(request: NextRequest) {
       })
     });
 
-    console.log(`✅ QR verified and marked as used: ${qrId}`);
 
     // Check if deposit should be refunded (successful check-in)
     if (booking.depositPaid && !booking.depositRefunded) {

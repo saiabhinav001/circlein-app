@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
     // 3. Community-specific deletion (multi-tenancy safe)
     const targetCommunityId = communityId || session.user.communityId;
 
-    console.log(`🧹 Starting safe booking cleanup for community: ${targetCommunityId}`);
 
     // 4. Delete bookings in batches (Firestore limit: 500 per batch)
     const bookingsRef = collection(db, 'bookings');
@@ -66,7 +65,6 @@ export async function POST(request: NextRequest) {
 
       await batch.commit();
       deletedBookings += batchDocs.length;
-      console.log(`   ✅ Deleted batch: ${batchDocs.length} bookings (Total: ${deletedBookings})`);
     }
 
     // 5. Delete calendar events (if exists)
@@ -89,13 +87,11 @@ export async function POST(request: NextRequest) {
 
         await batch.commit();
         deletedEvents += batchDocs.length;
-        console.log(`   ✅ Deleted batch: ${batchDocs.length} events (Total: ${deletedEvents})`);
       }
     } catch (eventError) {
-      console.log('   ⚠️ No events collection or error deleting events (non-critical)');
+            // TODO: add error handling
     }
 
-    console.log(`✅ Cleanup complete: ${deletedBookings} bookings, ${deletedEvents} events deleted`);
 
     return NextResponse.json({
       success: true,
@@ -109,7 +105,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Error clearing booking history:', error);
     return NextResponse.json(
       { 
         error: 'Failed to clear booking history',

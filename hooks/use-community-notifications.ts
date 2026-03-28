@@ -64,11 +64,6 @@ export function useResidentNotifications() {
 
       await addDoc(collection(db, 'communityNotifications'), notificationDocData);
       
-      console.log('📢 Community notification sent:', {
-        title: notificationData.title,
-        community: session.user.communityId,
-        type: notificationData.type
-      });
 
       return true;
     } catch (error) {

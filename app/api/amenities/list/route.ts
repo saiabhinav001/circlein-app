@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
       ...doc.data(),
     }));
 
-    console.log(`✅ Fetched ${amenities.length} amenities for community ${communityId}`);
 
     return NextResponse.json({
       success: true,
@@ -37,7 +36,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Error fetching amenities:', error);
     return NextResponse.json(
       { error: 'Failed to fetch amenities' },
       { status: 500 }

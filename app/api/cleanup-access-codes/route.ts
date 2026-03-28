@@ -77,7 +77,6 @@ export async function POST(request: NextRequest) {
         if (docs.length > 1) {
           // Found duplicates!
           results.duplicatesFound++;
-          console.log(`🔍 Found ${docs.length} documents for code: ${codeValue}`);
           
           // Find the most complete data (prefer one with usedBy set)
           let bestData = docs[0].data;
@@ -111,7 +110,6 @@ export async function POST(request: NextRequest) {
             if (d.docId !== codeValue) {
               await deleteDoc(doc(db, 'accessCodes', d.docId));
               results.documentsDeleted++;
-              console.log(`🗑️ Deleted duplicate document: ${d.docId}`);
             }
           }
           
@@ -131,7 +129,6 @@ export async function POST(request: NextRequest) {
           results.documentsMerged++;
           results.documentsDeleted++;
           results.cleanedCodes.push(codeValue);
-          console.log(`🔄 Migrated code ${codeValue} from doc ID ${d.docId}`);
         }
       } catch (err) {
         results.errors.push({

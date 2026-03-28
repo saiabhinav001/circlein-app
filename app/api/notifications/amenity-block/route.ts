@@ -60,7 +60,6 @@ export async function POST(request: NextRequest) {
     }));
 
     // Send batch emails
-    console.log(`📧 Sending amenity block notifications to ${residentEmails.length} residents`);
     const results = await sendBatchEmails(emails, 'amenityBlocked');
 
     const successCount = results.sent;

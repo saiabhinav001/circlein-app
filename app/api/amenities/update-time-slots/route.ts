@@ -47,7 +47,6 @@ export async function POST(request: NextRequest) {
     const amenityRef = doc(db, 'amenities', amenityId);
     await updateDoc(amenityRef, updateData);
 
-    console.log(`✅ Time slots updated for amenity ${amenityId}`);
 
     return NextResponse.json({
       success: true,
@@ -57,7 +56,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Error updating time slots:', error);
     return NextResponse.json(
       { error: 'Failed to update time slots' },
       { status: 500 }

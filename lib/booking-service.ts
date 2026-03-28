@@ -160,7 +160,6 @@ export async function refundDeposit(bookingId: string, userId: string, amount: n
       depositRefundedAt: serverTimestamp()
     });
 
-    console.log(`💰 Refunded ${amount} deposit to ${userId}`);
   } catch (error) {
     console.error('Error refunding deposit:', error);
   }
@@ -199,7 +198,6 @@ export async function chargeDeposit(userId: string, bookingId: string, amount: n
       createdAt: serverTimestamp()
     });
 
-    console.log(`💳 Charged ${amount} deposit to ${userId}`);
     return true;
   } catch (error) {
     console.error('Error charging deposit:', error);
@@ -228,7 +226,6 @@ export async function applySuspension(userId: string, noShowCount: number) {
           updatedAt: serverTimestamp()
         });
         
-        console.log(`🚫 Suspended user ${userId} until ${suspensionDate.toISOString().slice(0, 10)}`);
         return true;
       }
     }

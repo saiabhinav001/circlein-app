@@ -55,7 +55,6 @@ export async function POST(request: NextRequest) {
       try {
         // Case 1: Document ID doesn't match the code field - needs migration
         if (actualCode && docId !== actualCode) {
-          console.log(`🔄 Migrating code: ${actualCode} (old docId: ${docId})`);
           
           // Create new document with code as ID
           await setDoc(doc(db, 'accessCodes', actualCode), {

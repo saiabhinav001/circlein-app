@@ -47,7 +47,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    console.log(`🔄 Creating recurring booking: ${amenityName} for ${weeks} weeks (${frequency})`);
 
     // Get amenity capacity
     const amenityRef = doc(db, 'communities', communityId, 'amenities', amenityId);
@@ -134,7 +133,6 @@ export async function POST(request: NextRequest) {
           bookingId: bookingRef.id
         });
 
-        console.log(`   ✅ Week ${weekNum + 1}: Booked (${bookingRef.id})`);
 
       } catch (error: any) {
         results.push({
@@ -142,7 +140,6 @@ export async function POST(request: NextRequest) {
           status: 'failed',
           reason: error.message
         });
-        console.error(`   ❌ Week ${weekNum + 1}: Failed -`, error.message);
       }
     }
 

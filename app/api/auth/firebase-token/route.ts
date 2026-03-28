@@ -24,7 +24,6 @@ export async function POST(request: Request) {
 
     const userEmail = session.user.email;
     
-    console.log('🔐 Generating Firebase custom token for:', userEmail);
 
     // Generate custom token using Firebase Admin SDK
     // Use email as UID since that's how we identify users
@@ -35,11 +34,9 @@ export async function POST(request: Request) {
       communityId: (session.user as any).communityId || null,
     });
 
-    console.log('✅ Firebase custom token generated successfully');
 
     return NextResponse.json({ token: customToken });
   } catch (error: any) {
-    console.error('❌ Error generating Firebase custom token:', error);
     return NextResponse.json(
       { error: 'Failed to generate token', details: error.message },
       { status: 500 }

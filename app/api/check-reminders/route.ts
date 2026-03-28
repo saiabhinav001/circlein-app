@@ -8,7 +8,6 @@ import { emailTemplates, sendEmail } from '@/lib/email-service';
  */
 export async function POST() {
   try {
-    console.log('🔔 Checking for booking reminders...');
 
     const now = new Date();
     const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
@@ -68,7 +67,6 @@ export async function POST() {
     // Wait for all emails to be sent
     await Promise.all(promises);
 
-    console.log(`✅ Sent ${remindersSent} reminder(s)`);
 
     return NextResponse.json({
       success: true,
@@ -76,7 +74,6 @@ export async function POST() {
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('❌ Reminder check failed:', error);
     return NextResponse.json(
       {
         error: 'Failed to check reminders',

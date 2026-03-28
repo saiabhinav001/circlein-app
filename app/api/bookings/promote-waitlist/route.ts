@@ -32,13 +32,11 @@ interface PromoteWaitlistRequest {
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
-    console.log('\n🚀 === WAITLIST PROMOTION REQUEST ===');
 
     // 1. AUTHENTICATION CHECK (Admin or system internal call)
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
-      console.log('   ❌ Unauthorized: No session');
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
@@ -48,8 +46,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const communityId = (session.user as any).communityId;
     const userRole = (session.user as any).role;
 
-    console.log(`   👤 User: ${session.user.email} (${userRole})`);
-    console.log(`   🏘️  Community: ${communityId}`);
 
     if (!communityId) {
       return NextResponse.json(
@@ -66,9 +62,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const body: PromoteWaitlistRequest = await req.json();
     const { amenityId, startTime, reason = 'cancellation' } = body;
 
-    console.log(`   📋 Amenity: ${amenityId}`);
-    console.log(`   🕐 Time: ${startTime}`);
-    console.log(`   📌 Reason: ${reason}`);
 
     if (!amenityId || !startTime) {
       return NextResponse.json(
@@ -83,7 +76,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // 2.5. CHECK IF TIME SLOT HAS ALREADY PASSED
     const now = Timestamp.now();
     if (startTimestamp.toMillis() < now.toMillis()) {
-      console.log('   ⚠️  Time slot has already passed - no promotion needed');
       return NextResponse.json({
         success: true,
         message: 'Time slot has passed. No promotion needed.',
@@ -93,7 +85,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // 2.6. CHECK AMENITY CAPACITY AND CURRENT BOOKINGS
-    console.log('   📊 Checking capacity limits...');
     
     const amenityDoc = await adminDb.collection('amenities').doc(amenityId).get();
     if (!amenityDoc.exists) {
@@ -105,7 +96,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     
     const amenityData = amenityDoc.data();
     const maxPeople = amenityData?.booking?.maxPeople || amenityData?.rules?.maxSlotsPerFamily || 30;
-    console.log(`   📏 Max capacity: ${maxPeople} people`);
     
     // Count current confirmed bookings for this slot
     const confirmedBookingsQuery = adminDb
@@ -119,11 +109,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const currentConfirmed = confirmedSnapshot.size;
     const availableSlots = maxPeople - currentConfirmed;
     
-    console.log(`   ✅ Current confirmed: ${currentConfirmed}`);
-    console.log(`   🎯 Available slots: ${availableSlots}`);
     
     if (availableSlots <= 0) {
-      console.log('   ⚠️  No available slots - capacity full');
       return NextResponse.json({
         success: true,
         message: 'No available slots. Capacity is full.',
@@ -133,7 +120,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // 3. FIND NEXT PERSON(S) IN WAITLIST
-    console.log(`   🔍 Finding next ${availableSlots} waitlist person(s)...`);
 
     const waitlistQuery = adminDb
       .collection('bookings')
@@ -148,7 +134,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const waitlistSnapshot = await waitlistQuery.get();
 
     if (waitlistSnapshot.empty) {
-      console.log('   ℹ️  No one in waitlist (slot will remain empty)');
       return NextResponse.json({
         success: true,
         message: 'No waitlist entries found. Slot is now available.',
@@ -159,13 +144,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const promotedUsers: any[] = [];
     const amenityName = amenityData?.name || 'Unknown Amenity';
 
-    console.log(`   🎯 Found ${waitlistSnapshot.size} person(s) to promote`);
 
     // 4-6. LOOP THROUGH AND PROMOTE ALL ELIGIBLE WAITLIST USERS
     for (const waitlistDoc of waitlistSnapshot.docs) {
       const nextBooking = waitlistDoc.data();
       
-      console.log(`   👤 Promoting: ${nextBooking.userEmail} (Priority: ${nextBooking.priorityScore || 'N/A'})`);
 
       // 4. AUTO-CONFIRM - No need for manual confirmation, instant promotion
       await waitlistDoc.ref.update({
@@ -176,7 +159,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         updatedAt: now,
       });
 
-      console.log(`   ✅ ${nextBooking.userEmail} confirmed`);
 
       // 5. SEND EMAIL & CREATE IN-APP NOTIFICATION
       try {
@@ -228,9 +210,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           expiresAt: Timestamp.fromMillis(now.toMillis() + (7 * 24 * 60 * 60 * 1000)), // 7 days
         });
 
-        console.log(`   ✅ Notifications sent to ${nextBooking.userEmail}`);
       } catch (error) {
-        console.error(`   ⚠️  Notification error for ${nextBooking.userEmail}:`, error);
+                // TODO: add error handling
       }
 
       promotedUsers.push({
@@ -241,7 +222,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       });
     }
 
-    console.log(`   🎊 Successfully promoted ${promotedUsers.length} user(s)!`);
 
     // 7. SUCCESS RESPONSE
     return NextResponse.json({
@@ -259,7 +239,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
 
   } catch (error) {
-    console.error('❌ Waitlist promotion error:', error);
     return NextResponse.json(
       { 
         error: 'Failed to promote waitlist entry',
@@ -325,7 +304,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     });
 
   } catch (error) {
-    console.error('❌ Get waitlist error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch waitlist' },
       { status: 500 }

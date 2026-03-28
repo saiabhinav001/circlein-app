@@ -83,7 +83,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🗑️ Starting comprehensive deletion for user: ${userEmail}`);
 
     // 6. Delete all user's bookings (both past and future)
     let deletedBookings = 0;
@@ -100,10 +99,9 @@ export async function POST(request: NextRequest) {
           deletedBookings++;
         });
         await batch.commit();
-        console.log(`✅ Deleted ${deletedBookings} bookings for user ${userEmail}`);
       }
     } catch (error) {
-      console.error('❌ Error deleting bookings:', error);
+            // TODO: add error handling
       // Continue with deletion even if bookings fail
     }
 
@@ -122,10 +120,9 @@ export async function POST(request: NextRequest) {
           deletedNotifications++;
         });
         await batch.commit();
-        console.log(`✅ Deleted ${deletedNotifications} notifications for user ${userEmail}`);
       }
     } catch (error) {
-      console.error('❌ Error deleting notifications:', error);
+            // TODO: add error handling
       // Continue with deletion even if notifications fail
     }
 
@@ -137,10 +134,9 @@ export async function POST(request: NextRequest) {
       const userPrefsDoc = await userPrefsRef.get();
       if (userPrefsDoc.exists) {
         await userPrefsRef.delete();
-        console.log(`✅ Deleted user preferences for ${userEmail}`);
       }
     } catch (error) {
-      console.error('❌ Error deleting user preferences:', error);
+            // TODO: add error handling
       // Continue even if this fails
     }
 
@@ -160,7 +156,6 @@ export async function POST(request: NextRequest) {
           const codeId = codeDoc.id;
           await adminDb.collection('accessCodes').doc(codeId).delete();
           deletedAccessCodes.push(codeId);
-          console.log(`✅ DELETED access code: ${codeId}`);
         }
         
         // Generate ONE new replacement code for the community
@@ -196,27 +191,23 @@ export async function POST(request: NextRequest) {
             replacedCode: deletedAccessCodes[0] || null,
             reason: 'User deleted - replacement code',
           });
-          console.log(`✅ Created NEW access code: ${newAccessCode}`);
         }
       }
     } catch (error) {
-      console.error('❌ Error handling access codes:', error);
+            // TODO: add error handling
       // Continue even if this fails
     }
 
     // 10. Delete the user document itself
     try {
       await adminDb.collection('users').doc(userId).delete();
-      console.log(`✅ Deleted user document for ${userEmail}`);
     } catch (error) {
-      console.error('❌ Error deleting user document:', error);
       throw new Error('Failed to delete user document');
     }
 
     // 11. Invalidate any active sessions for this user
     // Note: NextAuth JWT sessions will automatically become invalid once the user doc is deleted
     // because the jwt callback checks if user exists in Firestore
-    console.log(`🔒 User ${userEmail} will be signed out on next request`);
 
     // 12. Return success response with deletion summary
     return NextResponse.json({
@@ -232,7 +223,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('💥 Error in delete-resident API:', error);
     return NextResponse.json(
       { 
         error: 'Failed to delete resident',

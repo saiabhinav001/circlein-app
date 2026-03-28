@@ -634,7 +634,6 @@ Assistant:`;
         clearTimeout(timeoutId);
         
         // Timeout or generation error - use intelligent fallback
-        console.log('⚠️ AI generation failed, using fallback:', genError.name);
         return NextResponse.json({ 
           response: getFallbackResponse(message, isAdmin),
           actionUrl: undefined,
@@ -643,7 +642,6 @@ Assistant:`;
 
     } catch (modelError: any) {
       // Model initialization failed - use fallback
-      console.log('⚠️ Model initialization failed, using fallback');
       return NextResponse.json({ 
         response: getFallbackResponse(message, isAdmin),
         actionUrl: undefined,
@@ -651,7 +649,6 @@ Assistant:`;
     }
 
   } catch (error: any) {
-    console.error('❌ Chatbot error:', error?.message);
     
     // Last resort - provide generic but helpful fallback
     const isAdmin = error.userRole === 'admin';

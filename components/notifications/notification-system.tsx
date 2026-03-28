@@ -181,7 +181,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     if (!session?.user?.communityId || !session?.user?.email) return;
 
     const connectionTime = new Date();
-    console.log('🔔 Notification listener connected at:', connectionTime.toISOString());
 
     const q = query(
       collection(db, 'communityNotifications'),
@@ -250,7 +249,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     });
 
     return () => {
-      console.log('🔔 Notification listener disconnected');
       unsubscribe();
     };
   }, [session?.user?.communityId, session?.user?.email]);
@@ -266,7 +264,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     );
 
     if (isExactDuplicate) {
-      console.log('🚫 Duplicate notification prevented');
       return;
     }
 

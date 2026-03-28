@@ -39,7 +39,6 @@ export function AccountValidationGuard() {
 
         // User has been deleted - force logout
         if (!data.exists || data.deleted) {
-          console.log('🚨 User account deleted - forcing logout');
           
           // Show user notification
           toast.error('Your account has been removed by an administrator.', {

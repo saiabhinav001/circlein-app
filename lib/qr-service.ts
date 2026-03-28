@@ -243,18 +243,10 @@ class QRService {
         metadata: {}
       };
 
-      console.log('✅ QR Code generated successfully:', {
-        bookingId: booking.id,
-        qrCodeId: qrDocRef.id,
-        amenity: amenityDetails.name,
-        user: qrData.userEmail,
-        autoShow: options.autoShow
-      });
 
       return result;
 
     } catch (error) {
-      console.error('❌ Error generating QR code:', error);
       throw new Error('Failed to generate QR code: ' + (error as Error).message);
     }
   }
@@ -543,7 +535,6 @@ class QRService {
       };
 
     } catch (error) {
-      console.error('❌ Error scanning QR code:', error);
       return {
         success: false,
         message: 'Error processing QR code scan: ' + (error as Error).message,

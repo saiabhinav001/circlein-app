@@ -85,7 +85,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Log eligibility check
-    console.log(`   🎯 Eligibility: Priority=${eligibility.priorityScore}, Deposit=${eligibility.requiresDeposit}`);
 
     // 4. Convert dates
     const bookingStart = new Date(startTime);
@@ -120,7 +119,7 @@ export async function POST(request: NextRequest) {
         const settingsSnapshot = await getDoc(doc(db, 'settings', session.user.communityId));
         settingsData = settingsSnapshot.data() || {};
       } catch (settingsError) {
-        console.error('   ⚠️ Failed to read community settings, using defaults:', settingsError);
+                // TODO: add error handling
       }
     }
 
@@ -203,7 +202,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`🎯 Booking request: ${amenityName} at ${selectedSlot} by ${session.user.email}`);
 
     // 5. PRE-READ: Check existing bookings (before transaction)
     const conflictQuery = query(
@@ -216,7 +214,6 @@ export async function POST(request: NextRequest) {
     const conflictSnapshot = await getDocs(conflictQuery);
     const existingBookingsCount = conflictSnapshot.docs.length;
 
-    console.log(`   📊 Found ${existingBookingsCount} existing booking(s) for this slot`);
 
     // Pre-read waitlist count
     const waitlistQuery = query(
@@ -235,7 +232,6 @@ export async function POST(request: NextRequest) {
       );
       const existingBookings = verifyDocs.filter(doc => doc.exists());
 
-      console.log(`   🔒 Transaction verified: ${existingBookings.length} confirmed bookings`);
 
       // Step 6b: Get amenity capacity
       const amenityRef = doc(db, 'amenities', amenityId);
@@ -248,7 +244,6 @@ export async function POST(request: NextRequest) {
       const amenityData = amenityDoc.data();
       const maxCapacity = amenityData.maxPeople || 1;
 
-      console.log(`   🏠 Amenity capacity: ${existingBookings.length}/${maxCapacity}`);
 
       // Step 6c: Decide - Confirmed or Waitlist?
       const newBookingRef = doc(collection(db, 'bookings'));
@@ -283,7 +278,6 @@ export async function POST(request: NextRequest) {
           confirmedAt: serverTimestamp(),
         });
 
-        console.log(`   ✅ CONFIRMED: Booking created (${existingBookings.length + 1}/${maxCapacity})`);
 
         return {
           status: 'confirmed',
@@ -307,7 +301,6 @@ export async function POST(request: NextRequest) {
           priorityScore: eligibility.priorityScore, // Store priority score for future sorting
         });
 
-        console.log(`   📋 WAITLIST: Added to position ${waitlistPosition} (Priority: ${eligibility.priorityScore})`);
 
         return {
           status: 'waitlist',
@@ -323,7 +316,6 @@ export async function POST(request: NextRequest) {
     });
 
     // 6. Send email notification based on status
-    console.log(`   📧 Preparing email notification (${result.status})...`);
 
     const communityTimeZone = resolveTimeZone(settingsData?.community?.timezone || settingsData?.timezone);
     const communityTimeFormat = settingsData?.community?.timeFormat === '24h' || settingsData?.timeFormat === '24h' ? '24h' : '12h';
@@ -399,10 +391,9 @@ export async function POST(request: NextRequest) {
           );
           if (recommendations.length > 0) {
             recommendationsHTML = generateRecommendationsHTML(recommendations);
-            console.log(`   💡 ${recommendations.length} recommendations added`);
           }
         } catch (err) {
-          console.log('   ⚠️ Recommendations fetch failed (non-critical)');
+                    // TODO: add error handling
         }
         
         // Generate enhanced sections (only recommendations)
@@ -432,14 +423,11 @@ export async function POST(request: NextRequest) {
       });
       
       if (emailResult.success) {
-        console.log(`   ✅ ${result.status === 'confirmed' ? 'Confirmation' : 'Waitlist'} email sent successfully`);
-        console.log(`   📨 Message ID: ${emailResult.messageId}`);
       } else {
-        console.error(`   ⚠️ Email failed:`, emailResult.error);
         // Don't throw - booking is still successful
       }
     } catch (emailError: any) {
-      console.error('   ⚠️ Email send failed (non-critical):', emailError.message);
+            // TODO: add error handling
       // Don't throw - booking succeeded, email is just a notification
     }
 
@@ -453,13 +441,8 @@ export async function POST(request: NextRequest) {
           bookingStartTime: bookingStart,
         });
 
-        if (awardedBadges.length > 0) {
-          console.log(
-            `   🏆 Awarded badges: ${awardedBadges.map((badge: any) => badge.name).join(', ')}`
-          );
-        }
       } catch (badgeError: any) {
-        console.error('   ⚠️ Badge evaluation failed (non-critical):', badgeError.message);
+                // TODO: add error handling
       }
     }
 
@@ -487,7 +470,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Booking error:', error);
     
     // Handle specific transaction errors
     if (error.message?.includes('not found')) {

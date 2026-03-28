@@ -19,7 +19,6 @@ export function RealtimeNotificationListener() {
   useEffect(() => {
     if (!session?.user?.email || !session?.user?.communityId) return;
 
-    console.log('🔔 Setting up real-time notification listener...');
 
     try {
       // Listen for notifications for this user
@@ -34,7 +33,6 @@ export function RealtimeNotificationListener() {
       unsubscribeRef.current = onSnapshot(
         notificationsQuery,
         (snapshot) => {
-          console.log(`📬 Received ${snapshot.size} unread notifications`);
 
           snapshot.docChanges().forEach((change) => {
             if (change.type === 'added') {
@@ -51,11 +49,9 @@ export function RealtimeNotificationListener() {
               const now = new Date();
               const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
               if (createdAt && createdAt < fiveMinutesAgo) {
-                console.log('⏭️ Skipping old notification:', notificationId);
                 return;
               }
 
-              console.log('✨ New notification:', data.type, data.title);
 
               // Show notification in UI
               addNotification({
@@ -77,20 +73,17 @@ export function RealtimeNotificationListener() {
           });
         },
         (error) => {
-          console.error('❌ Notification listener error:', error);
         }
       );
 
-      console.log('✅ Real-time notification listener active');
 
     } catch (error) {
-      console.error('❌ Failed to set up notification listener:', error);
+            // TODO: add error handling
     }
 
     // Cleanup on unmount
     return () => {
       if (unsubscribeRef.current) {
-        console.log('🔇 Cleaning up notification listener');
         unsubscribeRef.current();
       }
     };
@@ -134,9 +127,8 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
       read: true,
       readAt: Timestamp.now(),
     });
-    console.log('✅ Notification marked as read:', notificationId);
   } catch (error) {
-    console.error('❌ Failed to mark notification as read:', error);
+        // TODO: add error handling
   }
 }
 
@@ -147,8 +139,7 @@ export async function deleteNotification(notificationId: string): Promise<void> 
   try {
     const notificationRef = doc(db, 'notifications', notificationId);
     await deleteDoc(notificationRef);
-    console.log('🗑️ Notification deleted:', notificationId);
   } catch (error) {
-    console.error('❌ Failed to delete notification:', error);
+        // TODO: add error handling
   }
 }

@@ -62,7 +62,6 @@ export async function POST(request: NextRequest) {
       // Keep deletion history for audit trail
     });
 
-    console.log('✅ User restored:', email);
 
     return NextResponse.json({
       success: true,

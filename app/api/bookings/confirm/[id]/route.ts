@@ -38,15 +38,11 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
     const body = await req.json().catch(() => ({}));
     const action = body.action || 'confirm'; // Default to confirm for backward compatibility
 
-    console.log('\n🎯 === BOOKING CONFIRMATION REQUEST ===');
-    console.log(`   📋 Booking ID: ${params.id}`);
-    console.log(`   🎬 Action: ${action}`);
 
     // 1. AUTHENTICATION CHECK
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
-      console.log('   ❌ Unauthorized: No session');
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in.' },
         { status: 401 }
@@ -56,11 +52,8 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
     const userEmail = session.user.email;
     const communityId = (session.user as any).communityId;
 
-    console.log(`   👤 User: ${userEmail}`);
-    console.log(`   🏘️  Community: ${communityId}`);
 
     if (!communityId) {
-      console.log('   ❌ No community ID found');
       return NextResponse.json(
         { error: 'Community ID not found. Please contact support.' },
         { status: 400 }
@@ -72,7 +65,6 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
     const bookingDoc = await bookingRef.get();
 
     if (!bookingDoc.exists) {
-      console.log('   ❌ Booking not found');
       return NextResponse.json(
         { error: 'Booking not found.' },
         { status: 404 }
@@ -84,7 +76,6 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
     // 3. SECURITY CHECKS
     // 3a: Community match (multi-tenancy security)
     if (bookingData?.communityId !== communityId) {
-      console.log('   🚨 Security: Community mismatch');
       return NextResponse.json(
         { error: 'Access denied. This booking belongs to a different community.' },
         { status: 403 }
@@ -93,7 +84,6 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
 
     // 3b: User ownership (can only confirm own bookings)
     if (bookingData?.userEmail !== userEmail) {
-      console.log('   🚨 Security: User mismatch');
       return NextResponse.json(
         { error: 'Access denied. You can only confirm your own bookings.' },
         { status: 403 }
@@ -102,7 +92,6 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
 
     // 4. STATUS VALIDATION
     if (bookingData?.status === 'confirmed') {
-      console.log('   ✅ Already confirmed (idempotent response)');
       return NextResponse.json({
         success: true,
         message: 'Booking already confirmed.',
@@ -117,7 +106,6 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
     }
 
     if (bookingData?.status !== 'pending_confirmation') {
-      console.log(`   ❌ Invalid status: ${bookingData?.status}`);
       return NextResponse.json(
         { 
           error: `Cannot confirm booking with status: ${bookingData?.status}. Only pending confirmations can be confirmed.` 
@@ -131,7 +119,6 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
     const confirmationDeadline = bookingData.confirmationDeadline as Timestamp;
 
     if (!promotedAt || !confirmationDeadline) {
-      console.log('   ⚠️  Missing deadline data');
       return NextResponse.json(
         { error: 'Booking promotion data is incomplete.' },
         { status: 400 }
@@ -140,7 +127,6 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
 
     const now = Timestamp.now();
     if (now.toMillis() > confirmationDeadline.toMillis()) {
-      console.log('   ⏰ Confirmation deadline passed');
       
       // Update status to 'expired' and promote next person
       await bookingRef.update({
@@ -161,7 +147,6 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
 
     // 6. HANDLE ACTION: CONFIRM OR DECLINE
     if (action === 'decline') {
-      console.log('   ❌ User declined booking');
       
       // Update booking status to declined
       await bookingRef.update({
@@ -170,10 +155,8 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
         updatedAt: now,
       });
 
-      console.log('   ✅ Booking marked as declined');
 
       // 7. PROMOTE NEXT WAITLIST PERSON
-      console.log('   🚀 Triggering next waitlist promotion...');
       
       try {
         const promotionResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/bookings/promote-waitlist`, {
@@ -188,10 +171,9 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
 
         if (promotionResponse.ok) {
           const promotionData = await promotionResponse.json();
-          console.log('   ✅ Next person promoted:', promotionData);
         }
       } catch (promoError) {
-        console.error('   ⚠️  Promotion error:', promoError);
+                // TODO: add error handling
       }
 
       return NextResponse.json({
@@ -203,7 +185,6 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
     }
 
     // 6. CONFIRM BOOKING (Default action)
-    console.log('   ✅ Confirming booking...');
 
     await bookingRef.update({
       status: 'confirmed',
@@ -211,11 +192,9 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
       updatedAt: now,
     });
 
-    console.log('   ✅ Booking confirmed successfully!');
 
     // 7. SEND CONFIRMATION EMAIL WITH QR CODE
     try {
-      console.log('   📧 Sending confirmation email...');
 
       const settingsSnapshot = await adminDb.collection('settings').doc(communityId).get();
       const settingsData = settingsSnapshot.data() as any;
@@ -238,12 +217,10 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
       });
 
       if (!emailResponse.ok) {
-        console.log('   ⚠️  Email send failed (non-critical)');
       } else {
-        console.log('   ✅ Confirmation email sent!');
       }
     } catch (emailError) {
-      console.log('   ⚠️  Email error (non-critical):', emailError);
+            // TODO: add error handling
     }
 
     // 8. SUCCESS RESPONSE
@@ -262,7 +239,6 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
     });
 
   } catch (error) {
-    console.error('❌ Booking confirmation error:', error);
     return NextResponse.json(
       { 
         error: 'Failed to confirm booking. Please try again.',
@@ -334,7 +310,6 @@ export async function GET(req: NextRequest, props: RouteParams): Promise<NextRes
     });
 
   } catch (error) {
-    console.error('❌ Get booking status error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch booking status' },
       { status: 500 }

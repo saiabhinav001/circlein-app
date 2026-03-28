@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
   const testEmail = searchParams.get('email') || process.env.EMAIL_USER || 'circleinapp1@gmail.com';
 
   try {
-    console.log('🧪 Testing email configuration...');
     console.log('EMAIL_USER:', process.env.EMAIL_USER);
     console.log('EMAIL_PASSWORD exists:', !!process.env.EMAIL_PASSWORD);
     console.log('EMAIL_PASSWORD length:', process.env.EMAIL_PASSWORD?.length || 0);
@@ -88,7 +87,6 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('❌ Test email error:', error);
     return NextResponse.json({
       success: false,
       error: error.message,

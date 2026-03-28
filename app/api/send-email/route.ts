@@ -12,7 +12,6 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log('📧 Email request:', { to, senderRole, senderName, senderEmail, communityName });
 
     // Create transporter using Gmail SMTP
     const transporter = nodemailer.createTransport({
@@ -83,7 +82,6 @@ export async function POST(request: NextRequest) {
       replyTo: senderEmail || process.env.EMAIL_USER,
     });
 
-    console.log('✅ Email sent successfully:', info.messageId);
 
     return NextResponse.json({
       success: true,
@@ -92,7 +90,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Email sending error:', error);
     
     return NextResponse.json(
       { 

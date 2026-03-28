@@ -8,7 +8,6 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    console.log('🚀 Database initialization requested...');
     
     // Initialize main collections
     const initResult = await initializeDatabase();

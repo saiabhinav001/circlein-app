@@ -28,9 +28,6 @@ export function useReminderMonitor() {
 
         if (response.ok) {
           const data = await response.json();
-          if (data.remindersSent > 0) {
-            console.log(`✅ Sent ${data.remindersSent} reminder(s)`);
-          }
         }
       } catch (error) {
         console.error('Failed to check reminders:', error);

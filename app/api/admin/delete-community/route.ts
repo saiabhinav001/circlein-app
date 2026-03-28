@@ -66,9 +66,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🗑️ === CASCADE DELETE COMMUNITY ===');
-    console.log('📍 Community ID:', targetCommunityId);
-    console.log('👤 Admin Email:', targetAdminEmail);
 
     const deletionSummary = {
       community: false,
@@ -91,7 +88,6 @@ export async function POST(request: NextRequest) {
         await doc.ref.delete();
         deletionSummary.adminInvites++;
       }
-      console.log(`✅ Deleted ${deletionSummary.adminInvites} admin invites`);
     } catch (e) {
       console.error('Error deleting admin invites:', e);
     }
@@ -106,7 +102,6 @@ export async function POST(request: NextRequest) {
         await doc.ref.delete();
         deletionSummary.accessCodes++;
       }
-      console.log(`✅ Deleted ${deletionSummary.accessCodes} access codes`);
     } catch (e) {
       console.error('Error deleting access codes:', e);
     }
@@ -149,7 +144,6 @@ export async function POST(request: NextRequest) {
           deletionSummary.users++;
         }
       }
-      console.log(`✅ Deleted ${deletionSummary.adminUsers} admins and ${deletionSummary.users} users`);
     } catch (e) {
       console.error('Error deleting users:', e);
     }
@@ -164,7 +158,6 @@ export async function POST(request: NextRequest) {
         await doc.ref.delete();
         deletionSummary.amenities++;
       }
-      console.log(`✅ Deleted ${deletionSummary.amenities} amenities`);
     } catch (e) {
       console.error('Error deleting amenities:', e);
     }
@@ -205,14 +198,11 @@ export async function POST(request: NextRequest) {
       if (communityDoc.exists) {
         await communityRef.delete();
         deletionSummary.community = true;
-        console.log(`✅ Deleted community document: ${targetCommunityId}`);
       }
     } catch (e) {
       console.error('Error deleting community:', e);
     }
 
-    console.log('🗑️ === CASCADE DELETE COMPLETE ===');
-    console.log('📊 Summary:', deletionSummary);
 
     return NextResponse.json({
       success: true,
@@ -221,7 +211,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('💥 Error in delete-community API:', error);
     return NextResponse.json(
       { 
         error: 'Failed to delete community',

@@ -21,21 +21,16 @@ const db = admin.firestore();
 
 async function clearAllBookings() {
   try {
-    console.log('\n⚠️  WARNING: This will delete ALL bookings from the database!');
-    console.log('📊 Counting bookings...\n');
 
     // First, count all bookings
     const bookingsSnapshot = await db.collection('bookings').get();
     const totalBookings = bookingsSnapshot.size;
 
-    console.log(`📋 Found ${totalBookings} booking(s) to delete.\n`);
 
     if (totalBookings === 0) {
-      console.log('✅ No bookings to delete. Database is already clear.');
       process.exit(0);
     }
 
-    console.log('🗑️  Starting deletion process...\n');
 
     // Delete in batches to avoid memory issues
     const batchSize = 500;
@@ -60,18 +55,12 @@ async function clearAllBookings() {
       await batch.commit();
       deletedCount += snapshot.size;
 
-      console.log(`✓ Deleted ${deletedCount}/${totalBookings} bookings...`);
     }
 
-    console.log('\n✅ SUCCESS! All bookings have been deleted.');
-    console.log(`📊 Total deleted: ${deletedCount} booking(s)`);
-    console.log('📁 Collection "bookings" structure is preserved.');
-    console.log('\n🔄 Your booking statistics will update in real-time automatically!');
 
     process.exit(0);
 
   } catch (error) {
-    console.error('\n❌ Error deleting bookings:', error);
     console.error('Make sure you have set FIREBASE_PRIVATE_KEY and FIREBASE_CLIENT_EMAIL in your .env file');
     process.exit(1);
   }

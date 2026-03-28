@@ -69,9 +69,6 @@ export async function POST(request: NextRequest) {
     const userData = userDoc.data();
     const communityId = userData.communityId;
     
-    console.log('🗑️ === DELETING USER ===');
-    console.log('📧 Email:', email);
-    console.log('🏘️ Community:', communityId);
     
     // ============================================
     // STEP 1: FIND AND DELETE ALL ACCESS CODES
@@ -80,7 +77,6 @@ export async function POST(request: NextRequest) {
     
     // Get ALL access codes from database
     const allCodesSnapshot = await getDocs(collection(db, 'accessCodes'));
-    console.log('📊 Total access codes in DB:', allCodesSnapshot.size);
     
     // Find and delete EVERY code associated with this user
     for (const codeDoc of allCodesSnapshot.docs) {
@@ -89,7 +85,6 @@ export async function POST(request: NextRequest) {
       
       // Check if this code was used by this user
       if (codeData.usedBy === email) {
-        console.log('🎯 Found code used by user:', codeId, '- DELETING');
         await deleteDoc(doc(db, 'accessCodes', codeId));
         deletedCodes.push(codeId);
       }
@@ -100,13 +95,11 @@ export async function POST(request: NextRequest) {
       const codeRef = doc(db, 'accessCodes', userData.accessCodeUsed);
       const codeExists = await getDoc(codeRef);
       if (codeExists.exists()) {
-        console.log('🎯 Found code in user record:', userData.accessCodeUsed, '- DELETING');
         await deleteDoc(codeRef);
         deletedCodes.push(userData.accessCodeUsed);
       }
     }
     
-    console.log('✅ Total codes DELETED:', deletedCodes.length, deletedCodes);
     
     // ============================================
     // STEP 2: GENERATE NEW ACCESS CODE
@@ -138,7 +131,6 @@ export async function POST(request: NextRequest) {
           replacedCode: deletedCodes[0] || null,
           reason: reason || 'User deleted',
         });
-        console.log('✅ NEW access code created:', newAccessCode);
       }
     }
     
@@ -146,9 +138,7 @@ export async function POST(request: NextRequest) {
     // STEP 3: DELETE USER DOCUMENT
     // ============================================
     await deleteDoc(userRef);
-    console.log('✅ User document DELETED:', email);
     
-    console.log('🗑️ === DELETION COMPLETE ===');
 
     return NextResponse.json({
       success: true,
@@ -160,7 +150,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('💥 Delete error:', error);
     return NextResponse.json({
       error: 'Failed to delete user',
       details: error instanceof Error ? error.message : 'Unknown'
