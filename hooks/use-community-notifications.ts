@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useNotifications } from '@/components/notifications/NotificationSystem';
+import { useNotifications } from '@/components/notifications/notification-system';
 import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -22,7 +22,7 @@ export interface CommunityNotificationData {
   duration?: number;
 }
 
-export function useCommunityNotifications() {
+export function useResidentNotifications() {
   const { data: session } = useSession();
   const { addNotification } = useNotifications();
   const timeZone = useCommunityTimeZone();

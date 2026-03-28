@@ -32,12 +32,12 @@ import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/useToast';
-import { useCommunityNotifications } from '@/hooks/useCommunityNotifications';
+import { useToast } from '@/hooks/use-toast';
+import { useResidentNotifications } from '@/hooks/use-community-notifications';
 import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone, formatTimeInTimeZone } from '@/lib/timezone';
 import Link from 'next/link';
-import { CalendarErrorBoundary } from '@/components/calendar/CalendarErrorBoundary';
+import { CalendarErrorBoundary } from '@/components/calendar/calendar-error-boundary';
 
 // ============================================================================
 // UTILITIES
@@ -194,7 +194,7 @@ const slideUp = {
 export default function CalendarPage() {
   const { data: session } = useSession();
   const { toast } = useToast();
-  const { sendCommunityNotification } = useCommunityNotifications();
+  const { sendCommunityNotification } = useResidentNotifications();
   const timeZone = useCommunityTimeZone();
   const timeFormat = useCommunityTimeFormat();
   
@@ -972,7 +972,7 @@ export default function CalendarPage() {
             </div>
           </div>
         </div>
-      </CalendarErrorBoundary>
+        </CalendarErrorBoundary>
     );
   }
 

@@ -54,13 +54,13 @@ export interface AdvancedBooking {
 export type BookingFilter = 'current' | 'all' | 'past';
 export type BookingStatus = 'all' | 'confirmed' | 'cancelled' | 'completed' | 'in-progress' | 'expired';
 
-interface UseAdvancedBookingsProps {
+interface EnhancedBookingsProps {
   userEmail?: string;
   communityId?: string;
   isAdmin?: boolean;
 }
 
-export function useAdvancedBookings({ userEmail, communityId, isAdmin = false }: UseAdvancedBookingsProps = {}) {
+export function useEnhancedBookings({ userEmail, communityId, isAdmin = false }: EnhancedBookingsProps = {}) {
   const { data: session } = useSession();
   const [bookings, setBookings] = useState<AdvancedBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -570,4 +570,4 @@ Indexes take 5-15 minutes to build. App will work normally once complete.
   };
 }
 
-export default useAdvancedBookings;
+export default useEnhancedBookings;

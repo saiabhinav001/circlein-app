@@ -10,7 +10,7 @@ interface ErrorBoundaryState {
   error?: Error;
 }
 
-export default class BookingErrorBoundary extends React.Component<
+export default class BookingsErrorBoundary extends React.Component<
   React.PropsWithChildren<{}>,
   ErrorBoundaryState
 > {

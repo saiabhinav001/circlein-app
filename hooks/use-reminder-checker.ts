@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react';
  * Hook to periodically check for booking reminders
  * Runs every 15 minutes when user is active on the app
  */
-export function useReminderChecker() {
+export function useReminderMonitor() {
   const lastCheckRef = useRef<number>(0);
 
   useEffect(() => {

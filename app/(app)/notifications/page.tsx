@@ -15,7 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useNotifications } from '@/components/notifications/NotificationSystem';
+import { useNotifications } from '@/components/notifications/notification-system';
 import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateTimeInTimeZone } from '@/lib/timezone';
 import { cn } from '@/lib/utils';

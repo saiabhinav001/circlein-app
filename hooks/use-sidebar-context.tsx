@@ -11,4 +11,4 @@ export const SidebarContext = createContext<{
   setIsCollapsed: () => {},
 });
 
-export const useSidebarContext = () => useContext(SidebarContext);
+export const useNavSidebarContext = () => useContext(SidebarContext);

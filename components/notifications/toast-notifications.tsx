@@ -4,7 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Users, Star, Shield, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useNotifications, Notification } from './NotificationSystem';
+import { useNotifications, Notification } from './notification-system';
 
 // ============================================================================
 // ENTERPRISE-GRADE TOAST NOTIFICATIONS

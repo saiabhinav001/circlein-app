@@ -5,14 +5,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { indexValidator } from '@/lib/index-validator';
 import { useSession } from 'next-auth/react';
 
-interface IndexSetupGuideProps {
+interface SetupIndexGuideProps {
   show?: boolean;
   communityId?: string;
   userEmail?: string;
   onDismiss?: () => void;
 }
 
-export function IndexSetupGuide({ show = true, communityId, userEmail, onDismiss }: IndexSetupGuideProps) {
+export function SetupIndexGuide({ show = true, communityId, userEmail, onDismiss }: SetupIndexGuideProps) {
   const { data: session } = useSession();
   const [isValidating, setIsValidating] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
@@ -163,4 +163,4 @@ export function IndexSetupGuide({ show = true, communityId, userEmail, onDismiss
   );
 }
 
-export default IndexSetupGuide;
+export default SetupIndexGuide;

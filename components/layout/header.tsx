@@ -1,6 +1,6 @@
 'use client';
 
-import { NotificationBell, NotificationPanel } from '@/components/notifications/NotificationSystem';
+import { NotificationBell, NotificationPanel } from '@/components/notifications/notification-system';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { Search, User, Settings, UserCircle, LogOut, ChevronRight, Sparkles, X } from 'lucide-react';

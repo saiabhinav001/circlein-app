@@ -530,7 +530,7 @@ export default function LandingPage() {
     }
   }, [session, status, router]);
 
-  // Show loading state while checking authentication - return null to let LoadingScreen handle it
+  // Show loading state while checking authentication - return null so the global loader handles it
   if (status === 'loading') {
     return null;
   }

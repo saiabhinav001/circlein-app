@@ -2,9 +2,9 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import FlatNumberSetup from '@/components/auth/FlatNumberSetup';
+import UnitNumberSetup from '@/components/auth/flat-number-setup';
 
-export default function FlatNumberSetupPage() {
+export default function UnitNumberSetupPage() {
   const { data: session } = useSession();
   const router = useRouter();
 
@@ -13,7 +13,7 @@ export default function FlatNumberSetupPage() {
   };
 
   return (
-    <FlatNumberSetup 
+    <UnitNumberSetup 
       userEmail={session?.user?.email || ''} 
       onComplete={handleComplete} 
     />

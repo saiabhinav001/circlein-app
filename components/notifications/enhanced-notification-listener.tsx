@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, createContext, useContext } from 'react';
 import { useSession } from 'next-auth/react';
-import { useNotifications } from './NotificationSystem';
+import { useNotifications } from './notification-system';
 import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone } from '@/lib/timezone';
 

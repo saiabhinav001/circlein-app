@@ -24,12 +24,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { useUserCreation } from '@/hooks/useUserCreation';
+import { useSessionProvision } from '@/hooks/use-user-creation';
 import { useSearch } from '@/components/providers/search-provider';
 import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone, formatTimeInTimeZone } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
-import { SmartSuggestionsCard } from '@/components/booking/SmartSuggestionsCard';
+import { SmartSuggestionsCard } from '@/components/booking/smart-suggestions-card';
 
 interface Amenity {
   id: string;
@@ -343,7 +343,7 @@ export default function Dashboard() {
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [upcomingBookings, setUpcomingBookings] = useState<UpcomingBooking[]>([]);
   const [loading, setLoading] = useState(true);
-  const { session, status } = useUserCreation();
+  const { session, status } = useSessionProvision();
   const router = useRouter();
   const { searchQuery, setSearchQuery } = useSearch();
   const timeZone = useCommunityTimeZone();

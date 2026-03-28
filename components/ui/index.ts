@@ -1,6 +1,6 @@
-export { CircleInLogo, type CircleInLogoProps } from './CircleInLogo';
-export { default as Dock } from './Dock';
-export type { DockItem } from './Dock';
+export { CircleInLogo, type CircleInLogoProps } from './circlein-logo';
+export { default as Dock } from './dock';
+export type { DockItem } from './dock';
 export { 
   FadeIn, 
   FadeInMobile, 

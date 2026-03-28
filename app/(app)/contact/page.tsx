@@ -20,7 +20,7 @@ import {
 import { useSession } from 'next-auth/react'
 import ReactMarkdown from 'react-markdown'
 import { toast } from 'sonner'
-import { useNotifications } from '@/components/notifications/NotificationSystem'
+import { useNotifications } from '@/components/notifications/notification-system'
 
 // ============================================================================
 // TYPES

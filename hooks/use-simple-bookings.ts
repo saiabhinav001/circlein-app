@@ -37,7 +37,7 @@ export interface SimpleBooking {
 const amenityCache = new Map<string, { name: string; type: string; timestamp: number }>();
 const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes cache for production
 
-export function useSimpleBookings() {
+export function useBookingsData() {
   const { data: session } = useSession();
   const [bookings, setBookings] = useState<SimpleBooking[]>([]);
   const [loading, setLoading] = useState(true);

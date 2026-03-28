@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 /**
- * UserValidationGuard Component
+ * AccountValidationGuard Component
  * 
  * This component runs on every protected page and validates that the user
  * still exists in the database. If the user has been deleted by an admin,
@@ -14,7 +14,7 @@ import { toast } from 'sonner';
  * 
  * Usage: Add to the root layout or any protected pages
  */
-export function UserValidationGuard() {
+export function AccountValidationGuard() {
   const { data: session, status } = useSession();
   const router = useRouter();
 

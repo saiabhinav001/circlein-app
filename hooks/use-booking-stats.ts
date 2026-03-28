@@ -35,7 +35,7 @@ interface BookingStats {
   topUsers?: { email: string; count: number }[];
 }
 
-export function useBookingStats() {
+export function useBookingMetrics() {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === 'admin';
   
@@ -345,4 +345,4 @@ export function useBookingStats() {
   return stats;
 }
 
-export default useBookingStats;
+export default useBookingMetrics;

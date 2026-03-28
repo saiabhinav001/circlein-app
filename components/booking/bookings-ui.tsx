@@ -37,7 +37,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { useSimpleBookings, SimpleBooking } from '@/hooks/useSimpleBookings';
+import { useBookingsData, SimpleBooking } from '@/hooks/use-simple-bookings';
 import { toast } from 'sonner';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -45,11 +45,11 @@ import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/provi
 import { formatDateInTimeZone, formatDateTimeInTimeZone, formatTimeInTimeZone } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 
-interface Fortune500BookingsUIProps {
+interface BookingsUIProps {
   isAdmin?: boolean;
 }
 
-export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIProps) {
+export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
   const { data: session } = useSession();
   const timeZone = useCommunityTimeZone();
   const timeFormat = useCommunityTimeFormat();
@@ -66,7 +66,7 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
   const [showQRDetails, setShowQRDetails] = useState(true);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const { bookings, loading, error, refetch } = useSimpleBookings();
+  const { bookings, loading, error, refetch } = useBookingsData();
 
   const formatDateKey = useCallback((date: Date) => {
     const parts = new Intl.DateTimeFormat('en-US', {
@@ -1367,4 +1367,4 @@ export function Fortune500BookingsUI({ isAdmin = false }: Fortune500BookingsUIPr
   );
 }
 
-export default Fortune500BookingsUI;
+export default BookingsUI;

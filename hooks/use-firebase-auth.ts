@@ -10,7 +10,7 @@ import { auth } from '@/lib/firebase';
  * It ensures that when a user is authenticated via NextAuth,
  * they are also authenticated with Firebase so Firestore rules work correctly
  */
-export function useFirebaseAuth() {
+export function useFirebaseUserAuth() {
   const { data: session, status } = useSession();
 
   useEffect(() => {

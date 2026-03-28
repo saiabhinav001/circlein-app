@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import AmenityGalleryReviews from '@/components/amenity/AmenityGalleryReviews';
+import AmenityGalleryReviews from '@/components/amenity/amenity-gallery-reviews';
 import { enqueueOfflineBooking, flushOfflineBookings } from '@/lib/offline-booking-queue';
 import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone } from '@/lib/timezone';

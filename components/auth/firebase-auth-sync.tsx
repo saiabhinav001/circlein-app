@@ -1,6 +1,6 @@
 'use client';
 
-import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
+import { useFirebaseUserAuth } from '@/hooks/use-firebase-auth';
 import { ReactNode } from 'react';
 
 /**
@@ -8,6 +8,6 @@ import { ReactNode } from 'react';
  * This ensures Firestore rules work correctly by authenticating users with Firebase
  */
 export function FirebaseAuthSync({ children }: { children: ReactNode }) {
-  useFirebaseAuth();
+  useFirebaseUserAuth();
   return <>{children}</>;
 }

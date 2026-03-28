@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 
-export function useUserCreation() {
+export function useSessionProvision() {
   const { data: session, status } = useSession();
   const requestSentRef = useRef(false);
 

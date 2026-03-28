@@ -13,12 +13,12 @@ import { CircleInLogo } from '@/components/ui';
 import { useTheme } from '@/components/providers/theme-provider';
 import Link from 'next/link';
 
-interface FlatNumberSetupProps {
+interface UnitNumberSetupProps {
   userEmail?: string;
   onComplete?: () => void;
 }
 
-export default function FlatNumberSetup({ userEmail, onComplete }: FlatNumberSetupProps) {
+export default function UnitNumberSetup({ userEmail, onComplete }: UnitNumberSetupProps) {
   const { data: session, update } = useSession();
   const [flatNumber, setFlatNumber] = useState('');
   const [loading, setLoading] = useState(false);

@@ -39,8 +39,8 @@ import { cn } from '@/lib/utils';
 import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { notifyDateSpecificBlock } from '@/lib/notification-helpers';
-import { useNotifications } from '@/components/notifications/NotificationSystem';
-import { useCommunityNotifications } from '@/hooks/useCommunityNotifications';
+import { useNotifications } from '@/components/notifications/notification-system';
+import { useResidentNotifications } from '@/hooks/use-community-notifications';
 import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone } from '@/lib/timezone';
 
@@ -104,7 +104,7 @@ export default function AdminPanel() {
   const router = useRouter();
   const timeZone = useCommunityTimeZone();
   const { addNotification } = useNotifications();
-  const { sendAmenityBlockNotification, sendAmenityUnblockNotification, sendInstantBlockNotification } = useCommunityNotifications();
+  const { sendAmenityBlockNotification, sendAmenityUnblockNotification, sendInstantBlockNotification } = useResidentNotifications();
   
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);

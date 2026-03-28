@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic';
 
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import AdminBookingsLayout from '@/components/booking/AdminBookingsLayout';
-import BookingErrorBoundary from '@/components/booking/BookingErrorBoundary';
+import BookingsAdminLayout from '@/components/booking/admin-bookings-layout';
+import BookingsErrorBoundary from '@/components/booking/booking-error-boundary';
 import { Calendar } from 'lucide-react';
 
 export default function MyBookings() {
@@ -70,8 +70,8 @@ export default function MyBookings() {
   }
 
   return (
-    <BookingErrorBoundary>
-      <AdminBookingsLayout />
-    </BookingErrorBoundary>
+    <BookingsErrorBoundary>
+      <BookingsAdminLayout />
+    </BookingsErrorBoundary>
   );
 }

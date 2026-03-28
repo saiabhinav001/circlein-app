@@ -32,7 +32,7 @@ import {
   Trophy
 } from 'lucide-react';
 import Link from 'next/link';
-import useBookingStats from '@/hooks/useBookingStats';
+import useBookingMetrics from '@/hooks/use-booking-stats';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { db } from '@/lib/firebase';
@@ -73,7 +73,7 @@ const duration = 0.2;
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
-  const bookingStats = useBookingStats();
+  const bookingStats = useBookingMetrics();
   
   const isAdmin = (session?.user as any)?.role === 'admin';
   const userFlatNumber = (session?.user as any)?.flatNumber;

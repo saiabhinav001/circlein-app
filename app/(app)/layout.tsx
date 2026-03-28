@@ -5,16 +5,16 @@ import { usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { SearchProvider } from '@/components/providers/search-provider';
-import { EnhancedNotificationListener } from '@/components/notifications/EnhancedNotificationListener';
-import { RealtimeNotificationListener } from '@/components/notifications/RealtimeNotificationListener';
-import { FirebaseAuthSync } from '@/components/firebase-auth-sync';
-import { UserValidationGuard } from '@/components/auth/UserValidationGuard';
-import { ChatWidget } from '@/components/chatbot/ChatWidget';
-import { GlobalCommandPalette } from '@/components/layout/GlobalCommandPalette';
-import { ProductTour } from '@/components/onboarding/ProductTour';
+import { EnhancedNotificationListener } from '@/components/notifications/enhanced-notification-listener';
+import { RealtimeNotificationListener } from '@/components/notifications/realtime-notification-listener';
+import { FirebaseAuthSync } from '@/components/auth/firebase-auth-sync';
+import { AccountValidationGuard } from '@/components/auth/user-validation-guard';
+import { ChatWidget } from '@/components/chatbot/chat-widget';
+import { GlobalCommandPalette } from '@/components/layout/global-command-palette';
+import { ProductTour } from '@/components/onboarding/product-tour';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useReminderChecker } from '@/hooks/useReminderChecker';
-import { SidebarContext } from '@/hooks/useSidebarContext';
+import { useReminderMonitor } from '@/hooks/use-reminder-checker';
+import { SidebarContext } from '@/hooks/use-sidebar-context';
 
 export default function AppLayout({
   children,
@@ -27,7 +27,7 @@ export default function AppLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   // Check for booking reminders every 15 minutes
-  useReminderChecker();
+  useReminderMonitor();
 
   useEffect(() => {
     if (mainContentRef.current) {
@@ -41,7 +41,7 @@ export default function AppLayout({
       <SearchProvider>
         <SidebarContext.Provider value={{ isCollapsed: sidebarCollapsed, setIsCollapsed: setSidebarCollapsed }}>
           {/* User Validation Guard - Forces logout if user is deleted */}
-          <UserValidationGuard />
+          <AccountValidationGuard />
           
           <div className="flex h-[100dvh] min-h-screen bg-background overflow-hidden overflow-x-hidden">
             {/* Desktop Sidebar */}

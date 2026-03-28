@@ -5,15 +5,15 @@ import { GeistMono } from 'geist/font/mono';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { CommunityBrandingProvider } from '@/components/providers/community-branding-provider';
-import { NotificationProvider } from '@/components/notifications/NotificationSystem';
-import PushNotificationsManager from '@/components/notifications/PushNotificationsManager';
-import { ToastContainer } from '@/components/notifications/ToastNotifications';
-import AppInstallBanner from '@/components/pwa/AppInstallBanner';
-import DevServiceWorkerCleanup from '@/components/pwa/DevServiceWorkerCleanup';
+import { NotificationProvider } from '@/components/notifications/notification-system';
+import PushNotificationsManager from '@/components/notifications/push-notifications-manager';
+import { ToastContainer } from '@/components/notifications/toast-notifications';
+import AppInstallBanner from '@/components/pwa/app-install-banner';
+import DevServiceWorkerCleanup from '@/components/pwa/dev-service-worker-cleanup';
 import { Toaster } from '@/components/ui/sonner';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import LoadingScreen from '@/components/LoadingScreen';
+import AppLoaderScreen from '@/components/loading-screen';
 
 // Import debug functions to make them available in browser console
 import '@/lib/debug-notifications';
@@ -142,7 +142,7 @@ export default function RootLayout({
       </head>
       <body className={`${GeistSans.variable} ${GeistMono.variable} ${GeistSans.className}`}>
         <DevServiceWorkerCleanup />
-        <LoadingScreen />
+        <AppLoaderScreen />
         <AuthProvider>
           <ThemeProvider defaultTheme="dark" storageKey="circlein-theme">
             <CommunityBrandingProvider>

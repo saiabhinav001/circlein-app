@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { collection, query, where, onSnapshot, orderBy, Timestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useNotifications } from './NotificationSystem';
+import { useNotifications } from './notification-system';
 
 /**
  * Real-time notification listener using Firestore notifications collection
