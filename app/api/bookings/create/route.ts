@@ -13,6 +13,8 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebase-admin';
+import { checkBookingConflict } from '@/lib/booking-conflict-resolver';
 import { formatDateInTimeZone, resolveTimeZone } from '@/lib/timezone';
 
 /**
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
     } = bookingData;
 
     // 3. Validation
-    if (!amenityId || !startTime || !endTime) {
+    if (!amenityId || !startTime || !endTime || !selectedDate || !selectedSlot) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -109,6 +111,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'You cannot book a slot that has already started' },
         { status: 400 }
+      );
+    }
+
+    const [slotStartTime, slotEndTime] = selectedSlot.split('-').map((value) => value.trim());
+    if (!slotStartTime || !slotEndTime) {
+      return NextResponse.json(
+        { error: 'Invalid selected slot format' },
+        { status: 400 }
+      );
+    }
+
+    const conflictCheck = await checkBookingConflict(adminDb, {
+      amenityId,
+      selectedDate,
+      startTime: slotStartTime,
+      endTime: slotEndTime,
+    });
+
+    if (conflictCheck.hasConflict) {
+      return NextResponse.json(
+        {
+          error: 'This time slot is already booked.',
+          conflict: true,
+          nextAvailableSlot: conflictCheck.nextAvailableSlot,
+        },
+        { status: 409 }
       );
     }
 

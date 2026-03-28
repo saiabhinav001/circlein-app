@@ -515,6 +515,35 @@ export default function AmenityBooking() {
 
       const data = await response.json();
 
+      if (response.status === 409) {
+        toast.error('This time slot is already booked.');
+
+        const suggestedSlot = data?.nextAvailableSlot as
+          | { selectedDate?: string; startTime?: string; endTime?: string }
+          | null
+          | undefined;
+
+        if (
+          suggestedSlot?.selectedDate &&
+          suggestedSlot?.startTime &&
+          suggestedSlot?.endTime
+        ) {
+          const suggestedDate = new Date(suggestedSlot.selectedDate);
+          if (!Number.isNaN(suggestedDate.getTime())) {
+            setSelectedDate(suggestedDate);
+          }
+
+          const nextSlotLabel = `${suggestedSlot.startTime}-${suggestedSlot.endTime}`;
+          setSelectedSlot(nextSlotLabel);
+
+          toast.info(
+            `Next available slot: ${suggestedSlot.selectedDate.slice(0, 10)} from ${suggestedSlot.startTime} to ${suggestedSlot.endTime}`
+          );
+        }
+
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create booking');
       }
