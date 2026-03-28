@@ -402,7 +402,7 @@ export default function Dashboard() {
       { href: '/calendar', label: 'Open Calendar', icon: Calendar },
       { href: '/bookings', label: 'Manage Bookings', icon: Clock },
       { href: '/community', label: 'Community Updates', icon: Users },
-      { href: '/settings/resident', label: 'Account Settings', icon: Settings },
+      { href: '/settings', label: 'Account Settings', icon: Settings },
     ];
   }, [isAdmin]);
 

@@ -100,12 +100,12 @@ See `DEPLOYMENT_GUIDE.md` for detailed Vercel deployment instructions.
 
 ## � Documentation
 
-- **[GitHub & Vercel Setup](./GITHUB_AND_VERCEL_SETUP.md)** - Complete deployment guide
-- **[Deployment Guide](./DEPLOYMENT_GUIDE.md)** - Vercel deployment steps
-- **[Firebase Setup](./FIREBASE_SETUP.md)** - Firebase configuration
-- **[Database Schema](./FIRESTORE_DATABASE_SCHEMA.md)** - Firestore structure
-- **[Database Setup](./DATABASE_SETUP_GUIDE.md)** - Initial data setup
-- **[Multi-Tenancy](./MULTI_TENANCY_IMPLEMENTATION.md)** - Community isolation
+- **[GitHub & Vercel Setup](./docs/github-vercel-setup.md)** - Complete deployment guide
+- **[Deployment Guide](./docs/deployment.md)** - Vercel deployment steps
+- **[Firebase Setup](./docs/firebase-setup.md)** - Firebase configuration
+- **[Database Schema](./docs/firestore-schema.md)** - Firestore structure
+- **[Database Setup](./docs/database-setup.md)** - Initial data setup
+- **[Multi-Tenancy](./docs/multi-tenancy.md)** - Community isolation
 
 ## 🛠️ Tech Stack
 

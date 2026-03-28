@@ -153,7 +153,7 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ id:
               : 'Your account deletion request has been approved by your community admin.'
             : 'Your account deletion request was reviewed and rejected. Contact your admin for details.',
         read: false,
-        actionUrl: '/settings/resident',
+        actionUrl: '/settings',
         source: 'account_deletion_review',
         createdAt: nowIso,
         metadata: {

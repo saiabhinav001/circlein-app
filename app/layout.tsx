@@ -15,9 +15,6 @@ import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import AppLoaderScreen from '@/components/loading-screen';
 
-// Import debug functions to make them available in browser console
-import '@/lib/debug-notifications';
-
 export const metadata: Metadata = {
   title: {
     default: 'CircleIn - Enterprise Community Management Platform | Smart Booking & AI-Powered Solutions',
