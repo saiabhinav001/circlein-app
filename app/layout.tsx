@@ -2,27 +2,21 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
-import dynamic from 'next/dynamic';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { CommunityBrandingProvider } from '@/components/providers/community-branding-provider';
 import { NotificationProvider } from '@/components/notifications/NotificationSystem';
 import PushNotificationsManager from '@/components/notifications/PushNotificationsManager';
+import { ToastContainer } from '@/components/notifications/ToastNotifications';
 import AppInstallBanner from '@/components/pwa/AppInstallBanner';
 import DevServiceWorkerCleanup from '@/components/pwa/DevServiceWorkerCleanup';
+import { Toaster } from '@/components/ui/sonner';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import LoadingScreen from '@/components/LoadingScreen';
 
 // Import debug functions to make them available in browser console
 import '@/lib/debug-notifications';
-
-// Dynamic imports for better performance
-const ToastContainer = dynamic(
-  () => import('@/components/notifications/ToastNotifications').then(mod => ({ default: mod.ToastContainer })),
-  { ssr: false, loading: () => null }
-);
-const Toaster = dynamic(() => import('@/components/ui/sonner').then(mod => ({ default: mod.Toaster })), { ssr: false, loading: () => null });
 
 export const metadata: Metadata = {
   title: {

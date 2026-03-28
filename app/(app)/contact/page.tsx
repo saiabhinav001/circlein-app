@@ -363,8 +363,8 @@ interface AIChatPanelProps {
   messages: ChatMessage[]
   inputValue: string
   isTyping: boolean
-  messagesEndRef: React.RefObject<HTMLDivElement>
-  chatInputRef: React.RefObject<HTMLTextAreaElement>
+  messagesEndRef: React.RefObject<HTMLDivElement | null>
+  chatInputRef: React.RefObject<HTMLTextAreaElement | null>
   onInputChange: (value: string) => void
   onSendMessage: (content: string) => void
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void

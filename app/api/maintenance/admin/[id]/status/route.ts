@@ -13,10 +13,8 @@ const STATUS_LABELS: Record<string, string> = {
   closed: 'Closed',
 };
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-): Promise<NextResponse> {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const session = await getServerSession(authOptions);
 

@@ -1,36 +1,19 @@
-const withPWA = require('next-pwa')({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development' && process.env.ENABLE_PWA_DEV !== 'true',
-  fallbacks: {
-    document: '/offline',
-  },
-});
+// @ts-nocheck
+import withSerwist from '@serwist/next'
+import type { NextConfig } from 'next'
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const withSerwistConfig = withSerwist({
+  swSrc: 'app/sw.ts',
+  swDest: 'public/sw.js',
+  disable: process.env.NODE_ENV !== 'production',
+})
+
+const nextConfig: NextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
-  experimental: {
-    esmExternals: false,
-  },
-
+  turbopack: {},
   typescript: {
     ignoreBuildErrors: false,
   },
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
-
-  webpack: (config) => {
-    config.infrastructureLogging = {
-      level: 'error',
-    };
-    config.stats = 'errors-only';
-    return config;
-  },
-
   headers: async () => [
     {
       source: '/:path*',
@@ -66,7 +49,6 @@ const nextConfig = {
       ],
     },
   ],
-
   images: {
     remotePatterns: [
       {
@@ -86,7 +68,6 @@ const nextConfig = {
     minimumCacheTTL: 60,
     unoptimized: false,
   },
-
   compiler: {
     removeConsole:
       process.env.NODE_ENV === 'production'
@@ -95,9 +76,8 @@ const nextConfig = {
           }
         : false,
   },
-
   poweredByHeader: false,
   compress: true,
-};
+}
 
-module.exports = withPWA(nextConfig);
+export default withSerwistConfig(nextConfig)

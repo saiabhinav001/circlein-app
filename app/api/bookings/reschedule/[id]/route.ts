@@ -15,10 +15,8 @@ import {
 import { emailTemplates, sendEmail } from '@/lib/email-service';
 import { formatDateTimeInTimeZone, formatTimeInTimeZone, resolveTimeZone } from '@/lib/timezone';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const session = await getServerSession(authOptions);
 

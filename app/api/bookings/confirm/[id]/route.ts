@@ -26,15 +26,13 @@ import { formatDateTimeInTimeZone, resolveTimeZone } from '@/lib/timezone';
  */
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: RouteParams
-): Promise<NextResponse> {
+export async function POST(req: NextRequest, props: RouteParams): Promise<NextResponse> {
+  const params = await props.params;
   try {
     // Parse action from request body (confirm or decline)
     const body = await req.json().catch(() => ({}));
@@ -279,10 +277,8 @@ export async function POST(
  * GET endpoint - Check booking confirmation status
  * Useful for showing current status before user confirms
  */
-export async function GET(
-  req: NextRequest,
-  { params }: RouteParams
-): Promise<NextResponse> {
+export async function GET(req: NextRequest, props: RouteParams): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const session = await getServerSession(authOptions);
 

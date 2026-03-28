@@ -13,19 +13,37 @@ export default function DevServiceWorkerCleanup() {
     }
 
     let cancelled = false;
+    const SERWIST_SW_PATH = '/sw.js';
 
     const cleanup = async () => {
       try {
         const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(registrations.map((registration) => registration.unregister()));
+        const serwistRegistrations = registrations.filter((registration) => {
+          const scriptUrls = [
+            registration.active?.scriptURL,
+            registration.waiting?.scriptURL,
+            registration.installing?.scriptURL,
+          ].filter(Boolean) as string[];
+
+          return scriptUrls.some((url) => url.includes(SERWIST_SW_PATH));
+        });
+
+        await Promise.all(serwistRegistrations.map((registration) => registration.unregister()));
 
         if ('caches' in window) {
           const keys = await caches.keys();
-          await Promise.all(keys.map((key) => caches.delete(key)));
+          const pwaCacheKeys = keys.filter(
+            (key) =>
+              key.includes('serwist') ||
+              key.includes('workbox') ||
+              key.includes('precache') ||
+              key.includes('runtime')
+          );
+          await Promise.all(pwaCacheKeys.map((key) => caches.delete(key)));
         }
 
         if (!cancelled) {
-          console.info('Dev mode: cleared stale service workers and caches for reliable HMR.');
+          console.info('Dev mode: cleared Serwist service worker and related PWA caches for reliable HMR.');
         }
       } catch (error) {
         console.warn('Dev mode cleanup failed:', error);

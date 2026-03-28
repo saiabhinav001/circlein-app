@@ -39,10 +39,8 @@ interface BookingData {
   [key: string]: any;
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const bookingId = params.id;
     console.log('\n🚫 === BOOKING CANCELLATION ===');

@@ -57,10 +57,8 @@ async function validateAdminAndAnnouncement(id: string): Promise<ValidationResul
   };
 }
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-): Promise<NextResponse> {
+export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const validated = await validateAdminAndAnnouncement(params.id);
     if (!validated.ok) {
@@ -92,10 +90,8 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } }
-): Promise<NextResponse> {
+export async function DELETE(_request: Request, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const validated = await validateAdminAndAnnouncement(params.id);
     if (!validated.ok) {
