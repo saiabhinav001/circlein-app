@@ -892,9 +892,10 @@ export default function AmenityBooking() {
                           "ring-2 ring-slate-900 dark:ring-white ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-800"
                         ),
                         day_today: cn(
-                          "bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100",
-                          "font-bold",
-                          "ring-2 ring-blue-400 dark:ring-blue-500"
+                          "rounded-full font-bold",
+                          "text-blue-400",
+                          "ring-2 ring-blue-500 ring-offset-1 ring-offset-slate-900",
+                          "[&[aria-selected=true]]:bg-blue-600 [&[aria-selected=true]]:text-white [&[aria-selected=true]]:ring-blue-300"
                         ),
                         day_outside: "text-slate-300 dark:text-slate-700 opacity-30 hover:opacity-30 cursor-default",
                         day_disabled: "text-slate-300 dark:text-slate-700 opacity-20 cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent",
