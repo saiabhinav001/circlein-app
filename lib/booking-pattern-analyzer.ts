@@ -112,10 +112,28 @@ export function analyzeBookingPatterns(
   bookingHistory: BookingRecord[],
   today: Date
 ): BookingSuggestion[] {
+  if (!Array.isArray(bookingHistory) || bookingHistory.length === 0) {
+    return [];
+  }
+
   const normalizedToday = new Date(today);
   normalizedToday.setHours(0, 0, 0, 0);
 
   const relevantBookings = bookingHistory.filter((record) => {
+    if (!record || typeof record !== 'object') {
+      return false;
+    }
+
+    const amenityId = typeof record.amenityId === 'string' ? record.amenityId.trim() : '';
+    const amenityName = typeof record.amenityName === 'string' ? record.amenityName.trim() : '';
+    const date = typeof record.date === 'string' ? record.date.trim() : '';
+    const startTime = typeof record.startTime === 'string' ? record.startTime.trim() : '';
+    const endTime = typeof record.endTime === 'string' ? record.endTime.trim() : '';
+
+    if (!amenityId || !amenityName || !date || !startTime || !endTime) {
+      return false;
+    }
+
     const status = String(record.status || '').toLowerCase();
     return status === 'confirmed' || status === 'completed';
   });

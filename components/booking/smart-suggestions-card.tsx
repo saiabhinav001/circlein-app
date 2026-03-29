@@ -26,8 +26,17 @@ export function SmartSuggestionsCard() {
     let isMounted = true;
 
     const fetchSuggestions = async () => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+
       try {
-        const response = await fetch('/api/bookings/suggestions', { cache: 'no-store' });
+        const response = await fetch('/api/bookings/suggestions', {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeout);
+
         if (!response.ok) {
           throw new Error('Failed to fetch suggestions');
         }
@@ -37,11 +46,19 @@ export function SmartSuggestionsCard() {
         if (isMounted) {
           setSuggestions(Array.isArray(data?.suggestions) ? data.suggestions : []);
         }
-      } catch {
+      } catch (err) {
+        clearTimeout(timeout);
+
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Smart suggestions fetch failed:', err);
+        }
+
         if (isMounted) {
           setSuggestions([]);
         }
       } finally {
+        clearTimeout(timeout);
+
         if (isMounted) {
           setLoading(false);
         }

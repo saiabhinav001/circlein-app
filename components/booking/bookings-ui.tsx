@@ -44,6 +44,7 @@ import { db } from '@/lib/firebase';
 import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone, formatDateTimeInTimeZone, formatTimeInTimeZone } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
+import { SmartSuggestionsCard } from './smart-suggestions-card';
 
 interface BookingsUIProps {
   isAdmin?: boolean;
@@ -824,6 +825,8 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
             Export CSV
           </Button>
         </div>
+
+        {!isAdmin && <SmartSuggestionsCard />}
 
         {/* Bookings List */}
         <AnimatePresence mode="wait">

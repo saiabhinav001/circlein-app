@@ -115,10 +115,8 @@ export async function GET(): Promise<NextResponse> {
     const suggestions = analyzeBookingPatterns(bookingHistory, new Date());
 
     return NextResponse.json({ suggestions });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: 'Failed to load booking suggestions', details: error?.message || 'Unknown error' },
-      { status: 500 }
-    );
+  } catch {
+    // Suggestions are an enhancement; degrade gracefully when upstream data is unavailable.
+    return NextResponse.json({ suggestions: [] });
   }
 }
