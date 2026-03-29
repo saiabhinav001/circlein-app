@@ -178,4 +178,23 @@ These files are actively used and should NOT be modified:
 
 ---
 
+## Master Audit (Phase 0 Next.js 16): Section 5 Routing
+
+### Verification Snapshot
+
+| Check | Status | Evidence |
+|-------|--------|----------|
+| Protected routes redirect when unauthenticated (`/dashboard`, `/bookings`, `/calendar`, `/community`, `/maintenance`, `/notifications`, `/settings`, `/admin`, `/admin/*`) | PASS | Local HTTP checks returned `307` with `location: /api/auth/signin?callbackUrl=...` |
+| Public/auth routes remain accessible (`/auth/signin`, `/auth/signup`, `/contact`) | PASS | Local HTTP checks returned `200` |
+| Proxy protection coverage | PASS | `proxy.ts` matcher and guards include app routes, amenity routes, and admin wildcard routes |
+| Explicit page route `/admin/residents` | WARN | No dedicated page file currently exists; protection redirect works via admin wildcard guard |
+| Signed-in manual route smoke for all required pages | WARN | Not fully automated in this environment without an authenticated browser session |
+
+### Section 5 Verdict
+
+- FAIL: none detected in code-level and unauthenticated runtime checks.
+- WARN: signed-in manual navigation pass is still recommended for final sign-off.
+
+---
+
 *Audit completed successfully. Repository is production-ready.*
