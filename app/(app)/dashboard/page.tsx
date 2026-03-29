@@ -453,17 +453,6 @@ export default function Dashboard() {
     }
   }, [session]);
 
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && session?.user?.communityId) {
-        fetchDashboardData();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [session]);
-
   const fetchDashboardData = async () => {
     setLoading(true);
     await Promise.all([fetchAmenities(), fetchUpcomingBookings()]);
