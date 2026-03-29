@@ -8,15 +8,28 @@ CircleIn uses a multi-tenant data model so each community operates with isolated
 ## Key Features
 ### 🏠 Resident Features
 - Amenity booking flows with create, confirm, cancel, recurring, reschedule, and waitlist promotion APIs.
+- Offline booking queue with automatic sync when connection returns.
+- Smart booking suggestions based on booking history patterns.
+- Keyboard shortcuts for quick navigation: B (Bookings), D (Dashboard), S (Settings), and ? (Shortcuts help).
 - Resident settings for profile, privacy, appearance, password updates, and account deletion request flow.
-- Community engagement endpoints for announcements and polls.
-- Personal data export endpoint for account data portability.
+- Download My Data (GDPR) export as JSON from resident account flows.
+- Community engagement features for announcements and polls.
 
 ### 🔧 Admin Features
 - Admin dashboard modules for analytics, users, onboarding, waitlist management, maintenance, and settings.
+- Amenity health score (0-100) with color-coded indicators.
+- Weekly usage reports auto-generated and surfaced in analytics flows.
+- Smart maintenance auto-routing with keyword-based category detection.
+- Announcement pinning to keep critical updates at the top.
+- Announcement file attachments (images/PDFs).
+- Community polls with creation, voting, and expiry handling.
 - Community-level settings sync for branding, booking rules, and operational preferences.
 - Admin lifecycle routes for resident deletion and restoration operations.
 - Admin utilities for amenity migration, reset, and onboarding setup.
+
+### 📊 Analytics
+- Amenity usage heatmap with a 7x24 occupancy view.
+- Community dashboard widgets: weather, quick booking, pulse, and streak.
 
 ### 📱 PWA and Offline
 - Web app manifest served by app/manifest.ts.
@@ -28,12 +41,20 @@ CircleIn uses a multi-tenant data model so each community operates with isolated
 - Push notification token registration endpoint.
 - Email notification endpoints for operational and booking workflows.
 
+### ⚙️ Automation (Cron)
+- Auto-archival of old bookings to reduce active Firestore read load.
+- Booking reminders with 24h, 1h, and 15min tiers plus .ics calendar attachments.
+- Auto-conflict detection with next-available slot suggestions on clashes.
+
 ### 🔒 Security and Auth
 - Session-based auth with NextAuth route handlers.
 - Route protection and role checks in proxy.ts.
+- Firestore-based serverless-safe rate limiting for sensitive API routes.
+- Zod input validation on critical API routes.
+- Content Security Policy and security headers configured in next.config.ts.
+- API auth audit coverage: 84 API handlers reviewed; 2 intentionally public, 22 hardened with session auth, and 2 protected with CRON_SECRET.
 - Firebase Auth integration for authentication and token-based verification.
 - Firestore and Storage security rule files in repository root.
-- Security headers configured in next.config.ts.
 
 ## Tech Stack
 ![Next.js](https://img.shields.io/badge/Next.js-16.2.1-black?logo=next.js)
@@ -134,9 +155,13 @@ npm run lint     # Run ESLint
 circlein-app/
 ├── app/
 │   ├── (app)/                     # Authenticated app routes
-│   ├── (marketing)/               # Marketing/public routes
 │   ├── admin/                     # Admin-facing page routes
-│   ├── api/                       # 78 route handlers
+│   ├── api/                       # 84 API route handlers
+│   │   ├── amenities/health-scores/
+│   │   ├── amenities/[id]/heatmap/
+│   │   ├── bookings/suggestions/
+│   │   ├── cron/archive-bookings/
+│   │   └── cron/weekly-report/
 │   ├── auth/                      # Authentication pages
 │   ├── auth-status/
 │   ├── bookings/
@@ -146,12 +171,17 @@ circlein-app/
 │   ├── manifest.ts                # PWA manifest route
 │   └── sw.ts                      # Serwist service worker source
 ├── components/
+│   ├── analytics/usage-heatmap.tsx
 │   ├── amenity/
 │   ├── auth/
 │   ├── booking/
 │   ├── calendar/
 │   ├── chatbot/
+│   ├── community/polls-widget.tsx
+│   ├── dashboard/widgets/
 │   ├── layout/
+│   │   ├── keyboard-shortcuts-help.tsx
+│   │   └── offline-indicator.tsx
 │   ├── notifications/
 │   ├── onboarding/
 │   ├── providers/
@@ -170,14 +200,22 @@ circlein-app/
 │   ├── use-toast.ts
 │   └── use-user-creation.ts
 ├── lib/                           # Shared utilities and services
+│   ├── amenity-health-score.ts
 │   ├── auth.ts
+│   ├── booking-conflict-resolver.ts
+│   ├── booking-pattern-analyzer.ts
 │   ├── booking-service.ts
 │   ├── firebase.ts
+│   ├── ics-generator.ts
+│   ├── maintenance-auto-router.ts
 │   ├── offline-booking-queue.ts
+│   ├── rate-limiter.ts
+│   ├── report-generator.ts
+│   ├── schemas.ts
 │   ├── timezone.ts
 │   ├── validation.ts              # Shared validation (Phase 3)
 │   └── weather-service.ts
-├── docs/                          # Project documentation (see docs/ for full list)
+├── docs/                          # Project documentation hub (moved from root in cleanup phase)
 ├── public/                        # Static assets and generated service worker output
 ├── proxy.ts                       # Next.js 16 proxy layer for route protection
 ├── next.config.ts                 # Next.js configuration (TypeScript)
@@ -188,7 +226,7 @@ circlein-app/
 ```
 
 ## API Reference
-CircleIn currently includes 78 API route handlers under app/api.
+CircleIn currently includes 84 API route handlers under app/api.
 
 #### Access Codes (/api/access-codes/)
 | Method | Path | Description |
@@ -424,6 +462,8 @@ Recommended platform: Vercel with native Next.js support.
 
 Set all required environment variables in the Vercel project dashboard before deploying.
 
+Cron note: Vercel Hobby allows only one cron execution per day. The full cron automation set in this repo may require Vercel Pro for production cadence.
+
 See [docs/deployment.md](docs/deployment.md) for the full deployment guide.
 
 ## Configuration
@@ -439,8 +479,11 @@ The app uses Serwist via @serwist/next for PWA support. The service worker sourc
 ## Security
 - Route protection is enforced in proxy.ts with role checks for admin routes and guarded access to authenticated sections.
 - Session enforcement uses NextAuth callbacks and token-aware authorization logic.
+- Firestore-based rate limiting is enabled for sensitive API flows.
+- Zod validation guards critical API payloads.
+- API auth audit coverage: 84 API handlers reviewed; 2 intentionally public, 22 hardened with session auth, and 2 protected with CRON_SECRET.
+- Security headers are configured in next.config.ts, including CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and Permissions-Policy.
 - Firebase Authentication is used for sign-in and token-based identity checks.
-- Security headers are configured in next.config.ts, including HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and Permissions-Policy.
 - Firestore access control is enforced by firestore.rules.
 - Firebase Storage access control is enforced by storage.rules.
 
