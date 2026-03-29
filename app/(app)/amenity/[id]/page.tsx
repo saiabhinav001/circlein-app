@@ -804,47 +804,37 @@ export default function AmenityBooking() {
                       className="mx-auto w-full"
                       classNames={{
                         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full",
-                        month: "space-y-4 w-full",
+                        month: "space-y-4 w-full relative",
                         caption: "flex justify-center pt-1 relative items-center h-10",
                         caption_label: "text-sm font-semibold text-slate-900 dark:text-slate-100",
-                        nav: "space-x-1 flex items-center",
+                        nav: "absolute inset-x-0 top-0 h-10 px-1 flex items-center justify-between",
                         nav_button: cn(
-                          "h-8 w-8 sm:h-9 sm:w-9 inline-flex items-center justify-center rounded-lg",
-                          "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700",
-                          "hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600",
+                          "h-8 w-8 p-0 inline-flex items-center justify-center rounded-lg",
+                          "text-slate-500 dark:text-slate-400",
+                          "hover:bg-slate-100 dark:hover:bg-slate-800",
                           "active:scale-95 transition-all duration-100",
-                          "text-slate-600 dark:text-slate-400"
+                          "disabled:opacity-40"
                         ),
-                        nav_button_previous: "absolute left-0",
-                        nav_button_next: "absolute right-0",
+                        nav_button_previous: "",
+                        nav_button_next: "",
                         table: "w-full border-collapse",
                         head_row: "flex w-full justify-between",
-                        head_cell: "text-slate-500 dark:text-slate-400 rounded-md w-9 sm:w-11 font-medium text-[0.7rem] sm:text-xs uppercase tracking-wide text-center",
+                        head_cell: "text-slate-500 dark:text-slate-400 rounded-md w-9 font-medium text-xs text-center",
                         row: "flex w-full mt-1 justify-between",
                         cell: cn(
                           "relative p-0 sm:p-0.5 text-center text-sm focus-within:relative focus-within:z-20",
                           "[&:has([aria-selected])]:bg-transparent"
                         ),
                         day: cn(
-                          "h-9 w-9 sm:h-11 sm:w-11 p-0 font-medium rounded-lg",
+                          "h-9 w-9 p-0 font-normal rounded-lg text-sm",
                           "transition-all duration-100",
                           "text-slate-900 dark:text-slate-100",
-                          "hover:bg-slate-200/70 dark:hover:bg-slate-700/70",
-                          "active:scale-95",
-                          "focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-800"
+                          "hover:bg-slate-100 dark:hover:bg-slate-800",
+                          "focus:outline-none",
+                          
                         ),
-                        day_selected: cn(
-                          "bg-slate-900 dark:bg-white text-white dark:text-slate-900",
-                          "hover:bg-slate-900 dark:hover:bg-white hover:text-white dark:hover:text-slate-900",
-                          "shadow-md",
-                          "font-bold",
-                          "ring-2 ring-slate-900 dark:ring-white ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-800"
-                        ),
-                        day_today: cn(
-                          "bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100",
-                          "font-bold",
-                          "ring-2 ring-blue-400 dark:ring-blue-500"
-                        ),
+                        day_selected: "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-900 dark:hover:bg-white",
+                        day_today: "ring-1 ring-slate-300 dark:ring-slate-700",
                         day_outside: "text-slate-300 dark:text-slate-700 opacity-30 hover:opacity-30 cursor-default",
                         day_disabled: "text-slate-300 dark:text-slate-700 opacity-20 cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent",
                         day_hidden: "invisible",
