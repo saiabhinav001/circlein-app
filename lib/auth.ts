@@ -148,7 +148,7 @@ export const authOptions: NextAuthOptions = {
           }
 
           // User doesn't exist - this is a new signup, require access code
-          console.log('🆕 New user signup, checking access code');
+          console.log('New user signup, checking access code');
           
           if (!credentials?.accessCode) {
             throw new Error('Access code required for new users');
@@ -250,7 +250,7 @@ export const authOptions: NextAuthOptions = {
               lastLogin: serverTimestamp(),
             }, { merge: true });
           } else {
-            console.log('🆕 Creating new resident user or adding password:', user.email);
+            console.log('Creating new resident user or adding password:', user.email);
             
             // Check if user exists (might be Google user adding password)
             const existingUserDoc = await getDoc(doc(db, 'users', user.email));

@@ -160,7 +160,7 @@ export default function AmenityBooking() {
           setAmenity(fetchedAmenity);
           
           // DEBUG: Log what we received
-          console.log('🔥 FIRESTORE UPDATE RECEIVED:', {
+          console.log('Firestore update received:', {
             slotDuration: fetchedAmenity.booking?.slotDuration,
             hasWeekendSlots: !!fetchedAmenity.weekendSlots,
             hasWeekdaySlots: !!fetchedAmenity.weekdaySlots,
@@ -178,17 +178,17 @@ export default function AmenityBooking() {
           
           // Generate slots based on current data
           if (isWeekend && fetchedAmenity.weekendSlots && fetchedAmenity.weekendSlots.length > 0) {
-            console.log('✅ Using weekendSlots');
+            console.log('Using weekendSlots');
 
             setTimeSlots(fetchedAmenity.weekendSlots);
           } else if (!isWeekend && fetchedAmenity.weekdaySlots && fetchedAmenity.weekdaySlots.length > 0) {
-            console.log('✅ Using weekdaySlots');
+            console.log('Using weekdaySlots');
             setTimeSlots(fetchedAmenity.weekdaySlots);
           } else if (fetchedAmenity.timeSlots && fetchedAmenity.timeSlots.length > 0) {
-            console.log('✅ Using timeSlots (custom) - THIS OVERRIDES GENERATION!');
+            console.log('Using timeSlots (custom) - this overrides generation');
             setTimeSlots(fetchedAmenity.timeSlots);
           } else if (isWeekend && fetchedAmenity.weekendHours && fetchedAmenity.booking?.slotDuration) {
-            console.log('✅ Generating from weekendHours with duration:', fetchedAmenity.booking.slotDuration);
+            console.log('Generating from weekendHours with duration:', fetchedAmenity.booking.slotDuration);
             const slots = generateTimeSlots(
               fetchedAmenity.weekendHours.start,
               fetchedAmenity.weekendHours.end,
@@ -197,7 +197,7 @@ export default function AmenityBooking() {
             console.log('Generated weekend slots:', slots);
             setTimeSlots(slots);
           } else if (!isWeekend && fetchedAmenity.weekdayHours && fetchedAmenity.booking?.slotDuration) {
-            console.log('✅ Generating from weekdayHours with duration:', fetchedAmenity.booking.slotDuration);
+            console.log('Generating from weekdayHours with duration:', fetchedAmenity.booking.slotDuration);
             const slots = generateTimeSlots(
               fetchedAmenity.weekdayHours.start,
               fetchedAmenity.weekdayHours.end,
@@ -206,7 +206,7 @@ export default function AmenityBooking() {
             console.log('Generated weekday slots:', slots);
             setTimeSlots(slots);
           } else if (fetchedAmenity.operatingHours && fetchedAmenity.booking?.slotDuration) {
-            console.log('✅ Generating from operatingHours with duration:', fetchedAmenity.booking.slotDuration, fetchedAmenity.operatingHours);
+            console.log('Generating from operatingHours with duration:', fetchedAmenity.booking.slotDuration, fetchedAmenity.operatingHours);
             const slots = generateTimeSlots(
               fetchedAmenity.operatingHours.start,
               fetchedAmenity.operatingHours.end,
@@ -215,7 +215,7 @@ export default function AmenityBooking() {
             console.log('Generated operating hours slots:', slots);
             setTimeSlots(slots);
           } else {
-            console.log('⚠️ USING DEFAULT_TIME_SLOTS - No booking config found!');
+            console.log('Using default time slots - no booking config found');
             setTimeSlots(DEFAULT_TIME_SLOTS);
           }
           
@@ -262,20 +262,20 @@ export default function AmenityBooking() {
     
     // Priority 1: Check for weekday/weekend specific slots
     if (isWeekend && amenityData.weekendSlots && amenityData.weekendSlots.length > 0) {
-      console.log('📅 [Real-time] Using weekend slots:', amenityData.weekendSlots);
+      console.log('[Real-time] Using weekend slots:', amenityData.weekendSlots);
       setTimeSlots(amenityData.weekendSlots);
       return;
     }
     
     if (!isWeekend && amenityData.weekdaySlots && amenityData.weekdaySlots.length > 0) {
-      console.log('📅 [Real-time] Using weekday slots:', amenityData.weekdaySlots);
+      console.log('[Real-time] Using weekday slots:', amenityData.weekdaySlots);
       setTimeSlots(amenityData.weekdaySlots);
       return;
     }
     
     // Priority 2: Check for custom time slots (applies to all days)
     if (amenityData.timeSlots && Array.isArray(amenityData.timeSlots) && amenityData.timeSlots.length > 0) {
-      console.log('📅 [Real-time] Using custom time slots:', amenityData.timeSlots);
+      console.log('[Real-time] Using custom time slots:', amenityData.timeSlots);
       setTimeSlots(amenityData.timeSlots);
       return;
     }
@@ -287,7 +287,7 @@ export default function AmenityBooking() {
         amenityData.weekendHours.end,
         amenityData.booking.slotDuration
       );
-      console.log('📅 [Real-time] Generated weekend slots:', generatedSlots);
+      console.log('[Real-time] Generated weekend slots:', generatedSlots);
       setTimeSlots(generatedSlots);
       return;
     }
@@ -298,7 +298,7 @@ export default function AmenityBooking() {
         amenityData.weekdayHours.end,
         amenityData.booking.slotDuration
       );
-      console.log('📅 [Real-time] Generated weekday slots:', generatedSlots);
+      console.log('[Real-time] Generated weekday slots:', generatedSlots);
       setTimeSlots(generatedSlots);
       return;
     }
@@ -310,13 +310,13 @@ export default function AmenityBooking() {
         amenityData.operatingHours.end,
         amenityData.booking.slotDuration
       );
-      console.log('📅 [Real-time] Generated time slots:', generatedSlots);
+      console.log('[Real-time] Generated time slots:', generatedSlots);
       setTimeSlots(generatedSlots);
       return;
     }
     
     // Priority 5: Use default time slots
-    console.log('📅 [Real-time] Using default time slots');
+    console.log('[Real-time] Using default time slots');
     setTimeSlots(DEFAULT_TIME_SLOTS);
   };
 
@@ -434,7 +434,7 @@ export default function AmenityBooking() {
   const handleBooking = async () => {
     // Prevent double booking
     if (isBooking) {
-      console.log('🚫 Booking already in progress, ignoring duplicate request');
+      console.log('Booking already in progress, ignoring duplicate request');
       return;
     }
 
@@ -499,8 +499,8 @@ export default function AmenityBooking() {
     bookingEnd.setHours(endHours, endMinutes, 0, 0);
 
     try {
-      // 🔥 NEW: Use transaction-based API
-      console.log('🚀 Creating booking via transaction API...');
+      // Use transaction-based API
+      console.log('Creating booking via transaction API...');
       
       const response = await fetch('/api/bookings/create', {
         method: 'POST',
@@ -524,7 +524,7 @@ export default function AmenityBooking() {
         throw new Error(data.error || 'Failed to create booking');
       }
 
-      console.log('✅ Booking created:', data);
+      console.log('Booking created:', data);
 
       // Show appropriate success message based on status
       if (data.status === 'confirmed') {
@@ -547,7 +547,7 @@ export default function AmenityBooking() {
       fetchBookings(amenity.id, selectedDate);
       
     } catch (error) {
-      console.error('❌ Booking error:', error);
+      console.error('Booking error:', error);
 
       const offlinePayload = {
         amenityId: amenity.id,
