@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CloudSun, Droplets, Umbrella, Wind } from 'lucide-react';
 import { getWeatherEmoji, getWeatherForecast } from '@/lib/weather-service';
+import { Button } from '@/components/ui/button';
 
 interface WeatherData {
   temp: number;
@@ -56,7 +57,9 @@ function getCurrentCoordinates(): Promise<{ latitude: number; longitude: number 
 export function WeatherWidget() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [locationLabel, setLocationLabel] = useState(FALLBACK_LOCATION.label);
+  const [refreshToken, setRefreshToken] = useState(0);
 
   const accentClass = useMemo(() => getConditionAccent(weather?.condition || ''), [weather?.condition]);
 
@@ -65,6 +68,7 @@ export function WeatherWidget() {
 
     const loadWeather = async () => {
       setLoading(true);
+      setLoadError(false);
 
       try {
         const coords = await getCurrentCoordinates();
@@ -90,10 +94,12 @@ export function WeatherWidget() {
           });
         } else {
           setWeather(null);
+          setLoadError(true);
         }
       } catch (error) {
         if (isMounted) {
           setWeather(null);
+          setLoadError(true);
         }
       } finally {
         if (isMounted) {
@@ -107,7 +113,7 @@ export function WeatherWidget() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [refreshToken]);
 
   return (
     <section className="group relative overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-emerald-50/50 to-sky-50/50 p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-100/70 dark:border-slate-700/70 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800/90 dark:hover:border-emerald-700/60 dark:hover:shadow-emerald-950/40">
@@ -152,7 +158,19 @@ export function WeatherWidget() {
             </div>
           </>
         ) : (
-          <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Weather data is unavailable right now.</p>
+          <div className="mt-4 space-y-2">
+            <p className="text-sm text-slate-500 dark:text-slate-400">Weather data is unavailable right now.</p>
+            {loadError && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRefreshToken((prev) => prev + 1)}
+                className="h-8 rounded-lg border-slate-300/80 bg-white/70 px-3 text-xs text-slate-700 hover:bg-white hover:text-slate-900 dark:border-slate-700/70 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Retry weather
+              </Button>
+            )}
+          </div>
         )}
       </div>
     </section>

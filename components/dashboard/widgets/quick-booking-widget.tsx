@@ -15,6 +15,8 @@ interface BookingSummary {
 export function QuickBookingWidget() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [refreshToken, setRefreshToken] = useState(0);
   const [bookings, setBookings] = useState<BookingSummary[]>([]);
 
   useEffect(() => {
@@ -22,6 +24,7 @@ export function QuickBookingWidget() {
 
     const loadBookings = async () => {
       setLoading(true);
+      setLoadError(false);
 
       try {
         const response = await fetch('/api/bookings?limit=8', { cache: 'no-store' });
@@ -46,6 +49,7 @@ export function QuickBookingWidget() {
       } catch (error) {
         if (isMounted) {
           setBookings([]);
+          setLoadError(true);
         }
       } finally {
         if (isMounted) {
@@ -59,7 +63,7 @@ export function QuickBookingWidget() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [refreshToken]);
 
   const latestAmenityBooking = useMemo(() => {
     return bookings.find((booking) => booking.amenityId && booking.amenityName);
@@ -97,6 +101,21 @@ export function QuickBookingWidget() {
           <div className="h-4 w-24 rounded bg-slate-200 dark:bg-slate-700" />
           <div className="h-8 w-16 rounded bg-slate-200 dark:bg-slate-700" />
         </div>
+      ) : loadError ? (
+        <>
+          <div className="mt-4 flex items-center gap-2 text-slate-500 dark:text-slate-400">
+            <CalendarDays className="h-4 w-4" />
+            <p className="text-sm">Unable to load recent bookings</p>
+          </div>
+          <Button
+            type="button"
+            onClick={() => setRefreshToken((prev) => prev + 1)}
+            variant="outline"
+            className="mt-4 h-10 w-full rounded-xl border-slate-300/80 bg-white/70 text-slate-700 hover:bg-white hover:text-slate-900 dark:border-slate-700/70 dark:bg-slate-800/60 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
+          >
+            Retry
+          </Button>
+        </>
       ) : latestAmenityBooking ? (
         <>
           <p className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">{latestAmenityBooking.amenityName}</p>

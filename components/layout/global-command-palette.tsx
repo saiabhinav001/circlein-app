@@ -58,6 +58,7 @@ const NAV_SHORTCUTS: Record<string, string> = {
   'nav-dashboard': 'D',
   'nav-bookings': 'B',
   'nav-calendar': 'C',
+  'nav-notifications': 'N',
   'nav-settings': 'S',
 };
 
@@ -105,6 +106,12 @@ export function GlobalCommandPalette() {
       }
 
       if (event.metaKey || event.ctrlKey || event.altKey || isTyping(event)) {
+        return;
+      }
+
+      if (key === '/' && !event.shiftKey) {
+        event.preventDefault();
+        setOpen(true);
         return;
       }
 
@@ -218,6 +225,7 @@ export function GlobalCommandPalette() {
       { id: 'nav-bookings', label: 'Bookings', href: '/bookings', group: 'navigation', icon: Calendar, keywords: 'reservations' },
       { id: 'nav-calendar', label: 'Calendar', href: '/calendar', group: 'navigation', icon: Calendar, keywords: 'week day month schedule' },
       { id: 'nav-community', label: 'Community Feed', href: '/community', group: 'navigation', icon: Bell, keywords: 'announcements polls' },
+      { id: 'nav-notifications', label: 'Notifications', href: '/notifications', group: 'navigation', icon: Bell, keywords: 'alerts inbox' },
       { id: 'nav-profile', label: 'Profile', href: '/profile', group: 'navigation', icon: User, keywords: 'account' },
       {
         id: 'nav-settings',

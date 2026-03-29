@@ -651,7 +651,7 @@ export default function Dashboard() {
               View all <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-live="polite">
             {upcomingBookings.length > 0 ? (
               upcomingBookings.map((booking) => (
                 <div key={booking.id} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-3">
@@ -697,7 +697,7 @@ export default function Dashboard() {
               exit={{ opacity: 0, height: 0 }}
               className="mb-6"
             >
-              <div className="flex items-center gap-3 px-4 py-3 bg-teal-50 dark:bg-teal-950/20 rounded-xl border border-teal-100 dark:border-teal-900/40">
+              <div role="status" aria-live="polite" className="flex items-center gap-3 px-4 py-3 bg-teal-50 dark:bg-teal-950/20 rounded-xl border border-teal-100 dark:border-teal-900/40">
                 <SearchIcon className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                 <span className="text-sm text-teal-700 dark:text-teal-300">
                   {filteredAmenities.length} result{filteredAmenities.length !== 1 ? 's' : ''} for "{searchQuery}"

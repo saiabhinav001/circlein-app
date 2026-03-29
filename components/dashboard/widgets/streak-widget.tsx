@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Flame, Trophy } from 'lucide-react';
 import { getUserBookingStreak } from '@/lib/gamification-service';
+import { Button } from '@/components/ui/button';
 
 interface StreakWidgetProps {
   userEmail?: string;
@@ -40,6 +41,8 @@ function getStreakMessage(streak: number): string {
 export function StreakWidget({ userEmail, communityId }: StreakWidgetProps) {
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
+  const [loadError, setLoadError] = useState(false);
+  const [refreshToken, setRefreshToken] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -48,12 +51,14 @@ export function StreakWidget({ userEmail, communityId }: StreakWidgetProps) {
       if (!userEmail || !communityId) {
         if (isMounted) {
           setStreak(0);
+          setLoadError(false);
           setLoading(false);
         }
         return;
       }
 
       setLoading(true);
+      setLoadError(false);
 
       try {
         const value = await getUserBookingStreak(userEmail, communityId);
@@ -63,6 +68,7 @@ export function StreakWidget({ userEmail, communityId }: StreakWidgetProps) {
       } catch (error) {
         if (isMounted) {
           setStreak(0);
+          setLoadError(true);
         }
       } finally {
         if (isMounted) {
@@ -76,7 +82,7 @@ export function StreakWidget({ userEmail, communityId }: StreakWidgetProps) {
     return () => {
       isMounted = false;
     };
-  }, [communityId, userEmail]);
+  }, [communityId, refreshToken, userEmail]);
 
   const message = useMemo(() => getStreakMessage(streak), [streak]);
   const hasStreak = streak > 0;
@@ -104,6 +110,18 @@ export function StreakWidget({ userEmail, communityId }: StreakWidgetProps) {
           <div className="mt-4 animate-pulse space-y-2">
             <div className="h-4 w-24 rounded bg-slate-200 dark:bg-slate-700" />
             <div className="h-8 w-16 rounded bg-slate-200 dark:bg-slate-700" />
+          </div>
+        ) : loadError ? (
+          <div className="mt-4 space-y-2">
+            <p className="text-sm text-slate-500 dark:text-slate-400">Could not load your streak right now.</p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setRefreshToken((prev) => prev + 1)}
+              className="h-8 rounded-lg border-slate-300/80 bg-white/70 px-3 text-xs text-slate-700 hover:bg-white hover:text-slate-900 dark:border-slate-700/70 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Retry streak
+            </Button>
           </div>
         ) : (
           <>
