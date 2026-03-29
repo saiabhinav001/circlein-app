@@ -795,68 +795,6 @@ export default function AmenityBooking() {
                 {/* Calendar Section */}
                 <div className="p-3 sm:p-5 border-b border-slate-100 dark:border-slate-800">
                   {/* Calendar Container with subtle elevation */}
-<<<<<<< HEAD
-                  <div className="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl p-2 sm:p-4">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      className="mx-auto w-full"
-                      classNames={{
-                        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full",
-                        month: "space-y-4 w-full relative",
-                        caption: "flex justify-center pt-1 relative items-center h-10",
-                        caption_label: "text-sm font-semibold text-slate-900 dark:text-slate-100",
-                        nav: "absolute inset-x-0 top-0 h-10 px-1 flex items-center justify-between",
-                        nav_button: cn(
-                          "h-8 w-8 p-0 inline-flex items-center justify-center rounded-lg",
-                          "text-slate-500 dark:text-slate-400",
-                          "hover:bg-slate-100 dark:hover:bg-slate-800",
-                          "active:scale-95 transition-all duration-100",
-                          "disabled:opacity-40"
-                        ),
-                        nav_button_previous: "",
-                        nav_button_next: "",
-                        table: "w-full border-collapse",
-                        head_row: "flex w-full justify-between",
-                        head_cell: "text-slate-500 dark:text-slate-400 rounded-md w-9 font-medium text-xs text-center",
-                        row: "flex w-full mt-1 justify-between",
-                        cell: cn(
-                          "relative p-0 sm:p-0.5 text-center text-sm focus-within:relative focus-within:z-20",
-                          "[&:has([aria-selected])]:bg-transparent"
-                        ),
-                        day: cn(
-                          "h-9 w-9 p-0 font-normal rounded-lg text-sm",
-                          "transition-all duration-100",
-                          "text-slate-900 dark:text-slate-100",
-                          "hover:bg-slate-100 dark:hover:bg-slate-800",
-                          "focus:outline-none",
-                          
-                        ),
-                        day_selected: "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-900 dark:hover:bg-white",
-                        day_today: "ring-1 ring-slate-300 dark:ring-slate-700",
-                        day_outside: "text-slate-300 dark:text-slate-700 opacity-30 hover:opacity-30 cursor-default",
-                        day_disabled: "text-slate-300 dark:text-slate-700 opacity-20 cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent",
-                        day_hidden: "invisible",
-                      }}
-                    disabled={(date) => {
-                      // Disable past dates
-                      if (date < new Date(Date.now() - 86400000)) return true;
-                      
-                      // Disable blackout dates
-                      if (amenity.rules?.blackoutDates && amenity.rules.blackoutDates.length > 0) {
-                        return amenity.rules.blackoutDates.some((blackoutItem: any) => {
-                          try {
-                            let blackoutDate: Date | null = null;
-                            
-                            if (blackoutItem?.date) {
-                              if (blackoutItem.date instanceof Date) {
-                                blackoutDate = blackoutItem.date;
-                              } else if (blackoutItem.date.seconds) {
-                                blackoutDate = new Date(blackoutItem.date.seconds * 1000);
-                              } else {
-                                blackoutDate = new Date(blackoutItem.date);
-=======
                   <div className="rounded-2xl border border-slate-200/70 dark:border-slate-700/70 bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-900/60 shadow-sm p-3 sm:p-4">
                     <div className="mx-auto w-full max-w-[22.5rem] sm:max-w-[24.5rem]">
                     <div className="relative flex items-center justify-center mb-2.5 sm:mb-3">
@@ -1071,7 +1009,6 @@ export default function AmenityBooking() {
                                 return false;
                               } catch (error) {
                                 return false;
->>>>>>> 3fcb4da (fixup! fix(vercel): resolve React 19 peer dependency install failures)
                               }
                             });
                           }
