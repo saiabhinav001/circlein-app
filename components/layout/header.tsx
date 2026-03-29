@@ -4,7 +4,7 @@ import { NotificationBell, NotificationPanel } from '@/components/notifications/
 import OfflineIndicator from '@/components/layout/offline-indicator';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
-import { Search, User, Settings, UserCircle, LogOut, ChevronRight, Sparkles, X } from 'lucide-react';
+import { Search, User, Settings, UserCircle, LogOut, ChevronRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,10 +13,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useSearch } from '@/components/providers/search-provider';
 import Link from 'next/link';
 import { HamburgerMenu } from '@/components/ui/hamburger-menu';
-import { useState, useRef, useEffect } from 'react';
+import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
@@ -26,16 +25,13 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
   const { data: session } = useSession();
-  const { searchQuery, setSearchQuery } = useSearch();
   const pathname = usePathname();
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
   
   // Check if user is in admin context OR if user has admin role
   const isAdminUser = session?.user?.role === 'admin';
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+  const openCommandPalette = () => {
+    window.dispatchEvent(new Event('circlein-open-command-palette'));
   };
 
   // Keyboard shortcut for search (Cmd/Ctrl + K)
@@ -96,66 +92,36 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
 
         {/* Search Bar */}
         <div data-tour="header-search" className="relative flex-1 min-w-0 max-w-none md:max-w-md lg:max-w-lg ml-auto md:ml-4">
-          <div className="relative">
-            <Search className={cn(
-              "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors duration-100",
-              isSearchFocused ? "text-slate-500 dark:text-slate-400" : "text-slate-400 dark:text-slate-500"
-            )} />
-            <input
-              ref={searchRef}
-              type="text"
-              placeholder="Search..."
-              aria-label="Search site content"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
+          <button
+            type="button"
+            onClick={openCommandPalette}
+            aria-label="Search (Ctrl+K)"
+            className={cn(
+              "w-full h-9 rounded-lg px-3",
+              "flex items-center gap-2 text-left",
+              "bg-white dark:bg-slate-900",
+              "border border-slate-200 dark:border-slate-500/70",
+              "hover:border-slate-300 dark:hover:border-slate-300/70",
+              "focus-visible:bg-white dark:focus-visible:bg-slate-900",
+              "focus-visible:border-slate-400 dark:focus-visible:border-slate-100",
+              "focus-visible:ring-2 focus-visible:ring-slate-300/90 dark:focus-visible:ring-slate-100/85",
+              "focus-visible:shadow-[0_0_0_3px_rgba(148,163,184,0.2)] dark:focus-visible:shadow-[0_0_0_3px_rgba(248,250,252,0.16)]",
+              "outline-none transition-colors duration-100"
+            )}
+          >
+            <Search className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+            <span className="text-sm text-slate-400 dark:text-slate-500">Search...</span>
+            <kbd
               className={cn(
-                "w-full h-9 pl-9 pr-12 rounded-lg",
-                "text-sm text-slate-900 dark:text-slate-100",
-                "placeholder:text-slate-400 dark:placeholder:text-slate-500",
-                "bg-white dark:bg-slate-900",
-                "border border-slate-200 dark:border-slate-500/70",
-                "hover:border-slate-300 dark:hover:border-slate-300/70",
-                "focus:bg-white dark:focus:bg-slate-900",
-                "focus:border-slate-400 dark:focus:border-slate-100",
-                "focus:ring-2 focus:ring-slate-300/90 dark:focus:ring-slate-100/85",
-                "focus:shadow-[0_0_0_3px_rgba(148,163,184,0.2)] dark:focus:shadow-[0_0_0_3px_rgba(248,250,252,0.16)]",
-                "outline-none transition-colors duration-100"
+                "ml-auto px-1.5 py-0.5 text-[10px] font-medium rounded hidden md:block",
+                "text-slate-400 dark:text-slate-500",
+                "bg-slate-200/80 dark:bg-slate-700/80",
+                "border border-slate-300/50 dark:border-slate-600/50"
               )}
-            />
-            {/* Clear button when searching, keyboard hint when empty */}
-            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
-              {searchQuery ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    searchRef.current?.focus();
-                  }}
-                  aria-label="Clear search query"
-                  className={cn(
-                    "p-1 rounded-md",
-                    "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300",
-                    "hover:bg-slate-200 dark:hover:bg-slate-700",
-                    "transition-colors duration-100"
-                  )}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              ) : (
-                <kbd className={cn(
-                  "px-1.5 py-0.5 text-[10px] font-medium rounded hidden md:block",
-                  "text-slate-400 dark:text-slate-500",
-                  "bg-slate-200/80 dark:bg-slate-700/80",
-                  "border border-slate-300/50 dark:border-slate-600/50",
-                  isSearchFocused && "opacity-0"
-                )}>
-                  ⌘K
-                </kbd>
-              )}
-            </div>
-          </div>
+            >
+              ⌘K
+            </kbd>
+          </button>
         </div>
       </div>
 
