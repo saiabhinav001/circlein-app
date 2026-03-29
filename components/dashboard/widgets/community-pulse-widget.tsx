@@ -1,3 +1,5 @@
+'use client';
+
 import { CalendarClock, Sparkles } from 'lucide-react';
 
 interface CommunityPulseWidgetProps {
