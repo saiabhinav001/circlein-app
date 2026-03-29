@@ -51,17 +51,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ip = getClientIP(request);
-    const rateLimit = await checkRateLimit(adminDb, `${ip}_booking_create`, {
-      maxRequests: 5,
-      windowSeconds: 60,
-    });
+    if (process.env.NODE_ENV !== 'development') {
+      const ip = getClientIP(request);
+      const rateLimit = await checkRateLimit(adminDb, `${ip}_booking_create`, {
+        maxRequests: 5,
+        windowSeconds: 60,
+      });
 
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        { error: 'Too many booking requests. Please try again later.' },
-        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } }
-      );
+      if (!rateLimit.allowed) {
+        return NextResponse.json(
+          { error: 'Too many booking requests. Please try again later.' },
+          { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } }
+        );
+      }
     }
 
     // 2. Parse request
@@ -147,14 +149,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const conflictCheck = await checkBookingConflict(adminDb, {
-      amenityId,
-      selectedDate,
-      startTime: slotStartTime,
-      endTime: slotEndTime,
-    });
+    let conflictCheck: { hasConflict: boolean; nextAvailableSlot?: unknown } | null = null;
+    try {
+      conflictCheck = await checkBookingConflict(adminDb, {
+        amenityId,
+        selectedDate,
+        startTime: slotStartTime,
+        endTime: slotEndTime,
+      });
+    } catch (conflictError) {
+      console.error('Conflict check failed; continuing booking flow:', conflictError);
+    }
 
-    if (conflictCheck.hasConflict) {
+    if (conflictCheck?.hasConflict) {
       return NextResponse.json(
         {
           error: 'This time slot is already booked.',

@@ -33,21 +33,40 @@ interface Amenity {
   timeSlots?: string[]; // Dynamic time slots from Firestore
   weekdaySlots?: string[]; // Specific slots for Monday-Friday
   weekendSlots?: string[]; // Specific slots for Saturday-Sunday
+  slotDuration?: number;
   booking?: {
     slotDuration?: number; // Duration in hours (e.g., 2 for 2-hour slots)
     maxPeople?: number;
+    weekdayHours?: {
+      start?: string;
+      end?: string;
+      startTime?: string;
+      endTime?: string;
+    };
+    weekendHours?: {
+      start?: string;
+      end?: string;
+      startTime?: string;
+      endTime?: string;
+    };
   };
   operatingHours?: {
-    start: string; // e.g., "09:00"
-    end: string;   // e.g., "21:00"
+    start?: string; // e.g., "09:00"
+    end?: string;   // e.g., "21:00"
+    startTime?: string;
+    endTime?: string;
   };
   weekdayHours?: {
-    start: string;
-    end: string;
+    start?: string;
+    end?: string;
+    startTime?: string;
+    endTime?: string;
   };
   weekendHours?: {
-    start: string;
-    end: string;
+    start?: string;
+    end?: string;
+    startTime?: string;
+    endTime?: string;
   };
   rules: {
     maxSlotsPerFamily: number;
@@ -72,6 +91,16 @@ const DEFAULT_TIME_SLOTS = [
   '17:00-19:00',
   '19:00-21:00',
 ];
+
+const DAY_INDEX: Record<string, number> = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
 
 export default function AmenityBooking() {
   const params = useParams();
@@ -136,6 +165,74 @@ export default function AmenityBooking() {
     return slotStartMinutes <= nowMinutes;
   };
 
+  const getDayOfWeekInTimeZone = (date: Date) => {
+    const dayName = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      weekday: 'short',
+    }).format(date);
+
+    return DAY_INDEX[dayName] ?? date.getDay();
+  };
+
+  const normalizeHours = (
+    hours?: {
+      start?: string;
+      end?: string;
+      startTime?: string;
+      endTime?: string;
+    }
+  ) => {
+    if (!hours) {
+      return null;
+    }
+
+    const start = hours.start || hours.startTime;
+    const end = hours.end || hours.endTime;
+
+    if (!start || !end) {
+      return null;
+    }
+
+    return { start, end };
+  };
+
+  const getSlotDurationHours = (amenityData: Amenity) => {
+    return amenityData.booking?.slotDuration || amenityData.slotDuration || 1;
+  };
+
+  const resolveTimeSlotsForDate = (amenityData: Amenity, date: Date) => {
+    const dayOfWeek = getDayOfWeekInTimeZone(date);
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+    if (isWeekend && amenityData.weekendSlots?.length) {
+      return amenityData.weekendSlots;
+    }
+
+    if (!isWeekend && amenityData.weekdaySlots?.length) {
+      return amenityData.weekdaySlots;
+    }
+
+    if (amenityData.timeSlots?.length) {
+      return amenityData.timeSlots;
+    }
+
+    const slotDuration = getSlotDurationHours(amenityData);
+    const daySpecificHours = isWeekend
+      ? normalizeHours(amenityData.booking?.weekendHours) || normalizeHours(amenityData.weekendHours)
+      : normalizeHours(amenityData.booking?.weekdayHours) || normalizeHours(amenityData.weekdayHours);
+
+    if (daySpecificHours) {
+      return generateTimeSlots(daySpecificHours.start, daySpecificHours.end, slotDuration);
+    }
+
+    const generalHours = normalizeHours(amenityData.operatingHours);
+    if (generalHours) {
+      return generateTimeSlots(generalHours.start, generalHours.end, slotDuration);
+    }
+
+    return DEFAULT_TIME_SLOTS;
+  };
+
   const formatClockTime = (hours: number, minutes: number) => {
     if (timeFormat === '24h') {
       return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
@@ -144,6 +241,15 @@ export default function AmenityBooking() {
     const normalizedHour = ((hours + 11) % 12) + 1;
     const meridiem = hours >= 12 ? 'PM' : 'AM';
     return `${normalizedHour}:${String(minutes).padStart(2, '0')} ${meridiem}`;
+  };
+
+  const formatClockParts = (hours: number, minutes: number) => {
+    const normalizedHour = ((hours + 11) % 12) + 1;
+    const meridiem = hours >= 12 ? 'PM' : 'AM';
+    return {
+      time: `${normalizedHour}:${String(minutes).padStart(2, '0')}`,
+      meridiem,
+    };
   };
 
   const formatSlotLabel = (slot: string) => {
@@ -157,7 +263,18 @@ export default function AmenityBooking() {
       return slot;
     }
 
-    return `${formatClockTime(startHour, startMinute)}-${formatClockTime(endHour, endMinute)}`;
+    if (timeFormat === '24h') {
+      return `${formatClockTime(startHour, startMinute)}-${formatClockTime(endHour, endMinute)}`;
+    }
+
+    const startParts = formatClockParts(startHour, startMinute);
+    const endParts = formatClockParts(endHour, endMinute);
+
+    if (startParts.meridiem === endParts.meridiem) {
+      return `${startParts.time}-${endParts.time} ${endParts.meridiem}`;
+    }
+
+    return `${startParts.time} ${startParts.meridiem}-${endParts.time} ${endParts.meridiem}`;
   };
 
   // Generate time slots dynamically based on operating hours and duration
@@ -219,50 +336,11 @@ export default function AmenityBooking() {
           }
           
           setAmenity(fetchedAmenity);
-          
-          // DEBUG: Log what we received
-          
+ 
           // CRITICAL: Update time slots IMMEDIATELY when Firestore data changes
           // This runs every time booking.slotDuration or operating hours change
           const currentDate = selectedDate || new Date();
-          const dayOfWeek = currentDate.getDay();
-          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-          
-          // Generate slots based on current data
-          if (isWeekend && fetchedAmenity.weekendSlots && fetchedAmenity.weekendSlots.length > 0) {
-
-            setTimeSlots(fetchedAmenity.weekendSlots);
-          } else if (!isWeekend && fetchedAmenity.weekdaySlots && fetchedAmenity.weekdaySlots.length > 0) {
-            setTimeSlots(fetchedAmenity.weekdaySlots);
-          } else if (fetchedAmenity.timeSlots && fetchedAmenity.timeSlots.length > 0) {
-            setTimeSlots(fetchedAmenity.timeSlots);
-          } else if (isWeekend && fetchedAmenity.weekendHours && fetchedAmenity.booking?.slotDuration) {
-            const slots = generateTimeSlots(
-              fetchedAmenity.weekendHours.start,
-              fetchedAmenity.weekendHours.end,
-              fetchedAmenity.booking.slotDuration
-            );
-            console.log('Generated weekend slots:', slots);
-            setTimeSlots(slots);
-          } else if (!isWeekend && fetchedAmenity.weekdayHours && fetchedAmenity.booking?.slotDuration) {
-            const slots = generateTimeSlots(
-              fetchedAmenity.weekdayHours.start,
-              fetchedAmenity.weekdayHours.end,
-              fetchedAmenity.booking.slotDuration
-            );
-            console.log('Generated weekday slots:', slots);
-            setTimeSlots(slots);
-          } else if (fetchedAmenity.operatingHours && fetchedAmenity.booking?.slotDuration) {
-            const slots = generateTimeSlots(
-              fetchedAmenity.operatingHours.start,
-              fetchedAmenity.operatingHours.end,
-              fetchedAmenity.booking.slotDuration
-            );
-            console.log('Generated operating hours slots:', slots);
-            setTimeSlots(slots);
-          } else {
-            setTimeSlots(DEFAULT_TIME_SLOTS);
-          }
+          setTimeSlots(resolveTimeSlotsForDate(fetchedAmenity, currentDate));
           
           setLoading(false);
         }
@@ -275,7 +353,7 @@ export default function AmenityBooking() {
       // Cleanup listener on unmount
       return () => unsubscribe();
     }
-  }, [params.id, session?.user?.communityId]);
+  }, [params.id, session?.user?.communityId, selectedDate, timeZone]);
 
   useEffect(() => {
     if (selectedDate && params.id) {
@@ -302,60 +380,7 @@ export default function AmenityBooking() {
 
   // Update time slots based on selected date (weekday vs weekend)
   const updateTimeSlotsForDate = (amenityData: Amenity, date: Date) => {
-    const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    
-    // Priority 1: Check for weekday/weekend specific slots
-    if (isWeekend && amenityData.weekendSlots && amenityData.weekendSlots.length > 0) {
-      setTimeSlots(amenityData.weekendSlots);
-      return;
-    }
-    
-    if (!isWeekend && amenityData.weekdaySlots && amenityData.weekdaySlots.length > 0) {
-      setTimeSlots(amenityData.weekdaySlots);
-      return;
-    }
-    
-    // Priority 2: Check for custom time slots (applies to all days)
-    if (amenityData.timeSlots && Array.isArray(amenityData.timeSlots) && amenityData.timeSlots.length > 0) {
-      setTimeSlots(amenityData.timeSlots);
-      return;
-    }
-    
-    // Priority 3: Generate from weekday/weekend operating hours
-    if (isWeekend && amenityData.weekendHours && amenityData.booking?.slotDuration) {
-      const generatedSlots = generateTimeSlots(
-        amenityData.weekendHours.start,
-        amenityData.weekendHours.end,
-        amenityData.booking.slotDuration
-      );
-      setTimeSlots(generatedSlots);
-      return;
-    }
-    
-    if (!isWeekend && amenityData.weekdayHours && amenityData.booking?.slotDuration) {
-      const generatedSlots = generateTimeSlots(
-        amenityData.weekdayHours.start,
-        amenityData.weekdayHours.end,
-        amenityData.booking.slotDuration
-      );
-      setTimeSlots(generatedSlots);
-      return;
-    }
-    
-    // Priority 4: Generate from general operating hours
-    if (amenityData.operatingHours && amenityData.booking?.slotDuration) {
-      const generatedSlots = generateTimeSlots(
-        amenityData.operatingHours.start,
-        amenityData.operatingHours.end,
-        amenityData.booking.slotDuration
-      );
-      setTimeSlots(generatedSlots);
-      return;
-    }
-    
-    // Priority 5: Use default time slots
-    setTimeSlots(DEFAULT_TIME_SLOTS);
+    setTimeSlots(resolveTimeSlotsForDate(amenityData, date));
   };
 
   const fetchBookings = async (amenityId: string, date: Date) => {
@@ -394,12 +419,29 @@ export default function AmenityBooking() {
   };
 
   const isSlotBooked = (timeSlot: string) => {
-    const [startTime] = timeSlot.split('-');
-    const [hours, minutes] = startTime.split(':').map(Number);
-    
-    return bookings.some(booking => {
-      const bookingHour = booking.startTime.getHours();
-      return bookingHour === hours;
+    const [slotStartTime, slotEndTime] = timeSlot.split('-');
+
+    if (!slotStartTime || !slotEndTime) {
+      return false;
+    }
+
+    const [slotStartHour, slotStartMinute] = slotStartTime.split(':').map(Number);
+    const [slotEndHour, slotEndMinute] = slotEndTime.split(':').map(Number);
+
+    if (
+      [slotStartHour, slotStartMinute, slotEndHour, slotEndMinute].some((value) => Number.isNaN(value))
+    ) {
+      return false;
+    }
+
+    const slotStartMinutes = (slotStartHour * 60) + slotStartMinute;
+    const slotEndMinutes = (slotEndHour * 60) + slotEndMinute;
+
+    return bookings.some((booking) => {
+      const bookingStartMinutes = (booking.startTime.getHours() * 60) + booking.startTime.getMinutes();
+      const bookingEndMinutes = (booking.endTime.getHours() * 60) + booking.endTime.getMinutes();
+
+      return bookingStartMinutes < slotEndMinutes && bookingEndMinutes > slotStartMinutes;
     });
   };
 
@@ -969,7 +1011,7 @@ export default function AmenityBooking() {
                                 "w-3.5 h-3.5 transition-colors",
                                 isSelected ? "text-white/80 dark:text-slate-900/80" : ""
                               )} />
-                              <span>{formatSlotLabel(slot)}</span>
+                              <span className="whitespace-nowrap text-[13px] sm:text-sm">{formatSlotLabel(slot)}</span>
                             </div>
                             {booked && (
                               <span className="absolute -top-2 -right-2 px-1.5 py-0.5 text-[10px] font-semibold bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-md">
