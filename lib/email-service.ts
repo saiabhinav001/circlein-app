@@ -803,11 +803,18 @@ export const emailTemplates = {
   }),
 };
 
+type EmailAttachment = {
+  filename: string;
+  content: string | Buffer;
+  contentType?: string;
+};
+
 export async function sendEmail(
   options: {
     to: string;
     subject: string;
     html: string;
+    attachments?: EmailAttachment[];
   },
   retries = 3
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
@@ -833,6 +840,7 @@ export async function sendEmail(
         to: options.to,
         subject: options.subject,
         html: options.html,
+        attachments: options.attachments,
         replyTo: senderEmail,
         priority: 'high',
       });
