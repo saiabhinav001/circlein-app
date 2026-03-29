@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 
 /**
@@ -10,6 +12,16 @@ import { adminDb } from '@/lib/firebase-admin';
  */
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const role = (session.user as any).role;
+    if (role !== 'admin' && role !== 'super_admin') {
+      return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
+    }
+
     const { communityId, adminEmail } = await request.json();
 
     if (!communityId || !adminEmail) {
@@ -72,6 +84,16 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const role = (session.user as any).role;
+    if (role !== 'admin' && role !== 'super_admin') {
+      return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const communityId = searchParams.get('communityId');
 

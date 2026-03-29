@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
+import { checkRateLimit, getClientIP } from '@/lib/rate-limiter';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,19 @@ export const revalidate = 0;
  */
 export async function GET(request: NextRequest) {
   try {
+    const ip = getClientIP(request);
+    const rateLimit = await checkRateLimit(adminDb, `${ip}_auth_validate_user`, {
+      maxRequests: 120,
+      windowSeconds: 60,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -19,8 +21,15 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(request: NextRequest) {
   try {
-    // This endpoint should only be called by developers/super-admins
-    // Add your own authentication check here if needed
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const role = (session.user as any).role;
+    if (role !== 'admin' && role !== 'super_admin') {
+      return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
+    }
     
     const body = await request.json();
     const { adminEmail, communityId, confirmDelete } = body;

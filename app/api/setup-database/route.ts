@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Essential database schema setup using client SDK directly
 const setupDatabase = async () => {
@@ -355,6 +357,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Database setup disabled in production' }, { status: 403 });
   }
 
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const role = (session.user as any).role;
+  if (role !== 'admin' && role !== 'super_admin') {
+    return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
+  }
+
   try {
     const result = await setupDatabase();
     
@@ -373,6 +385,16 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const role = (session.user as any).role;
+  if (role !== 'admin' && role !== 'super_admin') {
+    return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
+  }
+
   return NextResponse.json({
     message: 'CircleIn Database Setup API',
     usage: 'Send POST request to setup essential database collections',

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
+import { PollCreateSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,12 +88,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Community ID missing' }, { status: 400 });
     }
 
-    const body = await request.json();
-    const question = String(body?.question || '').trim();
-    const options = Array.isArray(body?.options)
-      ? body.options.map((option: unknown) => String(option || '').trim()).filter(Boolean)
+    const rawBody = await request.json();
+    const parsedBody = PollCreateSchema.safeParse(rawBody);
+
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: parsedBody.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const question = String(parsedBody.data.question || '').trim();
+    const options = Array.isArray(parsedBody.data.options)
+      ? parsedBody.data.options.map((option: unknown) => String(option || '').trim()).filter(Boolean)
       : [];
-    const deadlineRaw = String(body?.deadline || '');
+    const deadlineRaw = String(parsedBody.data.deadline || '');
 
     if (!question || options.length < 2 || !deadlineRaw) {
       return NextResponse.json(

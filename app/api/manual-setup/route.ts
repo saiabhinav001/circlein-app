@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -305,6 +307,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Manual setup disabled in production' }, { status: 403 });
   }
 
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const role = (session.user as any).role;
+  if (role !== 'admin') {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+  }
+
   try {
     const result = await setupDatabaseWithAuth();
     
@@ -323,6 +335,20 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Manual setup disabled in production' }, { status: 403 });
+  }
+
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const role = (session.user as any).role;
+  if (role !== 'admin') {
+    return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+  }
+
   try {
     // Create the specific access code from the screenshot
     const accessCode = 'EOOACJSV';

@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Admin assignment API - for development use only
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const sessionRole = (session.user as any).role;
+    if (sessionRole !== 'admin' && sessionRole !== 'super_admin') {
+      return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
+    }
+
     // Import Firebase client SDK
     const { initializeApp, getApps } = await import('firebase/app');
     const { getFirestore, doc, setDoc, serverTimestamp } = await import('firebase/firestore');
@@ -19,7 +31,7 @@ export async function POST(request: NextRequest) {
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
     const db = getFirestore(app);
 
-    const { email, communityId = 'sunny-meadows', role = 'admin' } = await request.json();
+    const { email, communityId = 'sunny-meadows', role: requestedRole = 'admin' } = await request.json();
     
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -34,7 +46,7 @@ export async function POST(request: NextRequest) {
     const userDoc = {
       email: email,
       communityId: communityId,
-      role: role,
+      role: requestedRole,
       name: existingData.name || email.split('@')[0], // Preserve existing name
       authProvider: existingData.authProvider || 'google',
       profileCompleted: true, // CRITICAL: Ensure profile is marked as complete
@@ -49,7 +61,7 @@ export async function POST(request: NextRequest) {
     const inviteDoc = {
       email: email,
       communityId: communityId,
-      role: role,
+      role: requestedRole,
       status: 'accepted',
       invitedBy: 'system',
       createdAt: serverTimestamp(),
@@ -64,7 +76,7 @@ export async function POST(request: NextRequest) {
       data: {
         email: email,
         communityId: communityId,
-        role: role,
+        role: requestedRole,
         instructions: [
           '1. Sign out of the application',
           '2. Sign back in with your Google account',
@@ -84,6 +96,16 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const role = (session.user as any).role;
+  if (role !== 'admin' && role !== 'super_admin') {
+    return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
+  }
+
   return NextResponse.json({
     message: 'Admin Assignment API',
     usage: 'POST with { "email": "your@email.com", "communityId": "sunny-meadows", "role": "admin" }',

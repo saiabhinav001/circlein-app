@@ -16,6 +16,8 @@ import { db } from '@/lib/firebase';
 import { adminDb } from '@/lib/firebase-admin';
 import { checkBookingConflict } from '@/lib/booking-conflict-resolver';
 import { formatDateInTimeZone, resolveTimeZone } from '@/lib/timezone';
+import { checkRateLimit, getClientIP } from '@/lib/rate-limiter';
+import { BookingCreateSchema } from '@/lib/schemas';
 
 /**
  * PRODUCTION-GRADE BOOKING SYSTEM
@@ -30,7 +32,7 @@ interface BookingRequest {
   amenityName: string;
   startTime: string; // ISO date string
   endTime: string;   // ISO date string
-  attendees: string[];
+  attendees?: string[];
   selectedDate: string; // ISO date string
   selectedSlot: string; // e.g., "10:00-12:00"
   userName?: string;
@@ -49,8 +51,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const ip = getClientIP(request);
+    const rateLimit = await checkRateLimit(adminDb, `${ip}_booking_create`, {
+      maxRequests: 5,
+      windowSeconds: 60,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many booking requests. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } }
+      );
+    }
+
     // 2. Parse request
-    const bookingData: BookingRequest = await request.json();
+    const rawBody = await request.json();
+    const parsedBody = BookingCreateSchema.safeParse(rawBody);
+
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: parsedBody.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const bookingData = parsedBody.data as BookingRequest;
     const {
       amenityId,
       amenityName,

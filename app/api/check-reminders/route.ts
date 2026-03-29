@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { emailTemplates, sendEmail } from '@/lib/email-service';
 
@@ -8,6 +10,16 @@ import { emailTemplates, sendEmail } from '@/lib/email-service';
  */
 export async function POST() {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const role = (session.user as any).role;
+    if (role !== 'admin' && role !== 'super_admin') {
+      return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
+    }
+
 
     const now = new Date();
     const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -8,6 +10,16 @@ export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const role = (session.user as any).role;
+    if (role !== 'admin' && role !== 'super_admin') {
+      return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
+    }
+
     // Check if sunny-meadows community exists
     const communityDoc = await getDoc(doc(db, 'communities', 'sunny-meadows'));
     

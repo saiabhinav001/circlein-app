@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { detectMaintenanceCategory } from '@/lib/maintenance-auto-router';
+import { MaintenanceCreateSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,17 +69,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Community ID missing' }, { status: 400 });
     }
 
-    const body = await request.json();
-    const title = String(body?.title || '').trim();
-    const description = String(body?.description || '').trim();
-    const providedCategory = String(body?.category || '').trim();
-    const autoCategory = detectMaintenanceCategory(title, description || String(body?.issue || ''));
+    const rawBody = await request.json();
+    const parsedBody = MaintenanceCreateSchema.safeParse(rawBody);
+
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: parsedBody.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const title = String(parsedBody.data.title || '').trim();
+    const description = String(parsedBody.data.description || '').trim();
+    const providedCategory = String(parsedBody.data.category || '').trim();
+    const autoCategory = detectMaintenanceCategory(title, description || String(parsedBody.data.issue || ''));
     const category = providedCategory || autoCategory;
     const autoDetected = !providedCategory;
-    const priority = String(body?.priority || 'medium').trim();
-    const location = String(body?.location || '').trim();
-    const imageUrls = Array.isArray(body?.imageUrls)
-      ? body.imageUrls.map((url: unknown) => String(url || '').trim()).filter(Boolean)
+    const priority = String(parsedBody.data.priority || 'medium').trim();
+    const location = String(parsedBody.data.location || '').trim();
+    const imageUrls = Array.isArray(parsedBody.data.imageUrls)
+      ? parsedBody.data.imageUrls.map((url: unknown) => String(url || '').trim()).filter(Boolean)
       : [];
 
     if (!title || !description) {

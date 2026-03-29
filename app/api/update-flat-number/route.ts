@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { email, flatNumber } = body;
+
+    const role = (session.user as any).role;
+    const isAdmin = role === 'admin' || role === 'super_admin';
+    if (!isAdmin && session.user.email !== email) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     
     console.log('API received:', { email, flatNumber, body });
     

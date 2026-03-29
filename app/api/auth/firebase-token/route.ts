@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { adminAuth } from '@/lib/firebase-admin';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { checkRateLimit, getClientIP } from '@/lib/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,19 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: Request) {
   try {
+    const ip = getClientIP(request);
+    const rateLimit = await checkRateLimit(adminDb, `${ip}_auth_firebase_token`, {
+      maxRequests: 60,
+      windowSeconds: 60,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } }
+      );
+    }
+
     // Get NextAuth session
     const session = await getServerSession(authOptions);
 

@@ -21,8 +21,25 @@ import { formatDateInTimeZone, formatDateTimeInTimeZone, formatTimeInTimeZone, r
  * Security: Publicly accessible (excluded from middleware), safe for production
  */
 
+function hasValidCronSecret(request: NextRequest): boolean {
+  const expected = process.env.CRON_SECRET;
+  if (!expected) {
+    return false;
+  }
+
+  const authHeader = request.headers.get('authorization') || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  const headerToken = request.headers.get('x-cron-secret') || '';
+  const queryToken = request.nextUrl.searchParams.get('secret') || '';
+
+  return bearerToken === expected || headerToken === expected || queryToken === expected;
+}
+
 async function handleReminderCheck(request: NextRequest) {
   try {
+    if (!hasValidCronSecret(request)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // 1. CALCULATE TIME WINDOW (45-75 minutes from now)
     const now = new Date();

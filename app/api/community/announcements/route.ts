@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { sendPushToCommunity } from '@/lib/push-service';
 import { emailTemplates, sendBatchEmails } from '@/lib/email-service';
+import { AnnouncementCreateSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,14 +94,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Community ID missing' }, { status: 400 });
     }
 
-    const body = await request.json();
-    const title = String(body?.title || '').trim();
-    const content = String(body?.body || '').trim();
-    const previewText = String(body?.previewText || '').trim();
+    const rawBody = await request.json();
+    const parsedBody = AnnouncementCreateSchema.safeParse(rawBody);
+
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: parsedBody.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const title = String(parsedBody.data.title || '').trim();
+    const content = String(parsedBody.data.body || '').trim();
+    const previewText = String(parsedBody.data.previewText || '').trim();
     let attachments: AnnouncementAttachment[] = [];
 
     try {
-      attachments = normalizeAttachments(body?.attachments);
+      attachments = normalizeAttachments(parsedBody.data.attachments);
     } catch (attachmentError: any) {
       return NextResponse.json(
         { error: attachmentError?.message || 'Invalid attachment payload' },

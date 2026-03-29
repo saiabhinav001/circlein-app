@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { initializeDatabase, createSampleBookings } from '@/lib/init-database';
 
 export async function POST(req: NextRequest) {
   // Development only - block in production (destructive operation)
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json({ error: 'Database initialization disabled in production' }, { status: 403 });
+  }
+
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const role = (session.user as any).role;
+  if (role !== 'admin' && role !== 'super_admin') {
+    return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
   }
 
   try {
@@ -48,6 +60,16 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const role = (session.user as any).role;
+  if (role !== 'admin' && role !== 'super_admin') {
+    return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
+  }
+
   return NextResponse.json({
     message: 'Database initialization endpoint',
     instructions: [

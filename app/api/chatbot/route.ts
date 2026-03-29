@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { collection, doc, getDoc, getDocs, limit, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebase-admin';
+import { checkRateLimit, getClientIP } from '@/lib/rate-limiter';
 import { formatDateInTimeZone, resolveTimeZone } from '@/lib/timezone';
 
 // CircleIn Knowledge Base - Dynamic and Role-Aware
@@ -551,8 +553,26 @@ function getFallbackResponse(message: string, isAdmin: boolean): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, userRole, conversationHistory } = await request.json();
     const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const ip = getClientIP(request);
+    const rateLimit = await checkRateLimit(adminDb, `${ip}_chatbot`, {
+      maxRequests: 20,
+      windowSeconds: 60,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Chatbot rate limit reached. Please wait before sending more messages.' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } }
+      );
+    }
+
+    const { message, userRole, conversationHistory } = await request.json();
 
     // Quick validation
     if (!message?.trim()) {
