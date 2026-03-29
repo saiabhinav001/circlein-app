@@ -1,24 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useSession } from 'next-auth/react';
-import { Calendar as CalendarIcon, Clock, Users, Info, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Users, Info, ArrowLeft, CheckCircle2, AlertCircle, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import AmenityGalleryReviews from '@/components/amenity/amenity-gallery-reviews';
-import UsageHeatmap from '@/components/analytics/usage-heatmap';
 import { enqueueOfflineBooking, flushOfflineBookings } from '@/lib/offline-booking-queue';
-import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone } from '@/lib/timezone';
 
 interface Amenity {
@@ -33,40 +35,21 @@ interface Amenity {
   timeSlots?: string[]; // Dynamic time slots from Firestore
   weekdaySlots?: string[]; // Specific slots for Monday-Friday
   weekendSlots?: string[]; // Specific slots for Saturday-Sunday
-  slotDuration?: number;
   booking?: {
     slotDuration?: number; // Duration in hours (e.g., 2 for 2-hour slots)
     maxPeople?: number;
-    weekdayHours?: {
-      start?: string;
-      end?: string;
-      startTime?: string;
-      endTime?: string;
-    };
-    weekendHours?: {
-      start?: string;
-      end?: string;
-      startTime?: string;
-      endTime?: string;
-    };
   };
   operatingHours?: {
-    start?: string; // e.g., "09:00"
-    end?: string;   // e.g., "21:00"
-    startTime?: string;
-    endTime?: string;
+    start: string; // e.g., "09:00"
+    end: string;   // e.g., "21:00"
   };
   weekdayHours?: {
-    start?: string;
-    end?: string;
-    startTime?: string;
-    endTime?: string;
+    start: string;
+    end: string;
   };
   weekendHours?: {
-    start?: string;
-    end?: string;
-    startTime?: string;
-    endTime?: string;
+    start: string;
+    end: string;
   };
   rules: {
     maxSlotsPerFamily: number;
@@ -92,24 +75,17 @@ const DEFAULT_TIME_SLOTS = [
   '19:00-21:00',
 ];
 
-const DAY_INDEX: Record<string, number> = {
-  Sun: 0,
-  Mon: 1,
-  Tue: 2,
-  Wed: 3,
-  Thu: 4,
-  Fri: 5,
-  Sat: 6,
-};
+const CALENDAR_MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function AmenityBooking() {
   const params = useParams();
   const router = useRouter();
   const { data: session } = useSession();
   const timeZone = useCommunityTimeZone();
-  const timeFormat = useCommunityTimeFormat();
   const [amenity, setAmenity] = useState<Amenity | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>();
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSlot, setSelectedSlot] = useState<string>('');
@@ -118,164 +94,10 @@ export default function AmenityBooking() {
   const [isBooking, setIsBooking] = useState(false); // Prevent double booking
   const [timeSlots, setTimeSlots] = useState<string[]>(DEFAULT_TIME_SLOTS); // Dynamic time slots
 
-  const getDateKeyInTimeZone = (date: Date) => {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).formatToParts(date);
-
-    const year = parts.find((part) => part.type === 'year')?.value || '0000';
-    const month = parts.find((part) => part.type === 'month')?.value || '01';
-    const day = parts.find((part) => part.type === 'day')?.value || '01';
-    return `${year}-${month}-${day}`;
-  };
-
-  const getMinutesInTimeZone = (date: Date) => {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).formatToParts(date);
-
-    const hour = Number(parts.find((part) => part.type === 'hour')?.value || '0');
-    const minute = Number(parts.find((part) => part.type === 'minute')?.value || '0');
-    return (hour * 60) + minute;
-  };
-
-  const isSlotInPast = (date: Date, timeSlot: string) => {
-    const selectedDateKey = getDateKeyInTimeZone(date);
-    const now = new Date();
-    const nowDateKey = getDateKeyInTimeZone(now);
-
-    if (selectedDateKey < nowDateKey) {
-      return true;
-    }
-
-    if (selectedDateKey > nowDateKey) {
-      return false;
-    }
-
-    const [startTime] = timeSlot.split('-');
-    const [hours, minutes] = startTime.split(':').map(Number);
-    const slotStartMinutes = (hours * 60) + minutes;
-    const nowMinutes = getMinutesInTimeZone(now);
-    return slotStartMinutes <= nowMinutes;
-  };
-
-  const getDayOfWeekInTimeZone = (date: Date) => {
-    const dayName = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      weekday: 'short',
-    }).format(date);
-
-    return DAY_INDEX[dayName] ?? date.getDay();
-  };
-
-  const normalizeHours = (
-    hours?: {
-      start?: string;
-      end?: string;
-      startTime?: string;
-      endTime?: string;
-    }
-  ) => {
-    if (!hours) {
-      return null;
-    }
-
-    const start = hours.start || hours.startTime;
-    const end = hours.end || hours.endTime;
-
-    if (!start || !end) {
-      return null;
-    }
-
-    return { start, end };
-  };
-
-  const getSlotDurationHours = (amenityData: Amenity) => {
-    return amenityData.booking?.slotDuration || amenityData.slotDuration || 1;
-  };
-
-  const resolveTimeSlotsForDate = (amenityData: Amenity, date: Date) => {
-    const dayOfWeek = getDayOfWeekInTimeZone(date);
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-    if (isWeekend && amenityData.weekendSlots?.length) {
-      return amenityData.weekendSlots;
-    }
-
-    if (!isWeekend && amenityData.weekdaySlots?.length) {
-      return amenityData.weekdaySlots;
-    }
-
-    if (amenityData.timeSlots?.length) {
-      return amenityData.timeSlots;
-    }
-
-    const slotDuration = getSlotDurationHours(amenityData);
-    const daySpecificHours = isWeekend
-      ? normalizeHours(amenityData.booking?.weekendHours) || normalizeHours(amenityData.weekendHours)
-      : normalizeHours(amenityData.booking?.weekdayHours) || normalizeHours(amenityData.weekdayHours);
-
-    if (daySpecificHours) {
-      return generateTimeSlots(daySpecificHours.start, daySpecificHours.end, slotDuration);
-    }
-
-    const generalHours = normalizeHours(amenityData.operatingHours);
-    if (generalHours) {
-      return generateTimeSlots(generalHours.start, generalHours.end, slotDuration);
-    }
-
-    return DEFAULT_TIME_SLOTS;
-  };
-
-  const formatClockTime = (hours: number, minutes: number) => {
-    if (timeFormat === '24h') {
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    }
-
-    const normalizedHour = ((hours + 11) % 12) + 1;
-    const meridiem = hours >= 12 ? 'PM' : 'AM';
-    return `${normalizedHour}:${String(minutes).padStart(2, '0')} ${meridiem}`;
-  };
-
-  const formatClockParts = (hours: number, minutes: number) => {
-    const normalizedHour = ((hours + 11) % 12) + 1;
-    const meridiem = hours >= 12 ? 'PM' : 'AM';
-    return {
-      time: `${normalizedHour}:${String(minutes).padStart(2, '0')}`,
-      meridiem,
-    };
-  };
-
-  const formatSlotLabel = (slot: string) => {
-    const [start, end] = slot.split('-');
-    if (!start || !end) return slot;
-
-    const [startHour, startMinute] = start.split(':').map(Number);
-    const [endHour, endMinute] = end.split(':').map(Number);
-
-    if ([startHour, startMinute, endHour, endMinute].some((value) => Number.isNaN(value))) {
-      return slot;
-    }
-
-    if (timeFormat === '24h') {
-      return `${formatClockTime(startHour, startMinute)}-${formatClockTime(endHour, endMinute)}`;
-    }
-
-    const startParts = formatClockParts(startHour, startMinute);
-    const endParts = formatClockParts(endHour, endMinute);
-
-    if (startParts.meridiem === endParts.meridiem) {
-      return `${startParts.time}-${endParts.time} ${endParts.meridiem}`;
-    }
-
-    return `${startParts.time} ${startParts.meridiem}-${endParts.time} ${endParts.meridiem}`;
-  };
+  const monthPickerYears = useMemo(() => {
+    const centerYear = currentMonth.getFullYear();
+    return Array.from({ length: 15 }, (_, index) => centerYear - 7 + index);
+  }, [currentMonth]);
 
   // Generate time slots dynamically based on operating hours and duration
   const generateTimeSlots = (startHour: string, endHour: string, durationHours: number): string[] => {
@@ -336,11 +158,66 @@ export default function AmenityBooking() {
           }
           
           setAmenity(fetchedAmenity);
- 
+          
+          // DEBUG: Log what we received
+          console.log('🔥 FIRESTORE UPDATE RECEIVED:', {
+            slotDuration: fetchedAmenity.booking?.slotDuration,
+            hasWeekendSlots: !!fetchedAmenity.weekendSlots,
+            hasWeekdaySlots: !!fetchedAmenity.weekdaySlots,
+            hasTimeSlots: !!fetchedAmenity.timeSlots,
+            hasOperatingHours: !!fetchedAmenity.operatingHours,
+            operatingHours: fetchedAmenity.operatingHours,
+            booking: fetchedAmenity.booking
+          });
+          
           // CRITICAL: Update time slots IMMEDIATELY when Firestore data changes
           // This runs every time booking.slotDuration or operating hours change
           const currentDate = selectedDate || new Date();
-          setTimeSlots(resolveTimeSlotsForDate(fetchedAmenity, currentDate));
+          const dayOfWeek = currentDate.getDay();
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+          
+          // Generate slots based on current data
+          if (isWeekend && fetchedAmenity.weekendSlots && fetchedAmenity.weekendSlots.length > 0) {
+            console.log('✅ Using weekendSlots');
+
+            setTimeSlots(fetchedAmenity.weekendSlots);
+          } else if (!isWeekend && fetchedAmenity.weekdaySlots && fetchedAmenity.weekdaySlots.length > 0) {
+            console.log('✅ Using weekdaySlots');
+            setTimeSlots(fetchedAmenity.weekdaySlots);
+          } else if (fetchedAmenity.timeSlots && fetchedAmenity.timeSlots.length > 0) {
+            console.log('✅ Using timeSlots (custom) - THIS OVERRIDES GENERATION!');
+            setTimeSlots(fetchedAmenity.timeSlots);
+          } else if (isWeekend && fetchedAmenity.weekendHours && fetchedAmenity.booking?.slotDuration) {
+            console.log('✅ Generating from weekendHours with duration:', fetchedAmenity.booking.slotDuration);
+            const slots = generateTimeSlots(
+              fetchedAmenity.weekendHours.start,
+              fetchedAmenity.weekendHours.end,
+              fetchedAmenity.booking.slotDuration
+            );
+            console.log('Generated weekend slots:', slots);
+            setTimeSlots(slots);
+          } else if (!isWeekend && fetchedAmenity.weekdayHours && fetchedAmenity.booking?.slotDuration) {
+            console.log('✅ Generating from weekdayHours with duration:', fetchedAmenity.booking.slotDuration);
+            const slots = generateTimeSlots(
+              fetchedAmenity.weekdayHours.start,
+              fetchedAmenity.weekdayHours.end,
+              fetchedAmenity.booking.slotDuration
+            );
+            console.log('Generated weekday slots:', slots);
+            setTimeSlots(slots);
+          } else if (fetchedAmenity.operatingHours && fetchedAmenity.booking?.slotDuration) {
+            console.log('✅ Generating from operatingHours with duration:', fetchedAmenity.booking.slotDuration, fetchedAmenity.operatingHours);
+            const slots = generateTimeSlots(
+              fetchedAmenity.operatingHours.start,
+              fetchedAmenity.operatingHours.end,
+              fetchedAmenity.booking.slotDuration
+            );
+            console.log('Generated operating hours slots:', slots);
+            setTimeSlots(slots);
+          } else {
+            console.log('⚠️ USING DEFAULT_TIME_SLOTS - No booking config found!');
+            setTimeSlots(DEFAULT_TIME_SLOTS);
+          }
           
           setLoading(false);
         }
@@ -353,7 +230,7 @@ export default function AmenityBooking() {
       // Cleanup listener on unmount
       return () => unsubscribe();
     }
-  }, [params.id, session?.user?.communityId, selectedDate, timeZone]);
+  }, [params.id, session?.user?.communityId]);
 
   useEffect(() => {
     if (selectedDate && params.id) {
@@ -380,7 +257,67 @@ export default function AmenityBooking() {
 
   // Update time slots based on selected date (weekday vs weekend)
   const updateTimeSlotsForDate = (amenityData: Amenity, date: Date) => {
-    setTimeSlots(resolveTimeSlotsForDate(amenityData, date));
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
+    // Priority 1: Check for weekday/weekend specific slots
+    if (isWeekend && amenityData.weekendSlots && amenityData.weekendSlots.length > 0) {
+      console.log('📅 [Real-time] Using weekend slots:', amenityData.weekendSlots);
+      setTimeSlots(amenityData.weekendSlots);
+      return;
+    }
+    
+    if (!isWeekend && amenityData.weekdaySlots && amenityData.weekdaySlots.length > 0) {
+      console.log('📅 [Real-time] Using weekday slots:', amenityData.weekdaySlots);
+      setTimeSlots(amenityData.weekdaySlots);
+      return;
+    }
+    
+    // Priority 2: Check for custom time slots (applies to all days)
+    if (amenityData.timeSlots && Array.isArray(amenityData.timeSlots) && amenityData.timeSlots.length > 0) {
+      console.log('📅 [Real-time] Using custom time slots:', amenityData.timeSlots);
+      setTimeSlots(amenityData.timeSlots);
+      return;
+    }
+    
+    // Priority 3: Generate from weekday/weekend operating hours
+    if (isWeekend && amenityData.weekendHours && amenityData.booking?.slotDuration) {
+      const generatedSlots = generateTimeSlots(
+        amenityData.weekendHours.start,
+        amenityData.weekendHours.end,
+        amenityData.booking.slotDuration
+      );
+      console.log('📅 [Real-time] Generated weekend slots:', generatedSlots);
+      setTimeSlots(generatedSlots);
+      return;
+    }
+    
+    if (!isWeekend && amenityData.weekdayHours && amenityData.booking?.slotDuration) {
+      const generatedSlots = generateTimeSlots(
+        amenityData.weekdayHours.start,
+        amenityData.weekdayHours.end,
+        amenityData.booking.slotDuration
+      );
+      console.log('📅 [Real-time] Generated weekday slots:', generatedSlots);
+      setTimeSlots(generatedSlots);
+      return;
+    }
+    
+    // Priority 4: Generate from general operating hours
+    if (amenityData.operatingHours && amenityData.booking?.slotDuration) {
+      const generatedSlots = generateTimeSlots(
+        amenityData.operatingHours.start,
+        amenityData.operatingHours.end,
+        amenityData.booking.slotDuration
+      );
+      console.log('📅 [Real-time] Generated time slots:', generatedSlots);
+      setTimeSlots(generatedSlots);
+      return;
+    }
+    
+    // Priority 5: Use default time slots
+    console.log('📅 [Real-time] Using default time slots');
+    setTimeSlots(DEFAULT_TIME_SLOTS);
   };
 
   const fetchBookings = async (amenityId: string, date: Date) => {
@@ -419,35 +356,85 @@ export default function AmenityBooking() {
   };
 
   const isSlotBooked = (timeSlot: string) => {
-    const [slotStartTime, slotEndTime] = timeSlot.split('-');
-
-    if (!slotStartTime || !slotEndTime) {
-      return false;
-    }
-
-    const [slotStartHour, slotStartMinute] = slotStartTime.split(':').map(Number);
-    const [slotEndHour, slotEndMinute] = slotEndTime.split(':').map(Number);
-
-    if (
-      [slotStartHour, slotStartMinute, slotEndHour, slotEndMinute].some((value) => Number.isNaN(value))
-    ) {
-      return false;
-    }
-
-    const slotStartMinutes = (slotStartHour * 60) + slotStartMinute;
-    const slotEndMinutes = (slotEndHour * 60) + slotEndMinute;
-
-    return bookings.some((booking) => {
-      const bookingStartMinutes = (booking.startTime.getHours() * 60) + booking.startTime.getMinutes();
-      const bookingEndMinutes = (booking.endTime.getHours() * 60) + booking.endTime.getMinutes();
-
-      return bookingStartMinutes < slotEndMinutes && bookingEndMinutes > slotStartMinutes;
+    const [startTime] = timeSlot.split('-');
+    const [hours, minutes] = startTime.split(':').map(Number);
+    
+    return bookings.some(booking => {
+      const bookingHour = booking.startTime.getHours();
+      return bookingHour === hours;
     });
+  };
+
+  const navigateCalendarMonth = (direction: 'prev' | 'next') => {
+    setCurrentMonth((prev) => {
+      const next = new Date(prev);
+      next.setDate(1);
+      next.setMonth(prev.getMonth() + (direction === 'prev' ? -1 : 1));
+
+      setSelectedDate((currentSelected) => {
+        if (!currentSelected) {
+          return currentSelected;
+        }
+
+        const selectedDay = currentSelected.getDate();
+        const maxDayInTargetMonth = new Date(
+          next.getFullYear(),
+          next.getMonth() + 1,
+          0
+        ).getDate();
+
+        const nextSelectedDate = new Date(currentSelected);
+        nextSelectedDate.setFullYear(
+          next.getFullYear(),
+          next.getMonth(),
+          Math.min(selectedDay, maxDayInTargetMonth)
+        );
+
+        return nextSelectedDate;
+      });
+
+      return next;
+    });
+  };
+
+  const applyCalendarMonthYear = (year: number, month: number) => {
+    setCurrentMonth((prev) => {
+      const next = new Date(prev);
+      next.setDate(1);
+      next.setFullYear(year, month, 1);
+
+      setSelectedDate((currentSelected) => {
+        if (!currentSelected) {
+          return currentSelected;
+        }
+
+        const selectedDay = currentSelected.getDate();
+        const maxDayInTargetMonth = new Date(year, month + 1, 0).getDate();
+        const nextSelectedDate = new Date(currentSelected);
+        nextSelectedDate.setFullYear(
+          year,
+          month,
+          Math.min(selectedDay, maxDayInTargetMonth)
+        );
+
+        return nextSelectedDate;
+      });
+
+      return next;
+    });
+  };
+
+  const jumpToToday = () => {
+    const today = new Date();
+    setSelectedDate(today);
+    setCurrentMonth(new Date(today));
+    setSelectedSlot('');
   };
 
   const handleBooking = async () => {
     // Prevent double booking
     if (isBooking) {
+      console.log('🚫 Booking already in progress, ignoring duplicate request');
       return;
     }
 
@@ -498,7 +485,6 @@ export default function AmenityBooking() {
 
     if (isBlackoutDate) {
       toast.error('This date is blocked and not available for booking. Please select another date.');
-      setIsBooking(false);
       return;
     }
 
@@ -512,33 +498,9 @@ export default function AmenityBooking() {
     const bookingEnd = new Date(selectedDate);
     bookingEnd.setHours(endHours, endMinutes, 0, 0);
 
-    if (bookingStart.getTime() <= Date.now()) {
-      toast.error('You cannot book a slot that has already started. Please choose a future slot.');
-      setIsBooking(false);
-      return;
-    }
-
-    const offlinePayload = {
-      amenityId: amenity.id,
-      amenityName: amenity.name,
-      startTime: bookingStart.toISOString(),
-      endTime: bookingEnd.toISOString(),
-      attendees: attendees.filter(name => name.trim() !== ''),
-      selectedDate: selectedDate.toISOString(),
-      selectedSlot,
-      userName: session.user.name || session.user.email.split('@')[0],
-      userFlatNumber: (session.user as any).flatNumber || '',
-    };
-
     try {
-      if (!navigator.onLine) {
-        enqueueOfflineBooking(offlinePayload);
-        toast.success('No internet. Booking was queued and will sync automatically when online.');
-        setShowBookingModal(false);
-        return;
-      }
-
       // 🔥 NEW: Use transaction-based API
+      console.log('🚀 Creating booking via transaction API...');
       
       const response = await fetch('/api/bookings/create', {
         method: 'POST',
@@ -558,39 +520,11 @@ export default function AmenityBooking() {
 
       const data = await response.json();
 
-      if (response.status === 409) {
-        toast.error('This time slot is already booked.');
-
-        const suggestedSlot = data?.nextAvailableSlot as
-          | { selectedDate?: string; startTime?: string; endTime?: string }
-          | null
-          | undefined;
-
-        if (
-          suggestedSlot?.selectedDate &&
-          suggestedSlot?.startTime &&
-          suggestedSlot?.endTime
-        ) {
-          const suggestedDate = new Date(suggestedSlot.selectedDate);
-          if (!Number.isNaN(suggestedDate.getTime())) {
-            setSelectedDate(suggestedDate);
-          }
-
-          const nextSlotLabel = `${suggestedSlot.startTime}-${suggestedSlot.endTime}`;
-          setSelectedSlot(nextSlotLabel);
-
-          toast.info(
-            `Next available slot: ${suggestedSlot.selectedDate.slice(0, 10)} from ${suggestedSlot.startTime} to ${suggestedSlot.endTime}`
-          );
-        }
-
-        return;
-      }
-
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create booking');
       }
 
+      console.log('✅ Booking created:', data);
 
       // Show appropriate success message based on status
       if (data.status === 'confirmed') {
@@ -613,6 +547,20 @@ export default function AmenityBooking() {
       fetchBookings(amenity.id, selectedDate);
       
     } catch (error) {
+      console.error('❌ Booking error:', error);
+
+      const offlinePayload = {
+        amenityId: amenity.id,
+        amenityName: amenity.name,
+        startTime: bookingStart.toISOString(),
+        endTime: bookingEnd.toISOString(),
+        attendees: attendees.filter(name => name.trim() !== ''),
+        selectedDate: selectedDate.toISOString(),
+        selectedSlot,
+        userName: session.user.name || session.user.email.split('@')[0],
+        userFlatNumber: (session.user as any).flatNumber || '',
+      };
+
       if (!navigator.onLine || error instanceof TypeError) {
         enqueueOfflineBooking(offlinePayload);
         toast.success('No internet. Booking was queued and will sync automatically when online.');
@@ -847,6 +795,7 @@ export default function AmenityBooking() {
                 {/* Calendar Section */}
                 <div className="p-3 sm:p-5 border-b border-slate-100 dark:border-slate-800">
                   {/* Calendar Container with subtle elevation */}
+<<<<<<< HEAD
                   <div className="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl p-2 sm:p-4">
                     <Calendar
                       mode="single"
@@ -892,10 +841,9 @@ export default function AmenityBooking() {
                           "ring-2 ring-slate-900 dark:ring-white ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-800"
                         ),
                         day_today: cn(
-                          "rounded-full font-bold",
-                          "text-blue-400",
-                          "ring-2 ring-blue-500 ring-offset-1 ring-offset-slate-900",
-                          "[&[aria-selected=true]]:bg-blue-600 [&[aria-selected=true]]:text-white [&[aria-selected=true]]:ring-blue-300"
+                          "bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100",
+                          "font-bold",
+                          "ring-2 ring-blue-400 dark:ring-blue-500"
                         ),
                         day_outside: "text-slate-300 dark:text-slate-700 opacity-30 hover:opacity-30 cursor-default",
                         day_disabled: "text-slate-300 dark:text-slate-700 opacity-20 cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent",
@@ -918,31 +866,232 @@ export default function AmenityBooking() {
                                 blackoutDate = new Date(blackoutItem.date.seconds * 1000);
                               } else {
                                 blackoutDate = new Date(blackoutItem.date);
+=======
+                  <div className="rounded-2xl border border-slate-200/70 dark:border-slate-700/70 bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-900/60 shadow-sm p-3 sm:p-4">
+                    <div className="mx-auto w-full max-w-[22.5rem] sm:max-w-[24.5rem]">
+                    <div className="relative flex items-center justify-center mb-2.5 sm:mb-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Previous month"
+                        onClick={() => navigateCalendarMonth('prev')}
+                        className={cn(
+                          'absolute left-0 h-10 w-10 p-2 rounded-full',
+                          'bg-white/60 dark:bg-white/10 backdrop-blur-md',
+                          'border border-slate-200/60 dark:border-white/15',
+                          'shadow-sm shadow-slate-900/5 dark:shadow-black/20',
+                          'text-slate-600 dark:text-slate-300',
+                          'hover:bg-black/5 dark:hover:bg-white/20',
+                          'hover:text-slate-900 dark:hover:text-white',
+                          'transition-all duration-200 ease-out hover:scale-105 active:scale-95'
+                        )}
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </Button>
+                      <Popover open={isMonthPickerOpen} onOpenChange={setIsMonthPickerOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className={cn(
+                              "h-9 rounded-full px-4 text-base font-semibold tracking-tight",
+                              "text-slate-900 dark:text-white",
+                              "hover:bg-black/5 dark:hover:bg-white/10",
+                              "focus-visible:ring-2 focus-visible:ring-black/25 dark:focus-visible:ring-white/35"
+                            )}
+                          >
+                            <span>{formatDateInTimeZone(currentMonth, timeZone, { month: 'long', year: 'numeric' })}</span>
+                            <ChevronDown
+                              className={cn(
+                                "ml-1.5 h-4 w-4 transition-transform duration-200",
+                                isMonthPickerOpen && "rotate-180"
+                              )}
+                            />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          align="center"
+                          className={cn(
+                            "w-[18.5rem] rounded-2xl border p-3",
+                            "border-slate-200 dark:border-slate-800",
+                            "bg-white/95 dark:bg-slate-900/95 backdrop-blur-md"
+                          )}
+                        >
+                          <div className="space-y-3">
+                            <Select
+                              value={String(currentMonth.getFullYear())}
+                              onValueChange={(value) => {
+                                applyCalendarMonthYear(Number(value), currentMonth.getMonth());
+                              }}
+                            >
+                              <SelectTrigger className="h-9 rounded-lg border-slate-200 dark:border-slate-700">
+                                <SelectValue placeholder="Select year" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-64 rounded-xl border-slate-200 dark:border-slate-800">
+                                {monthPickerYears.map((year) => (
+                                  <SelectItem key={year} value={String(year)} className="rounded-md">
+                                    {year}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+
+                            <div className="grid grid-cols-4 gap-1.5">
+                              {CALENDAR_MONTH_LABELS.map((monthLabel, monthIndex) => {
+                                const isActiveMonth = monthIndex === currentMonth.getMonth();
+
+                                return (
+                                  <button
+                                    key={monthLabel}
+                                    type="button"
+                                    onClick={() => {
+                                      applyCalendarMonthYear(currentMonth.getFullYear(), monthIndex);
+                                      setIsMonthPickerOpen(false);
+                                    }}
+                                    className={cn(
+                                      "h-8 rounded-lg text-xs font-semibold transition-colors",
+                                      isActiveMonth
+                                        ? "bg-black text-white dark:bg-white dark:text-black"
+                                        : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                                    )}
+                                  >
+                                    {monthLabel}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Next month"
+                        onClick={() => navigateCalendarMonth('next')}
+                        className={cn(
+                          'absolute right-0 h-10 w-10 p-2 rounded-full',
+                          'bg-white/60 dark:bg-white/10 backdrop-blur-md',
+                          'border border-slate-200/60 dark:border-white/15',
+                          'shadow-sm shadow-slate-900/5 dark:shadow-black/20',
+                          'text-slate-600 dark:text-slate-300',
+                          'hover:bg-black/5 dark:hover:bg-white/20',
+                          'hover:text-slate-900 dark:hover:text-white',
+                          'transition-all duration-200 ease-out hover:scale-105 active:scale-95'
+                        )}
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </Button>
+                    </div>
+
+                    <div className="mb-2.5 flex items-center justify-between gap-2">
+                      <span className="inline-flex h-7 items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
+                        Today: {formatDateInTimeZone(new Date(), timeZone, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={jumpToToday}
+                        className="h-7 rounded-full px-2.5 text-xs font-semibold text-slate-600 hover:bg-black/5 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+                      >
+                        Go to today
+                      </Button>
+                    </div>
+
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.div
+                        key={`${currentMonth.getFullYear()}-${currentMonth.getMonth()}`}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                      >
+                        <Calendar
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={(date) => {
+                            setSelectedDate(date);
+                            if (date) {
+                              setCurrentMonth(new Date(date));
+                            }
+                          }}
+                          month={currentMonth}
+                          onMonthChange={setCurrentMonth}
+                          className="mx-auto w-full p-0"
+                          classNames={{
+                            months: "flex flex-col w-full",
+                            month: "space-y-3 w-full",
+                            month_caption: "hidden",
+                            nav: "hidden",
+                            month_grid: "w-full table-fixed border-collapse",
+                            weekdays: "",
+                            weekday: "h-8 pb-1 text-center align-middle text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500 sm:h-9 sm:pb-1.5",
+                            week: "",
+                            day: "h-10 p-0 text-center align-middle relative focus-within:relative focus-within:z-20 sm:h-11",
+                            day_button: cn(
+                              "mx-auto aspect-square w-full max-w-[2rem] sm:max-w-[2.2rem] lg:max-w-[2.35rem]",
+                              "rounded-xl text-sm font-medium",
+                              "flex items-center justify-center p-0",
+                              "transition-all duration-200 ease-out",
+                              "hover:bg-black/5 dark:hover:bg-white/10",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/25 dark:focus-visible:ring-white/35 focus-visible:ring-offset-2",
+                              "focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900",
+                              "[&[aria-current=date]]:font-semibold",
+                              "disabled:text-slate-400 dark:disabled:text-slate-600",
+                              "disabled:opacity-40 disabled:cursor-not-allowed"
+                            ),
+                            selected: "[&>button]:!bg-black [&>button]:!text-white dark:[&>button]:!bg-white dark:[&>button]:!text-slate-900 [&>button]:font-semibold [&>button]:ring-1 [&>button]:ring-inset [&>button]:ring-black/20 dark:[&>button]:ring-white/25",
+                            today: "[&>button]:ring-1 [&>button]:ring-inset [&>button]:ring-slate-500 dark:[&>button]:ring-slate-300 [&>button]:font-semibold [&>button]:bg-slate-100/80 dark:[&>button]:bg-slate-800/80",
+                            outside: "text-slate-400 dark:text-slate-600 opacity-55",
+                            disabled: "",
+                            day_hidden: "invisible",
+                          }}
+                        disabled={(date) => {
+                          // Disable past dates
+                          if (date < new Date(Date.now() - 86400000)) return true;
+                          
+                          // Disable blackout dates
+                          if (amenity.rules?.blackoutDates && amenity.rules.blackoutDates.length > 0) {
+                            return amenity.rules.blackoutDates.some((blackoutItem: any) => {
+                              try {
+                                let blackoutDate: Date | null = null;
+                                
+                                if (blackoutItem?.date) {
+                                  if (blackoutItem.date instanceof Date) {
+                                    blackoutDate = blackoutItem.date;
+                                  } else if (blackoutItem.date.seconds) {
+                                    blackoutDate = new Date(blackoutItem.date.seconds * 1000);
+                                  } else {
+                                    blackoutDate = new Date(blackoutItem.date);
+                                  }
+                                } else if (blackoutItem instanceof Date) {
+                                  blackoutDate = blackoutItem;
+                                } else if (blackoutItem?.seconds) {
+                                  blackoutDate = new Date(blackoutItem.seconds * 1000);
+                                } else if (typeof blackoutItem === 'string') {
+                                  blackoutDate = new Date(blackoutItem);
+                                }
+                                
+                                if (blackoutDate && !isNaN(blackoutDate.getTime())) {
+                                  const dateToCheck = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                                  const blackoutDateToCheck = new Date(blackoutDate.getFullYear(), blackoutDate.getMonth(), blackoutDate.getDate());
+                                  return dateToCheck.getTime() === blackoutDateToCheck.getTime();
+                                }
+                                
+                                return false;
+                              } catch (error) {
+                                return false;
+>>>>>>> 3fcb4da (fixup! fix(vercel): resolve React 19 peer dependency install failures)
                               }
-                            } else if (blackoutItem instanceof Date) {
-                              blackoutDate = blackoutItem;
-                            } else if (blackoutItem?.seconds) {
-                              blackoutDate = new Date(blackoutItem.seconds * 1000);
-                            } else if (typeof blackoutItem === 'string') {
-                              blackoutDate = new Date(blackoutItem);
-                            }
-                            
-                            if (blackoutDate && !isNaN(blackoutDate.getTime())) {
-                              const dateToCheck = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-                              const blackoutDateToCheck = new Date(blackoutDate.getFullYear(), blackoutDate.getMonth(), blackoutDate.getDate());
-                              return dateToCheck.getTime() === blackoutDateToCheck.getTime();
-                            }
-                            
-                            return false;
-                          } catch (error) {
-                            return false;
+                            });
                           }
-                        });
-                      }
-                      
-                      return false;
-                    }}
-                  />
+                          
+                          return false;
+                        }}
+                        />
+                      </motion.div>
+                    </AnimatePresence>
+                    </div>
                   </div>
                   
                   {/* Blocked Dates Notice */}
@@ -976,19 +1125,18 @@ export default function AmenityBooking() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
                       {timeSlots.map((slot) => {
                         const booked = isSlotBooked(slot);
-                        const pastSlot = isSlotInPast(selectedDate, slot);
                         const isSelected = selectedSlot === slot;
                         
                         return (
                           <button
                             key={slot}
-                            disabled={booked || pastSlot}
-                            onClick={() => !booked && !pastSlot && setSelectedSlot(slot)}
+                            disabled={booked}
+                            onClick={() => !booked && setSelectedSlot(slot)}
                             className={cn(
                               "relative px-2 sm:px-3 py-3 sm:py-3.5 rounded-xl text-sm font-medium",
                               "border-2 transition-all duration-100",
                               "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-500",
-                              (booked || pastSlot)
+                              booked 
                                 ? "bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 border-slate-100 dark:border-slate-800 cursor-not-allowed"
                                 : isSelected
                                   ? cn(
@@ -1012,16 +1160,11 @@ export default function AmenityBooking() {
                                 "w-3.5 h-3.5 transition-colors",
                                 isSelected ? "text-white/80 dark:text-slate-900/80" : ""
                               )} />
-                              <span className="whitespace-nowrap text-[13px] sm:text-sm">{formatSlotLabel(slot)}</span>
+                              <span>{slot}</span>
                             </div>
                             {booked && (
                               <span className="absolute -top-2 -right-2 px-1.5 py-0.5 text-[10px] font-semibold bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-md">
                                 Taken
-                              </span>
-                            )}
-                            {pastSlot && !booked && (
-                              <span className="absolute -top-2 -right-2 px-1.5 py-0.5 text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-md">
-                                Past
                               </span>
                             )}
                             {isSelected && !booked && (
@@ -1047,14 +1190,14 @@ export default function AmenityBooking() {
                               "active:scale-[0.98] active:shadow-md transition-all duration-150"
                             )}
                           >
-                            Book {formatSlotLabel(selectedSlot)}
+                            Book {selectedSlot}
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-md">
                           <DialogHeader>
                             <DialogTitle className="text-lg">Confirm Your Booking</DialogTitle>
                             <DialogDescription className="text-slate-500 dark:text-slate-400">
-                              {amenity.name} • {formatDateInTimeZone(selectedDate, timeZone, { weekday: 'short', month: 'short', day: 'numeric' })} • {formatSlotLabel(selectedSlot)}
+                              {amenity.name} • {formatDateInTimeZone(selectedDate, timeZone, { weekday: 'short', month: 'short', day: 'numeric' })} • {selectedSlot}
                             </DialogDescription>
                           </DialogHeader>
                           
@@ -1103,13 +1246,13 @@ export default function AmenityBooking() {
                             {/* Summary */}
                             <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
                               <div className="flex items-center gap-2 mb-2">
-                                <Info className="w-4 h-4 text-blue-500" />
+                                <Info className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                                 <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Booking Summary</span>
                               </div>
                               <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
                                 <li>• {amenity.name}</li>
                                 <li>• {formatDateInTimeZone(selectedDate, timeZone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</li>
-                                <li>• Time: {formatSlotLabel(selectedSlot)}</li>
+                                <li>• Time: {selectedSlot}</li>
                                 <li>• {attendees.filter(a => a.trim()).length || 1} attendee(s)</li>
                               </ul>
                             </div>
@@ -1167,8 +1310,6 @@ export default function AmenityBooking() {
             )}
           </div>
         </div>
-
-        <UsageHeatmap amenityId={amenity.id} amenityName={amenity.name} />
       </div>
     </div>
   );

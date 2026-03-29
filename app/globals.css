@@ -287,20 +287,20 @@
     transition: none !important;
   }
 
-  .calendar-day-has-booking:not(.day_selected) {
+  .calendar-day-has-booking:not(.day_selected):not(:has([aria-selected='true'])) {
     background-color: rgba(14, 165, 233, 0.16) !important;
     color: #0f172a !important;
     font-weight: 700 !important;
     box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.38);
   }
 
-  .dark .calendar-day-has-booking:not(.day_selected) {
+  .dark .calendar-day-has-booking:not(.day_selected):not(:has([aria-selected='true'])) {
     background-color: rgba(14, 165, 233, 0.2) !important;
     color: #e2e8f0 !important;
     box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.48);
   }
 
-  .calendar-day-has-booking:not(.day_selected)::after {
+  .calendar-day-has-booking:not(.day_selected):not(:has([aria-selected='true']))::after {
     content: '';
     position: absolute;
     left: 50%;
@@ -312,7 +312,7 @@
     background: rgba(14, 165, 233, 0.9);
   }
 
-  .dark .calendar-day-has-booking:not(.day_selected)::after {
+  .dark .calendar-day-has-booking:not(.day_selected):not(:has([aria-selected='true']))::after {
     background: rgba(125, 211, 252, 0.95);
   }
 }

@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar as CalendarIcon, 
+  ChevronDown,
   ChevronLeft, 
   ChevronRight, 
   Clock, 
@@ -29,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
@@ -135,6 +137,8 @@ const amenityTypes = [
 
 const GRID_HOURS = Array.from({ length: 17 }, (_, index) => index + 6); // 06:00-22:00
 
+const CALENDAR_MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 const AMENITY_COLOR_PALETTE = [
   'bg-teal-500',
   'bg-emerald-500',
@@ -207,6 +211,7 @@ export default function CalendarPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAmenity, setSelectedAmenity] = useState('All Amenities');
@@ -410,17 +415,74 @@ export default function CalendarPage() {
     cancelled: filteredBookings.filter(b => b.status === 'cancelled').length,
   }), [filteredBookings]);
 
+  const monthPickerYears = useMemo(() => {
+    const centerYear = currentMonth.getFullYear();
+    return Array.from({ length: 15 }, (_, index) => centerYear - 7 + index);
+  }, [currentMonth]);
+
   // Handlers
   const handleRefresh = useCallback(() => {
     fetchBookings(true);
     toast({ title: "Refreshed", description: "Calendar data updated." });
   }, []);
 
+  const applyCalendarMonthYear = useCallback((year: number, month: number) => {
+    setCurrentMonth((prev) => {
+      const nextMonth = new Date(prev);
+      nextMonth.setDate(1);
+      nextMonth.setFullYear(year, month, 1);
+
+      setSelectedDate((currentSelected) => {
+        if (!currentSelected) {
+          return currentSelected;
+        }
+
+        const selectedDay = currentSelected.getDate();
+        const maxDayInTargetMonth = new Date(year, month + 1, 0).getDate();
+
+        const nextSelectedDate = new Date(currentSelected);
+        nextSelectedDate.setFullYear(
+          year,
+          month,
+          Math.min(selectedDay, maxDayInTargetMonth)
+        );
+
+        return nextSelectedDate;
+      });
+
+      return nextMonth;
+    });
+  }, []);
+
   const navigateMonth = useCallback((direction: 'prev' | 'next') => {
-    setCurrentMonth(prev => {
-      const newMonth = new Date(prev);
-      newMonth.setMonth(prev.getMonth() + (direction === 'prev' ? -1 : 1));
-      return newMonth;
+    setCurrentMonth((prev) => {
+      const nextMonth = new Date(prev);
+      nextMonth.setDate(1);
+      nextMonth.setMonth(prev.getMonth() + (direction === 'prev' ? -1 : 1));
+
+      setSelectedDate((currentSelected) => {
+        if (!currentSelected) {
+          return currentSelected;
+        }
+
+        const selectedDay = currentSelected.getDate();
+        const maxDayInTargetMonth = new Date(
+          nextMonth.getFullYear(),
+          nextMonth.getMonth() + 1,
+          0
+        ).getDate();
+
+        const nextSelectedDate = new Date(currentSelected);
+        nextSelectedDate.setFullYear(
+          nextMonth.getFullYear(),
+          nextMonth.getMonth(),
+          Math.min(selectedDay, maxDayInTargetMonth)
+        );
+
+        return nextSelectedDate;
+      });
+
+      return nextMonth;
     });
   }, []);
 
@@ -1154,69 +1216,200 @@ export default function CalendarPage() {
                 
                 {/* Calendar */}
                 <div className={cn(
-                  "rounded-xl border p-3 sm:p-4",
-                  "bg-white dark:bg-slate-900",
-                  "border-slate-200 dark:border-slate-800"
+                  "rounded-2xl border p-4 sm:p-5",
+                  "bg-white/95 dark:bg-slate-900/90 backdrop-blur-sm",
+                  "border-slate-200/70 dark:border-slate-800/80",
+                  "shadow-[0_1px_2px_rgba(15,23,42,0.08),0_12px_28px_rgba(15,23,42,0.08)]",
+                  "dark:shadow-[0_1px_2px_rgba(2,6,23,0.55),0_18px_36px_rgba(2,6,23,0.35)]"
                 )}>
+                  <div className="mx-auto w-full max-w-[22.5rem] sm:max-w-[24.5rem]">
                   {/* Month navigation */}
-                  <div className="flex items-center justify-between mb-3 sm:mb-4">
-                    <h2 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-white">
-                      {formatDateInTimeZone(currentMonth, timeZone, { month: 'long', year: 'numeric' })}
-                    </h2>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigateMonth('prev')}
-                        className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                  <div className="relative flex items-center justify-center mb-2.5 sm:mb-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Previous month"
+                      onClick={() => navigateMonth('prev')}
+                      className={cn(
+                        'absolute left-0 h-10 w-10 p-2 rounded-full',
+                        'bg-white/60 dark:bg-white/10 backdrop-blur-md',
+                        'border border-slate-200/60 dark:border-white/15',
+                        'shadow-sm shadow-slate-900/5 dark:shadow-black/20',
+                        'text-slate-600 dark:text-slate-300',
+                        'hover:bg-black/5 dark:hover:bg-white/20',
+                        'hover:text-slate-900 dark:hover:text-white',
+                        'transition-all duration-200 ease-out hover:scale-105 active:scale-95'
+                      )}
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <Popover open={isMonthPickerOpen} onOpenChange={setIsMonthPickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className={cn(
+                            "h-9 rounded-full px-4 text-base font-semibold tracking-tight",
+                            "text-slate-900 dark:text-white",
+                            "hover:bg-black/5 dark:hover:bg-white/10",
+                            "focus-visible:ring-2 focus-visible:ring-black/25 dark:focus-visible:ring-white/35"
+                          )}
+                        >
+                          <span>{formatDateInTimeZone(currentMonth, timeZone, { month: 'long', year: 'numeric' })}</span>
+                          <ChevronDown
+                            className={cn(
+                              "ml-1.5 h-4 w-4 transition-transform duration-200",
+                              isMonthPickerOpen && "rotate-180"
+                            )}
+                          />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        align="center"
+                        className={cn(
+                          "w-[18.5rem] rounded-2xl border p-3",
+                          "border-slate-200 dark:border-slate-800",
+                          "bg-white/95 dark:bg-slate-900/95 backdrop-blur-md"
+                        )}
                       >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigateMonth('next')}
-                        className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
+                        <div className="space-y-3">
+                          <Select
+                            value={String(currentMonth.getFullYear())}
+                            onValueChange={(value) => {
+                              applyCalendarMonthYear(Number(value), currentMonth.getMonth());
+                            }}
+                          >
+                            <SelectTrigger className="h-9 rounded-lg border-slate-200 dark:border-slate-700">
+                              <SelectValue placeholder="Select year" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-64 rounded-xl border-slate-200 dark:border-slate-800">
+                              {monthPickerYears.map((year) => (
+                                <SelectItem key={year} value={String(year)} className="rounded-md">
+                                  {year}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {CALENDAR_MONTH_LABELS.map((monthLabel, monthIndex) => {
+                              const isActiveMonth = monthIndex === currentMonth.getMonth();
+
+                              return (
+                                <button
+                                  key={monthLabel}
+                                  type="button"
+                                  onClick={() => {
+                                    applyCalendarMonthYear(currentMonth.getFullYear(), monthIndex);
+                                    setIsMonthPickerOpen(false);
+                                  }}
+                                  className={cn(
+                                    "h-8 rounded-lg text-xs font-semibold transition-colors",
+                                    isActiveMonth
+                                      ? "bg-black text-white dark:bg-white dark:text-black"
+                                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                                  )}
+                                >
+                                  {monthLabel}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Next month"
+                      onClick={() => navigateMonth('next')}
+                      className={cn(
+                        'absolute right-0 h-10 w-10 p-2 rounded-full',
+                        'bg-white/60 dark:bg-white/10 backdrop-blur-md',
+                        'border border-slate-200/60 dark:border-white/15',
+                        'shadow-sm shadow-slate-900/5 dark:shadow-black/20',
+                        'text-slate-600 dark:text-slate-300',
+                        'hover:bg-black/5 dark:hover:bg-white/20',
+                        'hover:text-slate-900 dark:hover:text-white',
+                        'transition-all duration-200 ease-out hover:scale-105 active:scale-95'
+                      )}
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
                   </div>
-                  
+
+                  <div className="mb-2.5 flex items-center justify-between gap-2">
+                    <span className="inline-flex h-7 items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
+                      Today: {formatDateInTimeZone(new Date(), timeZone, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={jumpToToday}
+                      className="h-7 rounded-full px-2.5 text-xs font-semibold text-slate-600 hover:bg-black/5 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+                    >
+                      Go to today
+                    </Button>
+                  </div>
+
                   {/* Calendar grid */}
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    month={currentMonth}
-                    onMonthChange={setCurrentMonth}
-                    modifiers={{ hasBooking: bookingDates }}
-                    modifiersClassNames={{
-                      hasBooking: 'calendar-day-has-booking',
-                    }}
-                    className="w-full"
-                    classNames={{
-                      months: "flex flex-col",
-                      month: "space-y-4 w-full",
-                      caption: "hidden",
-                      nav: "hidden",
-                      table: "w-full border-collapse",
-                      head_row: "flex w-full",
-                      head_cell: "text-slate-500 dark:text-slate-400 rounded-md w-full font-medium text-xs",
-                      row: "flex w-full mt-1",
-                      cell: "text-center text-sm p-0 relative w-full aspect-square",
-                      day: cn(
-                        "h-full w-full p-0 font-normal rounded-lg text-sm relative",
-                        "hover:bg-slate-100 dark:hover:bg-slate-800",
-                        "transition-colors duration-100"
-                      ),
-                      day_selected: "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-900 dark:hover:bg-white",
-                      day_today: "ring-1 ring-slate-300 dark:ring-slate-700",
-                      day_outside: "text-slate-300 dark:text-slate-700 opacity-50",
-                      day_disabled: "text-slate-300 dark:text-slate-700 opacity-50",
-                      day_hidden: "invisible",
-                    }}
-                  />
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={`${currentMonth.getFullYear()}-${currentMonth.getMonth()}`}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
+                    >
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                          setSelectedDate(date);
+                          if (date) {
+                            setCurrentMonth(new Date(date));
+                          }
+                        }}
+                        month={currentMonth}
+                        onMonthChange={setCurrentMonth}
+                        modifiers={{ hasBooking: bookingDates }}
+                        modifiersClassNames={{
+                          hasBooking: 'font-semibold'
+                        }}
+                        className="w-full p-0"
+                        classNames={{
+                          months: "flex flex-col w-full",
+                          month: "space-y-3 w-full",
+                          month_caption: "hidden",
+                          nav: "hidden",
+                          month_grid: "w-full table-fixed border-collapse",
+                          weekdays: "",
+                          weekday: "h-8 pb-1 text-center align-middle text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500 sm:h-9 sm:pb-1.5",
+                          week: "",
+                          day: "h-10 p-0 text-center align-middle relative focus-within:relative focus-within:z-20 sm:h-11",
+                          day_button: cn(
+                            "mx-auto aspect-square w-full max-w-[2rem] sm:max-w-[2.2rem] lg:max-w-[2.35rem]",
+                            "rounded-xl text-sm font-medium",
+                            "flex items-center justify-center p-0",
+                            "transition-all duration-200 ease-out",
+                            "hover:bg-black/5 dark:hover:bg-white/10",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/25 dark:focus-visible:ring-white/35 focus-visible:ring-offset-2",
+                            "focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900",
+                            "[&[aria-current=date]]:font-semibold",
+                            "disabled:text-slate-400 dark:disabled:text-slate-600",
+                            "disabled:opacity-40 disabled:cursor-not-allowed"
+                          ),
+                          selected: "[&>button]:!bg-black [&>button]:!text-white dark:[&>button]:!bg-white dark:[&>button]:!text-slate-900 [&>button]:font-semibold [&>button]:ring-1 [&>button]:ring-inset [&>button]:ring-black/20 dark:[&>button]:ring-white/25",
+                          today: "[&>button]:ring-1 [&>button]:ring-inset [&>button]:ring-slate-500 dark:[&>button]:ring-slate-300 [&>button]:font-semibold [&>button]:bg-slate-100/80 dark:[&>button]:bg-slate-800/80",
+                          outside: "text-slate-400 dark:text-slate-600 opacity-55",
+                          disabled: "",
+                          day_hidden: "invisible",
+                        }}
+                      />
+                    </motion.div>
+                  </AnimatePresence>
+                  </div>
                 </div>
                 
                 {/* Stats - Inline indicators (hidden on mobile, shown on lg+) */}
