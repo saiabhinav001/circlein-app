@@ -9,6 +9,14 @@ interface StreakWidgetProps {
   communityId?: string;
 }
 
+function getNextMilestone(streak: number): number {
+  if (streak < 3) return 3;
+  if (streak < 7) return 7;
+  if (streak < 14) return 14;
+  if (streak < 21) return 21;
+  return streak;
+}
+
 function getStreakMessage(streak: number): string {
   if (streak >= 14) {
     return 'Incredible consistency. Keep leading the way!';
@@ -72,48 +80,68 @@ export function StreakWidget({ userEmail, communityId }: StreakWidgetProps) {
 
   const message = useMemo(() => getStreakMessage(streak), [streak]);
   const hasStreak = streak > 0;
+  const nextMilestone = useMemo(() => getNextMilestone(streak), [streak]);
+  const milestoneProgress = useMemo(() => {
+    if (nextMilestone === 0) return 0;
+    return Math.min(100, Math.round((streak / nextMilestone) * 100));
+  }, [nextMilestone, streak]);
 
   return (
     <section
-      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-gray-900 to-gray-800 p-4 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-xl ${
-        streak >= 7 ? 'before:pointer-events-none before:absolute before:inset-0 before:bg-gradient-to-br before:from-orange-950/30 before:to-transparent' : ''
+      className={`group relative overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-amber-50/60 to-orange-50/60 p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-200 hover:shadow-lg hover:shadow-amber-100/80 dark:border-slate-700/70 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800/90 dark:hover:border-amber-700/60 dark:hover:shadow-amber-950/40 ${
+        streak >= 7 ? 'before:pointer-events-none before:absolute before:inset-0 before:bg-gradient-to-br before:from-orange-500/12 before:to-transparent dark:before:from-orange-900/40' : ''
       }`}
     >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_84%_14%,rgba(251,191,36,0.2),transparent_42%),radial-gradient(circle_at_14%_84%,rgba(249,115,22,0.16),transparent_50%)] dark:bg-[radial-gradient(circle_at_84%_14%,rgba(251,191,36,0.14),transparent_42%),radial-gradient(circle_at_14%_84%,rgba(249,115,22,0.12),transparent_50%)]" />
+
       <div className="relative">
-        <div className="flex items-center gap-2 text-sm font-semibold text-white">
-          <Flame className="h-4 w-4 text-orange-400" />
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+          <Flame className="h-4 w-4 text-orange-500" />
           Streak
         </div>
 
         {loading ? (
           <div className="mt-4 animate-pulse space-y-2">
-            <div className="h-4 w-24 rounded bg-gray-700" />
-            <div className="h-8 w-16 rounded bg-gray-700" />
+            <div className="h-4 w-24 rounded bg-slate-200 dark:bg-slate-700" />
+            <div className="h-8 w-16 rounded bg-slate-200 dark:bg-slate-700" />
           </div>
         ) : (
           <>
             <div className="mt-4 flex items-end justify-between gap-3">
               <div>
                 {hasStreak ? <p className="text-4xl leading-none" aria-hidden="true">🔥</p> : null}
-                <p className={`mt-2 text-3xl font-bold leading-none ${hasStreak ? 'text-orange-400' : 'text-gray-500'}`}>{streak}</p>
-                <p className="mt-1 text-xs text-gray-400">day streak</p>
+                <p className={`mt-2 text-3xl font-bold leading-none ${hasStreak ? 'text-orange-500 dark:text-orange-400' : 'text-slate-500 dark:text-slate-500'}`}>{streak}</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">day streak</p>
               </div>
 
               {streak >= 7 ? (
-                <div className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-300">
+                <div className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-100/80 px-2 py-1 text-xs font-medium text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
                   <Trophy className="h-3.5 w-3.5" />
                   Milestone
                 </div>
               ) : null}
             </div>
 
+            <div className="mt-3 rounded-lg border border-white/60 bg-white/65 px-2.5 py-2 backdrop-blur-sm dark:border-slate-700/70 dark:bg-slate-800/70">
+              <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                <span>Next milestone</span>
+                <span>{nextMilestone} days</span>
+              </div>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-500"
+                  style={{ width: `${milestoneProgress}%` }}
+                />
+              </div>
+            </div>
+
             {hasStreak ? (
-              <p className="mt-3 text-sm text-gray-300">{message}</p>
+              <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{message}</p>
             ) : (
-              <p className="mt-3 text-sm text-gray-500">🏃 Start your streak!</p>
+              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Start your streak with a booking today.</p>
             )}
 
-            {streak >= 7 ? <p className="mt-2 text-xs italic text-yellow-400">Weekly consistency badge unlocked</p> : null}
+            {streak >= 7 ? <p className="mt-2 text-xs italic text-amber-700 dark:text-yellow-400">Weekly consistency badge unlocked</p> : null}
           </>
         )}
       </div>
