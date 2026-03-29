@@ -71,41 +71,52 @@ export function StreakWidget({ userEmail, communityId }: StreakWidgetProps) {
   }, [communityId, userEmail]);
 
   const message = useMemo(() => getStreakMessage(streak), [streak]);
+  const hasStreak = streak > 0;
 
   return (
-    <section className="rounded-2xl border border-slate-200/90 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/70 p-4 sm:p-5 shadow-sm">
-      <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-        <Flame className="h-4 w-4 text-orange-500" />
-        Booking Streak
-      </div>
-
-      {loading ? (
-        <div className="mt-4 space-y-2">
-          <div className="h-8 w-20 rounded bg-slate-200 dark:bg-slate-700/70" />
-          <div className="h-4 w-44 rounded bg-slate-100 dark:bg-slate-800/60" />
+    <section
+      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-gray-900 to-gray-800 p-4 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-xl ${
+        streak >= 7 ? 'before:pointer-events-none before:absolute before:inset-0 before:bg-gradient-to-br before:from-orange-950/30 before:to-transparent' : ''
+      }`}
+    >
+      <div className="relative">
+        <div className="flex items-center gap-2 text-sm font-semibold text-white">
+          <Flame className="h-4 w-4 text-orange-400" />
+          Streak
         </div>
-      ) : (
-        <>
-          <div className="mt-4 flex items-end justify-between">
-            <div>
-              <p className="text-3xl font-bold leading-none text-slate-900 dark:text-white">{streak}</p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">consecutive day{streak === 1 ? '' : 's'}</p>
-            </div>
-            <div className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-700 dark:bg-orange-900/20 dark:text-orange-300">
-              {streak >= 7 ? 'On fire' : streak >= 1 ? 'Active' : 'Start now'}
-            </div>
+
+        {loading ? (
+          <div className="mt-4 animate-pulse space-y-2">
+            <div className="h-4 w-24 rounded bg-gray-700" />
+            <div className="h-8 w-16 rounded bg-gray-700" />
           </div>
+        ) : (
+          <>
+            <div className="mt-4 flex items-end justify-between gap-3">
+              <div>
+                {hasStreak ? <p className="text-4xl leading-none" aria-hidden="true">🔥</p> : null}
+                <p className={`mt-2 text-3xl font-bold leading-none ${hasStreak ? 'text-orange-400' : 'text-gray-500'}`}>{streak}</p>
+                <p className="mt-1 text-xs text-gray-400">day streak</p>
+              </div>
 
-          <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{message}</p>
-
-          {streak >= 7 && (
-            <div className="mt-3 inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-300">
-              <Trophy className="h-3.5 w-3.5" />
-              Weekly consistency badge unlocked
+              {streak >= 7 ? (
+                <div className="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-300">
+                  <Trophy className="h-3.5 w-3.5" />
+                  Milestone
+                </div>
+              ) : null}
             </div>
-          )}
-        </>
-      )}
+
+            {hasStreak ? (
+              <p className="mt-3 text-sm text-gray-300">{message}</p>
+            ) : (
+              <p className="mt-3 text-sm text-gray-500">🏃 Start your streak!</p>
+            )}
+
+            {streak >= 7 ? <p className="mt-2 text-xs italic text-yellow-400">Weekly consistency badge unlocked</p> : null}
+          </>
+        )}
+      </div>
     </section>
   );
 }

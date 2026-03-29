@@ -84,39 +84,39 @@ export function QuickBookingWidget() {
   };
 
   return (
-    <section className="rounded-2xl border border-slate-200/90 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/70 p-4 sm:p-5 shadow-sm">
-      <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-        <Repeat2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-        Quick Booking
+    <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-gray-900 to-gray-800 p-4 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-xl">
+      <div className="flex items-center gap-2 text-sm font-semibold text-white">
+        <Repeat2 className="h-4 w-4 text-blue-400" />
+        Book Again
       </div>
 
       {loading ? (
-        <div className="mt-4 space-y-2">
-          <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-700/70" />
-          <div className="h-4 w-48 rounded bg-slate-100 dark:bg-slate-800/60" />
-          <div className="h-9 w-full rounded-lg bg-slate-100 dark:bg-slate-800/60" />
+        <div className="mt-4 animate-pulse space-y-2">
+          <div className="h-4 w-24 rounded bg-gray-700" />
+          <div className="h-8 w-16 rounded bg-gray-700" />
         </div>
       ) : latestAmenityBooking ? (
         <>
-          <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">Continue with your most recent amenity:</p>
-          <p className="mt-1 text-base font-semibold text-slate-900 dark:text-white">{latestAmenityBooking.amenityName}</p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-4 text-lg font-semibold text-white">{latestAmenityBooking.amenityName}</p>
+          <p className="mt-1 text-xs text-gray-500">
             {latestBookingDate
               ? `Last booked on ${latestBookingDate.toLocaleDateString()}`
               : 'Ready for your next reservation'}
           </p>
 
-          <Button onClick={goToBooking} className="mt-4 h-9 w-full rounded-lg bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100">
-            Book Again
+          <Button onClick={goToBooking} className="mt-4 h-10 w-full rounded-xl bg-blue-600 text-white hover:bg-blue-500">
+            Book Now
             <ArrowRight className="ml-2 h-3.5 w-3.5" />
           </Button>
         </>
       ) : (
         <>
-          <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">No recent amenity bookings found. Start a new reservation now.</p>
-          <Button onClick={() => router.push('/calendar')} variant="outline" className="mt-4 h-9 w-full rounded-lg">
-            <CalendarDays className="mr-2 h-3.5 w-3.5" />
-            Open Calendar
+          <div className="mt-4 flex items-center gap-2 text-gray-500">
+            <CalendarDays className="h-4 w-4" />
+            <p className="text-sm">No recent bookings yet</p>
+          </div>
+          <Button onClick={() => router.push('/calendar')} variant="outline" className="mt-4 h-10 w-full rounded-xl border-white/15 bg-black/10 text-gray-200 hover:bg-black/20 hover:text-white">
+            Start booking
           </Button>
         </>
       )}
