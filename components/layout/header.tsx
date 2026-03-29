@@ -15,7 +15,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { HamburgerMenu } from '@/components/ui/hamburger-menu';
-import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
@@ -33,19 +32,6 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
   const openCommandPalette = () => {
     window.dispatchEvent(new Event('circlein-open-command-palette'));
   };
-
-  // Keyboard shortcut for search (Cmd/Ctrl + K)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        window.dispatchEvent(new Event('circlein-open-command-palette'));
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   // Get page title from pathname
   const getPageTitle = () => {
@@ -95,31 +81,37 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
           <button
             type="button"
             onClick={openCommandPalette}
-            aria-label="Search (Ctrl+K)"
+            aria-label="Search and run commands (Ctrl+K)"
+            aria-haspopup="dialog"
             className={cn(
-              "w-full h-9 rounded-lg px-3",
+              "group relative isolate w-full h-9 rounded-xl px-3",
               "flex items-center gap-2 text-left",
-              "bg-white dark:bg-slate-900",
-              "border border-slate-200 dark:border-slate-500/70",
-              "hover:border-slate-300 dark:hover:border-slate-300/70",
-              "focus-visible:bg-white dark:focus-visible:bg-slate-900",
-              "focus-visible:border-slate-400 dark:focus-visible:border-slate-100",
-              "focus-visible:ring-2 focus-visible:ring-slate-300/90 dark:focus-visible:ring-slate-100/85",
-              "focus-visible:shadow-[0_0_0_3px_rgba(148,163,184,0.2)] dark:focus-visible:shadow-[0_0_0_3px_rgba(248,250,252,0.16)]",
-              "outline-none transition-colors duration-100"
+              "bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-900",
+              "border border-slate-200/95 dark:border-slate-500/70",
+              "hover:-translate-y-px hover:border-emerald-300/70 dark:hover:border-emerald-600/60",
+              "hover:shadow-[0_10px_24px_-18px_rgba(16,185,129,0.72)] dark:hover:shadow-[0_10px_24px_-18px_rgba(16,185,129,0.5)]",
+              "focus-visible:-translate-y-px",
+              "focus-visible:border-emerald-400/80 dark:focus-visible:border-emerald-500/70",
+              "focus-visible:ring-2 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-800/80",
+              "outline-none transition-all duration-200"
             )}
           >
-            <Search className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-            <span className="text-sm text-slate-400 dark:text-slate-500">Search...</span>
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-500/0 via-emerald-400/10 to-cyan-400/0 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+            />
+            <Search className="relative z-10 w-4 h-4 text-slate-400 transition-colors duration-200 group-hover:text-emerald-600 dark:text-slate-500 dark:group-hover:text-emerald-400" />
+            <span className="relative z-10 text-sm text-slate-500 dark:text-slate-400">Search pages and commands</span>
             <kbd
               className={cn(
-                "ml-auto px-1.5 py-0.5 text-[10px] font-medium rounded hidden md:block",
-                "text-slate-400 dark:text-slate-500",
+                "relative z-10 ml-auto px-1.5 py-0.5 text-[10px] font-medium rounded hidden md:block",
+                "text-slate-500 dark:text-slate-400",
                 "bg-slate-200/80 dark:bg-slate-700/80",
-                "border border-slate-300/50 dark:border-slate-600/50"
+                "border border-slate-300/60 dark:border-slate-600/60",
+                "transition-colors duration-200 group-hover:border-emerald-200 group-hover:text-emerald-700 dark:group-hover:border-emerald-700 dark:group-hover:text-emerald-400"
               )}
             >
-              ⌘K
+              Ctrl K
             </kbd>
           </button>
         </div>

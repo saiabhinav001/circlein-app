@@ -54,6 +54,13 @@ type BookingOption = {
   startTime: Date;
 };
 
+const NAV_SHORTCUTS: Record<string, string> = {
+  'nav-dashboard': 'D',
+  'nav-bookings': 'B',
+  'nav-calendar': 'C',
+  'nav-settings': 'S',
+};
+
 export function GlobalCommandPalette() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -279,9 +286,17 @@ export function GlobalCommandPalette() {
 
   return (
     <>
-    <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Jump to pages, amenities, bookings, or admin tools..." />
-      <CommandList>
+    <CommandDialog
+      open={open}
+      onOpenChange={setOpen}
+      contentClassName="rounded-2xl"
+      commandClassName="bg-white/95 dark:bg-slate-950/95"
+    >
+      <CommandInput
+        className="text-[15px]"
+        placeholder="Jump to pages, amenities, bookings, or admin tools..."
+      />
+      <CommandList className="max-h-[min(68vh,34rem)]">
         <CommandEmpty>No matching command found.</CommandEmpty>
 
         {recentIds.length > 0 && (
@@ -308,6 +323,7 @@ export function GlobalCommandPalette() {
         <CommandGroup heading="Navigation">
           {visibleNavigation.map((action) => {
             const Icon = action.icon;
+            const shortcut = NAV_SHORTCUTS[action.id];
             return (
               <CommandItem
                 key={action.id}
@@ -316,7 +332,7 @@ export function GlobalCommandPalette() {
               >
                 <Icon className="mr-2 h-4 w-4" />
                 <span>{action.label}</span>
-                {action.id === 'nav-bookings' && <CommandShortcut>G B</CommandShortcut>}
+                {shortcut && <CommandShortcut>{shortcut}</CommandShortcut>}
               </CommandItem>
             );
           })}
