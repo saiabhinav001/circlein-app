@@ -1101,6 +1101,9 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
               )} 
             />
             <DialogPrimitive.Content
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="booking-qr-modal-title"
               className={cn(
                 "fixed left-[50%] top-[50%] z-[10000]",
                 "w-[calc(100%-2rem)] max-w-sm translate-x-[-50%] translate-y-[-50%]",
@@ -1123,12 +1126,14 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
                     <Shield className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                   </div>
                   <div>
-                    <h2 className="font-semibold text-slate-900 dark:text-white">Facility Access</h2>
+                    <h2 id="booking-qr-modal-title" className="font-semibold text-slate-900 dark:text-white">Facility Access</h2>
                     <p className="text-xs text-slate-500">Present for entry</p>
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setShowQRModal(false)}
+                  aria-label="Close QR access modal"
                   className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 >
                   <X className="w-5 h-5" />
@@ -1167,7 +1172,9 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
                         </div>
                       </div>
                       <button
+                        type="button"
                         onClick={() => setShowQRDetails(!showQRDetails)}
+                        aria-label={showQRDetails ? 'Hide access code details' : 'Show access code details'}
                         className="p-2 rounded-lg hover:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
                       >
                         {showQRDetails ? (
@@ -1261,6 +1268,9 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
               )}
             />
             <DialogPrimitive.Content
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="booking-receipt-modal-title"
               className={cn(
                 'fixed left-[50%] top-[50%] z-[10000] w-[calc(100%-2rem)] max-w-2xl translate-x-[-50%] translate-y-[-50%]',
                 'rounded-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 shadow-2xl',
@@ -1274,13 +1284,15 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
                 <div className="p-5 sm:p-6">
                   <div className="flex items-start justify-between gap-3 mb-5">
                     <div>
-                      <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Booking Receipt</h2>
+                      <h2 id="booking-receipt-modal-title" className="text-xl font-semibold text-slate-900 dark:text-white">Booking Receipt</h2>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
                         Confirmation for {selectedBooking.amenityName || 'Community Facility'}
                       </p>
                     </div>
                     <button
+                      type="button"
                       onClick={() => setShowReceiptModal(false)}
+                      aria-label="Close booking receipt"
                       className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                     >
                       <X className="w-5 h-5" />

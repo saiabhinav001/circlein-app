@@ -83,7 +83,7 @@ export default function AppLayout({
                 onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
                 isMenuOpen={mobileMenuOpen}
               />
-              <main ref={mainContentRef} className="flex-1 overflow-auto bg-background">
+              <main id="main-content" ref={mainContentRef} className="flex-1 overflow-auto bg-background">
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}

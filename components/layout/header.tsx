@@ -105,6 +105,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
               ref={searchRef}
               type="text"
               placeholder="Search..."
+              aria-label="Search site content"
               value={searchQuery}
               onChange={handleSearchChange}
               onFocus={() => setIsSearchFocused(true)}
@@ -132,6 +133,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
                     setSearchQuery('');
                     searchRef.current?.focus();
                   }}
+                  aria-label="Clear search query"
                   className={cn(
                     "p-1 rounded-md",
                     "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300",
@@ -169,6 +171,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost" 
+              aria-label="Open user menu"
               className={cn(
                 "relative h-9 w-9 rounded-full p-0",
                 "hover:bg-slate-100 dark:hover:bg-slate-800",
@@ -177,7 +180,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
               )}
             >
               <Avatar className="h-9 w-9">
-                <AvatarImage src={session?.user?.image || ''} className="object-cover" />
+                <AvatarImage src={session?.user?.image || ''} alt={session?.user?.name ? `${session.user.name} profile` : 'User profile'} className="object-cover" />
                 <AvatarFallback className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium">
                   {session?.user?.name?.[0]?.toUpperCase() || <User className="w-4 h-4" />}
                 </AvatarFallback>
@@ -207,7 +210,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
             <div className="px-3 py-3 bg-slate-50 dark:bg-slate-800/40">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={session?.user?.image || ''} className="object-cover" />
+                  <AvatarImage src={session?.user?.image || ''} alt={session?.user?.name ? `${session.user.name} profile` : 'User profile'} className="object-cover" />
                   <AvatarFallback className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium">
                     {session?.user?.name?.[0]?.toUpperCase()}
                   </AvatarFallback>

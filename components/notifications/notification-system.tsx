@@ -508,7 +508,9 @@ export function NotificationPanel() {
             {['all', 'unread'].map((filterOption) => (
               <button
                 key={filterOption}
+                type="button"
                 onClick={() => setFilter(filterOption as any)}
+                aria-pressed={filter === filterOption}
                 className={cn(
                   "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
                   filter === filterOption
@@ -549,7 +551,9 @@ export function NotificationPanel() {
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery('')}
+                aria-label="Clear notification search"
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               >
                 <X className="h-3.5 w-3.5 text-slate-400" />

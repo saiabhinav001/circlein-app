@@ -437,6 +437,9 @@ export function ChatWidget() {
 
             <motion.section
               ref={panelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="chat-widget-title"
               initial={{ opacity: 0, y: 16, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.96 }}
@@ -446,7 +449,7 @@ export function ChatWidget() {
               <header className="relative flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-3 text-white dark:border-slate-800">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.25),transparent_45%)]" />
                 <div className="relative">
-                  <p className="text-sm font-semibold">CircleIn Assistant</p>
+                  <p id="chat-widget-title" className="text-sm font-semibold">CircleIn Assistant</p>
                   <p className="text-xs text-white/90">Ask anything or book by chat</p>
                 </div>
                 <div className="relative flex items-center gap-1">
@@ -455,6 +458,7 @@ export function ChatWidget() {
                     variant="ghost"
                     size="icon"
                     onClick={clearHistory}
+                    aria-label="Clear chat history"
                     className="h-8 w-8 rounded-md text-white/90 hover:bg-white/20 hover:text-white"
                     title="Clear chat history"
                   >
@@ -551,6 +555,7 @@ export function ChatWidget() {
                       size="icon"
                       className={cn(isListening && 'border-red-300 bg-red-50 text-red-600 dark:border-red-700 dark:bg-red-900/30 dark:text-red-400')}
                       onClick={startVoiceInput}
+                      aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
                     >
                       {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                     </Button>
@@ -560,6 +565,7 @@ export function ChatWidget() {
                     size="icon"
                     onClick={() => void sendMessage()}
                     disabled={isSending || !inputValue.trim()}
+                    aria-label="Send message"
                     className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
                   >
                     <Send className="h-4 w-4" />

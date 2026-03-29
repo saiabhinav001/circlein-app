@@ -25,6 +25,8 @@ export function KeyboardShortcutsHelp({
   onOpenChange,
   isAdmin,
 }: KeyboardShortcutsHelpProps) {
+  const titleId = 'keyboard-shortcuts-help-title';
+
   const shortcuts: ShortcutItem[] = [
     { keys: 'Ctrl/Cmd + K', action: 'Open command palette' },
     { keys: 'D', action: 'Go to dashboard' },
@@ -39,9 +41,9 @@ export function KeyboardShortcutsHelp({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <DialogHeader>
-          <DialogTitle>Keyboard Shortcuts</DialogTitle>
+          <DialogTitle id={titleId}>Keyboard Shortcuts</DialogTitle>
           <DialogDescription>
             Use these quick keys when your cursor is not inside a text field.
           </DialogDescription>

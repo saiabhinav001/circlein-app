@@ -142,7 +142,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
             </div>
           </div>
         </div>
-        <nav className="flex-1 p-4">
+        <nav aria-label="Main navigation" className="flex-1 p-4">
           <div className="space-y-2">
             {navigation.map((item) => (
               <div key={item.name} className="flex items-center px-3 py-3 rounded-xl">
@@ -176,6 +176,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                 variant="ghost"
                 size="sm"
                 onClick={handleCollapseToggle}
+                aria-label="Expand sidebar"
                 className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center"
               >
                 <Menu className="w-4 h-4 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
@@ -204,6 +205,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                     variant="ghost"
                     size="sm"
                     onClick={handleCollapseToggle}
+                    aria-label="Collapse sidebar"
                     className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center shrink-0"
                   >
                     <motion.div
@@ -219,6 +221,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                     variant="ghost"
                     size="sm"
                     onClick={onClose}
+                    aria-label="Close menu"
                     className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group w-8 h-8 flex items-center justify-center shrink-0 lg:hidden"
                   >
                     <X className="w-4 h-4 text-black dark:text-slate-300 group-hover:scale-110 transition-transform" />
@@ -258,6 +261,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
 
         {/* Navigation */}
         <nav 
+          aria-label="Main navigation"
           className={cn(
             "flex-1 overflow-x-hidden",
             isCollapsed 
@@ -296,6 +300,8 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                     <Link
                       href={item.href}
                       data-tour={getTourTarget(item.name)}
+                      aria-label={item.name}
+                      aria-current={pathname === item.href ? 'page' : undefined}
                       onClick={() => onClose?.()}
                       className={cn(
                         'relative flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-150',
@@ -320,6 +326,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                 <Link
                   href={item.href}
                   data-tour={getTourTarget(item.name)}
+                  aria-current={pathname === item.href ? 'page' : undefined}
                   onClick={() => onClose?.()}
                   className={cn(
                     'group relative flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 overflow-hidden',
@@ -421,6 +428,8 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                         <Link
                           href={item.href}
                           data-tour={getTourTarget(item.name, true)}
+                          aria-label={item.name}
+                          aria-current={pathname === item.href ? 'page' : undefined}
                           onClick={() => onClose?.()}
                           className={cn(
                             'relative flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-150',
@@ -445,6 +454,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                     <Link
                       href={item.href}
                       data-tour={getTourTarget(item.name, true)}
+                      aria-current={pathname === item.href ? 'page' : undefined}
                       onClick={() => onClose?.()}
                       className={cn(
                         'group relative flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 overflow-hidden',
@@ -527,6 +537,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                     variant="ghost"
                     size="sm"
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                     className="flex items-center justify-center w-11 h-11 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-all duration-200"
                   >
                     <div className="relative w-5 h-5 flex items-center justify-center">
@@ -619,6 +630,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                     variant="ghost"
                     size="sm"
                     onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                    aria-label="Sign out"
                     className="flex items-center justify-center w-11 h-11 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-150"
                   >
                     <LogOut className="w-5 h-5 text-red-500 dark:text-red-400" />
