@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
+import { detectMaintenanceCategory } from '@/lib/maintenance-auto-router';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,7 +71,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const body = await request.json();
     const title = String(body?.title || '').trim();
     const description = String(body?.description || '').trim();
-    const category = String(body?.category || 'general').trim();
+    const providedCategory = String(body?.category || '').trim();
+    const autoCategory = detectMaintenanceCategory(title, description || String(body?.issue || ''));
+    const category = providedCategory || autoCategory;
+    const autoDetected = !providedCategory;
     const priority = String(body?.priority || 'medium').trim();
     const location = String(body?.location || '').trim();
     const imageUrls = Array.isArray(body?.imageUrls)
@@ -91,6 +95,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       title,
       description,
       category,
+      autoDetected,
       location,
       priority,
       status: 'new',
@@ -130,7 +135,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       createdAt: now,
     });
 
-    return NextResponse.json({ success: true, requestId: requestRef.id });
+    return NextResponse.json({
+      success: true,
+      requestId: requestRef.id,
+      category,
+      autoDetected,
+    });
   } catch (error: any) {
     console.error('Failed to create maintenance request:', error);
     return NextResponse.json(

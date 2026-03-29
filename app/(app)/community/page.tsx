@@ -15,7 +15,8 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { db, storage } from '@/lib/firebase';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
@@ -49,6 +50,10 @@ import {
   ShieldCheck,
   FileText,
   Wand2,
+  Paperclip,
+  Download,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -77,6 +82,14 @@ interface AnnouncementComment {
   createdAt: Date;
 }
 
+interface AnnouncementAttachment {
+  name: string;
+  url: string;
+  contentType: string;
+  size: number;
+  isImage: boolean;
+}
+
 interface Announcement {
   id: string;
   title: string;
@@ -91,6 +104,7 @@ interface Announcement {
   reactionCounts: Record<string, number>;
   reactionsByUser: Record<string, string>;
   comments: AnnouncementComment[];
+  attachments: AnnouncementAttachment[];
 }
 
 interface Poll {
@@ -127,6 +141,9 @@ const REACTION_SPRING = {
   mass: 0.55,
 };
 
+const MAX_ANNOUNCEMENT_ATTACHMENTS = 6;
+const MAX_ANNOUNCEMENT_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
+
 const toDateSafe = (value: any): Date => {
   if (!value) {
     return new Date();
@@ -141,6 +158,22 @@ const toDateSafe = (value: any): Date => {
 };
 
 const randomId = () => Math.random().toString(36).slice(2, 10);
+
+const formatFileSize = (size: number): string => {
+  if (!size || size <= 0) {
+    return 'Unknown size';
+  }
+
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+};
 
 const stripMarkdown = (text: string): string => {
   return text
@@ -205,6 +238,7 @@ export default function CommunityPage() {
 
   const [announcementTitle, setAnnouncementTitle] = useState('');
   const [announcementBody, setAnnouncementBody] = useState('');
+  const [announcementAttachments, setAnnouncementAttachments] = useState<File[]>([]);
   const [postingAnnouncement, setPostingAnnouncement] = useState(false);
 
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
@@ -224,6 +258,7 @@ export default function CommunityPage() {
   const [editingBody, setEditingBody] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
   const [reactionDetail, setReactionDetail] = useState<{ announcementId: string; reactionKey: string } | null>(null);
+  const [expandedAttachmentsByAnnouncement, setExpandedAttachmentsByAnnouncement] = useState<Record<string, boolean>>({});
   const pendingReactionsRef = useRef<Record<string, string | undefined>>({});
 
   useEffect(() => {
@@ -288,6 +323,7 @@ export default function CommunityPage() {
         const next = snapshot.docs.map((docSnapshot) => {
           const data = docSnapshot.data();
           const commentsRaw = Array.isArray(data.comments) ? data.comments : [];
+          const attachmentsRaw = Array.isArray(data.attachments) ? data.attachments : [];
 
           return {
             id: docSnapshot.id,
@@ -309,6 +345,18 @@ export default function CommunityPage() {
               text: comment.text || '',
               createdAt: toDateSafe(comment.createdAt),
             })),
+            attachments: attachmentsRaw
+              .map((attachment: any, index: number) => ({
+                name: String(attachment?.name || `Attachment ${index + 1}`),
+                url: String(attachment?.url || ''),
+                contentType: String(attachment?.contentType || 'application/octet-stream'),
+                size: Number(attachment?.size || 0),
+                isImage:
+                  typeof attachment?.isImage === 'boolean'
+                    ? attachment.isImage
+                    : String(attachment?.contentType || '').toLowerCase().startsWith('image/'),
+              }))
+              .filter((attachment: AnnouncementAttachment) => attachment.url.length > 0),
           } as Announcement;
         });
 
@@ -497,6 +545,77 @@ export default function CommunityPage() {
     }
   };
 
+  const validateAnnouncementFiles = (incomingFiles: File[]): File[] => {
+    const selected = incomingFiles.slice(0, MAX_ANNOUNCEMENT_ATTACHMENTS);
+    const acceptedTypes = new Set([
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv',
+      'text/plain',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/zip',
+      'application/x-zip-compressed',
+    ]);
+
+    const valid: File[] = [];
+    for (const file of selected) {
+      const isImage = file.type.startsWith('image/');
+      const accepted = isImage || acceptedTypes.has(file.type);
+
+      if (!accepted) {
+        toast.error(`\"${file.name}\" is not a supported file type.`);
+        continue;
+      }
+
+      if (file.size > MAX_ANNOUNCEMENT_ATTACHMENT_SIZE_BYTES) {
+        toast.error(`\"${file.name}\" is larger than 10MB.`);
+        continue;
+      }
+
+      valid.push(file);
+    }
+
+    return valid;
+  };
+
+  const uploadAnnouncementAttachments = async (): Promise<AnnouncementAttachment[]> => {
+    if (!announcementAttachments.length || !communityId || !userEmail) {
+      return [];
+    }
+
+    const basePath = `communities/${communityId}/announcements/${Date.now()}`;
+    const uploaded: AnnouncementAttachment[] = [];
+
+    const selectedAttachments = announcementAttachments.slice(0, MAX_ANNOUNCEMENT_ATTACHMENTS);
+
+    for (let index = 0; index < selectedAttachments.length; index += 1) {
+      const file = selectedAttachments[index];
+      const cleanedName = file.name
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-zA-Z0-9._-]/g, '');
+      const safeName = cleanedName || `attachment-${index + 1}`;
+      const storageRef = ref(storage, `${basePath}/${index + 1}-${safeName}`);
+
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+
+      uploaded.push({
+        name: file.name,
+        url,
+        contentType: file.type || 'application/octet-stream',
+        size: file.size,
+        isImage: file.type.startsWith('image/'),
+      });
+    }
+
+    return uploaded;
+  };
+
   const createAnnouncement = async () => {
     if (!isAdmin || !communityId || !userEmail) return;
     if (!announcementTitle.trim() || !announcementBody.trim()) {
@@ -506,6 +625,8 @@ export default function CommunityPage() {
 
     setPostingAnnouncement(true);
     try {
+      const attachments = await uploadAnnouncementAttachments();
+
       const response = await fetch('/api/community/announcements', {
         method: 'POST',
         headers: {
@@ -515,6 +636,7 @@ export default function CommunityPage() {
           title: announcementTitle.trim(),
           body: announcementBody.trim(),
           previewText: stripMarkdown(announcementBody).slice(0, 180),
+          attachments,
         }),
       });
 
@@ -525,8 +647,13 @@ export default function CommunityPage() {
 
       setAnnouncementTitle('');
       setAnnouncementBody('');
+      setAnnouncementAttachments([]);
       setSelectedAdminTemplate('');
-      toast.success('Announcement posted.');
+      toast.success(
+        attachments.length > 0
+          ? `Announcement posted with ${attachments.length} attachment${attachments.length > 1 ? 's' : ''}.`
+          : 'Announcement posted.'
+      );
     } catch (error: any) {
       toast.error(error?.message || 'Failed to post announcement.');
     } finally {
@@ -1111,6 +1238,30 @@ export default function CommunityPage() {
                     placeholder="Write your announcement. Markdown supported."
                     className="min-h-[110px]"
                   />
+                  <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-3 space-y-2">
+                    <label className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                      <Paperclip className="w-4 h-4" />
+                      Attach files (optional, max {MAX_ANNOUNCEMENT_ATTACHMENTS}, 10MB each)
+                    </label>
+                    <Input
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.ppt,.pptx,.zip"
+                      onChange={(e) => {
+                        const files = validateAnnouncementFiles(Array.from(e.target.files || []));
+                        setAnnouncementAttachments(files);
+                      }}
+                    />
+                    {announcementAttachments.length > 0 && (
+                      <div className="space-y-1">
+                        {announcementAttachments.map((file) => (
+                          <p key={`${file.name}-${file.size}-${file.lastModified}`} className="text-xs text-slate-500 dark:text-slate-400">
+                            {file.name} ({formatFileSize(file.size)})
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div className="flex justify-end">
                     <Button type="button" onClick={createAnnouncement} disabled={postingAnnouncement}>
                       {postingAnnouncement ? 'Posting...' : 'Publish'}
@@ -1206,6 +1357,11 @@ export default function CommunityPage() {
                                   <Pin className="w-3 h-3" /> Pinned
                                 </Badge>
                               )}
+                              {announcement.attachments.length > 0 && (
+                                <Badge variant="outline" className="text-xs gap-1">
+                                  <Paperclip className="w-3 h-3" /> {announcement.attachments.length}
+                                </Badge>
+                              )}
                             </div>
                             <CardDescription>
                               Posted by {announcement.authorName} • {formatRelative(announcement.createdAt, timeZone)}
@@ -1282,6 +1438,63 @@ export default function CommunityPage() {
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {announcement.body}
                             </ReactMarkdown>
+                          </div>
+                        )}
+
+                        {announcement.attachments.length > 0 && (
+                          <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+                            <button
+                              type="button"
+                              className="w-full flex items-center justify-between gap-2 text-left"
+                              onClick={() =>
+                                setExpandedAttachmentsByAnnouncement((current) => ({
+                                  ...current,
+                                  [announcement.id]: !current[announcement.id],
+                                }))
+                              }
+                            >
+                              <span className="text-sm font-medium text-slate-800 dark:text-slate-100 inline-flex items-center gap-2">
+                                <Paperclip className="w-4 h-4" />
+                                Attachments ({announcement.attachments.length})
+                              </span>
+                              {expandedAttachmentsByAnnouncement[announcement.id] ? (
+                                <ChevronUp className="w-4 h-4 text-slate-500" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 text-slate-500" />
+                              )}
+                            </button>
+
+                            {expandedAttachmentsByAnnouncement[announcement.id] && (
+                              <div className="mt-3 grid sm:grid-cols-2 gap-2">
+                                {announcement.attachments.map((attachment, index) => (
+                                  <a
+                                    key={`${announcement.id}-${attachment.url}-${index}`}
+                                    href={attachment.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="rounded-md border border-slate-200 dark:border-slate-700 p-2 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors"
+                                  >
+                                    {attachment.isImage ? (
+                                      <div
+                                        className="h-24 rounded-md border border-slate-200 dark:border-slate-700 bg-cover bg-center"
+                                        style={{ backgroundImage: `url(${attachment.url})` }}
+                                      />
+                                    ) : (
+                                      <div className="h-24 rounded-md border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400">
+                                        <Paperclip className="w-6 h-6" />
+                                      </div>
+                                    )}
+                                    <div className="mt-2 flex items-center justify-between gap-2">
+                                      <div className="min-w-0">
+                                        <p className="text-sm text-slate-800 dark:text-slate-100 truncate">{attachment.name}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{formatFileSize(attachment.size)}</p>
+                                      </div>
+                                      <Download className="w-4 h-4 text-slate-500" />
+                                    </div>
+                                  </a>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
 

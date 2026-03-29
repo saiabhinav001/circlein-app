@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { useNotifications } from '@/components/notifications/notification-system';
+import { KeyboardShortcutsHelp } from '@/components/layout/keyboard-shortcuts-help';
 import { formatDateTimeInTimeZone } from '@/lib/timezone';
 import {
   CommandDialog,
@@ -56,8 +58,10 @@ export function GlobalCommandPalette() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const timeZone = useCommunityTimeZone();
+  const { setIsOpen: setNotificationsOpen } = useNotifications();
 
   const [open, setOpen] = useState(false);
+  const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
   const [amenities, setAmenities] = useState<AmenityOption[]>([]);
   const [bookingCommands, setBookingCommands] = useState<BookingOption[]>([]);
   const [recentIds, setRecentIds] = useState<string[]>([]);
@@ -65,10 +69,65 @@ export function GlobalCommandPalette() {
   const isAdmin = session?.user?.role === 'admin';
 
   useEffect(() => {
+    const isTyping = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) {
+        return false;
+      }
+
+      const tagName = target.tagName.toLowerCase();
+      if (target.isContentEditable) {
+        return true;
+      }
+
+      if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+        return true;
+      }
+
+      const role = target.getAttribute('role');
+      return role === 'textbox' || role === 'combobox' || role === 'searchbox';
+    };
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      const key = event.key.toLowerCase();
+
+      if ((event.metaKey || event.ctrlKey) && key === 'k') {
         event.preventDefault();
         setOpen(true);
+        return;
+      }
+
+      if (event.metaKey || event.ctrlKey || event.altKey || isTyping(event)) {
+        return;
+      }
+
+      if (key === 'd') {
+        event.preventDefault();
+        router.push('/dashboard');
+        return;
+      }
+
+      if (key === 'b') {
+        event.preventDefault();
+        router.push('/bookings');
+        return;
+      }
+
+      if (key === 'n') {
+        event.preventDefault();
+        setNotificationsOpen(true);
+        return;
+      }
+
+      if (key === 's') {
+        event.preventDefault();
+        router.push(isAdmin ? '/admin/settings' : '/settings');
+        return;
+      }
+
+      if (key === '?' || (key === '/' && event.shiftKey)) {
+        event.preventDefault();
+        setShortcutsHelpOpen(true);
       }
     };
 
@@ -81,7 +140,7 @@ export function GlobalCommandPalette() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('circlein-open-command-palette', onExternalOpen);
     };
-  }, []);
+  }, [isAdmin, router, setNotificationsOpen]);
 
   useEffect(() => {
     if (!session?.user?.email) return;
@@ -219,6 +278,7 @@ export function GlobalCommandPalette() {
   const visibleAdmin = staticActions.filter((action) => action.group === 'admin' && isAdmin);
 
   return (
+    <>
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput placeholder="Jump to pages, amenities, bookings, or admin tools..." />
       <CommandList>
@@ -340,5 +400,11 @@ export function GlobalCommandPalette() {
         )}
       </CommandList>
     </CommandDialog>
+    <KeyboardShortcutsHelp
+      open={shortcutsHelpOpen}
+      onOpenChange={setShortcutsHelpOpen}
+      isAdmin={isAdmin}
+    />
+    </>
   );
 }

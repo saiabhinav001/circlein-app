@@ -7,6 +7,55 @@ import { emailTemplates, sendBatchEmails } from '@/lib/email-service';
 
 export const dynamic = 'force-dynamic';
 
+const MAX_ANNOUNCEMENT_ATTACHMENTS = 6;
+const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
+
+type AnnouncementAttachment = {
+  name: string;
+  url: string;
+  contentType: string;
+  size: number;
+  isImage: boolean;
+};
+
+function normalizeAttachments(value: unknown): AnnouncementAttachment[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .slice(0, MAX_ANNOUNCEMENT_ATTACHMENTS)
+    .map((entry, index) => {
+      const attachment = entry as Record<string, unknown>;
+      const name = String(attachment?.name || `Attachment ${index + 1}`).trim();
+      const url = String(attachment?.url || '').trim();
+      const contentType = String(attachment?.contentType || 'application/octet-stream').trim();
+
+      const parsedSize = Number(attachment?.size || 0);
+      const size = Number.isFinite(parsedSize) && parsedSize > 0 ? Math.floor(parsedSize) : 0;
+
+      if (!url) {
+        return null;
+      }
+
+      if (size > MAX_ATTACHMENT_SIZE_BYTES) {
+        throw new Error(`Attachment \"${name}\" exceeds 10MB limit`);
+      }
+
+      const inferredImage = contentType.toLowerCase().startsWith('image/');
+      const isImage = typeof attachment?.isImage === 'boolean' ? attachment.isImage : inferredImage;
+
+      return {
+        name,
+        url,
+        contentType,
+        size,
+        isImage,
+      };
+    })
+    .filter((item): item is AnnouncementAttachment => item !== null);
+}
+
 function stripMarkdown(text: string): string {
   return text
     .replace(/```[\s\S]*?```/g, ' ')
@@ -48,6 +97,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const title = String(body?.title || '').trim();
     const content = String(body?.body || '').trim();
     const previewText = String(body?.previewText || '').trim();
+    let attachments: AnnouncementAttachment[] = [];
+
+    try {
+      attachments = normalizeAttachments(body?.attachments);
+    } catch (attachmentError: any) {
+      return NextResponse.json(
+        { error: attachmentError?.message || 'Invalid attachment payload' },
+        { status: 400 }
+      );
+    }
 
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and body are required' }, { status: 400 });
@@ -64,6 +123,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       reactionCounts: {},
       reactionsByUser: {},
       comments: [],
+      attachments,
       pinnedAt: null,
       deletedAt: null,
       deletedBy: null,

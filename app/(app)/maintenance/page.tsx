@@ -20,6 +20,7 @@ interface MaintenanceRequest {
   description: string;
   location?: string;
   category: string;
+  autoDetected?: boolean;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'new' | 'in_progress' | 'resolved' | 'closed';
   imageUrls: string[];
@@ -45,7 +46,7 @@ export default function MaintenancePage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [category, setCategory] = useState('plumbing');
+  const [category, setCategory] = useState('auto');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
   const [files, setFiles] = useState<File[]>([]);
 
@@ -132,7 +133,7 @@ export default function MaintenancePage() {
           title: title.trim(),
           description: description.trim(),
           location: location.trim(),
-          category,
+          category: category === 'auto' ? '' : category,
           priority,
           imageUrls,
         }),
@@ -146,10 +147,15 @@ export default function MaintenancePage() {
       setTitle('');
       setDescription('');
       setLocation('');
-      setCategory('plumbing');
+      setCategory('auto');
       setPriority('medium');
       setFiles([]);
-      toast.success('Maintenance request submitted');
+      const routedCategory = normalizeCategory(payload?.category);
+      toast.success(
+        payload?.autoDetected
+          ? `Request submitted and auto-routed to ${routedCategory}.`
+          : `Request submitted in ${routedCategory}.`
+      );
       loadRequests();
     } catch (error: any) {
       toast.error(error?.message || 'Failed to submit request');
@@ -170,6 +176,34 @@ export default function MaintenancePage() {
     if (priority === 'high') return <Badge className="bg-orange-600">High</Badge>;
     if (priority === 'low') return <Badge variant="secondary">Low</Badge>;
     return <Badge className="bg-slate-600">Medium</Badge>;
+  };
+
+  const normalizeCategory = (value?: string) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'plumbing') return 'Plumbing';
+    if (normalized === 'electrical') return 'Electrical';
+    if (normalized === 'hvac' || normalized === 'ac' || normalized === 'air conditioning') return 'HVAC';
+    if (normalized === 'structural') return 'Structural';
+    return 'General';
+  };
+
+  const categoryBadge = (categoryValue?: string, autoDetected?: boolean) => {
+    const normalized = normalizeCategory(categoryValue);
+
+    if (normalized === 'Plumbing') {
+      return <Badge className="bg-cyan-600">Plumbing{autoDetected ? ' (Auto)' : ''}</Badge>;
+    }
+    if (normalized === 'Electrical') {
+      return <Badge className="bg-amber-600">Electrical{autoDetected ? ' (Auto)' : ''}</Badge>;
+    }
+    if (normalized === 'HVAC') {
+      return <Badge className="bg-sky-600">HVAC{autoDetected ? ' (Auto)' : ''}</Badge>;
+    }
+    if (normalized === 'Structural') {
+      return <Badge className="bg-stone-600">Structural{autoDetected ? ' (Auto)' : ''}</Badge>;
+    }
+
+    return <Badge className="bg-slate-600">General{autoDetected ? ' (Auto)' : ''}</Badge>;
   };
 
   const sortedRequests = useMemo(() => {
@@ -223,15 +257,15 @@ export default function MaintenancePage() {
             <div className="grid sm:grid-cols-2 gap-3">
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Category" />
+                  <SelectValue placeholder="Auto-detect category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="plumbing">Plumbing</SelectItem>
-                  <SelectItem value="electrical">Electrical</SelectItem>
-                  <SelectItem value="housekeeping">Housekeeping</SelectItem>
-                  <SelectItem value="amenity">Amenity</SelectItem>
-                  <SelectItem value="security">Security</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="auto">Auto-detect from issue details</SelectItem>
+                  <SelectItem value="Plumbing">Plumbing</SelectItem>
+                  <SelectItem value="Electrical">Electrical</SelectItem>
+                  <SelectItem value="HVAC">HVAC</SelectItem>
+                  <SelectItem value="Structural">Structural</SelectItem>
+                  <SelectItem value="General">General</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -296,7 +330,7 @@ export default function MaintenancePage() {
                   </div>
                   <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{request.description}</p>
                   <div className="text-xs text-slate-500 mt-2 flex items-center gap-3">
-                    <span className="inline-flex items-center gap-1"><Clock3 className="w-3.5 h-3.5" /> {String(request.category || 'general')}</span>
+                    <span className="inline-flex items-center gap-1"><Clock3 className="w-3.5 h-3.5" /> {categoryBadge(request.category, request.autoDetected)}</span>
                     {request.status === 'resolved' || request.status === 'closed' ? (
                       <span className="inline-flex items-center gap-1"><CircleCheckBig className="w-3.5 h-3.5" /> Resolved</span>
                     ) : (
