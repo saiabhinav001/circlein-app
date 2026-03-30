@@ -607,7 +607,15 @@ export default function AdminSettingsUI() {
       case 'account':
         return <AccountSection profile={profile} setProfile={setProfile} />;
       case 'community':
-        return <CommunitySection settings={communitySettings} setSettings={setCommunitySettings} />;
+        return (
+          <CommunitySection
+            settings={communitySettings}
+            setSettings={setCommunitySettings}
+            onSave={handleSave}
+            isSaving={isLoading}
+            canSave={isDirty}
+          />
+        );
       case 'booking-rules':
         return <BookingRulesSection settings={communitySettings} setSettings={setCommunitySettings} />;
       case 'notifications':
@@ -936,10 +944,16 @@ function AccountSection({
 
 function CommunitySection({ 
   settings, 
-  setSettings 
+  setSettings,
+  onSave,
+  isSaving,
+  canSave,
 }: { 
   settings: CommunitySettings; 
   setSettings: (s: CommunitySettings) => void;
+  onSave: () => void;
+  isSaving: boolean;
+  canSave: boolean;
 }) {
   return (
     <div className="p-6">
@@ -1036,6 +1050,7 @@ function CommunitySection({
             Choose your exact community location for weather and regional context.
           </p>
           <LocationPicker
+            initialDisplayName={settings.locationDisplayName}
             onLocationSelected={(result) =>
               setSettings({
                 ...settings,
@@ -1073,6 +1088,29 @@ function CommunitySection({
             checked={settings.weekendBookings}
             onCheckedChange={(checked) => setSettings({ ...settings, weekendBookings: checked })}
           />
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Save after selecting a location to sync weather and regional context.
+          </p>
+          <Button
+            type="button"
+            onClick={onSave}
+            disabled={isSaving || !canSave}
+            className="gap-2 w-full sm:w-auto bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+          >
+            {isSaving ? (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                className="w-4 h-4 border-2 border-white dark:border-gray-900 border-t-transparent rounded-full"
+              />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            Save Community Settings
+          </Button>
         </div>
       </div>
     </div>

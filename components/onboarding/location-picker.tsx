@@ -4,14 +4,43 @@ import { useEffect, useMemo, useState } from 'react'
 import { MapPin, Navigation, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { searchLocations, reverseGeocode, type GeocodingResult } from '@/lib/geocoding'
+import type { GeocodingResult } from '@/lib/geocoding'
 import { toast } from 'sonner'
 
 interface LocationPickerProps {
   onLocationSelected: (result: GeocodingResult) => void
+  initialDisplayName?: string
 }
 
-export function LocationPicker({ onLocationSelected }: LocationPickerProps) {
+async function fetchLocationSuggestions(query: string): Promise<GeocodingResult[]> {
+  const response = await fetch(`/api/geocoding/search?q=${encodeURIComponent(query)}`, {
+    method: 'GET',
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch location suggestions')
+  }
+
+  const payload = await response.json()
+  return Array.isArray(payload?.results) ? payload.results : []
+}
+
+async function fetchReverseLocation(lat: number, lon: number): Promise<GeocodingResult | null> {
+  const response = await fetch(`/api/geocoding/reverse?lat=${lat}&lon=${lon}`, {
+    method: 'GET',
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to reverse geocode location')
+  }
+
+  const payload = await response.json()
+  return payload?.result || null
+}
+
+export function LocationPicker({ onLocationSelected, initialDisplayName }: LocationPickerProps) {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
@@ -26,6 +55,12 @@ export function LocationPicker({ onLocationSelected }: LocationPickerProps) {
   }, [selected])
 
   useEffect(() => {
+    if (!selected && !query.trim() && initialDisplayName?.trim()) {
+      setQuery(initialDisplayName.trim())
+    }
+  }, [initialDisplayName, query, selected])
+
+  useEffect(() => {
     const normalized = query.trim()
     if (normalized.length < 2) {
       setResults([])
@@ -37,13 +72,13 @@ export function LocationPicker({ onLocationSelected }: LocationPickerProps) {
     const timeout = window.setTimeout(async () => {
       try {
         setLoading(true)
-        const nextResults = await searchLocations(normalized)
+        const nextResults = await fetchLocationSuggestions(normalized)
         setResults(nextResults.slice(0, 6))
         setIsOpen(true)
         setHighlightedIndex(nextResults.length > 0 ? 0 : -1)
       } catch {
         setResults([])
-        setIsOpen(false)
+        setIsOpen(true)
       } finally {
         setLoading(false)
       }
@@ -72,7 +107,7 @@ export function LocationPicker({ onLocationSelected }: LocationPickerProps) {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
-          const result = await reverseGeocode(position.coords.latitude, position.coords.longitude)
+          const result = await fetchReverseLocation(position.coords.latitude, position.coords.longitude)
           if (!result) {
             toast.error('Unable to resolve your current location.')
             return
@@ -170,6 +205,12 @@ export function LocationPicker({ onLocationSelected }: LocationPickerProps) {
                 </button>
               )
             })}
+          </div>
+        )}
+
+        {isOpen && !loading && query.trim().length >= 2 && results.length === 0 && (
+          <div className="absolute z-20 mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+            No location suggestions found. Try a nearby landmark or city.
           </div>
         )}
       </div>

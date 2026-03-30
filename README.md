@@ -9,11 +9,14 @@ It combines amenity booking, notifications, maintenance tracking, and admin work
 - Amenity browsing and booking with cancel, reschedule, recurring, and waitlist support.
 - Dashboard widgets for weather, quick re-booking, community pulse, and booking streak.
 - Smart booking suggestions based on recent patterns.
+- Community-wide 12h/24h time display consistency across booking, QR, calendar, and waitlist experiences.
 - Keyboard-driven command palette (Ctrl/Cmd + K, plus route shortcuts).
 - PWA support with offline page and service worker integration.
 
 ### Admin workflows
 - Admin dashboard for settings, waitlist, maintenance, and operations.
+- Community location setup with autocomplete + map preview for weather and locality context.
+- Support ticket desk (`/admin/contact-tickets`) with assignment and status workflows.
 - Weekly report generation and analytics integrations.
 - Automated booking archive flow to keep active collections lean.
 - Maintenance categorization helpers and operations tooling.
@@ -24,6 +27,17 @@ It combines amenity booking, notifications, maintenance tracking, and admin work
 - Role-aware route protection via [proxy.ts](proxy.ts).
 - Cron endpoints protected by shared secret checks.
 - Type-safe UI and server code with TypeScript strict mode.
+
+## Latest Release Highlights (March 2026)
+
+- Global time-format system with app-level provider and community-level 12h/24h preference.
+- Open-source geocoding stack (Photon + Nominatim) and weather stack (Open-Meteo).
+- Authenticated weather proxy route at `/api/weather` plus role-aware weather widget for resident/admin dashboards.
+- Booking engine hardening for recurring flows, policy enforcement, and automatic waitlist promotion handling.
+- Chatbot hardening with validated payloads, trusted role derivation from session, and deterministic AI timeout fallback.
+- Contact ticketing system: resident submission, admin triage desk, status lifecycle, and update notifications.
+- Resident differentiator upgrades: pulse scoring insights and smart slot deep-link quick-booking.
+- Responsive polish for ticket surfaces and dense widget content.
 
 ## Tech Stack
 
@@ -75,6 +89,9 @@ Optional but commonly used in production:
 - `FIREBASE_PRIVATE_KEY`
 - `EMAIL_USER`
 - `EMAIL_PASSWORD`
+- `SUPPORT_EMAIL`
+- `ENABLE_EXTERNAL_AI`
+- `GEMINI_API_KEY`
 
 ### 4) Run locally
 
@@ -126,6 +143,12 @@ Configured in [vercel.json](vercel.json):
 Operational note:
 - Keep `CRON_SECRET` set in production.
 - Unauthenticated direct hits to protected cron routes should return `401`.
+
+## API Additions Snapshot
+
+- `/api/weather` - Weather proxy backed by community location settings.
+- `/api/contact/tickets` - Resident/admin support ticket listing and ticket creation.
+- `/api/contact/tickets/[id]/status` - Admin-only ticket status transitions and updates.
 
 ## Security Model
 
