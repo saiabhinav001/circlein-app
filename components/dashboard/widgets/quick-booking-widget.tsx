@@ -12,12 +12,22 @@ interface BookingSummary {
   startTime: string | null;
 }
 
+interface SmartSuggestion {
+  amenityId: string;
+  amenityName: string;
+  suggestedDate: string;
+  suggestedStartTime: string;
+  suggestedEndTime: string;
+  message: string;
+}
+
 export function QuickBookingWidget() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
   const [bookings, setBookings] = useState<BookingSummary[]>([]);
+  const [topSuggestion, setTopSuggestion] = useState<SmartSuggestion | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -46,9 +56,30 @@ export function QuickBookingWidget() {
         if (isMounted) {
           setBookings(nextBookings);
         }
+
+        try {
+          const suggestionsResponse = await fetch('/api/bookings/suggestions', { cache: 'no-store' });
+          if (!suggestionsResponse.ok) {
+            throw new Error('Failed to fetch smart suggestions');
+          }
+
+          const suggestionsData = await suggestionsResponse.json();
+          const nextSuggestion = Array.isArray(suggestionsData?.suggestions)
+            ? suggestionsData.suggestions[0] || null
+            : null;
+
+          if (isMounted) {
+            setTopSuggestion(nextSuggestion);
+          }
+        } catch {
+          if (isMounted) {
+            setTopSuggestion(null);
+          }
+        }
       } catch (error) {
         if (isMounted) {
           setBookings([]);
+          setTopSuggestion(null);
           setLoadError(true);
         }
       } finally {
@@ -78,6 +109,13 @@ export function QuickBookingWidget() {
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }, [latestAmenityBooking]);
 
+  const suggestionSlotLabel = useMemo(() => {
+    if (!topSuggestion) {
+      return null;
+    }
+    return `${topSuggestion.suggestedStartTime}-${topSuggestion.suggestedEndTime}`;
+  }, [topSuggestion]);
+
   const goToBooking = () => {
     if (latestAmenityBooking?.amenityId) {
       router.push(`/amenity/${latestAmenityBooking.amenityId}`);
@@ -85,6 +123,19 @@ export function QuickBookingWidget() {
     }
 
     router.push('/calendar');
+  };
+
+  const goToSuggestedBooking = () => {
+    if (!topSuggestion) {
+      goToBooking();
+      return;
+    }
+
+    const params = new URLSearchParams({
+      date: topSuggestion.suggestedDate,
+      slot: `${topSuggestion.suggestedStartTime}-${topSuggestion.suggestedEndTime}`,
+    });
+    router.push(`/amenity/${topSuggestion.amenityId}?${params.toString()}`);
   };
 
   return (
@@ -125,8 +176,18 @@ export function QuickBookingWidget() {
               : 'Ready for your next reservation'}
           </p>
 
-          <Button onClick={goToBooking} className="mt-4 h-10 w-full rounded-xl bg-blue-600 text-white shadow-sm transition-all duration-200 hover:bg-blue-500 hover:shadow-md hover:shadow-blue-300/50 dark:hover:shadow-blue-900/40">
-            Book Now
+          {topSuggestion && suggestionSlotLabel ? (
+            <div className="mt-3 rounded-xl border border-sky-200/80 bg-sky-50/80 px-3 py-2.5 dark:border-sky-800/70 dark:bg-sky-950/30">
+              <p className="text-[11px] uppercase tracking-wide text-sky-700 dark:text-sky-300">Smart pick</p>
+              <p className="mt-1 text-xs text-slate-700 dark:text-slate-200 line-clamp-2">{topSuggestion.message}</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                {topSuggestion.suggestedDate} • {suggestionSlotLabel}
+              </p>
+            </div>
+          ) : null}
+
+          <Button onClick={topSuggestion ? goToSuggestedBooking : goToBooking} className="mt-4 h-10 w-full rounded-xl bg-blue-600 text-white shadow-sm transition-all duration-200 hover:bg-blue-500 hover:shadow-md hover:shadow-blue-300/50 dark:hover:shadow-blue-900/40">
+            {topSuggestion ? 'Book Suggested Slot' : 'Book Now'}
             <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Button>
         </>

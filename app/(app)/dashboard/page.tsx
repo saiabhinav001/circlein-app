@@ -678,6 +678,7 @@ export default function Dashboard() {
             <>
               <QuickBookingWidget />
               <CommunityPulseWidget
+                totalAmenities={amenities.length}
                 availableAmenities={availableAmenitiesCount}
                 blockedAmenities={blockedAmenitiesCount}
                 upcomingBookings={upcomingBookings.length}
