@@ -21,6 +21,16 @@ export const BookingCreateSchema = z.object({
   userFlatNumber: z.string().max(50).optional(),
 });
 
+export const RecurringBookingCreateSchema = z.object({
+  amenityId: z.string().min(1).max(100),
+  amenityName: z.string().min(1).max(200),
+  startTime: z.string().min(1).max(80),
+  endTime: z.string().min(1).max(80),
+  selectedSlot: z.string().regex(BOOKING_SLOT_REGEX),
+  weeks: z.coerce.number().int().min(1).max(12),
+  frequency: z.enum(['weekly', 'biweekly']),
+});
+
 const MaintenanceCategorySchema = z.enum([
   'Plumbing',
   'Electrical',

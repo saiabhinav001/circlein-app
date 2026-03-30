@@ -31,6 +31,57 @@ interface RouteParams {
   }>;
 }
 
+function toDate(value: unknown): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof (value as { toDate?: () => Date }).toDate === 'function') {
+    return (value as { toDate: () => Date }).toDate();
+  }
+
+  return null;
+}
+
+function getInternalApiBaseUrl(req: NextRequest): string {
+  const configuredBaseUrl = process.env.NEXTAUTH_URL?.trim();
+  if (configuredBaseUrl) {
+    return configuredBaseUrl.replace(/\/$/, '');
+  }
+  return req.nextUrl.origin.replace(/\/$/, '');
+}
+
+async function triggerWaitlistPromotion(
+  baseUrl: string,
+  amenityId: string,
+  startTimeValue: unknown,
+  reason: 'manual' | 'declined' | 'deadline_expired'
+): Promise<void> {
+  const startDate = toDate(startTimeValue);
+  if (!amenityId || !startDate) {
+    return;
+  }
+
+  const promotionResponse = await fetch(`${baseUrl}/api/bookings/promote-waitlist`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      amenityId,
+      startTime: startDate.toISOString(),
+      reason,
+    }),
+  });
+
+  if (!promotionResponse.ok) {
+    const responseBody = await promotionResponse.text().catch(() => '');
+    console.error('Waitlist promotion failed:', promotionResponse.status, responseBody);
+  }
+}
+
 export async function POST(req: NextRequest, props: RouteParams): Promise<NextResponse> {
   const params = await props.params;
   try {
@@ -51,6 +102,7 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
 
     const userEmail = session.user.email;
     const communityId = (session.user as any).communityId;
+    const internalApiBaseUrl = getInternalApiBaseUrl(req);
 
 
     if (!communityId) {
@@ -134,7 +186,16 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
         expiredAt: now,
       });
 
-      // TODO: Trigger next person promotion (separate API call)
+      try {
+        await triggerWaitlistPromotion(
+          internalApiBaseUrl,
+          String(bookingData?.amenityId || ''),
+          bookingData?.startTime,
+          'deadline_expired'
+        );
+      } catch (promotionError) {
+        console.error('Failed to promote waitlist after confirmation deadline:', promotionError);
+      }
       
       return NextResponse.json(
         { 
@@ -159,21 +220,14 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
       // 7. PROMOTE NEXT WAITLIST PERSON
       
       try {
-        const promotionResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/bookings/promote-waitlist`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amenityId: bookingData.amenityId,
-            startTime: bookingData.startTime.toDate().toISOString(),
-            reason: 'manual',
-          }),
-        });
-
-        if (promotionResponse.ok) {
-          const promotionData = await promotionResponse.json();
-        }
+        await triggerWaitlistPromotion(
+          internalApiBaseUrl,
+          String(bookingData?.amenityId || ''),
+          bookingData?.startTime,
+          'declined'
+        );
       } catch (promoError) {
-                // TODO: add error handling
+        console.error('Failed to promote waitlist after decline:', promoError);
       }
 
       return NextResponse.json({
@@ -200,7 +254,7 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
       const settingsData = settingsSnapshot.data() as any;
       const communityTimeZone = resolveTimeZone(settingsData?.community?.timezone || settingsData?.timezone);
       
-      const emailResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/notifications/email`, {
+      const emailResponse = await fetch(`${internalApiBaseUrl}/api/notifications/email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -220,7 +274,7 @@ export async function POST(req: NextRequest, props: RouteParams): Promise<NextRe
       } else {
       }
     } catch (emailError) {
-            // TODO: add error handling
+            console.error('Failed to send booking confirmation email:', emailError);
     }
 
     // 8. SUCCESS RESPONSE
