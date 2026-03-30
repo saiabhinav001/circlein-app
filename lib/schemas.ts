@@ -41,6 +41,18 @@ export const ChatbotRequestSchema = z.object({
   conversationHistory: z.array(ChatConversationMessageSchema).max(20).optional(),
 });
 
+export const SupportTicketCreateSchema = z.object({
+  subject: z.string().trim().min(3).max(160),
+  message: z.string().trim().min(10).max(4000),
+  category: z.enum(['general', 'booking', 'billing', 'account', 'technical']).optional(),
+});
+
+export const SupportTicketStatusUpdateSchema = z.object({
+  status: z.enum(['open', 'in_progress', 'resolved', 'closed']),
+  assignedTo: z.union([z.string().trim().email(), z.literal('')]).optional(),
+  updateNote: z.string().trim().max(500).optional(),
+});
+
 const MaintenanceCategorySchema = z.enum([
   'Plumbing',
   'Electrical',

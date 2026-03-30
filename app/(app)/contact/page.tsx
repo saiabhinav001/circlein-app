@@ -41,6 +41,15 @@ interface SuggestedQuestion {
   question: string
 }
 
+interface SupportTicket {
+  id: string
+  reference?: string
+  subject: string
+  status: 'open' | 'in_progress' | 'resolved' | 'closed' | string
+  category?: string
+  createdAt?: string | null
+}
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -68,6 +77,20 @@ const SUGGESTED_QUESTIONS: SuggestedQuestion[] = [
   }
 ]
 
+const SUPPORT_STATUS_LABELS: Record<string, string> = {
+  open: 'Open',
+  in_progress: 'In Progress',
+  resolved: 'Resolved',
+  closed: 'Closed'
+}
+
+const SUPPORT_STATUS_BADGE_STYLES: Record<string, string> = {
+  open: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  in_progress: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  resolved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  closed: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+}
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -93,6 +116,9 @@ export default function ContactPage() {
   })
   const [isSubmittingEmail, setIsSubmittingEmail] = useState(false)
   const [emailSubmitted, setEmailSubmitted] = useState(false)
+  const [submittedTicketReference, setSubmittedTicketReference] = useState<string | null>(null)
+  const [recentTickets, setRecentTickets] = useState<SupportTicket[]>([])
+  const [isLoadingTickets, setIsLoadingTickets] = useState(false)
 
   // Auto-scroll chat to bottom
   const scrollToBottom = useCallback(() => {
@@ -102,6 +128,35 @@ export default function ContactPage() {
   useEffect(() => {
     scrollToBottom()
   }, [messages, scrollToBottom])
+
+  const loadRecentTickets = useCallback(async () => {
+    if (!session?.user?.email) {
+      return
+    }
+
+    try {
+      setIsLoadingTickets(true)
+      const response = await fetch('/api/contact/tickets', { cache: 'no-store' })
+      const payload = await response.json()
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Failed to load support tickets')
+      }
+
+      setRecentTickets(Array.isArray(payload?.tickets) ? payload.tickets : [])
+    } catch (error) {
+      console.error('Failed to load support tickets:', error)
+      setRecentTickets([])
+    } finally {
+      setIsLoadingTickets(false)
+    }
+  }, [session?.user?.email])
+
+  useEffect(() => {
+    if (mode === 'email') {
+      void loadRecentTickets()
+    }
+  }, [mode, loadRecentTickets])
 
   // ============================================================================
   // AI CHAT HANDLERS
@@ -182,30 +237,38 @@ export default function ContactPage() {
     setIsSubmittingEmail(true)
 
     try {
-      const response = await fetch('/api/send-email', {
+      const response = await fetch('/api/contact/tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: 'support',
           subject: emailForm.subject,
-          message: emailForm.message,
-          userEmail: session?.user?.email,
-          userName: session?.user?.name
+          message: emailForm.message
         })
       })
 
-      if (!response.ok) throw new Error('Failed to send email')
+      const payload = await response.json()
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Failed to create support ticket')
+      }
+
+      const ticketReference = payload?.ticket?.reference || payload?.ticket?.id?.slice?.(0, 8)?.toUpperCase?.() || null
+      setSubmittedTicketReference(ticketReference)
+
+      await loadRecentTickets()
 
       // Add persistent notification
       addNotification({
         type: 'system',
         priority: 'normal',
         title: 'Support request submitted',
-        message: `Your message "${emailForm.subject}" has been sent. We'll respond within 24-48 hours.`
+        message: ticketReference
+          ? `Ticket ${ticketReference} has been created. We'll respond within 24-48 hours.`
+          : `Your support ticket "${emailForm.subject}" has been submitted. We'll respond within 24-48 hours.`
       })
 
       // Optional toast for immediate feedback
-      toast.success('Message sent successfully')
+      toast.success(ticketReference ? `Ticket ${ticketReference} submitted` : 'Support ticket submitted')
 
       setEmailSubmitted(true)
       setEmailForm({ subject: '', message: '' })
@@ -218,6 +281,7 @@ export default function ContactPage() {
   }
 
   const handleNewEmailRequest = () => {
+    setSubmittedTicketReference(null)
     setEmailSubmitted(false)
   }
 
@@ -341,7 +405,10 @@ export default function ContactPage() {
                 form={emailForm}
                 isSubmitting={isSubmittingEmail}
                 isSubmitted={emailSubmitted}
+                submittedTicketReference={submittedTicketReference}
                 userEmail={session?.user?.email}
+                tickets={recentTickets}
+                isLoadingTickets={isLoadingTickets}
                 onFormChange={setEmailForm}
                 onSubmit={handleEmailSubmit}
                 onNewRequest={handleNewEmailRequest}
@@ -559,7 +626,10 @@ interface EmailPanelProps {
   form: { subject: string; message: string }
   isSubmitting: boolean
   isSubmitted: boolean
+  submittedTicketReference?: string | null
   userEmail?: string | null
+  tickets: SupportTicket[]
+  isLoadingTickets: boolean
   onFormChange: (form: { subject: string; message: string }) => void
   onSubmit: (e: React.FormEvent) => void
   onNewRequest: () => void
@@ -569,7 +639,10 @@ function EmailPanel({
   form,
   isSubmitting,
   isSubmitted,
+  submittedTicketReference,
   userEmail,
+  tickets,
+  isLoadingTickets,
   onFormChange,
   onSubmit,
   onNewRequest
@@ -587,6 +660,11 @@ function EmailPanel({
           <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-5 sm:mb-6">
             We&apos;ll respond to your request within 24-48 hours. You can check your notifications for updates.
           </p>
+          {submittedTicketReference && (
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-5 sm:mb-6">
+              Ticket reference: <span className="font-medium text-gray-800 dark:text-gray-200">{submittedTicketReference}</span>
+            </p>
+          )}
           <button
             onClick={onNewRequest}
             className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 
@@ -679,6 +757,42 @@ function EmailPanel({
           <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
             Include relevant details like booking dates, amenity names, or error messages.
           </p>
+        </div>
+
+        <div className="rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/40 p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <h4 className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-200">Recent tickets</h4>
+            <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Last 4</span>
+          </div>
+
+          {isLoadingTickets ? (
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Loading support history...</p>
+          ) : tickets.length === 0 ? (
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">No support tickets yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {tickets.slice(0, 4).map((ticket) => {
+                const statusKey = String(ticket.status || 'open')
+                const statusLabel = SUPPORT_STATUS_LABELS[statusKey] || statusKey
+                const statusClass = SUPPORT_STATUS_BADGE_STYLES[statusKey] || SUPPORT_STATUS_BADGE_STYLES.open
+
+                return (
+                  <div key={ticket.id} className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-xs sm:text-sm text-gray-800 dark:text-gray-200 line-clamp-1">{ticket.subject}</p>
+                      <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${statusClass}`}>
+                        {statusLabel}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                      {ticket.reference || ticket.id.slice(0, 8).toUpperCase()}
+                      {ticket.createdAt ? ` • ${new Date(ticket.createdAt).toLocaleDateString()}` : ''}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Submit Button */}

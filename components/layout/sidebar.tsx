@@ -107,6 +107,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
     { name: 'Maintenance Desk', href: '/admin/maintenance', icon: ClipboardList },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
+      { name: 'Support Tickets', href: '/admin/contact-tickets', icon: MessageCircle },
   ];
 
   const getTourTarget = (itemName: string, isAdminSection = false) => {
