@@ -44,6 +44,7 @@ import { useResidentNotifications } from '@/hooks/use-community-notifications';
 import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone } from '@/lib/timezone';
 import type { HealthScore } from '@/lib/amenity-health-score';
+import { WeatherWidget } from '@/components/dashboard/widgets/weather-widget';
 
 // ============================================================================
 // SCHEMA & TYPES
@@ -564,6 +565,10 @@ export default function AdminPanel() {
             </Button>
           </div>
         </motion.header>
+
+        <section className="mb-6 sm:mb-8">
+          <WeatherWidget />
+        </section>
 
         {/* ================================================================
             ADD AMENITY FORM

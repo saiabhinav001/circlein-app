@@ -672,21 +672,23 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {!isAdmin && (
-          <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <WeatherWidget />
-            <QuickBookingWidget />
-            <CommunityPulseWidget
-              availableAmenities={availableAmenitiesCount}
-              blockedAmenities={blockedAmenitiesCount}
-              upcomingBookings={upcomingBookings.length}
-            />
-            <StreakWidget
-              userEmail={session?.user?.email}
-              communityId={communityId}
-            />
-          </section>
-        )}
+        <section className={cn('mb-6 grid grid-cols-1 gap-4', isAdmin ? 'sm:grid-cols-1 xl:grid-cols-1' : 'sm:grid-cols-2 xl:grid-cols-4')}>
+          <WeatherWidget />
+          {!isAdmin && (
+            <>
+              <QuickBookingWidget />
+              <CommunityPulseWidget
+                availableAmenities={availableAmenitiesCount}
+                blockedAmenities={blockedAmenitiesCount}
+                upcomingBookings={upcomingBookings.length}
+              />
+              <StreakWidget
+                userEmail={session?.user?.email}
+                communityId={communityId}
+              />
+            </>
+          )}
+        </section>
 
         {/* Search Results Indicator */}
         <AnimatePresence>

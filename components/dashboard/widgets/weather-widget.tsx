@@ -1,175 +1,243 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { CloudSun, Droplets, Umbrella, Wind } from 'lucide-react';
-import { getWeatherEmoji, getWeatherForecast } from '@/lib/weather-service';
-import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { Droplets, Wind, Umbrella, Sun } from 'lucide-react';
+import type { WeatherData } from '@/lib/weather';
 
-interface WeatherData {
-  temp: number;
-  feelsLike: number;
-  condition: string;
-  description: string;
-  humidity: number;
-  windSpeed: number;
-  precipitation: number;
+type WeatherApiResponse = WeatherData | { error: string };
+
+function formatUpdatedAgo(date: Date | null): string {
+  if (!date) return 'Updated just now';
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
+
+  if (diffMinutes < 1) return 'Updated just now';
+  if (diffMinutes < 60) return `Updated ${diffMinutes}m ago`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  return `Updated ${diffHours}h ago`;
 }
 
-const FALLBACK_LOCATION = {
-  latitude: 12.9716,
-  longitude: 77.5946,
-  label: 'Community area',
-};
+function forecastDayLabel(dateText: string): string {
+  const date = new Date(`${dateText}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return '--';
 
-function getConditionAccent(condition: string): string {
-  const normalized = condition.toLowerCase();
-
-  if (normalized.includes('rain') || normalized.includes('storm')) {
-    return 'bg-blue-500/25';
-  }
-
-  if (normalized.includes('cloud') || normalized.includes('overcast') || normalized.includes('fog')) {
-    return 'bg-slate-400/25';
-  }
-
-  return 'bg-yellow-400/25';
-}
-
-function getCurrentCoordinates(): Promise<{ latitude: number; longitude: number } | null> {
-  if (typeof window === 'undefined' || !navigator.geolocation) {
-    return Promise.resolve(null);
-  }
-
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      () => resolve(null),
-      { enableHighAccuracy: false, timeout: 5000, maximumAge: 5 * 60 * 1000 }
-    );
-  });
+  return date.toLocaleDateString('en-US', { weekday: 'short' });
 }
 
 export function WeatherWidget() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 'super_admin';
+  const communityName = (session?.user as any)?.communityName || 'Community';
+
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-  const [locationLabel, setLocationLabel] = useState(FALLBACK_LOCATION.label);
-  const [refreshToken, setRefreshToken] = useState(0);
-
-  const accentClass = useMemo(() => getConditionAccent(weather?.condition || ''), [weather?.condition]);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
 
-    const loadWeather = async () => {
-      setLoading(true);
-      setLoadError(false);
-
+    const load = async () => {
       try {
-        const coords = await getCurrentCoordinates();
-        const latitude = coords?.latitude ?? FALLBACK_LOCATION.latitude;
-        const longitude = coords?.longitude ?? FALLBACK_LOCATION.longitude;
-        setLocationLabel(coords ? 'Your location' : FALLBACK_LOCATION.label);
+        const response = await fetch('/api/weather', { cache: 'no-store' });
+        const payload: WeatherApiResponse = await response.json();
 
-        const forecast = await getWeatherForecast(new Date(), latitude, longitude);
+        if (!active) return;
 
-        if (!isMounted) {
+        if (!response.ok) {
+          setWeather(null);
+          setApiError('weather_unavailable');
           return;
         }
 
-        if (forecast) {
-          setWeather({
-            temp: forecast.temp,
-            feelsLike: forecast.feelsLike,
-            condition: forecast.condition,
-            description: forecast.description,
-            humidity: forecast.humidity,
-            windSpeed: forecast.windSpeed,
-            precipitation: forecast.precipitation,
-          });
-        } else {
+        if ('error' in payload) {
           setWeather(null);
-          setLoadError(true);
+          setApiError(payload.error);
+          return;
         }
-      } catch (error) {
-        if (isMounted) {
-          setWeather(null);
-          setLoadError(true);
-        }
+
+        setWeather(payload);
+        setApiError(null);
+        setLastUpdated(new Date(payload.current.updatedAt));
+      } catch {
+        if (!active) return;
+        setWeather(null);
+        setApiError('weather_unavailable');
       } finally {
-        if (isMounted) {
+        if (active) {
           setLoading(false);
         }
       }
     };
 
-    loadWeather();
+    load();
+    const interval = setInterval(load, 30 * 60 * 1000);
 
     return () => {
-      isMounted = false;
+      active = false;
+      clearInterval(interval);
     };
-  }, [refreshToken]);
+  }, []);
+
+  const alerts = useMemo(() => {
+    if (!weather) return [] as { tone: 'amber' | 'red'; message: string }[];
+
+    const nextAlerts: { tone: 'amber' | 'red'; message: string }[] = [];
+
+    if (weather.current.weatherCode >= 95) {
+      nextAlerts.push({
+        tone: 'red',
+        message: 'Thunderstorm alert - outdoor areas closed',
+      });
+    }
+
+    if (weather.current.precipitationProbability > 60) {
+      nextAlerts.push({
+        tone: 'amber',
+        message: 'High rain chance - pool may close',
+      });
+    }
+
+    if (weather.current.uvIndex > 7) {
+      nextAlerts.push({
+        tone: 'red',
+        message: 'High UV - limit outdoor exposure',
+      });
+    }
+
+    return nextAlerts;
+  }, [weather]);
+
+  if (loading) {
+    return (
+      <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5 text-slate-200 shadow-lg">
+        <div className="space-y-3 animate-pulse">
+          <div className="h-3 w-32 rounded bg-slate-700" />
+          <div className="h-10 w-40 rounded bg-slate-700" />
+          <div className="h-4 w-52 rounded bg-slate-700" />
+        </div>
+      </section>
+    );
+  }
+
+  if (apiError === 'location_not_configured') {
+    return (
+      <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5 text-slate-200 shadow-lg">
+        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{communityName}</p>
+        <h3 className="mt-2 text-lg font-semibold text-white">Weather</h3>
+        {isAdmin ? (
+          <p className="mt-3 text-sm text-slate-300">
+            Set your community location in{' '}
+            <Link href="/admin/settings" className="text-emerald-300 hover:text-emerald-200 underline underline-offset-2">
+              Admin Settings
+            </Link>{' '}
+            to enable weather insights.
+          </p>
+        ) : (
+          <p className="mt-3 text-sm text-slate-300">Weather unavailable - contact admin.</p>
+        )}
+      </section>
+    );
+  }
+
+  if (!weather) {
+    return (
+      <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5 text-slate-200 shadow-lg">
+        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{communityName}</p>
+        <h3 className="mt-2 text-lg font-semibold text-white">Weather</h3>
+        <p className="mt-3 text-sm text-slate-300">Weather data is temporarily unavailable.</p>
+      </section>
+    );
+  }
 
   return (
-    <section className="group relative overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-emerald-50/50 to-sky-50/50 p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-100/70 dark:border-slate-700/70 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800/90 dark:hover:border-emerald-700/60 dark:hover:shadow-emerald-950/40">
-      <div className={`pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full blur-2xl ${accentClass}`} />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(16,185,129,0.16),transparent_52%),radial-gradient(circle_at_84%_14%,rgba(56,189,248,0.16),transparent_48%)] dark:bg-[radial-gradient(circle_at_18%_18%,rgba(16,185,129,0.16),transparent_52%),radial-gradient(circle_at_84%_14%,rgba(56,189,248,0.12),transparent_48%)]" />
+    <section className="relative overflow-hidden rounded-2xl border border-slate-700 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-5 text-slate-100 shadow-lg shadow-slate-900/60">
+      <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-cyan-500/20 blur-3xl" />
+      <div className="pointer-events-none absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-emerald-500/20 blur-3xl" />
 
-      <div className="relative">
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-          <CloudSun className="h-4 w-4 text-amber-500" />
-          Weather
+      <div className="relative space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">{communityName}</p>
+          <p className="text-xs text-slate-400">{formatUpdatedAgo(lastUpdated)}</p>
         </div>
-        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{locationLabel}</p>
 
-        {loading ? (
-          <div className="mt-4 animate-pulse space-y-2">
-            <div className="h-4 w-24 rounded bg-slate-200 dark:bg-slate-700" />
-            <div className="h-8 w-16 rounded bg-slate-200 dark:bg-slate-700" />
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-5xl leading-none" aria-hidden="true">
+              {weather.current.emoji}
+            </span>
+            <p className="text-5xl font-black text-white leading-none">{weather.current.temperature}°</p>
           </div>
-        ) : weather ? (
-          <>
-            <div className="mt-4 flex items-start justify-between gap-3">
-              <div>
-                <p className="text-4xl font-bold leading-none text-slate-900 dark:text-white">{weather.temp}°C</p>
-                <p className="mt-2 text-sm text-slate-600 capitalize dark:text-slate-300">{weather.description}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Feels like {weather.feelsLike}°C</p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/60 bg-white/60 text-3xl leading-none shadow-sm backdrop-blur-sm dark:border-slate-700/80 dark:bg-slate-800/80" aria-hidden="true">
-                <span className="group-hover:scale-110 transition-transform duration-300">{getWeatherEmoji(weather.condition)}</span>
-              </div>
-            </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-slate-600 dark:text-slate-300">
-              <div className="rounded-lg border border-white/50 bg-white/60 px-2 py-2 backdrop-blur-sm dark:border-slate-700/70 dark:bg-slate-800/70">
-                <p className="flex items-center gap-1"><Droplets className="h-3.5 w-3.5" />{weather.humidity}%</p>
-              </div>
-              <div className="rounded-lg border border-white/50 bg-white/60 px-2 py-2 backdrop-blur-sm dark:border-slate-700/70 dark:bg-slate-800/70">
-                <p className="flex items-center gap-1"><Wind className="h-3.5 w-3.5" />{weather.windSpeed} km/h</p>
-              </div>
-              <div className="rounded-lg border border-white/50 bg-white/60 px-2 py-2 backdrop-blur-sm dark:border-slate-700/70 dark:bg-slate-800/70">
-                <p className="flex items-center gap-1"><Umbrella className="h-3.5 w-3.5" />{weather.precipitation}%</p>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="mt-4 space-y-2">
-            <p className="text-sm text-slate-500 dark:text-slate-400">Weather data is unavailable right now.</p>
-            {loadError && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setRefreshToken((prev) => prev + 1)}
-                className="h-8 rounded-lg border-slate-300/80 bg-white/70 px-3 text-xs text-slate-700 hover:bg-white hover:text-slate-900 dark:border-slate-700/70 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-800"
+          <div className="space-y-1 text-right text-sm text-slate-200">
+            <p className="font-medium text-white">{weather.current.condition}</p>
+            <p>Feels like {weather.current.feelsLike}°C</p>
+            <p>Humidity {weather.current.humidity}%</p>
+            <p>Wind {weather.current.windSpeed} km/h</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 text-xs">
+          <div className="rounded-lg border border-slate-700 bg-slate-800/70 px-2 py-2 text-slate-200">
+            <p className="flex items-center gap-1"><Droplets className="h-3.5 w-3.5" />Humidity {weather.current.humidity}%</p>
+          </div>
+          <div className="rounded-lg border border-slate-700 bg-slate-800/70 px-2 py-2 text-slate-200">
+            <p className="flex items-center gap-1"><Wind className="h-3.5 w-3.5" />Wind {weather.current.windSpeed}</p>
+          </div>
+          <div className="rounded-lg border border-slate-700 bg-slate-800/70 px-2 py-2 text-slate-200">
+            <p className="flex items-center gap-1"><Umbrella className="h-3.5 w-3.5" />Rain {weather.current.precipitationProbability}%</p>
+          </div>
+        </div>
+
+        {alerts.map((alert) => (
+          <div
+            key={alert.message}
+            className={
+              alert.tone === 'amber'
+                ? 'rounded-lg border border-amber-400/50 bg-amber-500/20 px-3 py-2 text-xs text-amber-100'
+                : 'rounded-lg border border-red-400/50 bg-red-500/20 px-3 py-2 text-xs text-red-100'
+            }
+          >
+            {alert.message}
+          </div>
+        ))}
+
+        <div className="overflow-x-auto">
+          <div className="flex min-w-max gap-2 pb-1">
+            {weather.forecast.map((day) => (
+              <div
+                key={day.date}
+                className="w-20 rounded-lg border border-slate-700 bg-slate-800/70 px-2 py-2 text-center"
               >
-                Retry weather
-              </Button>
-            )}
+                <p className="text-[11px] text-slate-300">{forecastDayLabel(day.date)}</p>
+                <p className="mt-1 text-xl leading-none">{day.emoji}</p>
+                <p className="mt-1 text-xs font-medium text-white">{day.tempMax}° / {day.tempMin}°</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {isAdmin && (
+          <div className="rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-3 text-xs text-slate-200">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Facility impact</p>
+            <div className="space-y-1.5">
+              {weather.current.precipitationProbability > 60 && (
+                <p>Consider indoor alternatives for outdoor amenities.</p>
+              )}
+              {weather.current.temperature > 40 && (
+                <p>Extreme heat - pool booking surge likely.</p>
+              )}
+              {weather.current.uvIndex > 8 && (
+                <p className="flex items-center gap-1"><Sun className="h-3.5 w-3.5" />UV alert - enforce shade requirements.</p>
+              )}
+              {weather.current.precipitationProbability <= 60 && weather.current.temperature <= 40 && weather.current.uvIndex <= 8 && (
+                <p>Operations look stable for current conditions.</p>
+              )}
+            </div>
           </div>
         )}
       </div>
