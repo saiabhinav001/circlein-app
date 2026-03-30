@@ -52,6 +52,7 @@ import {
   Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { LocationPicker } from '@/components/onboarding/location-picker';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -100,6 +101,10 @@ interface CommunitySettings {
   timezone: string;
   timeFormat: '12h' | '24h';
   businessHours: string;
+  latitude: number | null;
+  longitude: number | null;
+  city: string;
+  locationDisplayName: string;
   weekendBookings: boolean;
 }
 
@@ -164,6 +169,10 @@ const DEFAULT_COMMUNITY_SETTINGS: CommunitySettings = {
   timezone: 'Asia/Kolkata',
   timeFormat: '24h',
   businessHours: '6:00 AM - 10:00 PM',
+  latitude: null,
+  longitude: null,
+  city: '',
+  locationDisplayName: '',
   weekendBookings: true,
 };
 
@@ -324,6 +333,25 @@ export default function AdminSettingsUI() {
               ? '12h'
               : '24h',
             businessHours: communityData.businessHours || nextCommunitySettings.businessHours,
+            latitude: (() => {
+              const raw = communityData.latitude ?? settingsData.latitude ?? nextCommunitySettings.latitude;
+              if (raw === null || raw === undefined || raw === '') return null;
+              const parsed = typeof raw === 'number' ? raw : Number(raw);
+              return Number.isFinite(parsed) ? parsed : null;
+            })(),
+            longitude: (() => {
+              const raw = communityData.longitude ?? settingsData.longitude ?? nextCommunitySettings.longitude;
+              if (raw === null || raw === undefined || raw === '') return null;
+              const parsed = typeof raw === 'number' ? raw : Number(raw);
+              return Number.isFinite(parsed) ? parsed : null;
+            })(),
+            city: String(communityData.city ?? settingsData.city ?? nextCommunitySettings.city ?? ''),
+            locationDisplayName: String(
+              communityData.locationDisplayName ??
+                settingsData.locationDisplayName ??
+                nextCommunitySettings.locationDisplayName ??
+                ''
+            ),
           };
 
           nextTheme = {
@@ -500,9 +528,17 @@ export default function AdminSettingsUI() {
                 timezone: communitySettings.timezone || 'Asia/Kolkata',
                 timeFormat: communitySettings.timeFormat,
                 businessHours: communitySettings.businessHours,
+                latitude: communitySettings.latitude,
+                longitude: communitySettings.longitude,
+                city: communitySettings.city,
+                locationDisplayName: communitySettings.locationDisplayName,
               },
               timezone: communitySettings.timezone || 'Asia/Kolkata',
               timeFormat: communitySettings.timeFormat,
+              latitude: communitySettings.latitude,
+              longitude: communitySettings.longitude,
+              city: communitySettings.city,
+              locationDisplayName: communitySettings.locationDisplayName,
               theme: {
                 primaryColor: communityTheme.primaryColor,
                 accentColor: communityTheme.accentColor,
@@ -990,6 +1026,37 @@ function CommunitySection({
               />
             </div>
           </div>
+        </div>
+
+        <Separator />
+
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Community Location</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Choose your exact community location for weather and regional context.
+          </p>
+          <LocationPicker
+            onLocationSelected={(result) =>
+              setSettings({
+                ...settings,
+                latitude: result.lat,
+                longitude: result.lon,
+                city: result.city,
+                locationDisplayName: result.displayName,
+              })
+            }
+          />
+
+          {settings.locationDisplayName && settings.latitude !== null && settings.longitude !== null && (
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 text-xs text-gray-600 dark:text-gray-300">
+              <p className="font-medium text-gray-800 dark:text-gray-100">Current location</p>
+              <p className="mt-1">{settings.locationDisplayName}</p>
+              <p className="mt-0.5 text-gray-500 dark:text-gray-400">
+                {settings.latitude.toFixed(5)}, {settings.longitude.toFixed(5)}
+                {settings.city ? ` • ${settings.city}` : ''}
+              </p>
+            </div>
+          )}
         </div>
 
         <Separator />

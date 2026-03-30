@@ -35,10 +35,17 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { CircleInLogo } from '@/components/ui';
 import { useTheme } from '@/components/providers/theme-provider';
 import Link from 'next/link';
+import { LocationPicker } from '@/components/onboarding/location-picker';
 
 // Form schemas
 const communitySchema = z.object({
   communityName: z.string().min(3, 'Community name must be at least 3 characters'),
+  locationDisplayName: z.string().min(2, 'Please select a community location'),
+  latitude: z.number({ required_error: 'Please select a community location' }),
+  longitude: z.number({ required_error: 'Please select a community location' }),
+  city: z.string().optional(),
+  country: z.string().optional(),
+  countryCode: z.string().optional(),
 });
 
 const amenitySchema = z.object({
@@ -112,7 +119,15 @@ export default function AdminOnboarding() {
   // Form instances
   const communityForm = useForm<CommunityFormData>({
     resolver: zodResolver(communitySchema),
-    defaultValues: { communityName: '' },
+    defaultValues: {
+      communityName: '',
+      locationDisplayName: '',
+      latitude: undefined,
+      longitude: undefined,
+      city: '',
+      country: '',
+      countryCode: '',
+    },
   });
 
   const amenitiesForm = useForm<AmenitiesFormData>({
@@ -157,7 +172,16 @@ export default function AdminOnboarding() {
       const response = await fetch('/api/admin/onboarding/update-community', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ communityId, communityName: data.communityName }),
+        body: JSON.stringify({
+          communityId,
+          communityName: data.communityName,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          city: data.city || '',
+          country: data.country || '',
+          countryCode: data.countryCode || '',
+          locationDisplayName: data.locationDisplayName,
+        }),
       });
 
       const result = await response.json();
@@ -384,6 +408,43 @@ export default function AdminOnboarding() {
                     />
                     {communityForm.formState.errors.communityName && (
                       <p className="text-red-500 text-sm">{communityForm.formState.errors.communityName.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Community Location
+                    </Label>
+                    <LocationPicker
+                      onLocationSelected={(location) => {
+                        communityForm.setValue('locationDisplayName', location.displayName, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                        communityForm.setValue('latitude', location.lat, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                        communityForm.setValue('longitude', location.lon, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                        communityForm.setValue('city', location.city || '', { shouldDirty: true });
+                        communityForm.setValue('country', location.country || '', { shouldDirty: true });
+                        communityForm.setValue('countryCode', location.countryCode || '', { shouldDirty: true });
+                      }}
+                    />
+
+                    <input type="hidden" {...communityForm.register('locationDisplayName')} />
+                    <input type="hidden" {...communityForm.register('city')} />
+                    <input type="hidden" {...communityForm.register('country')} />
+                    <input type="hidden" {...communityForm.register('countryCode')} />
+
+                    {communityForm.formState.errors.locationDisplayName && (
+                      <p className="text-red-500 text-sm">{communityForm.formState.errors.locationDisplayName.message}</p>
+                    )}
+                    {(communityForm.formState.errors.latitude || communityForm.formState.errors.longitude) && (
+                      <p className="text-red-500 text-sm">Please select a valid location.</p>
                     )}
                   </div>
 

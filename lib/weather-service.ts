@@ -1,8 +1,4 @@
-/**
- * WEATHER SERVICE
- * Fetch weather forecast for outdoor amenities
- * Using Open-Meteo API (FREE, NO API KEY REQUIRED)
- */
+import { fetchCommunityWeather } from '@/lib/weather';
 
 interface WeatherForecast {
   temp: number;
@@ -16,81 +12,26 @@ interface WeatherForecast {
 }
 
 export async function getWeatherForecast(
-  date: Date,
+  _date: Date,
   latitude: number,
   longitude: number
 ): Promise<WeatherForecast | null> {
-  try {
-    // Open-Meteo API - FREE, no API key needed!
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m&timezone=auto`;
-    
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      console.error('Weather API error:', response.statusText);
-      return null;
-    }
-
-    const data = await response.json();
-    
-    // Find forecast closest to booking date
-    const targetTime = date.getTime();
-    let closestIndex = 0;
-    let minDiff = Math.abs(new Date(data.hourly.time[0]).getTime() - targetTime);
-
-    for (let i = 0; i < data.hourly.time.length; i++) {
-      const forecastTime = new Date(data.hourly.time[i]).getTime();
-      const diff = Math.abs(forecastTime - targetTime);
-      
-      if (diff < minDiff) {
-        minDiff = diff;
-        closestIndex = i;
-      }
-    }
-
-    const weatherCode = data.hourly.weather_code[closestIndex];
-    const { condition, description } = getWeatherCondition(weatherCode);
-
-    return {
-      temp: Math.round(data.hourly.temperature_2m[closestIndex]),
-      feelsLike: Math.round(data.hourly.apparent_temperature[closestIndex]),
-      condition,
-      description,
-      icon: getWeatherIcon(weatherCode),
-      humidity: Math.round(data.hourly.relative_humidity_2m[closestIndex]),
-      windSpeed: Math.round(data.hourly.wind_speed_10m[closestIndex]),
-      precipitation: Math.round(data.hourly.precipitation_probability[closestIndex] || 0)
-    };
-  } catch (error) {
-    console.error('Error fetching weather:', error);
+  const weather = await fetchCommunityWeather(latitude, longitude);
+  if (!weather) {
     return null;
   }
-}
 
-// Convert Open-Meteo weather codes to conditions
-function getWeatherCondition(code: number): { condition: string; description: string } {
-  if (code === 0) return { condition: 'Clear', description: 'Clear sky' };
-  if (code <= 3) return { condition: 'Clouds', description: 'Partly cloudy' };
-  if (code <= 48) return { condition: 'Fog', description: 'Foggy' };
-  if (code <= 67) return { condition: 'Rain', description: 'Rainy' };
-  if (code <= 77) return { condition: 'Snow', description: 'Snowy' };
-  if (code <= 82) return { condition: 'Rain', description: 'Rain showers' };
-  if (code <= 86) return { condition: 'Snow', description: 'Snow showers' };
-  if (code <= 99) return { condition: 'Thunderstorm', description: 'Thunderstorm' };
-  return { condition: 'Unknown', description: 'Weather unavailable' };
-}
-
-// Get weather icon based on code
-function getWeatherIcon(code: number): string {
-  if (code === 0) return '01d';
-  if (code <= 3) return '02d';
-  if (code <= 48) return '50d';
-  if (code <= 67) return '10d';
-  if (code <= 77) return '13d';
-  if (code <= 82) return '09d';
-  if (code <= 86) return '13d';
-  if (code <= 99) return '11d';
-  return '01d';
+  const current = weather.current;
+  return {
+    temp: current.temperature,
+    feelsLike: current.feelsLike,
+    condition: current.condition,
+    description: current.condition,
+    icon: current.weatherCode.toString(),
+    humidity: current.humidity,
+    windSpeed: current.windSpeed,
+    precipitation: current.precipitationProbability,
+  };
 }
 
 export function isOutdoorAmenity(amenityType: string): boolean {
@@ -105,14 +46,14 @@ export function isOutdoorAmenity(amenityType: string): boolean {
 
 export function getWeatherEmoji(condition: string): string {
   const emojiMap: { [key: string]: string } = {
-    'Clear': '☀️',
-    'Clouds': '☁️',
-    'Rain': '🌧️',
-    'Drizzle': '🌦️',
-    'Thunderstorm': '⛈️',
-    'Snow': '❄️',
-    'Mist': '🌫️',
-    'Fog': '🌫️'
+    Clear: '☀️',
+    Clouds: '☁️',
+    Rain: '🌧️',
+    Drizzle: '🌦️',
+    Thunderstorm: '⛈️',
+    Snow: '❄️',
+    Mist: '🌫️',
+    Fog: '🌫️',
   };
   
   return emojiMap[condition] || '🌤️';

@@ -19,9 +19,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { communityId, communityName } = await request.json();
-    
-    console.log('Request data:', { communityId, communityName });
+    const {
+      communityId,
+      communityName,
+      latitude,
+      longitude,
+      city,
+      country,
+      countryCode,
+      locationDisplayName,
+    } = await request.json();
+
+    const normalizedLatitude = typeof latitude === 'number' && Number.isFinite(latitude) ? latitude : null;
+    const normalizedLongitude = typeof longitude === 'number' && Number.isFinite(longitude) ? longitude : null;
+    const normalizedCity = typeof city === 'string' ? city : '';
+    const normalizedCountry = typeof country === 'string' ? country : '';
+    const normalizedCountryCode = typeof countryCode === 'string' ? countryCode.toUpperCase() : '';
+    const normalizedLocationDisplayName = typeof locationDisplayName === 'string' ? locationDisplayName : '';
+
+    console.log('Request data:', {
+      communityId,
+      communityName,
+      latitude: normalizedLatitude,
+      longitude: normalizedLongitude,
+      locationDisplayName: normalizedLocationDisplayName,
+    });
 
     if (!communityId || !communityName) {
       console.log('Missing required fields');
@@ -58,6 +80,12 @@ export async function POST(request: NextRequest) {
         // Update existing document
         await updateDoc(communityRef, {
           name: communityName,
+          latitude: normalizedLatitude,
+          longitude: normalizedLongitude,
+          city: normalizedCity,
+          country: normalizedCountry,
+          countryCode: normalizedCountryCode,
+          locationDisplayName: normalizedLocationDisplayName,
           updatedAt: new Date(),
         });
         console.log('Successfully updated community document');
@@ -67,12 +95,44 @@ export async function POST(request: NextRequest) {
         await setDoc(communityRef, {
           id: communityId,
           name: communityName,
+          latitude: normalizedLatitude,
+          longitude: normalizedLongitude,
+          city: normalizedCity,
+          country: normalizedCountry,
+          countryCode: normalizedCountryCode,
+          locationDisplayName: normalizedLocationDisplayName,
           createdAt: new Date(),
           updatedAt: new Date(),
           isActive: true,
         });
         console.log('Successfully created community document');
       }
+
+      await setDoc(
+        doc(db, 'settings', communityId),
+        {
+          communityId,
+          community: {
+            communityName,
+            latitude: normalizedLatitude,
+            longitude: normalizedLongitude,
+            city: normalizedCity,
+            locationDisplayName: normalizedLocationDisplayName,
+            country: normalizedCountry,
+            countryCode: normalizedCountryCode,
+            timeFormat: '24h',
+          },
+          latitude: normalizedLatitude,
+          longitude: normalizedLongitude,
+          city: normalizedCity,
+          locationDisplayName: normalizedLocationDisplayName,
+          country: normalizedCountry,
+          countryCode: normalizedCountryCode,
+          timeFormat: '24h',
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
     } catch (firestoreError: any) {
       console.error('Detailed Firestore error:', {
         message: firestoreError.message,
