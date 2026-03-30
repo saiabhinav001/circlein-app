@@ -1,8 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-export async function GET(request: NextRequest) {
+function sanitizeApiKey(raw: string | undefined): string {
+  if (!raw) {
+    return '';
+  }
+  return raw.replace(/^["']|["']$/g, '').trim();
+}
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit = {},
+  timeoutMs = 7000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, { ...init, signal: controller.signal, cache: 'no-store' });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -14,7 +36,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const externalAiEnabled = process.env.ENABLE_EXTERNAL_AI === 'true';
+    if (!externalAiEnabled) {
+      return NextResponse.json({
+        status: 'disabled',
+        message: 'External AI is disabled by configuration',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const apiKey = sanitizeApiKey(process.env.GEMINI_API_KEY);
     
     if (!apiKey) {
       return NextResponse.json({
@@ -25,11 +56,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch available models directly from the API
-    const modelsResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
-      {
-        next: { revalidate: 3600 },
-      }
+    const modelsResponse = await fetchWithTimeout(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`
     );
     
     if (!modelsResponse.ok) {
@@ -52,14 +80,14 @@ export async function GET(request: NextRequest) {
     if (workingModel) {
       // Test with the working model
       const modelName = workingModel.name.replace('models/', '');
-      const testResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+      const testResponse = await fetchWithTimeout(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: 'Say "Hello" in one word.' }] }]
-          })
+            contents: [{ parts: [{ text: 'Say "Hello" in one word.' }] }],
+          }),
         }
       );
       
@@ -68,27 +96,31 @@ export async function GET(request: NextRequest) {
         testResult = {
           model: modelName,
           status: 'success',
-          response: testData.candidates?.[0]?.content?.parts?.[0]?.text || 'No response'
+          response: testData.candidates?.[0]?.content?.parts?.[0]?.text || 'No response',
         };
       }
     }
     
     return NextResponse.json({
-      status: testResult ? 'success' : 'error',
+      status: testResult ? 'success' : 'degraded',
       apiKeyConfigured: true,
-      apiKeyLength: apiKey.length,
-      availableModels: availableModels,
+      availableModels,
       workingModel: workingModel?.name || null,
-      testResult: testResult,
-      timestamp: new Date().toISOString()
+      testResult,
+      timestamp: new Date().toISOString(),
     });
 
   } catch (error: any) {
+    const message =
+      error?.name === 'AbortError'
+        ? 'Timed out while reaching Gemini API'
+        : error?.message || 'Unknown error';
+
     return NextResponse.json({
       status: 'error',
-      message: error.message,
-      errorName: error.name,
-      timestamp: new Date().toISOString()
+      message,
+      errorName: error?.name || 'Error',
+      timestamp: new Date().toISOString(),
     }, { status: 500 });
   }
 }

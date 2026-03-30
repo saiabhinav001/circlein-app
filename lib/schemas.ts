@@ -31,6 +31,16 @@ export const RecurringBookingCreateSchema = z.object({
   frequency: z.enum(['weekly', 'biweekly']),
 });
 
+const ChatConversationMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string().trim().min(1).max(1000),
+});
+
+export const ChatbotRequestSchema = z.object({
+  message: z.string().trim().min(1).max(1000),
+  conversationHistory: z.array(ChatConversationMessageSchema).max(20).optional(),
+});
+
 const MaintenanceCategorySchema = z.enum([
   'Plumbing',
   'Electrical',

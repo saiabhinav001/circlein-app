@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { collection, doc, getDoc, getDocs, limit, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { ChatbotRequestSchema } from '@/lib/schemas';
 import { adminDb } from '@/lib/firebase-admin';
 import { checkRateLimit, getClientIP } from '@/lib/rate-limiter';
 import { formatDateInTimeZone, resolveTimeZone } from '@/lib/timezone';
@@ -572,19 +573,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { message, userRole, conversationHistory } = await request.json();
-
-    // Quick validation
-    if (!message?.trim()) {
+    const rawBody = await request.json().catch(() => null);
+    const parsedBody = ChatbotRequestSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
       return NextResponse.json(
-        { error: 'Message is required' },
+        { error: 'Invalid chatbot request payload', details: parsedBody.error.issues },
         { status: 400 }
       );
     }
 
-    const isAdmin = userRole === 'admin';
+    const { message, conversationHistory = [] } = parsedBody.data;
+    const normalizedMessage = message.trim();
+    const sessionRole = (session.user as any).role;
+    const isAdmin = sessionRole === 'admin' || sessionRole === 'super_admin';
 
-    const parsedIntent = parseBookingIntent(message);
+    const parsedIntent = parseBookingIntent(normalizedMessage);
     if (parsedIntent.isBookingIntent) {
       try {
         const bookingResult = await tryCreateBookingFromIntent(request, parsedIntent, session);
@@ -616,18 +619,20 @@ export async function POST(request: NextRequest) {
       const prompt = `${CIRCLEIN_KNOWLEDGE_BASE}${roleContext}
 
 ${conversationContext ? `Recent conversation:\n${conversationContext}\n` : ''}
-User: ${message}
+User: ${normalizedMessage}
 
 Respond naturally and concisely (1-3 sentences). Be helpful and specific to their role.
 Assistant:`;
 
-      // Fast generation with timeout protection - reduced to 5s for faster fallback
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s max
+      // Enforce a hard timeout so fallback responses remain fast and deterministic.
 
       try {
-        const result = await model.generateContent(prompt);
-        clearTimeout(timeoutId);
+        const result = (await Promise.race([
+          model.generateContent(prompt),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('generation_timeout')), 5000)
+          ),
+        ])) as any;
         
         const response = await result.response;
         const text = response.text();
@@ -635,7 +640,7 @@ Assistant:`;
         if (!text || text.trim() === '') {
           // Empty response - use fallback
           return NextResponse.json({ 
-            response: getFallbackResponse(message, isAdmin)
+            response: getFallbackResponse(normalizedMessage, isAdmin)
           });
         }
         
@@ -651,11 +656,9 @@ Assistant:`;
 
         return NextResponse.json({ response: sanitizedResponse, actionUrl: undefined });
       } catch (genError: any) {
-        clearTimeout(timeoutId);
-        
         // Timeout or generation error - use intelligent fallback
         return NextResponse.json({ 
-          response: getFallbackResponse(message, isAdmin),
+          response: getFallbackResponse(normalizedMessage, isAdmin),
           actionUrl: undefined,
         });
       }
@@ -663,20 +666,14 @@ Assistant:`;
     } catch (modelError: any) {
       // Model initialization failed - use fallback
       return NextResponse.json({ 
-        response: getFallbackResponse(message, isAdmin),
+        response: getFallbackResponse(normalizedMessage, isAdmin),
         actionUrl: undefined,
       });
     }
 
-  } catch (error: any) {
-    
-    // Last resort - provide generic but helpful fallback
-    const isAdmin = error.userRole === 'admin';
+  } catch {
     return NextResponse.json({
-      response: getFallbackResponse(
-        error.message || "help", 
-        isAdmin || false
-      ),
+      response: getFallbackResponse('help', false),
       actionUrl: undefined,
     });
   }
