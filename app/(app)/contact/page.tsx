@@ -778,13 +778,13 @@ function EmailPanel({
 
                 return (
                   <div key={ticket.id} className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2">
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between">
                       <p className="text-xs sm:text-sm text-gray-800 dark:text-gray-200 line-clamp-1">{ticket.subject}</p>
-                      <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${statusClass}`}>
+                      <span className={`self-start text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${statusClass}`}>
                         {statusLabel}
                       </span>
                     </div>
-                    <p className="mt-1 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 break-all">
                       {ticket.reference || ticket.id.slice(0, 8).toUpperCase()}
                       {ticket.createdAt ? ` • ${new Date(ticket.createdAt).toLocaleDateString()}` : ''}
                     </p>

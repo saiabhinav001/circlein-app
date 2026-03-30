@@ -180,7 +180,7 @@ export function QuickBookingWidget() {
             <div className="mt-3 rounded-xl border border-sky-200/80 bg-sky-50/80 px-3 py-2.5 dark:border-sky-800/70 dark:bg-sky-950/30">
               <p className="text-[11px] uppercase tracking-wide text-sky-700 dark:text-sky-300">Smart pick</p>
               <p className="mt-1 text-xs text-slate-700 dark:text-slate-200 line-clamp-2">{topSuggestion.message}</p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 break-words">
                 {topSuggestion.suggestedDate} • {suggestionSlotLabel}
               </p>
             </div>

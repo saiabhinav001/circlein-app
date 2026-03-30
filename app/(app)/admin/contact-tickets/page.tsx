@@ -154,7 +154,7 @@ export default function AdminContactTicketsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid lg:grid-cols-2 gap-4">
+          <div className="grid xl:grid-cols-2 gap-4">
             {COLUMNS.map((column) => (
               <Card key={column.key}>
                 <CardHeader className="pb-3">
@@ -171,16 +171,16 @@ export default function AdminContactTicketsPage() {
                   ) : (
                     grouped[column.key].map((ticket) => (
                       <div key={ticket.id} className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-2">
-                        <div className="flex items-start justify-between gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                           <h3 className="font-medium text-slate-900 dark:text-slate-100 line-clamp-2">{ticket.subject}</h3>
                           {statusBadge(ticket.status)}
                         </div>
 
                         <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">{ticket.message}</p>
 
-                        <div className="text-xs text-slate-500 flex flex-wrap items-center gap-3">
+                        <div className="text-xs text-slate-500 grid gap-1">
                           <span className="inline-flex items-center gap-1"><User className="w-3.5 h-3.5" /> {ticket.userName || 'Resident'}</span>
-                          <span className="inline-flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {ticket.userEmail || 'N/A'}</span>
+                          <span className="inline-flex items-center gap-1 break-all"><Mail className="w-3.5 h-3.5" /> {ticket.userEmail || 'N/A'}</span>
                           <span className="inline-flex items-center gap-1"><Clock3 className="w-3.5 h-3.5" /> {ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : 'Unknown date'}</span>
                         </div>
 
@@ -210,6 +210,7 @@ export default function AdminContactTicketsPage() {
                                 key={status}
                                 size="sm"
                                 variant={status === 'resolved' ? 'default' : 'outline'}
+                                className="w-full sm:w-auto"
                                 disabled={actionId === `${ticket.id}_${status}`}
                                 onClick={() => updateStatus(ticket.id, status)}
                               >
