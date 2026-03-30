@@ -29,7 +29,7 @@ const DEFAULT_THEME: CommunityTheme = {
 const CommunityBrandingContext = createContext<CommunityBrandingContextValue>({
   theme: DEFAULT_THEME,
   timeZone: resolveTimeZone(undefined, 'Asia/Kolkata'),
-  timeFormat: '12h',
+  timeFormat: '24h',
 });
 
 export function useCommunityBranding() {
@@ -48,14 +48,14 @@ export function CommunityBrandingProvider({ children }: { children: React.ReactN
   const { data: session } = useSession();
   const [theme, setTheme] = useState<CommunityTheme>(DEFAULT_THEME);
   const [timeZone, setTimeZone] = useState<string>(resolveTimeZone(undefined, 'Asia/Kolkata'));
-  const [timeFormat, setTimeFormat] = useState<'12h' | '24h'>('12h');
+  const [timeFormat, setTimeFormat] = useState<'12h' | '24h'>('24h');
 
   useEffect(() => {
     const communityId = (session?.user as any)?.communityId;
     if (!communityId) {
       setTheme(DEFAULT_THEME);
       setTimeZone(resolveTimeZone(undefined, 'Asia/Kolkata'));
-      setTimeFormat('12h');
+      setTimeFormat('24h');
       return;
     }
 
@@ -65,7 +65,7 @@ export function CommunityBrandingProvider({ children }: { children: React.ReactN
       (snapshot) => {
         const data = snapshot.data() as any;
         const incoming = data?.theme || {};
-        const configuredTimeFormat = data?.community?.timeFormat || data?.timeFormat || '12h';
+        const configuredTimeFormat = data?.community?.timeFormat || data?.timeFormat || '24h';
         setTheme({
           primaryColor: incoming.primaryColor || DEFAULT_THEME.primaryColor,
           accentColor: incoming.accentColor || DEFAULT_THEME.accentColor,
@@ -73,7 +73,7 @@ export function CommunityBrandingProvider({ children }: { children: React.ReactN
           communityName: incoming.communityName || (session?.user as any)?.communityName || DEFAULT_THEME.communityName,
         });
         setTimeZone('Asia/Kolkata');
-        setTimeFormat(configuredTimeFormat === '24h' ? '24h' : '12h');
+        setTimeFormat(configuredTimeFormat === '12h' ? '12h' : '24h');
       },
       (error) => {
         console.warn('Community branding permissions unavailable, using defaults:', error);
@@ -82,7 +82,7 @@ export function CommunityBrandingProvider({ children }: { children: React.ReactN
           communityName: (session?.user as any)?.communityName || DEFAULT_THEME.communityName,
         });
         setTimeZone(resolveTimeZone(undefined, 'Asia/Kolkata'));
-        setTimeFormat('12h');
+        setTimeFormat('24h');
       }
     );
 

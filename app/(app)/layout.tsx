@@ -15,6 +15,8 @@ import { ProductTour } from '@/components/onboarding/product-tour';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReminderMonitor } from '@/hooks/use-reminder-checker';
 import { SidebarContext } from '@/hooks/use-sidebar-context';
+import { useCommunityTimeFormat } from '@/components/providers/community-branding-provider';
+import { TimeFormatProvider } from '@/lib/time-format-context';
 
 export default function AppLayout({
   children,
@@ -25,6 +27,7 @@ export default function AppLayout({
   const mainContentRef = useRef<HTMLElement | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const timeFormat = useCommunityTimeFormat();
   
   // Check for booking reminders every 15 minutes
   useReminderMonitor();
@@ -90,7 +93,9 @@ export default function AppLayout({
                   transition={{ duration: 0.25 }}
                   className="min-h-full bg-gradient-to-b from-background via-background to-muted/30 dark:to-muted/10"
                 >
-                  {children}
+                  <TimeFormatProvider format={timeFormat}>
+                    {children}
+                  </TimeFormatProvider>
                 </motion.div>
               </main>
             </div>

@@ -15,13 +15,14 @@ import {
   AlertTriangle,
   AlarmClock,
 } from 'lucide-react';
-import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import TypedConfirmDialog from '@/components/ui/typed-confirm-dialog';
+import { useTimeFormat } from '@/lib/time-format-context';
+import { formatDateTime } from '@/lib/time-format';
 
 interface WaitlistEntry {
   id: string;
@@ -81,6 +82,7 @@ function toDate(value: any): Date | null {
 
 export default function AdminWaitlistManagement() {
   const { data: session, status } = useSession();
+  const timeFormat = useTimeFormat();
   const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([]);
   const [stats, setStats] = useState<WaitlistStats>(defaultStats);
   const [loading, setLoading] = useState(true);
@@ -369,12 +371,12 @@ export default function AdminWaitlistManagement() {
                             </p>
                             <p className="flex items-center gap-1.5">
                               <Clock className="w-4 h-4 text-emerald-500" />
-                              <span>{startDate ? format(startDate, 'MMM d, yyyy h:mm a') : 'Time unavailable'}</span>
+                              <span>{startDate ? formatDateTime(startDate, timeFormat) : 'Time unavailable'}</span>
                             </p>
                             {lastReminderDate && (
                               <p className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                                 <Send className="w-3.5 h-3.5" />
-                                <span>Last reminder: {format(lastReminderDate, 'MMM d, h:mm a')}</span>
+                                <span>Last reminder: {formatDateTime(lastReminderDate, timeFormat)}</span>
                               </p>
                             )}
                           </div>
@@ -398,7 +400,7 @@ export default function AdminWaitlistManagement() {
                                     ? 'text-emerald-700 border-emerald-300 dark:text-emerald-300 dark:border-emerald-800'
                                     : 'text-red-700 border-red-300 dark:text-red-300 dark:border-red-800'
                                 }
-                                title={`${audit.message} at ${format(new Date(audit.at), 'MMM d, h:mm a')}`}
+                                title={`${audit.message} at ${formatDateTime(new Date(audit.at), timeFormat)}`}
                               >
                                 {audit.type === 'promotion' ? 'Promotion' : 'Reminder'} {audit.status}
                               </Badge>

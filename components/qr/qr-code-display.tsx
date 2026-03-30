@@ -11,6 +11,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { qrService, QRCodeData } from '@/lib/qr-service';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import { formatTime as formatClockTime } from '@/lib/time-format';
+import { useTimeFormat } from '@/lib/time-format-context';
 
 interface QRCodeDisplayProps {
   booking: any;
@@ -23,6 +25,7 @@ export function QRCodeDisplay({ booking, isOpen, onClose }: QRCodeDisplayProps) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showQR, setShowQR] = useState(true);
+  const timeFormat = useTimeFormat();
 
   useEffect(() => {
     if (isOpen && booking) {
@@ -82,14 +85,6 @@ export function QRCodeDisplay({ booking, isOpen, onClose }: QRCodeDisplayProps) 
       case 'cancelled': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     }
-  };
-
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    }).format(date);
   };
 
   const formatDate = (date: Date) => {
@@ -215,7 +210,7 @@ export function QRCodeDisplay({ booking, isOpen, onClose }: QRCodeDisplayProps) 
                     <div>
                       <p className="text-gray-500">Time</p>
                       <p className="font-medium">
-                        {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                        {formatClockTime(booking.startTime, timeFormat)} - {formatClockTime(booking.endTime, timeFormat)}
                       </p>
                     </div>
                     <div>
@@ -232,13 +227,13 @@ export function QRCodeDisplay({ booking, isOpen, onClose }: QRCodeDisplayProps) 
                       {qrData.checkInTime && (
                         <div className="flex items-center gap-2 text-sm">
                           <CheckCircle className="h-4 w-4 text-green-500" />
-                          <span>Checked in: {formatTime(qrData.checkInTime)}</span>
+                          <span>Checked in: {formatClockTime(qrData.checkInTime, timeFormat)}</span>
                         </div>
                       )}
                       {qrData.checkOutTime && (
                         <div className="flex items-center gap-2 text-sm">
                           <CheckCircle className="h-4 w-4 text-blue-500" />
-                          <span>Checked out: {formatTime(qrData.checkOutTime)}</span>
+                          <span>Checked out: {formatClockTime(qrData.checkOutTime, timeFormat)}</span>
                         </div>
                       )}
                     </div>

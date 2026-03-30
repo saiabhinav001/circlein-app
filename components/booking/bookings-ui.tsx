@@ -41,10 +41,12 @@ import { useBookingsData, SimpleBooking } from '@/hooks/use-simple-bookings';
 import { toast } from 'sonner';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone, formatDateTimeInTimeZone, formatTimeInTimeZone } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 import { SmartSuggestionsCard } from './smart-suggestions-card';
+import { useTimeFormat } from '@/lib/time-format-context';
+import { formatTime as formatClockTimeValue } from '@/lib/time-format';
 
 interface BookingsUIProps {
   isAdmin?: boolean;
@@ -53,7 +55,7 @@ interface BookingsUIProps {
 export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
   const { data: session } = useSession();
   const timeZone = useCommunityTimeZone();
-  const timeFormat = useCommunityTimeFormat();
+  const timeFormat = useTimeFormat();
   const [selectedBooking, setSelectedBooking] = useState<SimpleBooking | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
@@ -109,13 +111,10 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
   ), []);
 
   const formatClockTime = useCallback((hours: number, minutes: number) => {
-    if (timeFormat === '24h') {
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    }
-
-    const normalizedHour = ((hours + 11) % 12) + 1;
-    const meridiem = hours >= 12 ? 'PM' : 'AM';
-    return `${normalizedHour}:${String(minutes).padStart(2, '0')} ${meridiem}`;
+    return formatClockTimeValue(
+      `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
+      timeFormat
+    );
   }, [timeFormat]);
 
   const formatSlotLabel = useCallback((slot?: string) => {
@@ -397,7 +396,7 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
                   userName: 'Resident',
                   amenityName: booking.amenityName,
                   date: formatLongDate(new Date(booking.startTime)),
-                  timeSlot: `${formatTimeInTimeZone(new Date(booking.startTime), timeZone)} - ${formatTimeInTimeZone(new Date(booking.endTime), timeZone)}`,
+                  timeSlot: `${formatTimeInTimeZone(new Date(booking.startTime), timeZone, { hour12: timeFormat !== '24h' })} - ${formatTimeInTimeZone(new Date(booking.endTime), timeZone, { hour12: timeFormat !== '24h' })}`,
                   bookingId: booking.id,
                   isAdminCancellation: false,
                 }
@@ -554,7 +553,7 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true,
+      hour12: timeFormat !== '24h',
       year: 'numeric',
     }));
     const safeDate = escapeHtml(formatLongDate(booking.startTime));

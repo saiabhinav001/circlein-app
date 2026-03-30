@@ -19,6 +19,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { formatTime as formatClockTime } from '@/lib/time-format';
+import { useTimeFormat } from '@/lib/time-format-context';
 
 interface EnhancedQRDisplayProps {
   booking: any;
@@ -36,6 +38,7 @@ export function EnhancedQRDisplay({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [qrGenerated, setQrGenerated] = useState(false);
   const [copied, setCopied] = useState(false);
+  const timeFormat = useTimeFormat();
 
   useEffect(() => {
     generateQRCode();
@@ -275,7 +278,7 @@ export function EnhancedQRDisplay({
                   <div className="flex items-center gap-2 text-gray-600">
                     <Clock className="w-4 h-4" />
                     <span className="text-sm">
-                      {format(booking.startTime, 'h:mm a')} - {format(booking.endTime, 'h:mm a')}
+                      {formatClockTime(booking.startTime, timeFormat)} - {formatClockTime(booking.endTime, timeFormat)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-600">

@@ -12,6 +12,8 @@ import { qrService, QRScanResult, QRCodeData } from '@/lib/qr-service';
 import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
+import { formatTime as formatClockTime } from '@/lib/time-format';
+import { useTimeFormat } from '@/lib/time-format-context';
 
 interface QRScannerProps {
   isOpen: boolean;
@@ -27,6 +29,7 @@ export function QRScanner({ isOpen, onClose, onScanSuccess }: QRScannerProps) {
   const [scannerInitialized, setScannerInitialized] = useState(false);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const timeFormat = useTimeFormat();
 
   useEffect(() => {
     if (isOpen && !scannerInitialized) {
@@ -126,14 +129,6 @@ export function QRScanner({ isOpen, onClose, onScanSuccess }: QRScannerProps) {
     }
   };
 
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    }).format(date);
-  };
-
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
       weekday: 'short',
@@ -230,7 +225,7 @@ export function QRScanner({ isOpen, onClose, onScanSuccess }: QRScannerProps) {
                           <div>
                             <p className="text-gray-600">Time</p>
                             <p className="font-medium">
-                              {formatTime(scanResult.data.startTime)} - {formatTime(scanResult.data.endTime)}
+                              {formatClockTime(scanResult.data.startTime, timeFormat)} - {formatClockTime(scanResult.data.endTime, timeFormat)}
                             </p>
                           </div>
                           <div>
@@ -247,13 +242,13 @@ export function QRScanner({ isOpen, onClose, onScanSuccess }: QRScannerProps) {
                             {scanResult.data.checkInTime && (
                               <div className="flex items-center gap-2 text-sm text-green-700">
                                 <CheckCircle className="h-4 w-4" />
-                                <span>Checked in at {formatTime(scanResult.data.checkInTime)}</span>
+                                <span>Checked in at {formatClockTime(scanResult.data.checkInTime, timeFormat)}</span>
                               </div>
                             )}
                             {scanResult.data.checkOutTime && (
                               <div className="flex items-center gap-2 text-sm text-blue-700">
                                 <CheckCircle className="h-4 w-4" />
-                                <span>Checked out at {formatTime(scanResult.data.checkOutTime)}</span>
+                                <span>Checked out at {formatClockTime(scanResult.data.checkOutTime, timeFormat)}</span>
                               </div>
                             )}
                           </div>

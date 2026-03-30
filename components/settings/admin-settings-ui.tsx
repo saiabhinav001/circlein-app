@@ -162,7 +162,7 @@ const DEFAULT_COMMUNITY_SETTINGS: CommunitySettings = {
   maxActiveBookings: '3',
   communityName: '',
   timezone: 'Asia/Kolkata',
-  timeFormat: '12h',
+  timeFormat: '24h',
   businessHours: '6:00 AM - 10:00 PM',
   weekendBookings: true,
 };
@@ -320,7 +320,9 @@ export default function AdminSettingsUI() {
               'Asia/Kolkata',
               'Asia/Kolkata'
             ),
-            timeFormat: communityData.timeFormat === '24h' || settingsData.timeFormat === '24h' ? '24h' : nextCommunitySettings.timeFormat,
+            timeFormat: (communityData.timeFormat === '12h' || settingsData.timeFormat === '12h')
+              ? '12h'
+              : '24h',
             businessHours: communityData.businessHours || nextCommunitySettings.businessHours,
           };
 
@@ -930,7 +932,12 @@ function CommunitySection({
           </div>
         </div>
 
-        {/* Timezone & Business Hours */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Regional Settings</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Set how time should appear for everyone in your community.</p>
+        </div>
+
+        {/* Regional Settings */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -963,8 +970,8 @@ function CommunitySection({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="12h">12-hour (AM/PM)</SelectItem>
-                <SelectItem value="24h">24-hour</SelectItem>
+                <SelectItem value="24h">24-hour (14:30)</SelectItem>
+                <SelectItem value="12h">12-hour (2:30 PM)</SelectItem>
               </SelectContent>
             </Select>
           </div>
