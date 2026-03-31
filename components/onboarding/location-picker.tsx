@@ -93,18 +93,17 @@ export function LocationPicker({ onLocationSelected, initialDisplayName, initial
   const [selected, setSelected] = useState<GeocodingResult | null>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
-  const [previewMode, setPreviewMode] = useState<'iframe' | 'image' | 'fallback'>('iframe')
-  const [iframeLoaded, setIframeLoaded] = useState(false)
+  const [mapPreviewMode, setMapPreviewMode] = useState<'iframe' | 'image' | 'none'>('iframe')
 
-  const previewMapUrl = useMemo(() => {
+  const previewMapEmbedUrl = useMemo(() => {
     if (!selected) return ''
     const bbox = `${selected.lon - 0.01}%2C${selected.lat - 0.01}%2C${selected.lon + 0.01}%2C${selected.lat + 0.01}`
     return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${selected.lat}%2C${selected.lon}`
   }, [selected])
 
-  const staticPreviewMapUrl = useMemo(() => {
+  const previewMapImageUrl = useMemo(() => {
     if (!selected) return ''
-    return `https://staticmap.openstreetmap.de/staticmap.php?center=${selected.lat},${selected.lon}&zoom=15&size=800x220&markers=${selected.lat},${selected.lon},red-pushpin`
+    return `https://staticmap.openstreetmap.de/staticmap.php?center=${selected.lat},${selected.lon}&zoom=14&size=840x280&markers=${selected.lat},${selected.lon},lightblue1`
   }, [selected])
 
   const openStreetMapUrl = useMemo(() => {
@@ -140,29 +139,6 @@ export function LocationPicker({ onLocationSelected, initialDisplayName, initial
       })
     }
   }, [initialLocation, selected])
-
-  useEffect(() => {
-    if (!selected) {
-      return
-    }
-
-    setPreviewMode('iframe')
-    setIframeLoaded(false)
-  }, [selected])
-
-  useEffect(() => {
-    if (!selected || iframeLoaded) {
-      return
-    }
-
-    const previewTimeout = window.setTimeout(() => {
-      setPreviewMode('image')
-    }, 4500)
-
-    return () => {
-      window.clearTimeout(previewTimeout)
-    }
-  }, [selected, iframeLoaded])
 
   useEffect(() => {
     const normalized = query.trim()
@@ -203,6 +179,7 @@ export function LocationPicker({ onLocationSelected, initialDisplayName, initial
 
   const handleSelect = (result: GeocodingResult) => {
     setSelected(result)
+    setMapPreviewMode('iframe')
     setQuery(result.displayName)
     setResults([])
     setIsOpen(false)
@@ -380,33 +357,29 @@ export function LocationPicker({ onLocationSelected, initialDisplayName, initial
           </div>
 
           <div className="overflow-hidden rounded-md border border-slate-200 dark:border-slate-700">
-            {previewMode === 'iframe' && (
+            {mapPreviewMode === 'iframe' && (
               <iframe
                 title="Selected community location preview"
-                src={previewMapUrl}
+                src={previewMapEmbedUrl}
                 className="h-[140px] w-full max-w-[420px]"
                 loading="lazy"
-                onLoad={() => {
-                  setIframeLoaded(true)
-                }}
+                onError={() => setMapPreviewMode('image')}
               />
             )}
 
-            {previewMode === 'image' && (
+            {mapPreviewMode === 'image' && (
               <img
-                src={staticPreviewMapUrl}
+                src={previewMapImageUrl}
                 alt="Selected community location preview"
                 className="h-[140px] w-full max-w-[420px] object-cover"
                 loading="lazy"
-                onError={() => {
-                  setPreviewMode('fallback')
-                }}
+                onError={() => setMapPreviewMode('none')}
               />
             )}
 
-            {previewMode === 'fallback' && (
-              <div className="flex h-[140px] w-full max-w-[420px] items-center justify-center bg-slate-50 px-3 text-center text-xs text-slate-600 dark:bg-slate-900 dark:text-slate-300">
-                Map preview unavailable in this network. Use "Open full map" below.
+            {mapPreviewMode === 'none' && (
+              <div className="flex h-[140px] w-full max-w-[420px] items-center justify-center bg-slate-50 text-xs text-slate-500 dark:bg-slate-900/60 dark:text-slate-400">
+                Preview unavailable. Use Open full map.
               </div>
             )}
           </div>
