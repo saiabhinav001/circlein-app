@@ -45,6 +45,11 @@ service cloud.firestore {
     match /settings/{settingId} {
       allow read, write: if true;
     }
+
+    // Weekly analytics reports
+    match /weekly_reports/{reportId} {
+      allow read, write: if true;
+    }
     
     // QR Codes collection
     match /qr-codes/{qrCodeId} {

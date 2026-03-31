@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -34,6 +34,8 @@ import { WeatherWidget } from '@/components/dashboard/widgets/weather-widget';
 import { QuickBookingWidget } from '@/components/dashboard/widgets/quick-booking-widget';
 import { CommunityPulseWidget } from '@/components/dashboard/widgets/community-pulse-widget';
 import { StreakWidget } from '@/components/dashboard/widgets/streak-widget';
+import { OperationsSummaryWidget } from '@/components/dashboard/widgets/operations-summary-widget';
+import { DEFAULT_DASHBOARD_WIDGET_SETTINGS, mergeDashboardWidgetSettings } from '@/lib/dashboard-widgets';
 
 interface Amenity {
   id: string;
@@ -346,6 +348,7 @@ function EmptyState({
 export default function Dashboard() {
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [upcomingBookings, setUpcomingBookings] = useState<UpcomingBooking[]>([]);
+  const [widgetSettings, setWidgetSettings] = useState(DEFAULT_DASHBOARD_WIDGET_SETTINGS);
   const [loading, setLoading] = useState(true);
   const { session, status } = useSessionProvision();
   const router = useRouter();
@@ -355,6 +358,23 @@ export default function Dashboard() {
   const communityId = (session?.user as any)?.communityId as string | undefined;
   const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 'super_admin';
   const userName = session?.user?.name?.split(' ')[0] || 'there';
+
+  const hasVisibleWidgets = useMemo(() => {
+    if (isAdmin) {
+      return (
+        widgetSettings.admin.weather ||
+        widgetSettings.admin.communityPulse ||
+        widgetSettings.admin.operations
+      );
+    }
+
+    return (
+      widgetSettings.resident.weather ||
+      widgetSettings.resident.quickBooking ||
+      widgetSettings.resident.communityPulse ||
+      widgetSettings.resident.streak
+    );
+  }, [isAdmin, widgetSettings]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -455,8 +475,27 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     setLoading(true);
-    await Promise.all([fetchAmenities(), fetchUpcomingBookings()]);
+    await Promise.all([fetchAmenities(), fetchUpcomingBookings(), fetchWidgetSettings()]);
     setLoading(false);
+  };
+
+  const fetchWidgetSettings = async () => {
+    try {
+      if (!session?.user?.communityId) {
+        setWidgetSettings(DEFAULT_DASHBOARD_WIDGET_SETTINGS);
+        return;
+      }
+
+      const settingsSnap = await getDoc(doc(db, 'settings', session.user.communityId));
+      const settingsData = (settingsSnap.data() as any) || {};
+      const merged = mergeDashboardWidgetSettings(
+        settingsData.dashboardWidgets ?? settingsData.community?.dashboardWidgets
+      );
+      setWidgetSettings(merged);
+    } catch (error) {
+      console.error('Error fetching dashboard widget settings:', error);
+      setWidgetSettings(DEFAULT_DASHBOARD_WIDGET_SETTINGS);
+    }
   };
 
   const fetchAmenities = async () => {
@@ -628,7 +667,7 @@ export default function Dashboard() {
             </div>
           </section>
 
-          {isAdmin && (
+          {isAdmin && widgetSettings.admin.communityPulse && (
             <section className="rounded-2xl border border-slate-200/90 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/70 p-5 sm:p-6 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Community Pulse</h3>
               <div className="mt-4 space-y-3">
@@ -672,24 +711,58 @@ export default function Dashboard() {
           </div>
         </section>
 
-        <section className={cn('mb-6 grid grid-cols-1 gap-4', isAdmin ? 'sm:grid-cols-1 xl:grid-cols-1' : 'sm:grid-cols-2 xl:grid-cols-4')}>
-          <WeatherWidget />
-          {!isAdmin && (
-            <>
-              <QuickBookingWidget />
+        {hasVisibleWidgets ? (
+          <section
+            className={cn(
+              'mb-6 grid grid-cols-1 gap-4',
+              isAdmin ? 'sm:grid-cols-2 xl:grid-cols-3' : 'sm:grid-cols-2 xl:grid-cols-4'
+            )}
+          >
+            {((isAdmin && widgetSettings.admin.weather) ||
+              (!isAdmin && widgetSettings.resident.weather)) && <WeatherWidget />}
+
+            {!isAdmin && widgetSettings.resident.quickBooking && <QuickBookingWidget />}
+
+            {((isAdmin && widgetSettings.admin.communityPulse) ||
+              (!isAdmin && widgetSettings.resident.communityPulse)) && (
               <CommunityPulseWidget
                 totalAmenities={amenities.length}
                 availableAmenities={availableAmenitiesCount}
                 blockedAmenities={blockedAmenitiesCount}
                 upcomingBookings={upcomingBookings.length}
               />
+            )}
+
+            {!isAdmin && widgetSettings.resident.streak && (
               <StreakWidget
                 userEmail={session?.user?.email}
                 communityId={communityId}
               />
-            </>
-          )}
-        </section>
+            )}
+
+            {isAdmin && widgetSettings.admin.operations && (
+              <OperationsSummaryWidget
+                totalAmenities={amenities.length}
+                availableAmenities={availableAmenitiesCount}
+                blockedAmenities={blockedAmenitiesCount}
+                upcomingBookings={upcomingBookings.length}
+              />
+            )}
+          </section>
+        ) : (
+          <section className="mb-6 rounded-2xl border border-slate-200/90 bg-white/80 p-5 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/70">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Primary dashboard widgets are currently hidden. An admin can enable them in settings.
+            </p>
+            <Link
+              href="/admin/settings"
+              className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+            >
+              Open dashboard widget settings
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </section>
+        )}
 
         {/* Search Results Indicator */}
         <AnimatePresence>
@@ -717,7 +790,7 @@ export default function Dashboard() {
         </AnimatePresence>
 
         {/* AI Suggestions */}
-        <SmartSuggestionsCard />
+        {!isAdmin && widgetSettings.resident.smartSuggestions && <SmartSuggestionsCard />}
 
         {/* Empty States */}
         {amenities.length === 0 && !loading && (

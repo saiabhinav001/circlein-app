@@ -41,29 +41,39 @@ export function ToastNotification({ notification, onClose, index }: ToastNotific
   const Icon = toastIcons[notification.type] || Star;
   const style = priorityStyles[notification.priority] || priorityStyles.normal;
   const [progress, setProgress] = React.useState(100);
+  const onCloseRef = React.useRef(onClose);
+
+  React.useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   // Auto-hide timer with progress bar
   React.useEffect(() => {
-    if (notification.autoHide) {
-      const duration = notification.duration || 5000;
-      const interval = 50;
-      const decrement = (interval / duration) * 100;
-
-      const timer = setInterval(() => {
-        setProgress(prev => {
-          const newProgress = prev - decrement;
-          if (newProgress <= 0) {
-            clearInterval(timer);
-            onClose();
-            return 0;
-          }
-          return newProgress;
-        });
-      }, interval);
-
-      return () => clearInterval(timer);
+    if (!notification.autoHide) {
+      setProgress(100);
+      return;
     }
-  }, [notification.autoHide, notification.duration, onClose]);
+
+    const duration = Math.max(800, notification.duration || 5000);
+    const startedAt = Date.now();
+    const intervalMs = 50;
+
+    const progressTimer = window.setInterval(() => {
+      const elapsed = Date.now() - startedAt;
+      const nextProgress = Math.max(0, 100 - (elapsed / duration) * 100);
+      setProgress(nextProgress);
+    }, intervalMs);
+
+    const closeTimer = window.setTimeout(() => {
+      setProgress(0);
+      onCloseRef.current();
+    }, duration);
+
+    return () => {
+      window.clearInterval(progressTimer);
+      window.clearTimeout(closeTimer);
+    };
+  }, [notification.autoHide, notification.duration, notification.id]);
 
   return (
     <motion.div

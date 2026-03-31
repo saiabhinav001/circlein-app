@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -151,7 +151,7 @@ export default function AdminAnalyticsPage() {
 
   useEffect(() => {
     if (status === 'loading') return;
-    if (!session?.user?.email || session.user.role !== 'admin') {
+    if (!session?.user?.email || (session.user.role !== 'admin' && session.user.role !== 'super_admin')) {
       router.push('/dashboard');
       return;
     }
@@ -164,14 +164,9 @@ export default function AdminAnalyticsPage() {
 
     try {
       setLoading(true);
-      const [bookingsSnapshot, weeklyReportSnapshot] = await Promise.all([
-        getDocs(
-          query(collection(db, 'bookings'), where('communityId', '==', session.user.communityId))
-        ),
-        getDocs(
-          query(collection(db, 'weekly_reports'), orderBy('generatedAt', 'desc'), limit(1))
-        ),
-      ]);
+      const bookingsSnapshot = await getDocs(
+        query(collection(db, 'bookings'), where('communityId', '==', session.user.communityId))
+      );
 
       const rows = bookingsSnapshot.docs.map((docSnapshot) => ({
         id: docSnapshot.id,
@@ -180,10 +175,31 @@ export default function AdminAnalyticsPage() {
 
       setBookings(rows);
 
-      if (weeklyReportSnapshot.empty) {
+      try {
+        const weeklyReportSnapshot = await getDocs(
+          query(
+            collection(db, 'weekly_reports'),
+            where('communityId', '==', session.user.communityId),
+            limit(25)
+          )
+        );
+
+        if (weeklyReportSnapshot.empty) {
+          setLatestWeeklyReport(null);
+        } else {
+          const latest = weeklyReportSnapshot.docs
+            .map((docSnapshot) => docSnapshot.data() as WeeklyReportRecord)
+            .sort((a, b) => {
+              const aTime = new Date(a.generatedAt || 0).getTime();
+              const bTime = new Date(b.generatedAt || 0).getTime();
+              return bTime - aTime;
+            })[0] || null;
+
+          setLatestWeeklyReport(latest);
+        }
+      } catch (weeklyReportError) {
+        console.warn('Weekly reports unavailable for analytics summary:', weeklyReportError);
         setLatestWeeklyReport(null);
-      } else {
-        setLatestWeeklyReport(weeklyReportSnapshot.docs[0].data() as WeeklyReportRecord);
       }
     } catch (error) {
       console.error('Failed to load analytics:', error);

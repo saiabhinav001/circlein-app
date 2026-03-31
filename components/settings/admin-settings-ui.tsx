@@ -50,9 +50,15 @@ import {
   AlertTriangle,
   Compass,
   Download,
+  LayoutDashboard,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { LocationPicker } from '@/components/onboarding/location-picker';
+import {
+  DEFAULT_DASHBOARD_WIDGET_SETTINGS,
+  mergeDashboardWidgetSettings,
+  type DashboardWidgetSettings,
+} from '@/lib/dashboard-widgets';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -106,6 +112,7 @@ interface CommunitySettings {
   city: string;
   locationDisplayName: string;
   weekendBookings: boolean;
+  dashboardWidgets: DashboardWidgetSettings;
 }
 
 interface CommunityBrandTheme {
@@ -174,6 +181,7 @@ const DEFAULT_COMMUNITY_SETTINGS: CommunitySettings = {
   city: '',
   locationDisplayName: '',
   weekendBookings: true,
+  dashboardWidgets: DEFAULT_DASHBOARD_WIDGET_SETTINGS,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -320,6 +328,11 @@ export default function AdminSettingsUI() {
           const settingsData = (settingsSnap.data() as any) || {};
           const communityData = settingsData.community || {};
           const bookingRules = settingsData.bookingRules || {};
+          const dashboardWidgets = mergeDashboardWidgetSettings(
+            settingsData.dashboardWidgets ??
+              communityData.dashboardWidgets ??
+              nextCommunitySettings.dashboardWidgets
+          );
 
           nextCommunitySettings = {
             ...nextCommunitySettings,
@@ -352,6 +365,7 @@ export default function AdminSettingsUI() {
                 nextCommunitySettings.locationDisplayName ??
                 ''
             ),
+            dashboardWidgets,
           };
 
           nextTheme = {
@@ -378,6 +392,11 @@ export default function AdminSettingsUI() {
           console.error('Failed to load community settings:', e);
         }
       }
+
+      nextCommunitySettings = {
+        ...nextCommunitySettings,
+        dashboardWidgets: mergeDashboardWidgetSettings(nextCommunitySettings.dashboardWidgets),
+      };
 
       setProfile(nextProfile);
       setNotifications(nextNotifications);
@@ -532,6 +551,7 @@ export default function AdminSettingsUI() {
                 longitude: communitySettings.longitude,
                 city: communitySettings.city,
                 locationDisplayName: communitySettings.locationDisplayName,
+                dashboardWidgets: communitySettings.dashboardWidgets,
               },
               timezone: communitySettings.timezone || 'Asia/Kolkata',
               timeFormat: communitySettings.timeFormat,
@@ -539,6 +559,7 @@ export default function AdminSettingsUI() {
               longitude: communitySettings.longitude,
               city: communitySettings.city,
               locationDisplayName: communitySettings.locationDisplayName,
+              dashboardWidgets: communitySettings.dashboardWidgets,
               theme: {
                 primaryColor: communityTheme.primaryColor,
                 accentColor: communityTheme.accentColor,
@@ -938,6 +959,28 @@ function AccountSection({
   );
 }
 
+function WidgetToggleRow({
+  title,
+  description,
+  checked,
+  onCheckedChange,
+}: {
+  title: string;
+  description: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800/50">
+      <div className="min-w-0 pr-3">
+        <p className="text-sm font-medium text-gray-900 dark:text-white">{title}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
+      </div>
+      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Community Section
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1051,6 +1094,12 @@ function CommunitySection({
           </p>
           <LocationPicker
             initialDisplayName={settings.locationDisplayName}
+            initialLocation={{
+              lat: settings.latitude,
+              lon: settings.longitude,
+              city: settings.city,
+              displayName: settings.locationDisplayName,
+            }}
             onLocationSelected={(result) =>
               setSettings({
                 ...settings,
@@ -1090,9 +1139,175 @@ function CommunitySection({
           />
         </div>
 
+        <Separator />
+
+        <div className="space-y-3">
+          <div className="flex items-start gap-2">
+            <LayoutDashboard className="mt-0.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Dashboard Widgets</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Choose which widgets are visible for residents and admins.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Visible for residents</p>
+
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <WidgetToggleRow
+                title="Weather"
+                description="Shows local weather based on community location."
+                checked={settings.dashboardWidgets.resident.weather}
+                onCheckedChange={(checked) =>
+                  setSettings({
+                    ...settings,
+                    dashboardWidgets: {
+                      ...settings.dashboardWidgets,
+                      resident: {
+                        ...settings.dashboardWidgets.resident,
+                        weather: checked,
+                      },
+                    },
+                  })
+                }
+              />
+              <WidgetToggleRow
+                title="Quick Booking"
+                description="Fast shortcuts to popular amenity booking actions."
+                checked={settings.dashboardWidgets.resident.quickBooking}
+                onCheckedChange={(checked) =>
+                  setSettings({
+                    ...settings,
+                    dashboardWidgets: {
+                      ...settings.dashboardWidgets,
+                      resident: {
+                        ...settings.dashboardWidgets.resident,
+                        quickBooking: checked,
+                      },
+                    },
+                  })
+                }
+              />
+              <WidgetToggleRow
+                title="Community Pulse"
+                description="At-a-glance availability and activity trends."
+                checked={settings.dashboardWidgets.resident.communityPulse}
+                onCheckedChange={(checked) =>
+                  setSettings({
+                    ...settings,
+                    dashboardWidgets: {
+                      ...settings.dashboardWidgets,
+                      resident: {
+                        ...settings.dashboardWidgets.resident,
+                        communityPulse: checked,
+                      },
+                    },
+                  })
+                }
+              />
+              <WidgetToggleRow
+                title="Booking Streak"
+                description="Resident engagement streak and consistency score."
+                checked={settings.dashboardWidgets.resident.streak}
+                onCheckedChange={(checked) =>
+                  setSettings({
+                    ...settings,
+                    dashboardWidgets: {
+                      ...settings.dashboardWidgets,
+                      resident: {
+                        ...settings.dashboardWidgets.resident,
+                        streak: checked,
+                      },
+                    },
+                  })
+                }
+              />
+            </div>
+
+            <WidgetToggleRow
+              title="Smart Suggestions"
+              description="AI suggestions panel for optimizing booking patterns."
+              checked={settings.dashboardWidgets.resident.smartSuggestions}
+              onCheckedChange={(checked) =>
+                setSettings({
+                  ...settings,
+                  dashboardWidgets: {
+                    ...settings.dashboardWidgets,
+                    resident: {
+                      ...settings.dashboardWidgets.resident,
+                      smartSuggestions: checked,
+                    },
+                  },
+                })
+              }
+            />
+          </div>
+
+          <div className="space-y-2 pt-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Visible for admins</p>
+
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <WidgetToggleRow
+                title="Weather"
+                description="Current weather conditions at your community location."
+                checked={settings.dashboardWidgets.admin.weather}
+                onCheckedChange={(checked) =>
+                  setSettings({
+                    ...settings,
+                    dashboardWidgets: {
+                      ...settings.dashboardWidgets,
+                      admin: {
+                        ...settings.dashboardWidgets.admin,
+                        weather: checked,
+                      },
+                    },
+                  })
+                }
+              />
+              <WidgetToggleRow
+                title="Community Pulse"
+                description="Availability and booking metrics for admin overview."
+                checked={settings.dashboardWidgets.admin.communityPulse}
+                onCheckedChange={(checked) =>
+                  setSettings({
+                    ...settings,
+                    dashboardWidgets: {
+                      ...settings.dashboardWidgets,
+                      admin: {
+                        ...settings.dashboardWidgets.admin,
+                        communityPulse: checked,
+                      },
+                    },
+                  })
+                }
+              />
+            </div>
+
+            <WidgetToggleRow
+              title="Operations Summary"
+              description="Daily booking operations snapshot for administrators."
+              checked={settings.dashboardWidgets.admin.operations}
+              onCheckedChange={(checked) =>
+                setSettings({
+                  ...settings,
+                  dashboardWidgets: {
+                    ...settings.dashboardWidgets,
+                    admin: {
+                      ...settings.dashboardWidgets.admin,
+                      operations: checked,
+                    },
+                  },
+                })
+              }
+            />
+          </div>
+        </div>
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Save after selecting a location to sync weather and regional context.
+            Save after updating location or widget visibility to sync the dashboard experience.
           </p>
           <Button
             type="button"

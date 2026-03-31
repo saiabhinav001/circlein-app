@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { MapPin, Navigation, Loader2 } from 'lucide-react'
+import { ExternalLink, Loader2, LocateFixed, MapPin, Navigation } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { GeocodingResult } from '@/lib/geocoding'
@@ -10,6 +10,37 @@ import { toast } from 'sonner'
 interface LocationPickerProps {
   onLocationSelected: (result: GeocodingResult) => void
   initialDisplayName?: string
+  initialLocation?: {
+    lat: number | null
+    lon: number | null
+    city?: string
+    displayName?: string
+  }
+}
+
+function buildResultKey(result: GeocodingResult, index: number): string {
+  if (result.id) {
+    return `${result.id}-${index}`
+  }
+
+  return `${result.displayName}-${result.lat}-${result.lon}-${index}`
+}
+
+function dedupeSuggestionResults(items: GeocodingResult[]): GeocodingResult[] {
+  const seen = new Set<string>()
+  const deduped: GeocodingResult[] = []
+
+  for (const item of items) {
+    const key = `${item.displayName.toLowerCase()}|${item.lat.toFixed(6)}|${item.lon.toFixed(6)}`
+    if (seen.has(key)) {
+      continue
+    }
+
+    seen.add(key)
+    deduped.push(item)
+  }
+
+  return deduped
 }
 
 async function fetchLocationSuggestions(query: string): Promise<GeocodingResult[]> {
@@ -40,7 +71,21 @@ async function fetchReverseLocation(lat: number, lon: number): Promise<Geocoding
   return payload?.result || null
 }
 
-export function LocationPicker({ onLocationSelected, initialDisplayName }: LocationPickerProps) {
+async function fetchApproximateLocation(): Promise<GeocodingResult | null> {
+  const response = await fetch('/api/geocoding/ip', {
+    method: 'GET',
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch approximate location')
+  }
+
+  const payload = await response.json()
+  return payload?.result || null
+}
+
+export function LocationPicker({ onLocationSelected, initialDisplayName, initialLocation }: LocationPickerProps) {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
@@ -51,7 +96,13 @@ export function LocationPicker({ onLocationSelected, initialDisplayName }: Locat
 
   const previewMapUrl = useMemo(() => {
     if (!selected) return ''
-    return `https://staticmap.openstreetmap.de/staticmap.php?center=${selected.lat},${selected.lon}&zoom=15&size=300x100&maptype=mapnik`
+    const bbox = `${selected.lon - 0.01}%2C${selected.lat - 0.01}%2C${selected.lon + 0.01}%2C${selected.lat + 0.01}`
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${selected.lat}%2C${selected.lon}`
+  }, [selected])
+
+  const openStreetMapUrl = useMemo(() => {
+    if (!selected) return ''
+    return `https://www.openstreetmap.org/?mlat=${selected.lat}&mlon=${selected.lon}#map=15/${selected.lat}/${selected.lon}`
   }, [selected])
 
   useEffect(() => {
@@ -59,6 +110,29 @@ export function LocationPicker({ onLocationSelected, initialDisplayName }: Locat
       setQuery(initialDisplayName.trim())
     }
   }, [initialDisplayName, query, selected])
+
+  useEffect(() => {
+    if (selected) {
+      return
+    }
+
+    if (
+      initialLocation &&
+      Number.isFinite(initialLocation.lat) &&
+      Number.isFinite(initialLocation.lon)
+    ) {
+      setSelected({
+        displayName: initialLocation.displayName || `${initialLocation.lat}, ${initialLocation.lon}`,
+        shortName: initialLocation.city || initialLocation.displayName || 'Saved location',
+        city: initialLocation.city || '',
+        state: '',
+        country: '',
+        countryCode: '',
+        lat: Number(initialLocation.lat),
+        lon: Number(initialLocation.lon),
+      })
+    }
+  }, [initialLocation, selected])
 
   useEffect(() => {
     const normalized = query.trim()
@@ -69,22 +143,32 @@ export function LocationPicker({ onLocationSelected, initialDisplayName }: Locat
       return
     }
 
+    let isActive = true
+
     const timeout = window.setTimeout(async () => {
       try {
         setLoading(true)
         const nextResults = await fetchLocationSuggestions(normalized)
-        setResults(nextResults.slice(0, 6))
+        if (!isActive) return
+        const dedupedResults = dedupeSuggestionResults(nextResults).slice(0, 20)
+        setResults(dedupedResults)
         setIsOpen(true)
-        setHighlightedIndex(nextResults.length > 0 ? 0 : -1)
+        setHighlightedIndex(dedupedResults.length > 0 ? 0 : -1)
       } catch {
+        if (!isActive) return
         setResults([])
         setIsOpen(true)
       } finally {
-        setLoading(false)
+        if (isActive) {
+          setLoading(false)
+        }
       }
     }, 300)
 
-    return () => window.clearTimeout(timeout)
+    return () => {
+      isActive = false
+      window.clearTimeout(timeout)
+    }
   }, [query])
 
   const handleSelect = (result: GeocodingResult) => {
@@ -96,9 +180,25 @@ export function LocationPicker({ onLocationSelected, initialDisplayName }: Locat
     onLocationSelected(result)
   }
 
+  const tryApproximateLocation = async () => {
+    try {
+      const result = await fetchApproximateLocation()
+      if (!result) {
+        toast.error('Could not determine approximate location. Try typing your location.')
+        return
+      }
+
+      handleSelect(result)
+      toast.success('Using approximate location based on network. Refine it with search if needed.')
+    } catch {
+      toast.error('Unable to detect approximate location. Please search manually.')
+    }
+  }
+
   const handleUseBrowserLocation = () => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      toast.error('Browser geolocation is not available.')
+      toast.error('Browser geolocation is not available. Falling back to approximate location.')
+      void tryApproximateLocation()
       return
     }
 
@@ -119,9 +219,14 @@ export function LocationPicker({ onLocationSelected, initialDisplayName }: Locat
           setGeoLoading(false)
         }
       },
-      () => {
+      (error) => {
         setGeoLoading(false)
-        toast.error('Location permission denied or unavailable.')
+        if (error?.code === 1) {
+          toast.error('Location permission denied. Using approximate location instead.')
+        } else {
+          toast.error('Precise location unavailable. Using approximate location instead.')
+        }
+        void tryApproximateLocation()
       },
       {
         enableHighAccuracy: false,
@@ -168,6 +273,17 @@ export function LocationPicker({ onLocationSelected, initialDisplayName }: Locat
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={handleInputKeyDown}
+          onFocus={() => {
+            if (results.length > 0 || query.trim().length >= 2) {
+              setIsOpen(true)
+            }
+          }}
+          onBlur={() => {
+            window.setTimeout(() => {
+              setIsOpen(false)
+              setHighlightedIndex(-1)
+            }, 120)
+          }}
           placeholder="Search location (e.g., Prestige Shantiniketan, Bangalore)"
           className="h-10"
           aria-label="Community location"
@@ -186,7 +302,7 @@ export function LocationPicker({ onLocationSelected, initialDisplayName }: Locat
 
               return (
                 <button
-                  key={`${result.displayName}-${result.lat}-${result.lon}`}
+                  key={buildResultKey(result, index)}
                   type="button"
                   onClick={() => handleSelect(result)}
                   className={`w-full px-3 py-2 text-left transition-colors ${
@@ -220,6 +336,11 @@ export function LocationPicker({ onLocationSelected, initialDisplayName }: Locat
         Use my browser location
       </Button>
 
+      <Button type="button" variant="ghost" onClick={tryApproximateLocation} className="w-full sm:w-auto text-xs sm:text-sm">
+        <LocateFixed className="mr-2 h-4 w-4" />
+        Use approximate location
+      </Button>
+
       {selected && (
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-700/50 dark:bg-emerald-900/20 dark:text-emerald-300">
@@ -228,12 +349,26 @@ export function LocationPicker({ onLocationSelected, initialDisplayName }: Locat
             <span className="text-emerald-600/80 dark:text-emerald-300/80">({selected.lat.toFixed(5)}, {selected.lon.toFixed(5)})</span>
           </div>
 
-          <img
-            src={previewMapUrl}
-            alt="Selected community location preview"
-            className="h-[100px] w-full max-w-[300px] rounded-md border border-slate-200 object-cover dark:border-slate-700"
-            loading="lazy"
-          />
+          <div className="overflow-hidden rounded-md border border-slate-200 dark:border-slate-700">
+            <iframe
+              title="Selected community location preview"
+              src={previewMapUrl}
+              className="h-[140px] w-full max-w-[420px]"
+              loading="lazy"
+            />
+          </div>
+
+          {openStreetMapUrl && (
+            <a
+              href={openStreetMapUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+            >
+              Open full map
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
         </div>
       )}
     </div>

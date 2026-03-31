@@ -8,5 +8,5 @@ interface AuthWrapperProps {
 }
 
 export default function AuthWrapper({ children }: AuthWrapperProps) {
-  return <SessionProvider>{children}</SessionProvider>;
+  return <SessionProvider refetchOnWindowFocus={false} refetchWhenOffline={false}>{children}</SessionProvider>;
 }

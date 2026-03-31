@@ -130,6 +130,11 @@ export default function AdminOnboarding() {
     },
   });
 
+  const watchedLocationDisplayName = communityForm.watch('locationDisplayName');
+  const watchedLatitude = communityForm.watch('latitude');
+  const watchedLongitude = communityForm.watch('longitude');
+  const watchedCity = communityForm.watch('city');
+
   const amenitiesForm = useForm<AmenitiesFormData>({
     resolver: zodResolver(amenitiesSchema),
     defaultValues: {
@@ -416,6 +421,13 @@ export default function AdminOnboarding() {
                       Community Location
                     </Label>
                     <LocationPicker
+                      initialDisplayName={watchedLocationDisplayName || ''}
+                      initialLocation={{
+                        lat: typeof watchedLatitude === 'number' ? watchedLatitude : null,
+                        lon: typeof watchedLongitude === 'number' ? watchedLongitude : null,
+                        city: watchedCity || '',
+                        displayName: watchedLocationDisplayName || '',
+                      }}
                       onLocationSelected={(location) => {
                         communityForm.setValue('locationDisplayName', location.displayName, {
                           shouldDirty: true,

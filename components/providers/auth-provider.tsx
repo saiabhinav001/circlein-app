@@ -11,7 +11,7 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children, session }: AuthProviderProps) {
   return (
-    <SessionProvider session={session}>
+    <SessionProvider session={session} refetchOnWindowFocus={false} refetchWhenOffline={false}>
       {children}
     </SessionProvider>
   );

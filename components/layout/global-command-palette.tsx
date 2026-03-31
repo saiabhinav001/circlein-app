@@ -97,7 +97,10 @@ export function GlobalCommandPalette() {
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      const key = event.key.toLowerCase();
+      const key = typeof event.key === 'string' ? event.key.toLowerCase() : '';
+      if (!key) {
+        return;
+      }
 
       if ((event.metaKey || event.ctrlKey) && key === 'k') {
         event.preventDefault();
