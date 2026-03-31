@@ -29,7 +29,7 @@ export function OperationsSummaryWidget({
         <Activity className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
+      <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <MetricChip
           icon={Home}
           label="Total Amenities"

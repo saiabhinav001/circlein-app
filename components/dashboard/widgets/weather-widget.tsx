@@ -181,7 +181,7 @@ export function WeatherWidget() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 text-xs">
+        <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
           <div className="rounded-lg border border-slate-700 bg-slate-800/70 px-2 py-2 text-slate-200">
             <p className="flex items-center gap-1"><Droplets className="h-3.5 w-3.5" />Humidity {weather.current.humidity}%</p>
           </div>

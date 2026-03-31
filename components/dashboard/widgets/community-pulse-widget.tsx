@@ -47,7 +47,7 @@ export function CommunityPulseWidget({
           Community Pulse
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div className="rounded-xl border border-white/50 bg-white/65 px-3 py-2.5 backdrop-blur-sm dark:border-slate-700/70 dark:bg-slate-800/70">
             <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">bookings today</p>
             <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{bookingsToday}</p>
@@ -58,7 +58,7 @@ export function CommunityPulseWidget({
             <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">{pulseScore}</p>
           </div>
 
-          <div className="col-span-2 rounded-xl border border-white/50 bg-white/65 px-3 py-2.5 backdrop-blur-sm dark:border-slate-700/70 dark:bg-slate-800/70">
+          <div className="rounded-xl border border-white/50 bg-white/65 px-3 py-2.5 backdrop-blur-sm sm:col-span-2 dark:border-slate-700/70 dark:bg-slate-800/70">
             <div className="flex items-center justify-between gap-3">
               <div className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300">
                 <CalendarClock className="h-3.5 w-3.5" />
