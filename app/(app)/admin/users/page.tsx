@@ -44,7 +44,7 @@ import {
   Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateInTimeZone } from '@/lib/timezone';
 import { collection, query, where, getDocs, doc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -135,6 +135,8 @@ const getUserDisplayName = (user: User) => {
 export default function ManageUsers() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const timeZone = useCommunityTimeZone();
+  const timeFormat = useCommunityTimeFormat();
   
   // Data state
   const [accessCodes, setAccessCodes] = useState<AccessCode[]>([]);
@@ -301,7 +303,14 @@ export default function ManageUsers() {
     if (!value) return 'Unknown';
     const dt = new Date(value);
     if (Number.isNaN(dt.getTime())) return 'Unknown';
-    return dt.toLocaleString();
+    return formatDateInTimeZone(dt, timeZone, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: timeFormat !== '24h',
+    });
   };
 
   // ============================================================================

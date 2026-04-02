@@ -11,6 +11,7 @@ const withSerwistConfig = withSerwist({
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   turbopack: {},
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
   typescript: {
     ignoreBuildErrors: false,
   },

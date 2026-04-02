@@ -50,6 +50,8 @@ export const SupportTicketCreateSchema = z.object({
 export const SupportTicketStatusUpdateSchema = z.object({
   status: z.enum(['open', 'in_progress', 'resolved', 'closed']),
   assignedTo: z.union([z.string().trim().email(), z.literal('')]).optional(),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
+  escalate: z.boolean().optional(),
   updateNote: z.string().trim().max(500).optional(),
 });
 

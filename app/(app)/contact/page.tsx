@@ -21,6 +21,8 @@ import { useSession } from 'next-auth/react'
 import ReactMarkdown from 'react-markdown'
 import { toast } from 'sonner'
 import { useNotifications } from '@/components/notifications/notification-system'
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider'
+import { formatDateInTimeZone } from '@/lib/timezone'
 
 // ============================================================================
 // TYPES
@@ -33,6 +35,16 @@ interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   timestamp: number
+  actionUrl?: string
+}
+
+interface ChatbotResponse {
+  response?: string
+  actionUrl?: string
+  confidence?: number
+  handoffSuggested?: boolean
+  handoffReason?: string
+  source?: 'intent' | 'ai' | 'fallback' | 'handoff'
 }
 
 interface SuggestedQuestion {
@@ -97,6 +109,7 @@ const SUPPORT_STATUS_BADGE_STYLES: Record<string, string> = {
 
 export default function ContactPage() {
   const { data: session } = useSession()
+  const timeZone = useCommunityTimeZone()
   const { addNotification } = useNotifications()
   
   // Support mode state
@@ -182,7 +195,7 @@ export default function ContactPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: content.trim(),
-          history: messages.map(m => ({
+          conversationHistory: messages.map(m => ({
             role: m.role,
             content: m.content
           }))
@@ -191,13 +204,14 @@ export default function ContactPage() {
 
       if (!response.ok) throw new Error('Failed to get response')
 
-      const data = await response.json()
+      const data: ChatbotResponse = await response.json()
       
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
         content: data.response || 'I apologize, but I encountered an issue. Please try again.',
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        actionUrl: data.actionUrl,
       }
 
       setMessages(prev => [...prev, assistantMessage])
@@ -407,6 +421,7 @@ export default function ContactPage() {
                 isSubmitted={emailSubmitted}
                 submittedTicketReference={submittedTicketReference}
                 userEmail={session?.user?.email}
+                timeZone={timeZone}
                 tickets={recentTickets}
                 isLoadingTickets={isLoadingTickets}
                 onFormChange={setEmailForm}
@@ -611,6 +626,14 @@ function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
                         prose-p:my-1 prose-ul:my-1 prose-li:my-0
                         prose-headings:text-gray-900 dark:prose-headings:text-white">
             <ReactMarkdown>{message.content}</ReactMarkdown>
+            {message.actionUrl && (
+              <a
+                href={message.actionUrl}
+                className="mt-2 inline-flex items-center gap-1 rounded-md bg-emerald-500 px-2.5 py-1 text-[11px] font-semibold text-white no-underline hover:bg-emerald-600"
+              >
+                {message.actionUrl === '/contact' ? 'Open support center' : 'Open details'}
+              </a>
+            )}
           </div>
         )}
       </div>
@@ -628,6 +651,7 @@ interface EmailPanelProps {
   isSubmitted: boolean
   submittedTicketReference?: string | null
   userEmail?: string | null
+  timeZone: string
   tickets: SupportTicket[]
   isLoadingTickets: boolean
   onFormChange: (form: { subject: string; message: string }) => void
@@ -641,12 +665,30 @@ function EmailPanel({
   isSubmitted,
   submittedTicketReference,
   userEmail,
+  timeZone,
   tickets,
   isLoadingTickets,
   onFormChange,
   onSubmit,
   onNewRequest
 }: EmailPanelProps) {
+  const formatTicketDate = (value?: string | null) => {
+    if (!value) {
+      return null
+    }
+
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) {
+      return null
+    }
+
+    return formatDateInTimeZone(parsed, timeZone, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  }
+
   if (isSubmitted) {
     return (
       <div className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-800 p-6 sm:p-8 lg:p-12">
@@ -775,6 +817,7 @@ function EmailPanel({
                 const statusKey = String(ticket.status || 'open')
                 const statusLabel = SUPPORT_STATUS_LABELS[statusKey] || statusKey
                 const statusClass = SUPPORT_STATUS_BADGE_STYLES[statusKey] || SUPPORT_STATUS_BADGE_STYLES.open
+                const ticketDate = formatTicketDate(ticket.createdAt)
 
                 return (
                   <div key={ticket.id} className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2">
@@ -786,7 +829,7 @@ function EmailPanel({
                     </div>
                     <p className="mt-1 text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 break-all">
                       {ticket.reference || ticket.id.slice(0, 8).toUpperCase()}
-                      {ticket.createdAt ? ` • ${new Date(ticket.createdAt).toLocaleDateString()}` : ''}
+                      {ticketDate ? ` • ${ticketDate}` : ''}
                     </p>
                   </div>
                 )

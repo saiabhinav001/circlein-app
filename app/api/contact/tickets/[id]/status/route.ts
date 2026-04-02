@@ -4,6 +4,11 @@ import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { sendEmail } from '@/lib/email-service';
 import { SupportTicketStatusUpdateSchema } from '@/lib/schemas';
+import {
+  computeSupportDueAt,
+  normalizeSupportPriority,
+  toDateValue,
+} from '@/lib/support-ticket';
 
 const STATUS_LABELS: Record<string, string> = {
   open: 'Open',
@@ -24,6 +29,8 @@ function escapeHtml(value: string): string {
 function buildTicketUpdateEmailHtml(params: {
   subject: string;
   status: string;
+  priority: string;
+  dueAt: string;
   note: string;
   updatedByName: string;
   ticketReference: string;
@@ -35,6 +42,8 @@ function buildTicketUpdateEmailHtml(params: {
       <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #f9fafb;">
         <p><strong>Subject:</strong> ${escapeHtml(params.subject)}</p>
         <p><strong>Status:</strong> ${escapeHtml(params.status)}</p>
+        <p><strong>Priority:</strong> ${escapeHtml(params.priority.toUpperCase())}</p>
+        <p><strong>SLA Due:</strong> ${escapeHtml(params.dueAt)}</p>
         <p><strong>Updated by:</strong> ${escapeHtml(params.updatedByName)}</p>
       </div>
       ${
@@ -80,6 +89,8 @@ export async function PATCH(
     const nextStatus = parsedBody.data.status;
     const updateNote = (parsedBody.data.updateNote || '').trim();
     const assignedToRaw = parsedBody.data.assignedTo;
+    const requestedPriority = parsedBody.data.priority;
+    const shouldEscalate = parsedBody.data.escalate === true;
 
     const ticketRef = adminDb.collection('supportTickets').doc(params.id);
     const ticketDoc = await ticketRef.get();
@@ -95,15 +106,45 @@ export async function PATCH(
 
     const now = new Date();
     const existingHistory = Array.isArray(ticketData.history) ? ticketData.history : [];
+    const existingPriority = normalizeSupportPriority(ticketData.priority);
+    const nextPriority = shouldEscalate
+      ? 'urgent'
+      : normalizeSupportPriority(requestedPriority || ticketData.priority);
     const nextAssignedTo =
       assignedToRaw === ''
         ? null
         : assignedToRaw || ticketData.assignedTo || session.user.email;
+    const existingFirstResponseAt = toDateValue(ticketData.firstResponseAt);
+    const shouldSetFirstResponse = !existingFirstResponseAt && nextStatus !== 'open';
+    const firstResponseAt = shouldSetFirstResponse ? now : existingFirstResponseAt;
+
+    const createdAt = toDateValue(ticketData.createdAt) || now;
+    const previousDueAt = toDateValue(ticketData.dueAt);
+    const dueAt =
+      requestedPriority || shouldEscalate || !previousDueAt
+        ? shouldEscalate
+          ? computeSupportDueAt(now, nextPriority)
+          : computeSupportDueAt(createdAt, nextPriority)
+        : previousDueAt;
+
+    const escalatedAt = shouldEscalate ? now : toDateValue(ticketData.escalatedAt);
+    const effectiveUpdateNote = [
+      updateNote,
+      shouldEscalate ? 'Escalated for priority handling.' : '',
+      existingPriority !== nextPriority ? `Priority updated to ${nextPriority}.` : '',
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
 
     await ticketRef.update({
       status: nextStatus,
+      priority: nextPriority,
       assignedTo: nextAssignedTo,
-      updateNote,
+      updateNote: effectiveUpdateNote,
+      dueAt,
+      firstResponseAt,
+      escalatedAt,
       updatedAt: now,
       resolvedAt:
         nextStatus === 'resolved' || nextStatus === 'closed'
@@ -115,10 +156,12 @@ export async function PATCH(
         {
           id: `evt_${Date.now()}`,
           status: nextStatus,
-          note: updateNote || `Status changed to ${STATUS_LABELS[nextStatus] || nextStatus}`,
+          note: effectiveUpdateNote || `Status changed to ${STATUS_LABELS[nextStatus] || nextStatus}`,
           updatedBy: session.user.email,
           updatedByName: session.user.name || session.user.email,
           assignedTo: nextAssignedTo,
+          priority: nextPriority,
+          escalated: shouldEscalate,
           timestamp: now,
         },
       ],
@@ -130,7 +173,9 @@ export async function PATCH(
       type: 'community',
       priority: nextStatus === 'resolved' || nextStatus === 'closed' ? 'normal' : 'important',
       title: `Support update: ${ticketData.subject || 'Support ticket'}`,
-      message: `Status changed to ${STATUS_LABELS[nextStatus] || nextStatus}.`,
+      message: shouldEscalate
+        ? `Status changed to ${STATUS_LABELS[nextStatus] || nextStatus} and ticket was escalated.`
+        : `Status changed to ${STATUS_LABELS[nextStatus] || nextStatus}.`,
       read: false,
       actionUrl: '/contact',
       source: 'support_ticket_status',
@@ -147,7 +192,9 @@ export async function PATCH(
           html: buildTicketUpdateEmailHtml({
             subject: String(ticketData.subject || 'Support ticket'),
             status: STATUS_LABELS[nextStatus] || nextStatus,
-            note: updateNote,
+            priority: nextPriority,
+            dueAt: dueAt?.toISOString?.() || now.toISOString(),
+            note: effectiveUpdateNote,
             updatedByName: session.user.name || session.user.email,
             ticketReference,
           }),
@@ -165,6 +212,10 @@ export async function PATCH(
       ticket: {
         id: params.id,
         status: nextStatus,
+        priority: nextPriority,
+        dueAt: dueAt?.toISOString?.() || null,
+        firstResponseAt: firstResponseAt?.toISOString?.() || null,
+        isEscalated: Boolean(escalatedAt),
         assignedTo: nextAssignedTo,
         updatedAt: now.toISOString(),
       },

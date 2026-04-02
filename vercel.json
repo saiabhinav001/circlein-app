@@ -12,20 +12,13 @@
     "NPM_CONFIG_FUND": "false"
   },
   "functions": {
+    "app/api/cron/support-sla-watch/route.ts": {
+      "maxDuration": 60
+    },
     "app/api/**/*.ts": {
       "maxDuration": 10
     }
   },
-  "crons": [
-    {
-      "path": "/api/cron/archive-bookings",
-      "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/cron/weekly-report",
-      "schedule": "0 3 * * 1"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",

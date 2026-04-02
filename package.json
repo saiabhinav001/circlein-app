@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "test:e2e": "playwright test",
+    "test:e2e:responsive": "playwright test tests/e2e/responsive-layout-smoke.spec.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:install": "playwright install chromium",

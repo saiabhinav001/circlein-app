@@ -1,280 +1,242 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminDb } from '@/lib/firebase-admin';
+import { emailTemplates, sendEmail } from '@/lib/email-service';
 import { formatDateInTimeZone, formatDateTimeInTimeZone, resolveTimeZone } from '@/lib/timezone';
+import { toDateValue } from '@/lib/support-ticket';
 
 /**
  * AUTO-CANCELLATION CRON JOB
- * Simplified version that ALWAYS returns 200
+ * Cancels unchecked confirmed bookings after grace period and promotes waitlist users.
  */
 
+function hasValidCronSecret(request: NextRequest): boolean {
+  const expected = process.env.CRON_SECRET;
+  if (!expected) {
+    return false;
+  }
+
+  const authHeader = request.headers.get('authorization') || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  const headerToken = request.headers.get('x-cron-secret') || '';
+  const queryToken = request.nextUrl.searchParams.get('secret') || '';
+
+  return bearerToken === expected || headerToken === expected || queryToken === expected;
+}
+
+function toNumber(value: unknown, fallback: number): number {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
 export async function GET(request: NextRequest) {
-  const startTime = Date.now();
+  const startedAt = Date.now();
   let cancelledCount = 0;
   let promotedCount = 0;
+  let checked = 0;
   const errors: string[] = [];
-  const logs: string[] = [];
 
   try {
-    // Verify cron secret
-    const authHeader = request.headers.get('authorization');
-    const cronHeader = request.headers.get('x-cron-secret');
-    const expectedSecret = process.env.CRON_SECRET;
-    
-    logs.push('🔐 Checking authentication...');
-    
-    if (!authHeader && !cronHeader) {
-      logs.push('❌ No auth headers provided');
-      return NextResponse.json({ 
-        success: false,
-        error: 'No authentication headers',
-        logs 
-      }, { status: 401 });
-    }
-    
-    const isValid = 
-      authHeader === `Bearer ${expectedSecret}` || 
-      cronHeader === expectedSecret;
-    
-    if (!isValid) {
-      logs.push('❌ Invalid credentials');
-      return NextResponse.json({ 
-        success: false,
-        error: 'Invalid credentials',
-        logs 
-      }, { status: 401 });
-    }
-    
-    logs.push('✅ Authentication successful');
-    logs.push('🔄 Starting auto-cancel check...');
-
-    // Lazy load Firebase to catch initialization errors
-    let db, collection, query, where, getDocs, updateDoc, doc, Timestamp, serverTimestamp, getDoc, setDoc, increment;
-    
-    try {
-      const firebaseModule = await import('firebase/firestore');
-      const firebaseConfig = await import('@/lib/firebase');
-      
-      db = firebaseConfig.db;
-      collection = firebaseModule.collection;
-      query = firebaseModule.query;
-      where = firebaseModule.where;
-      getDocs = firebaseModule.getDocs;
-      updateDoc = firebaseModule.updateDoc;
-      doc = firebaseModule.doc;
-      Timestamp = firebaseModule.Timestamp;
-      serverTimestamp = firebaseModule.serverTimestamp;
-      getDoc = firebaseModule.getDoc;
-      setDoc = firebaseModule.setDoc;
-      increment = firebaseModule.increment;
-      
-      logs.push('✅ Firebase modules loaded');
-    } catch (importError: any) {
-      logs.push(`❌ Firebase import failed: ${importError.message}`);
-      throw new Error(`Firebase initialization failed: ${importError.message}`);
+    if (!hasValidCronSecret(request)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const now = new Date();
-    const gracePeriodCutoff = new Date(now.getTime() - (25 * 60 * 1000));
-    logs.push(`📅 Grace period cutoff: ${gracePeriodCutoff.toISOString()}`);
+    const gracePeriodCutoff = new Date(now.getTime() - 25 * 60 * 1000);
 
-    // Query bookings
-    const bookingsRef = collection(db, 'bookings');
-    const targetQuery = query(
-      bookingsRef,
-      where('status', '==', 'confirmed'),
-      where('startTime', '<=', Timestamp.fromDate(gracePeriodCutoff))
-    );
+    // Use a single-field query to avoid composite index dependency.
+    const snapshot = await adminDb
+      .collection('bookings')
+      .where('startTime', '<=', gracePeriodCutoff)
+      .get();
+    checked = snapshot.size;
 
-    let snapshot;
-    try {
-      snapshot = await getDocs(targetQuery);
-      logs.push(`📊 Found ${snapshot.docs.length} bookings to process`);
-    } catch (queryError: any) {
-      logs.push(`❌ Query error: ${queryError.message}`);
-      errors.push(`Query failed: ${queryError.message}`);
-      // Return success with error details instead of throwing
-      const duration = Date.now() - startTime;
-      return NextResponse.json({ 
-        success: true, // Return 200 to prevent cron retry
-        cancelled: 0,
-        promoted: 0,
-        errors,
-        logs,
-        duration: `${duration}ms`,
-        message: 'Query failed but endpoint is working'
-      });
-    }
+    const candidates = snapshot.docs.filter((docSnapshot) => {
+      const booking = docSnapshot.data() as Record<string, unknown>;
+      const status = String(booking.status || '').toLowerCase();
+      return status === 'confirmed' && !booking.checkInTime;
+    });
 
     // Process bookings
-    for (const bookingDoc of snapshot.docs) {
+    for (const bookingDoc of candidates) {
       try {
-        const booking = bookingDoc.data();
-        logs.push(`🔍 Processing booking ${bookingDoc.id}`);
-        
-        if (booking.checkInTime) {
-          logs.push(`  ⏭️ Already checked in`);
-          continue;
-        }
+        const booking = bookingDoc.data() as Record<string, unknown>;
 
         // Cancel booking
-        try {
-          await updateDoc(doc(db, 'bookings', bookingDoc.id), {
-            status: 'no_show',
-            autoCancelledAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-          });
-          cancelledCount++;
-          logs.push(`  ✅ Cancelled`);
-        } catch (updateError: any) {
-          logs.push(`  ⚠️ Cancel failed: ${updateError.message}`);
-          errors.push(`Cancel ${bookingDoc.id}: ${updateError.message}`);
-          continue;
-        }
+        await bookingDoc.ref.update({
+          status: 'no_show',
+          autoCancelledAt: now,
+          updatedAt: now,
+          source: 'cron_auto_cancel',
+        });
+        cancelledCount++;
 
         // Update stats (non-critical)
         try {
-          const userStatsRef = doc(db, 'userBookingStats', booking.userId);
-          const statsDoc = await getDoc(userStatsRef);
-          
-          let newNoShowCount = 1;
-          
-          if (statsDoc.exists()) {
-            const currentStats = statsDoc.data();
-            newNoShowCount = (currentStats.noShowCount || 0) + 1;
-            
-            await updateDoc(userStatsRef, {
-              noShowCount: increment(1),
-              updatedAt: serverTimestamp()
-            });
-          } else {
-            await setDoc(userStatsRef, {
-              userId: booking.userId,
-              noShowCount: 1,
-              totalBookings: 1,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp()
-            });
-          }
-          logs.push(`  📊 Stats updated (no-shows: ${newNoShowCount})`);
-          
-          // Apply 7-day suspension if 3+ no-shows
-          if (newNoShowCount >= 3) {
-            const { applySuspension } = await import('@/lib/booking-service');
-            const suspended = await applySuspension(booking.userId, newNoShowCount);
-            if (suspended) {
-              logs.push(`  🚫 User suspended for 7 days (${newNoShowCount} no-shows)`);
+          const userId = String(booking.userId || '').trim();
+          if (userId) {
+            const userStatsRef = adminDb.collection('userBookingStats').doc(userId);
+            const statsDoc = await userStatsRef.get();
+            const currentNoShowCount = statsDoc.exists
+              ? toNumber(statsDoc.data()?.noShowCount, 0)
+              : 0;
+            const nextNoShowCount = currentNoShowCount + 1;
+
+            const statsPayload: Record<string, unknown> = {
+              userId,
+              noShowCount: nextNoShowCount,
+              updatedAt: now,
+            };
+
+            if (!statsDoc.exists) {
+              statsPayload.totalBookings = 1;
+              statsPayload.createdAt = now;
             }
+
+            if (nextNoShowCount >= 3) {
+              const suspendedUntil = new Date(now);
+              suspendedUntil.setDate(suspendedUntil.getDate() + 7);
+              statsPayload.suspendedUntil = suspendedUntil;
+              statsPayload.suspensionReason = `${nextNoShowCount} no-shows`;
+            }
+
+            await userStatsRef.set(statsPayload, { merge: true });
           }
         } catch (statsError: any) {
-          logs.push(`  ⚠️ Stats failed: ${statsError.message}`);
+          errors.push(`Stats ${bookingDoc.id}: ${statsError.message}`);
         }
 
         // Check waitlist
         try {
-          const waitlistQuery = query(
-            bookingsRef,
-            where('amenityId', '==', booking.amenityId),
-            where('startTime', '==', booking.startTime),
-            where('status', '==', 'waitlist')
-          );
-
-          const waitlistSnapshot = await getDocs(waitlistQuery);
-          
-          if (waitlistSnapshot.empty) {
-            logs.push(`  ℹ️ No waitlist`);
+          const startTimeValue = booking.startTime;
+          if (!startTimeValue) {
             continue;
           }
 
+          const waitlistSnapshot = await adminDb
+            .collection('bookings')
+            .where('startTime', '==', startTimeValue)
+            .get();
+
           const waitlistBookings = waitlistSnapshot.docs
-            .map(d => ({ id: d.id, ...d.data() }))
-            .sort((a: any, b: any) => {
-              // Sort by priority score (higher first), then by waitlist position (lower first)
-              const priorityDiff = (b.priorityScore || 50) - (a.priorityScore || 50);
-              if (priorityDiff !== 0) return priorityDiff;
-              return (a.waitlistPosition || 999) - (b.waitlistPosition || 999);
+            .map((docSnapshot) => ({
+              id: docSnapshot.id,
+              ref: docSnapshot.ref,
+              data: docSnapshot.data() as Record<string, unknown>,
+            }))
+            .filter((candidate) => {
+              const status = String(candidate.data.status || '').toLowerCase();
+              return (
+                status === 'waitlist' &&
+                String(candidate.data.amenityId || '') === String(booking.amenityId || '')
+              );
+            })
+            .sort((a, b) => {
+              const priorityDiff =
+                toNumber(b.data.priorityScore, 50) - toNumber(a.data.priorityScore, 50);
+              if (priorityDiff !== 0) {
+                return priorityDiff;
+              }
+              return (
+                toNumber(a.data.waitlistPosition, 999) -
+                toNumber(b.data.waitlistPosition, 999)
+              );
             });
 
-          const nextInLine = waitlistBookings[0] as any;
-          logs.push(`  👤 Next: Priority=${nextInLine.priorityScore || 50}, Pos=${nextInLine.waitlistPosition}`);
+          const nextInLine = waitlistBookings[0];
+          if (!nextInLine) {
+            continue;
+          }
+
           const confirmationDeadline = new Date(now.getTime() + (30 * 60 * 1000));
-          
-          await updateDoc(doc(db, 'bookings', nextInLine.id), {
+
+          await nextInLine.ref.update({
             status: 'pending_confirmation',
-            waitlistPromotedAt: serverTimestamp(),
-            confirmationDeadline: Timestamp.fromDate(confirmationDeadline),
-            updatedAt: serverTimestamp()
+            waitlistPromotedAt: now,
+            confirmationDeadline,
+            updatedAt: now,
+            source: 'cron_auto_cancel',
           });
 
           promotedCount++;
-          logs.push(`  🎉 Promoted ${nextInLine.id}`);
 
           // Send email (non-critical)
           try {
-            const { emailTemplates, sendEmail } = await import('@/lib/email-service');
-            const settingsSnapshot = booking.communityId
-              ? await getDoc(doc(db, 'settings', booking.communityId))
-              : null;
-            const settingsData = settingsSnapshot?.data() as any;
-            const communityTimeZone = resolveTimeZone(settingsData?.community?.timezone || settingsData?.timezone);
-            
+            const recipientEmail = String(nextInLine.data.userEmail || '').trim();
+            if (!recipientEmail || !recipientEmail.includes('@')) {
+              continue;
+            }
+
+            const communityId = String(booking.communityId || '').trim();
+            let communityTimeZone = 'UTC';
+            if (communityId) {
+              const settingsSnapshot = await adminDb.collection('settings').doc(communityId).get();
+              const settingsData = settingsSnapshot.data() as Record<string, unknown> | undefined;
+              const nestedCommunity = settingsData?.community;
+              const communityRecord = nestedCommunity && typeof nestedCommunity === 'object'
+                ? (nestedCommunity as Record<string, unknown>)
+                : undefined;
+              const timezoneValue = communityRecord?.timezone ?? settingsData?.timezone;
+              communityTimeZone = resolveTimeZone(
+                typeof timezoneValue === 'string' ? timezoneValue : undefined
+              );
+            }
+
+            const bookingStart = toDateValue(booking.startTime) || now;
             const emailTemplate = emailTemplates.waitlistPromotion({
-              userName: nextInLine.userName || 'Resident',
-              amenityName: booking.amenityName,
-              date: formatDateInTimeZone(booking.startTime.toDate(), communityTimeZone, {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+              userName: String(nextInLine.data.userName || 'Resident'),
+              amenityName: String(booking.amenityName || 'Amenity'),
+              date: formatDateInTimeZone(bookingStart, communityTimeZone, {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
               }),
-              timeSlot: nextInLine.selectedSlot || 'Time slot',
-              confirmationDeadline: formatDateTimeInTimeZone(confirmationDeadline, communityTimeZone),
+              timeSlot: String(nextInLine.data.selectedSlot || 'Time slot'),
+              confirmationDeadline: formatDateTimeInTimeZone(
+                confirmationDeadline,
+                communityTimeZone
+              ),
               bookingId: nextInLine.id,
-              flatNumber: nextInLine.userFlatNumber || ''
+              flatNumber: String(nextInLine.data.userFlatNumber || ''),
             });
 
             await sendEmail({
-              to: nextInLine.userEmail,
+              to: recipientEmail,
               subject: emailTemplate.subject,
-              html: emailTemplate.html
+              html: emailTemplate.html,
             });
-
-            logs.push(`  📧 Email sent`);
           } catch (emailError: any) {
-            logs.push(`  ⚠️ Email failed: ${emailError.message}`);
+            errors.push(`Promotion email ${bookingDoc.id}: ${emailError.message}`);
           }
         } catch (waitlistError: any) {
-          logs.push(`  ⚠️ Waitlist error: ${waitlistError.message}`);
           errors.push(`Waitlist ${bookingDoc.id}: ${waitlistError.message}`);
         }
       } catch (bookingError: any) {
-        logs.push(`  ❌ Booking error: ${bookingError.message}`);
         errors.push(`Booking ${bookingDoc.id}: ${bookingError.message}`);
       }
     }
 
-    const duration = Date.now() - startTime;
-    logs.push(`✅ Complete: ${cancelledCount} cancelled, ${promotedCount} promoted`);
-
     return NextResponse.json({ 
       success: true,
+      message: 'Auto-cancel check completed',
+      checked,
+      eligible: candidates.length,
       cancelled: cancelledCount,
       promoted: promotedCount,
+      failed: errors.length,
       errors: errors.length > 0 ? errors : undefined,
-      logs: logs.slice(-20), // Last 20 logs only
-      duration: `${duration}ms`,
+      durationMs: Date.now() - startedAt,
       timestamp: now.toISOString()
     });
 
   } catch (error: any) {
-    const duration = Date.now() - startTime;
-    logs.push(`❌ FATAL ERROR: ${error.message}`);
-    
-    // ALWAYS return 200 to prevent cron retries
     return NextResponse.json({ 
       success: false,
       error: error.message,
-      stack: error.stack?.split('\n').slice(0, 5).join('\n'), // First 5 lines only
       cancelled: cancelledCount,
       promoted: promotedCount,
       errors,
-      logs,
-      duration: `${duration}ms`
-    }, { status: 200 }); // Changed from 500 to 200
+      durationMs: Date.now() - startedAt,
+    }, { status: 500 });
   }
 }

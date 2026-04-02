@@ -23,6 +23,10 @@ interface ChatMessage {
 interface ChatbotResponse {
   response: string;
   actionUrl?: string;
+  confidence?: number;
+  handoffSuggested?: boolean;
+  handoffReason?: string;
+  source?: 'intent' | 'ai' | 'fallback' | 'handoff';
 }
 
 declare global {
@@ -494,7 +498,7 @@ export function ChatWidget() {
                           href={message.actionUrl}
                           className="mt-2 inline-block rounded-lg bg-emerald-500 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-600"
                         >
-                          Open booking details
+                          {message.actionUrl === '/contact' ? 'Open support center' : 'Open booking details'}
                         </a>
                       )}
                     </div>

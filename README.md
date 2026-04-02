@@ -9,13 +9,13 @@ It combines amenity booking, notifications, maintenance tracking, and admin work
 - Amenity browsing and booking with cancel, reschedule, recurring, and waitlist support.
 - Dashboard widgets for weather, quick re-booking, community pulse, and booking streak.
 - Smart booking suggestions based on recent patterns.
-- Community-wide 12h/24h time display consistency across booking, QR, calendar, and waitlist experiences.
+- Community-wide 12h/24h time display consistency across booking, QR, calendar, waitlist, and support timelines.
 - Keyboard-driven command palette (Ctrl/Cmd + K, plus route shortcuts).
 - PWA support with offline page and service worker integration.
 
 ### Admin workflows
 - Admin dashboard for settings, waitlist, maintenance, and operations.
-- Community location setup with autocomplete + map preview for weather and locality context.
+- Community location setup with autocomplete, browser/approximate detection options, and resilient map preview fallbacks.
 - Support ticket desk (`/admin/contact-tickets`) with assignment and status workflows.
 - Weekly report generation and analytics integrations.
 - Automated booking archive flow to keep active collections lean.
@@ -32,6 +32,7 @@ It combines amenity booking, notifications, maintenance tracking, and admin work
 
 - Global time-format system with app-level provider and community-level 12h/24h preference.
 - Open-source geocoding stack (Photon + Nominatim) and weather stack (Open-Meteo).
+- Multi-provider approximate geolocation fallback (`/api/geocoding/ip`) for better reliability.
 - Authenticated weather proxy route at `/api/weather` plus role-aware weather widget for resident/admin dashboards.
 - Booking engine hardening for recurring flows, policy enforcement, and automatic waitlist promotion handling.
 - Chatbot hardening with validated payloads, trusted role derivation from session, and deterministic AI timeout fallback.
@@ -135,10 +136,17 @@ graph TD
 
 ## Automation and Cron
 
-Configured in [vercel.json](vercel.json):
+This project uses an external scheduler (cron-job.org), not Vercel Cron.
 
+Recommended cron-job.org schedules:
+
+- `/api/cron/auto-cancel` -> `*/5 * * * *`
+- `/api/cron/send-reminders` -> `*/15 * * * *`
+- `/api/cron/expire-waitlist` -> `0 * * * *`
+- `/api/cron/support-sla-watch` -> `*/30 * * * *`
 - `/api/cron/archive-bookings` -> `0 2 * * *`
 - `/api/cron/weekly-report` -> `0 3 * * 1`
+- `/api/cron/weekly-digest` -> `0 9 * * 1`
 
 Operational note:
 - Keep `CRON_SECRET` set in production.
@@ -149,6 +157,9 @@ Operational note:
 - `/api/weather` - Weather proxy backed by community location settings.
 - `/api/contact/tickets` - Resident/admin support ticket listing and ticket creation.
 - `/api/contact/tickets/[id]/status` - Admin-only ticket status transitions and updates.
+- `/api/admin/operations-radar` - Admin operations risk index and alert feed.
+- `/api/admin/support-sla-watch` - Session-authenticated manual SLA watch trigger (dry-run by default).
+- `/api/cron/support-sla-watch` - Automated SLA watch and escalation workflow.
 
 ## Security Model
 
@@ -156,6 +167,7 @@ Operational note:
 - Protected app routes redirect unauthenticated users to sign-in.
 - Firestore and storage rules are versioned in [firestore.rules](firestore.rules) and [storage.rules](storage.rules).
 - Security headers and build/runtime settings live in [next.config.ts](next.config.ts) and [vercel.json](vercel.json).
+- Security headers explicitly allow required OpenStreetMap map preview embeds and self geolocation while camera/microphone remain disabled.
 
 ## Project Layout
 
@@ -189,6 +201,8 @@ Also verify:
 - Protected routes redirect when signed out.
 - Command palette opens with Ctrl/Cmd + K.
 - Cron endpoints are not publicly executable without secret.
+- Admin location picker supports browser location, approximate location, and a visible map preview/fallback.
+- Switching community time format updates support/admin timeline timestamps accordingly.
 
 ## Documentation Map
 

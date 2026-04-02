@@ -65,6 +65,10 @@ export function CommunityBrandingProvider({ children }: { children: React.ReactN
       (snapshot) => {
         const data = snapshot.data() as any;
         const incoming = data?.theme || {};
+        const configuredTimeZone = resolveTimeZone(
+          data?.community?.timezone || data?.timezone,
+          'Asia/Kolkata'
+        );
         const configuredTimeFormat = data?.community?.timeFormat || data?.timeFormat || '24h';
         setTheme({
           primaryColor: incoming.primaryColor || DEFAULT_THEME.primaryColor,
@@ -72,7 +76,7 @@ export function CommunityBrandingProvider({ children }: { children: React.ReactN
           logoUrl: incoming.logoUrl || DEFAULT_THEME.logoUrl,
           communityName: incoming.communityName || (session?.user as any)?.communityName || DEFAULT_THEME.communityName,
         });
-        setTimeZone('Asia/Kolkata');
+        setTimeZone(configuredTimeZone);
         setTimeFormat(configuredTimeFormat === '12h' ? '12h' : '24h');
       },
       (error) => {

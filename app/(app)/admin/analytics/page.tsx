@@ -22,12 +22,14 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import {
+  AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
   CalendarDays,
   Clock3,
   Download,
+  ShieldCheck,
   Sparkles,
   Target,
   TrendingUp,
@@ -35,6 +37,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateTimeInTimeZone } from '@/lib/timezone';
 
 interface BookingRecord {
   id: string;
@@ -63,6 +67,59 @@ interface WeeklyReportRecord {
   generatedAt: string;
 }
 
+type RadarRiskLevel = 'stable' | 'guarded' | 'elevated' | 'critical';
+type RadarAlertSeverity = 'good' | 'watch' | 'critical';
+
+interface OperationsRadarAlert {
+  id: string;
+  severity: RadarAlertSeverity;
+  title: string;
+  detail: string;
+  actionLabel: string;
+  actionUrl: string;
+}
+
+interface OperationsRadarSnapshot {
+  riskScore: number;
+  riskLevel: RadarRiskLevel;
+  generatedAt: string;
+  support: {
+    total: number;
+    active: number;
+    overdue: number;
+    atRisk: number;
+    urgentOrHigh: number;
+  };
+  maintenance: {
+    total: number;
+    open: number;
+    urgentOrHigh: number;
+    stale: number;
+  };
+  demand: {
+    upcomingSevenDays: number;
+    previousSevenDays: number;
+    demandDeltaPercent: number;
+    cancellationRateRecent: number;
+    weekendUpcoming: number;
+    peakHour: number | null;
+    peakHourBookings: number;
+  };
+  slaWatch: {
+    runAt: string | null;
+    scannedTickets: number;
+    escalatedTickets: number;
+    notificationsCreated: number;
+    dryRun: boolean;
+    source: string;
+    byReason: {
+      overdue: number;
+      atRisk: number;
+    };
+  } | null;
+  alerts: OperationsRadarAlert[];
+}
+
 const DATE_RANGES = [
   { key: 7, label: 'Last 7 days' },
   { key: 30, label: 'Last 30 days' },
@@ -78,6 +135,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const DAY_FORMATTER = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+const NUMBER_FORMATTER = new Intl.NumberFormat('en-US');
 
 const toDate = (value: any): Date | null => {
   if (!value) return null;
@@ -90,9 +148,13 @@ const toIsoDate = (date: Date) => date.toISOString().slice(0, 10);
 
 const asPct = (value: number) => `${Math.round(value)}%`;
 
-const toNumber = (value: number) => value.toLocaleString('en-US');
+const toNumber = (value: number) => NUMBER_FORMATTER.format(value);
 
-const formatHourLabel = (hour: number) => {
+const formatHourLabel = (hour: number, timeFormat: '12h' | '24h') => {
+  if (timeFormat === '24h') {
+    return `${String(hour).padStart(2, '0')}:00`;
+  }
+
   const normalizedHour = ((hour + 11) % 12) + 1;
   const meridiem = hour >= 12 ? 'pm' : 'am';
   return `${normalizedHour}${meridiem}`;
@@ -104,6 +166,36 @@ const getDelta = (current: number, previous: number) => {
   }
 
   return ((current - previous) / previous) * 100;
+};
+
+const formatSignedPercent = (value: number) => `${value > 0 ? '+' : ''}${Math.round(value)}%`;
+
+const getRadarRiskLabel = (riskLevel: RadarRiskLevel) => {
+  if (riskLevel === 'critical') {
+    return 'Critical';
+  }
+
+  if (riskLevel === 'elevated') {
+    return 'Elevated';
+  }
+
+  if (riskLevel === 'guarded') {
+    return 'Guarded';
+  }
+
+  return 'Stable';
+};
+
+const getRadarAlertClassName = (severity: RadarAlertSeverity) => {
+  if (severity === 'critical') {
+    return 'border-rose-200 bg-rose-50/70 text-rose-800 dark:border-rose-800/70 dark:bg-rose-950/40 dark:text-rose-200';
+  }
+
+  if (severity === 'watch') {
+    return 'border-amber-200 bg-amber-50/70 text-amber-800 dark:border-amber-800/70 dark:bg-amber-950/30 dark:text-amber-200';
+  }
+
+  return 'border-emerald-200 bg-emerald-50/70 text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-950/30 dark:text-emerald-200';
 };
 
 const buildTrendSeries = (bookings: BookingRecord[], rangeDays: number) => {
@@ -143,11 +235,47 @@ const buildTrendSeries = (bookings: BookingRecord[], rangeDays: number) => {
 export default function AdminAnalyticsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const timeZone = useCommunityTimeZone();
+  const timeFormat = useCommunityTimeFormat();
 
   const [loading, setLoading] = useState(true);
   const [rangeDays, setRangeDays] = useState(30);
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [latestWeeklyReport, setLatestWeeklyReport] = useState<WeeklyReportRecord | null>(null);
+  const [operationsRadar, setOperationsRadar] = useState<OperationsRadarSnapshot | null>(null);
+  const [radarLoading, setRadarLoading] = useState(false);
+  const [runningSlaWatch, setRunningSlaWatch] = useState(false);
+
+  const formatReportGeneratedAt = (value: string) => {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return 'Unknown';
+    }
+
+    return formatDateTimeInTimeZone(parsed, timeZone, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: timeFormat !== '24h',
+    });
+  };
+
+  const formatRadarGeneratedAt = (value: string) => {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return 'Unknown';
+    }
+
+    return formatDateTimeInTimeZone(parsed, timeZone, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: timeFormat !== '24h',
+    });
+  };
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -159,11 +287,64 @@ export default function AdminAnalyticsPage() {
     loadBookings();
   }, [status, session?.user?.email, session?.user?.role, session?.user?.communityId, router]);
 
+  const loadOperationsRadar = async (): Promise<OperationsRadarSnapshot | null> => {
+    try {
+      setRadarLoading(true);
+      const response = await fetch('/api/admin/operations-radar', {
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        setOperationsRadar(null);
+        return null;
+      }
+
+      const payload = await response.json().catch(() => null);
+      const nextRadar = (payload?.radar as OperationsRadarSnapshot | null) || null;
+      setOperationsRadar(nextRadar);
+      return nextRadar;
+    } catch (radarError) {
+      console.warn('Operations radar unavailable:', radarError);
+      setOperationsRadar(null);
+      return null;
+    } finally {
+      setRadarLoading(false);
+    }
+  };
+
+  const runManualSlaWatch = async () => {
+    try {
+      setRunningSlaWatch(true);
+
+      const response = await fetch('/api/admin/support-sla-watch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun: true }),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Failed to run SLA watch test');
+      }
+
+      toast.success(
+        `SLA watch test complete: scanned ${payload?.scanned || 0}, escalations ${payload?.escalated || 0}`
+      );
+      await loadOperationsRadar();
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to run SLA watch test');
+    } finally {
+      setRunningSlaWatch(false);
+    }
+  };
+
   const loadBookings = async () => {
     if (!session?.user?.communityId) return;
 
     try {
       setLoading(true);
+      const radarPromise = loadOperationsRadar();
+
       const bookingsSnapshot = await getDocs(
         query(collection(db, 'bookings'), where('communityId', '==', session.user.communityId))
       );
@@ -201,10 +382,13 @@ export default function AdminAnalyticsPage() {
         console.warn('Weekly reports unavailable for analytics summary:', weeklyReportError);
         setLatestWeeklyReport(null);
       }
+
+      await radarPromise;
     } catch (error) {
       console.error('Failed to load analytics:', error);
       toast.error('Failed to load analytics data');
       setLatestWeeklyReport(null);
+      setOperationsRadar(null);
     } finally {
       setLoading(false);
     }
@@ -429,6 +613,40 @@ export default function AdminAnalyticsPage() {
     return Math.round((latestWeeklyReport.noShowRate || 0) * 100);
   }, [latestWeeklyReport]);
 
+  const radarRiskAccent = useMemo(() => {
+    const level = operationsRadar?.riskLevel;
+
+    if (level === 'critical') {
+      return {
+        ring: 'ring-rose-300/70 dark:ring-rose-500/40',
+        text: 'text-rose-700 dark:text-rose-300',
+        panel: 'bg-rose-50/60 dark:bg-rose-950/25 border-rose-200 dark:border-rose-800/70',
+      };
+    }
+
+    if (level === 'elevated') {
+      return {
+        ring: 'ring-amber-300/70 dark:ring-amber-500/40',
+        text: 'text-amber-700 dark:text-amber-300',
+        panel: 'bg-amber-50/60 dark:bg-amber-950/25 border-amber-200 dark:border-amber-800/70',
+      };
+    }
+
+    if (level === 'guarded') {
+      return {
+        ring: 'ring-cyan-300/70 dark:ring-cyan-500/40',
+        text: 'text-cyan-700 dark:text-cyan-300',
+        panel: 'bg-cyan-50/60 dark:bg-cyan-950/20 border-cyan-200 dark:border-cyan-800/60',
+      };
+    }
+
+    return {
+      ring: 'ring-emerald-300/70 dark:ring-emerald-500/40',
+      text: 'text-emerald-700 dark:text-emerald-300',
+      panel: 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60',
+    };
+  }, [operationsRadar?.riskLevel]);
+
   const latestPoint = trendData[trendData.length - 1];
   const previousPoint = trendData[trendData.length - 2];
   const todayBookingsDelta = latestPoint && previousPoint ? latestPoint.bookings - previousPoint.bookings : 0;
@@ -548,6 +766,124 @@ export default function AdminAnalyticsPage() {
             </div>
 
             <Card className="rounded-2xl border-slate-200/90 dark:border-slate-700/70 bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm">
+              <CardHeader className="pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-base">Operations radar</CardTitle>
+                    <CardDescription>Unified risk index across support SLA, maintenance backlog, and demand pressure.</CardDescription>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-slate-300 dark:border-slate-600"
+                      disabled={runningSlaWatch}
+                      onClick={runManualSlaWatch}
+                    >
+                      {runningSlaWatch ? 'Testing SLA watch...' : 'Test SLA watch'}
+                    </Button>
+                    {operationsRadar && (
+                      <span className={cn('inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold', radarRiskAccent.panel, radarRiskAccent.text)}>
+                        {getRadarRiskLabel(operationsRadar.riskLevel)} risk
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {radarLoading && !operationsRadar ? (
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Calibrating operations radar...</p>
+                ) : operationsRadar ? (
+                  <div className="grid lg:grid-cols-[220px_minmax(0,1fr)] gap-4">
+                    <div className={cn('rounded-2xl border p-4 flex flex-col items-center justify-center gap-2 text-center', radarRiskAccent.panel)}>
+                      <div className={cn('h-24 w-24 rounded-full ring-8 flex items-center justify-center bg-white/90 dark:bg-slate-900/80', radarRiskAccent.ring)}>
+                        <span className={cn('text-2xl font-bold', radarRiskAccent.text)}>{operationsRadar.riskScore}</span>
+                      </div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Risk score</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Updated {formatRadarGeneratedAt(operationsRadar.generatedAt)}
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3">
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Support pressure</p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{toNumber(operationsRadar.support.active)} active</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {toNumber(operationsRadar.support.overdue)} overdue, {toNumber(operationsRadar.support.atRisk)} at risk
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3">
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Maintenance backlog</p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{toNumber(operationsRadar.maintenance.open)} open</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {toNumber(operationsRadar.maintenance.stale)} stale, {toNumber(operationsRadar.maintenance.urgentOrHigh)} high priority
+                          </p>
+                        </div>
+
+                        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3">
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Demand next 7 days</p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{toNumber(operationsRadar.demand.upcomingSevenDays)} bookings</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {formatSignedPercent(operationsRadar.demand.demandDeltaPercent)} vs previous window
+                          </p>
+                          {operationsRadar.demand.peakHour !== null && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              Peak slot: {formatHourLabel(operationsRadar.demand.peakHour, timeFormat)} ({toNumber(operationsRadar.demand.peakHourBookings)})
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3">
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Last SLA watch run</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            {operationsRadar.slaWatch?.runAt ? formatRadarGeneratedAt(operationsRadar.slaWatch.runAt) : 'No run recorded'}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {operationsRadar.slaWatch
+                              ? `${toNumber(operationsRadar.slaWatch.scannedTickets)} scanned • ${toNumber(operationsRadar.slaWatch.escalatedTickets)} escalated`
+                              : 'Run SLA watch to populate this card.'}
+                          </p>
+                          {operationsRadar.slaWatch && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              Overdue: {toNumber(operationsRadar.slaWatch.byReason.overdue)} • At risk: {toNumber(operationsRadar.slaWatch.byReason.atRisk)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        {operationsRadar.alerts.slice(0, 3).map((alert) => (
+                          <div key={alert.id} className={cn('rounded-xl border p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3', getRadarAlertClassName(alert.severity))}>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold flex items-center gap-2">
+                                {alert.severity === 'good' ? <ShieldCheck className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+                                {alert.title}
+                              </p>
+                              <p className="text-xs mt-1 opacity-90">{alert.detail}</p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full sm:w-auto border-current/40"
+                              onClick={() => router.push(alert.actionUrl)}
+                            >
+                              {alert.actionLabel}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Radar is temporarily unavailable. Refresh to retry.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border-slate-200/90 dark:border-slate-700/70 bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-base">Latest weekly report</CardTitle>
                 <CardDescription>Generated by cron and stored in weekly_reports</CardDescription>
@@ -569,7 +905,7 @@ export default function AdminAnalyticsPage() {
                     <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-2.5">
                       <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">No-show rate</p>
                       <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{latestReportNoShowRate}%</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Peak: {latestWeeklyReport.peakDay} at {formatHourLabel(latestWeeklyReport.peakHour)}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Peak: {latestWeeklyReport.peakDay} at {formatHourLabel(latestWeeklyReport.peakHour, timeFormat)}</p>
                     </div>
                     <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-2.5">
                       <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Most popular amenity</p>
@@ -579,7 +915,7 @@ export default function AdminAnalyticsPage() {
                           : 'N/A'}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Report generated: {new Date(latestWeeklyReport.generatedAt).toLocaleString()}
+                        Report generated: {formatReportGeneratedAt(latestWeeklyReport.generatedAt)}
                       </p>
                     </div>
                   </div>

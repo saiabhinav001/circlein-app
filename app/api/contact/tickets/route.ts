@@ -5,6 +5,13 @@ import { adminDb } from '@/lib/firebase-admin';
 import { checkRateLimit, getClientIP } from '@/lib/rate-limiter';
 import { sendEmail } from '@/lib/email-service';
 import { SupportTicketCreateSchema } from '@/lib/schemas';
+import {
+  SUPPORT_PRIORITY_SLA_HOURS,
+  computeSupportDueAt,
+  getSupportPriorityRank,
+  getSupportStatusRank,
+  inferSupportPriority,
+} from '@/lib/support-ticket';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,16 +50,45 @@ function mapTicket(docSnapshot: FirebaseFirestore.QueryDocumentSnapshot<Firebase
     message: String(data.message || ''),
     category: String(data.category || 'general'),
     status: String(data.status || 'open'),
+    priority: String(data.priority || 'normal'),
+    slaTargetHours: Number(data.slaTargetHours || 48),
     communityId: String(data.communityId || ''),
     userEmail: String(data.userEmail || ''),
     userName: String(data.userName || ''),
     assignedTo: data.assignedTo ? String(data.assignedTo) : null,
     createdAt: toIsoDate(data.createdAt),
     updatedAt: toIsoDate(data.updatedAt),
+    dueAt: toIsoDate(data.dueAt),
+    firstResponseAt: toIsoDate(data.firstResponseAt),
+    escalatedAt: toIsoDate(data.escalatedAt),
     resolvedAt: toIsoDate(data.resolvedAt),
     closedAt: toIsoDate(data.closedAt),
+    isEscalated: Boolean(data.escalatedAt),
     history: Array.isArray(data.history) ? data.history : [],
   };
+}
+
+function toSortTime(value: string | null): number {
+  return value ? new Date(value).getTime() : Number.POSITIVE_INFINITY;
+}
+
+function compareAdminQueue(a: ReturnType<typeof mapTicket>, b: ReturnType<typeof mapTicket>): number {
+  const statusDelta = getSupportStatusRank(a.status) - getSupportStatusRank(b.status);
+  if (statusDelta !== 0) {
+    return statusDelta;
+  }
+
+  const priorityDelta = getSupportPriorityRank(b.priority) - getSupportPriorityRank(a.priority);
+  if (priorityDelta !== 0) {
+    return priorityDelta;
+  }
+
+  const dueDelta = toSortTime(a.dueAt) - toSortTime(b.dueAt);
+  if (dueDelta !== 0) {
+    return dueDelta;
+  }
+
+  return toSortTime(a.createdAt) - toSortTime(b.createdAt);
 }
 
 function buildSupportTicketEmailHtml(params: {
@@ -60,6 +96,8 @@ function buildSupportTicketEmailHtml(params: {
   subject: string;
   message: string;
   category: string;
+  priority: string;
+  dueAt: string;
   userName: string;
   userEmail: string;
   communityId: string;
@@ -67,6 +105,8 @@ function buildSupportTicketEmailHtml(params: {
   const safeSubject = escapeHtml(params.subject);
   const safeMessage = escapeHtml(params.message).replace(/\n/g, '<br>');
   const safeCategory = escapeHtml(params.category);
+  const safePriority = escapeHtml(params.priority.toUpperCase());
+  const safeDueAt = escapeHtml(params.dueAt);
   const safeName = escapeHtml(params.userName);
   const safeEmail = escapeHtml(params.userEmail);
   const safeCommunity = escapeHtml(params.communityId);
@@ -78,6 +118,8 @@ function buildSupportTicketEmailHtml(params: {
       <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #f9fafb;">
         <p><strong>Subject:</strong> ${safeSubject}</p>
         <p><strong>Category:</strong> ${safeCategory}</p>
+        <p><strong>Priority:</strong> ${safePriority}</p>
+        <p><strong>SLA Due:</strong> ${safeDueAt}</p>
         <p><strong>From:</strong> ${safeName} (${safeEmail})</p>
         <p><strong>Community:</strong> ${safeCommunity}</p>
       </div>
@@ -112,13 +154,15 @@ export async function GET(): Promise<NextResponse> {
           .where('userEmail', '==', session.user.email)
           .get();
 
-    const tickets = snapshot.docs
-      .map((docSnapshot) => mapTicket(docSnapshot))
-      .sort((a, b) => {
-        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return bTime - aTime;
-      });
+    const mappedTickets = snapshot.docs.map((docSnapshot) => mapTicket(docSnapshot));
+
+    const tickets = isAdmin
+      ? mappedTickets.sort(compareAdminQueue)
+      : mappedTickets.sort((a, b) => {
+          const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return bTime - aTime;
+        });
 
     return NextResponse.json({ success: true, tickets });
   } catch (error: any) {
@@ -171,6 +215,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const message = parsedBody.data.message.trim();
     const category = parsedBody.data.category || 'general';
     const now = new Date();
+    const priority = inferSupportPriority({ subject, message, category });
+    const slaTargetHours = SUPPORT_PRIORITY_SLA_HOURS[priority];
+    const dueAt = computeSupportDueAt(now, priority);
 
     const ticketRef = adminDb.collection('supportTickets').doc();
     const ticketReference = ticketRef.id.substring(0, 8).toUpperCase();
@@ -180,22 +227,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       message,
       category,
       status: 'open',
+      priority,
+      slaTargetHours,
       communityId,
       userEmail: session.user.email,
       userName: session.user.name || session.user.email,
       assignedTo: null,
       createdAt: now,
       updatedAt: now,
+      dueAt,
+      firstResponseAt: null,
+      escalatedAt: null,
       resolvedAt: null,
       closedAt: null,
       history: [
         {
           id: `evt_${Date.now()}`,
           status: 'open',
-          note: 'Ticket submitted',
+          note: `Ticket submitted (priority: ${priority})`,
           updatedBy: session.user.email,
           updatedByName: session.user.name || session.user.email,
           assignedTo: null,
+          priority,
           timestamp: now,
         },
       ],
@@ -205,7 +258,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       userEmail: session.user.email,
       communityId,
       type: 'community',
-      priority: 'important',
+      priority: priority === 'urgent' || priority === 'high' ? 'important' : 'normal',
       title: `Support ticket created: ${subject}`,
       message: `Ticket ${ticketReference} is now open. We will update you soon.`,
       read: false,
@@ -225,6 +278,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             subject,
             message,
             category,
+            priority,
+            dueAt: dueAt.toISOString(),
             userName: session.user.name || session.user.email,
             userEmail: session.user.email,
             communityId,
@@ -246,6 +301,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         subject,
         category,
         status: 'open',
+        priority,
+        slaTargetHours,
+        dueAt: dueAt.toISOString(),
         createdAt: now.toISOString(),
       },
     });

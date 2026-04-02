@@ -11,6 +11,16 @@ This folder contains Playwright smoke tests for critical user-facing regressions
     - Use approximate location
 - Admin analytics page load
 - Dashboard tab-switch focus stability
+- Responsive layout smoke checks (mobile/tablet/desktop)
+  - Public pages:
+  - `/landing`
+  - `/auth/signin`
+  - Authenticated admin/resident critical pages:
+  - `/contact`
+  - `/admin/contact-tickets`
+  - `/admin/analytics`
+  - `/admin/maintenance`
+  - Horizontal overflow guard (`scrollWidth <= clientWidth`)
 - Runtime guard against known console errors:
   - NotificationProvider/ToastNotification update timing error
   - Duplicate React key error in location suggestions
@@ -40,7 +50,13 @@ npm run test:e2e:install
 npm run test:e2e
 ```
 
-3. Open HTML report:
+3. Run responsive smoke suite only:
+
+```bash
+npm run test:e2e:responsive
+```
+
+4. Open HTML report:
 
 ```bash
 npm run test:e2e:report

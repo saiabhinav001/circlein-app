@@ -18,7 +18,10 @@ function isAuthorized(request: NextRequest): boolean {
 
   const authHeader = request.headers.get('authorization') || '';
   const token = authHeader.replace('Bearer ', '').trim();
-  return token === configuredSecret;
+  const cronHeader = request.headers.get('x-cron-secret') || '';
+  const queryToken = request.nextUrl.searchParams.get('secret') || '';
+
+  return token === configuredSecret || cronHeader === configuredSecret || queryToken === configuredSecret;
 }
 
 async function handleWeeklyDigest(request: NextRequest): Promise<NextResponse> {

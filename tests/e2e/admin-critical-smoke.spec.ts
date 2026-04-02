@@ -119,6 +119,10 @@ test.describe('Admin critical smoke', () => {
 
     await suggestionButtons.first().click()
     await expect(page.getByText(/State Bank of India/i)).toBeVisible()
+    await expect(page.getByRole('link', { name: /Open full map/i })).toBeVisible()
+    await expect(
+      page.locator('iframe[title="Selected community location preview"], img[alt="Selected community location static preview"]')
+    ).toHaveCount(1)
 
     await page.getByRole('button', { name: /Use approximate location/i }).click()
     await expect(page.getByText(/Hyderabad, Telangana, India/i)).toBeVisible()

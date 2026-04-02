@@ -12,6 +12,24 @@ export default [
       '@next/next/no-img-element': 'off',
       'react/no-unescaped-entities': 'off',
       'import/no-anonymous-default-export': 'off',
+      'no-restricted-properties': [
+        'error',
+        {
+          property: 'toLocaleString',
+          message:
+            'Use shared timezone/time-format helpers (for dates) or Intl.NumberFormat (for numbers) instead of direct toLocaleString.',
+        },
+        {
+          property: 'toLocaleDateString',
+          message:
+            'Use shared timezone/time-format helpers instead of direct toLocaleDateString.',
+        },
+        {
+          property: 'toLocaleTimeString',
+          message:
+            'Use shared timezone/time-format helpers instead of direct toLocaleTimeString.',
+        },
+      ],
     },
   },
   {

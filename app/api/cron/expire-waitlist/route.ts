@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, Timestamp, updateDoc, doc as docRef } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
+import { toDateValue } from '@/lib/support-ticket';
 
 /**
  * 🕐 WAITLIST EXPIRY CRON ENDPOINT
@@ -40,27 +40,23 @@ async function handleWaitlistExpiry(request: NextRequest) {
     }
 
     const now = new Date();
-    const nowTimestamp = Timestamp.fromDate(now);
+    const snapshot = await adminDb
+      .collection('bookings')
+      .where('endTime', '<=', now)
+      .get();
+
+    const eligible = snapshot.docs.filter((docSnapshot) => {
+      const status = String(docSnapshot.data().status || '').toLowerCase();
+      return status === 'waitlist' || status === 'pending_confirmation';
+    });
 
 
-    // 1. QUERY WAITLIST BOOKINGS THAT HAVE PASSED
-    const bookingsRef = collection(db, 'bookings');
-    
-    // Find waitlist entries with end time in the past
-    const waitlistQuery = query(
-      bookingsRef,
-      where('status', 'in', ['waitlist', 'pending_confirmation']),
-      where('endTime', '<=', nowTimestamp)
-    );
-
-    const snapshot = await getDocs(waitlistQuery);
-
-
-    if (snapshot.empty) {
+    if (eligible.length === 0) {
       return NextResponse.json({
         success: true,
         message: 'No expired waitlist entries',
-        checked: 0,
+        checked: snapshot.size,
+        eligible: 0,
         expired: 0,
       });
     }
@@ -70,27 +66,28 @@ async function handleWaitlistExpiry(request: NextRequest) {
     let failed = 0;
     const errors: string[] = [];
 
-    for (const doc of snapshot.docs) {
-      const booking = doc.data();
+    for (const docSnapshot of eligible) {
+      const booking = docSnapshot.data();
       
       try {
-        console.log(`      User: ${booking.userEmail}`);
-        console.log(`      Amenity: ${booking.amenityName}`);
-        console.log(`      End Time: ${booking.endTime.toDate().toISOString()}`);
-        console.log(`      Status: ${booking.status}`);
+        const endTime = toDateValue(booking.endTime);
+        if (!endTime || endTime.getTime() > now.getTime()) {
+          continue;
+        }
 
         // Update booking status to expired
-        const bookingDocRef = docRef(db, 'bookings', doc.id);
-        await updateDoc(bookingDocRef, {
+        await docSnapshot.ref.update({
           status: 'expired',
-          expiredAt: Timestamp.now(),
+          expiredAt: now,
           expiredReason: 'Time slot passed while in waitlist',
+          updatedAt: now,
+          source: 'cron_expire_waitlist',
         });
 
         expired++;
 
       } catch (error: any) {
-        errors.push(`${doc.id}: ${error.message}`);
+        errors.push(`${docSnapshot.id}: ${error.message}`);
         failed++;
       }
 
@@ -105,6 +102,7 @@ async function handleWaitlistExpiry(request: NextRequest) {
       success: true,
       message: 'Waitlist expiry check completed',
       checked: snapshot.size,
+      eligible: eligible.length,
       expired: expired,
       failed: failed,
       errors: errors.length > 0 ? errors : undefined,

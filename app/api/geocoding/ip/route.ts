@@ -3,104 +3,21 @@ import { searchLocations, type GeocodingResult } from '@/lib/geocoding'
 
 export const dynamic = 'force-dynamic'
 
-type ApproximateLocation = {
-  city: string
-  state: string
-  country: string
-  countryCode: string
-  lat: number
-  lon: number
-}
-
 function buildDisplayName(city: string, region: string, country: string): string {
   const parts = [city, region, country].filter(Boolean)
   return parts.length > 0 ? parts.join(', ') : 'Approximate location'
 }
 
-function toText(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : ''
+type ProviderResult = {
+  lat: number
+  lon: number
+  city: string
+  state: string
+  country: string
+  countryCode: string
 }
 
-function isValidCoordinates(lat: number, lon: number): boolean {
-  return Number.isFinite(lat) && Number.isFinite(lon)
-}
-
-function toGeocodingResult(location: ApproximateLocation): GeocodingResult {
-  return {
-    id: `ip-${location.lat.toFixed(6)}-${location.lon.toFixed(6)}`,
-    source: 'ip',
-    displayName: buildDisplayName(location.city, location.state, location.country),
-    shortName: location.city || location.state || location.country || 'Approximate location',
-    city: location.city,
-    state: location.state,
-    country: location.country,
-    countryCode: location.countryCode,
-    lat: location.lat,
-    lon: location.lon,
-  }
-}
-
-function fromIpApi(payload: any): ApproximateLocation | null {
-  const lat = Number(payload?.latitude)
-  const lon = Number(payload?.longitude)
-
-  if (!isValidCoordinates(lat, lon)) {
-    return null
-  }
-
-  return {
-    city: toText(payload?.city),
-    state: toText(payload?.region),
-    country: toText(payload?.country_name),
-    countryCode: toText(payload?.country_code).toUpperCase(),
-    lat,
-    lon,
-  }
-}
-
-function fromIpWho(payload: any): ApproximateLocation | null {
-  if (payload?.success === false) {
-    return null
-  }
-
-  const lat = Number(payload?.latitude)
-  const lon = Number(payload?.longitude)
-
-  if (!isValidCoordinates(lat, lon)) {
-    return null
-  }
-
-  return {
-    city: toText(payload?.city),
-    state: toText(payload?.region),
-    country: toText(payload?.country),
-    countryCode: toText(payload?.country_code).toUpperCase(),
-    lat,
-    lon,
-  }
-}
-
-function fromIpInfo(payload: any): ApproximateLocation | null {
-  const loc = toText(payload?.loc)
-  const [latText, lonText] = loc.split(',')
-  const lat = Number(latText)
-  const lon = Number(lonText)
-
-  if (!isValidCoordinates(lat, lon)) {
-    return null
-  }
-
-  return {
-    city: toText(payload?.city),
-    state: toText(payload?.region),
-    country: toText(payload?.country),
-    countryCode: toText(payload?.country).toUpperCase(),
-    lat,
-    lon,
-  }
-}
-
-async function fetchWithTimeout(url: string, timeoutMs: number): Promise<any | null> {
+async function fetchJson(url: string, timeoutMs: number): Promise<any | null> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
 
@@ -110,7 +27,6 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<any | n
       signal: controller.signal,
       headers: {
         Accept: 'application/json',
-        'User-Agent': 'CircleIn-Community-App/1.0',
       },
     })
 
@@ -126,68 +42,146 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<any | n
   }
 }
 
-async function fromVercelGeoHeaders(request: NextRequest): Promise<GeocodingResult | null> {
-  const city = toText(request.headers.get('x-vercel-ip-city'))
-  const state = toText(request.headers.get('x-vercel-ip-country-region'))
-  const countryCode = toText(request.headers.get('x-vercel-ip-country')).toUpperCase()
+function toNormalizedString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
 
-  if (!city && !state && !countryCode) {
+function toCountryCode(value: unknown): string {
+  return toNormalizedString(value).toUpperCase()
+}
+
+function toFiniteNumber(value: unknown): number | null {
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) ? numericValue : null
+}
+
+function toGeocodingResult(payload: ProviderResult): GeocodingResult {
+  return {
+    source: 'ip',
+    displayName: buildDisplayName(payload.city, payload.state, payload.country),
+    shortName: payload.city || payload.state || payload.country || 'Approximate location',
+    city: payload.city,
+    state: payload.state,
+    country: payload.country,
+    countryCode: payload.countryCode,
+    lat: payload.lat,
+    lon: payload.lon,
+  }
+}
+
+async function fromIpApiCo(): Promise<ProviderResult | null> {
+  const data = await fetchJson('https://ipapi.co/json/', 3500)
+  if (!data) {
     return null
   }
 
-  const query = [city, state, countryCode].filter(Boolean).join(', ')
-  if (!query) {
+  const lat = toFiniteNumber(data?.latitude)
+  const lon = toFiniteNumber(data?.longitude)
+  if (lat === null || lon === null) {
     return null
   }
 
-  try {
-    const matches = await searchLocations(query)
-    if (matches.length === 0) {
-      return null
-    }
+  return {
+    lat,
+    lon,
+    city: toNormalizedString(data?.city),
+    state: toNormalizedString(data?.region),
+    country: toNormalizedString(data?.country_name),
+    countryCode: toCountryCode(data?.country_code),
+  }
+}
 
-    const normalizedCity = city.toLowerCase()
-    const preferred =
-      matches.find((match) => normalizedCity && match.city.toLowerCase() === normalizedCity) ||
-      matches[0]
-
-    return {
-      ...preferred,
-      source: 'ip',
-    }
-  } catch {
+async function fromIpWhoIs(): Promise<ProviderResult | null> {
+  const data = await fetchJson('https://ipwho.is/', 3500)
+  if (!data || data?.success === false) {
     return null
+  }
+
+  const lat = toFiniteNumber(data?.latitude)
+  const lon = toFiniteNumber(data?.longitude)
+  if (lat === null || lon === null) {
+    return null
+  }
+
+  return {
+    lat,
+    lon,
+    city: toNormalizedString(data?.city),
+    state: toNormalizedString(data?.region),
+    country: toNormalizedString(data?.country),
+    countryCode: toCountryCode(data?.country_code),
+  }
+}
+
+async function fromIpInfo(): Promise<ProviderResult | null> {
+  const data = await fetchJson('https://ipinfo.io/json', 3500)
+  if (!data) {
+    return null
+  }
+
+  const [latRaw, lonRaw] = String(data?.loc || '').split(',')
+  const lat = toFiniteNumber(latRaw)
+  const lon = toFiniteNumber(lonRaw)
+  if (lat === null || lon === null) {
+    return null
+  }
+
+  return {
+    lat,
+    lon,
+    city: toNormalizedString(data?.city),
+    state: toNormalizedString(data?.region),
+    country: toNormalizedString(data?.country),
+    countryCode: toCountryCode(data?.country),
+  }
+}
+
+async function fromEdgeHeaders(request: NextRequest): Promise<GeocodingResult | null> {
+  const city = toNormalizedString(request.headers.get('x-vercel-ip-city'))
+  const state = toNormalizedString(request.headers.get('x-vercel-ip-country-region'))
+  const country = toNormalizedString(request.headers.get('x-vercel-ip-country'))
+
+  if (!city && !state && !country) {
+    return null
+  }
+
+  const hint = [city, state, country].filter(Boolean).join(', ')
+  const candidates = await searchLocations(hint)
+  const best = candidates[0]
+
+  if (!best) {
+    return null
+  }
+
+  return {
+    ...best,
+    source: 'ip',
+    displayName: buildDisplayName(city || best.city, state || best.state, country || best.country),
+    shortName: city || state || country || best.shortName,
+    city: city || best.city,
+    state: state || best.state,
+    country: country || best.country,
+    countryCode: toCountryCode(country || best.countryCode),
   }
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const providers = [
-      { url: 'https://ipapi.co/json/', parser: fromIpApi },
-      { url: 'https://ipwho.is/', parser: fromIpWho },
-      { url: 'https://ipinfo.io/json', parser: fromIpInfo },
-    ] as const
+    const providers = [fromIpApiCo, fromIpWhoIs, fromIpInfo]
 
     for (const provider of providers) {
-      const payload = await fetchWithTimeout(provider.url, 7000)
-      if (!payload) {
-        continue
+      const providerResult = await provider()
+      if (providerResult) {
+        return NextResponse.json({ result: toGeocodingResult(providerResult) })
       }
-
-      const location = provider.parser(payload)
-      if (!location) {
-        continue
-      }
-
-      return NextResponse.json({ result: toGeocodingResult(location) })
     }
 
-    const vercelFallback = await fromVercelGeoHeaders(request)
-    if (vercelFallback) {
-      return NextResponse.json({ result: vercelFallback })
+    const edgeHeaderFallback = await fromEdgeHeaders(request)
+    if (edgeHeaderFallback) {
+      return NextResponse.json({ result: edgeHeaderFallback })
     }
 
-    return NextResponse.json({ result: null, error: 'ip_lookup_failed' }, { status: 422 })
+    return NextResponse.json({ result: null, error: 'ip_lookup_failed' }, { status: 502 })
   } catch (error: any) {
     console.error('Approximate location lookup failed:', error)
     return NextResponse.json({ result: null, error: 'ip_lookup_failed' }, { status: 500 })

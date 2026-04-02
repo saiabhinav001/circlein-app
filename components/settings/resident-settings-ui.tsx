@@ -46,6 +46,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { registerPushNotifications } from '@/lib/push-notifications';
+import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateTimeInTimeZone } from '@/lib/timezone';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -1013,8 +1015,30 @@ function SecuritySection({
   deletionRequestStatus: AccountDeletionRequestStatus | null;
   setDeletionRequestStatus: (value: AccountDeletionRequestStatus | null) => void;
 }) {
+  const timeZone = useCommunityTimeZone();
+  const timeFormat = useCommunityTimeFormat();
   const [isExporting, setIsExporting] = useState(false);
   const [isRequestingDeletion, setIsRequestingDeletion] = useState(false);
+
+  const formatDeletionStatusTime = (value?: string) => {
+    if (!value) {
+      return null;
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return formatDateTimeInTimeZone(parsed, timeZone, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: timeFormat !== '24h',
+    });
+  };
 
   const handleDataExport = async () => {
     setIsExporting(true);
@@ -1225,8 +1249,12 @@ function SecuritySection({
                 {deletionRequestStatus?.status && (
                   <p className="mt-2 text-xs font-medium text-red-700 dark:text-red-300">
                     Current status: {deletionRequestStatus.status}
-                    {deletionRequestStatus.requestedAt ? ` · requested ${new Date(deletionRequestStatus.requestedAt).toLocaleString()}` : ''}
-                    {deletionRequestStatus.reviewedAt ? ` · reviewed ${new Date(deletionRequestStatus.reviewedAt).toLocaleString()}` : ''}
+                    {deletionRequestStatus.requestedAt
+                      ? ` · requested ${formatDeletionStatusTime(deletionRequestStatus.requestedAt) || 'Unknown time'}`
+                      : ''}
+                    {deletionRequestStatus.reviewedAt
+                      ? ` · reviewed ${formatDeletionStatusTime(deletionRequestStatus.reviewedAt) || 'Unknown time'}`
+                      : ''}
                   </p>
                 )}
                 {deletionRequestStatus?.reviewNote && (

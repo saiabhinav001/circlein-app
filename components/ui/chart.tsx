@@ -7,6 +7,27 @@ import { cn } from '@/lib/utils';
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const;
+const CHART_NUMBER_FORMATTER = new Intl.NumberFormat('en-US');
+
+function formatChartValue(value: unknown): string {
+  if (typeof value === 'number') {
+    return CHART_NUMBER_FORMATTER.format(value);
+  }
+
+  if (typeof value === 'string') {
+    const numericValue = Number(value);
+    if (value.trim() !== '' && Number.isFinite(numericValue)) {
+      return CHART_NUMBER_FORMATTER.format(numericValue);
+    }
+    return value;
+  }
+
+  if (value == null) {
+    return '';
+  }
+
+  return String(value);
+}
 
 export type ChartConfig = {
   [k in string]: {
@@ -240,7 +261,7 @@ const ChartTooltipContent = React.forwardRef<
                       </div>
                       {item.value && (
                         <span className="font-mono font-medium tabular-nums text-foreground">
-                          {item.value.toLocaleString()}
+                          {formatChartValue(item.value)}
                         </span>
                       )}
                     </div>

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, CalendarDays, Repeat2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateInTimeZone } from '@/lib/timezone';
 
 interface BookingSummary {
   id: string;
@@ -23,6 +25,7 @@ interface SmartSuggestion {
 
 export function QuickBookingWidget() {
   const router = useRouter();
+  const timeZone = useCommunityTimeZone();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -172,7 +175,11 @@ export function QuickBookingWidget() {
           <p className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">{latestAmenityBooking.amenityName}</p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {latestBookingDate
-              ? `Last booked on ${latestBookingDate.toLocaleDateString()}`
+              ? `Last booked on ${formatDateInTimeZone(latestBookingDate, timeZone, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}`
               : 'Ready for your next reservation'}
           </p>
 

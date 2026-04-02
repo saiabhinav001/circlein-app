@@ -8,6 +8,8 @@ import type { WeatherData } from '@/lib/weather';
 
 type WeatherApiResponse = WeatherData | { error: string };
 
+const WEEKDAY_SHORT_FORMATTER = new Intl.DateTimeFormat('en-US', { weekday: 'short' });
+
 function formatUpdatedAgo(date: Date | null): string {
   if (!date) return 'Updated just now';
 
@@ -25,7 +27,7 @@ function forecastDayLabel(dateText: string): string {
   const date = new Date(`${dateText}T00:00:00`);
   if (Number.isNaN(date.getTime())) return '--';
 
-  return date.toLocaleDateString('en-US', { weekday: 'short' });
+  return WEEKDAY_SHORT_FORMATTER.format(date);
 }
 
 export function WeatherWidget() {

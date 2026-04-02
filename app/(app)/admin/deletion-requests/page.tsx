@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { CheckCircle2, Search, ShieldAlert, XCircle, Loader2 } from 'lucide-react';
 import TypedConfirmDialog from '@/components/ui/typed-confirm-dialog';
 import { toast } from 'sonner';
+import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateTimeInTimeZone } from '@/lib/timezone';
 
 type RequestStatus = 'requested' | 'approved' | 'rejected';
 
@@ -31,6 +33,8 @@ interface DeletionRequestItem {
 export default function AdminDeletionRequestsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const timeZone = useCommunityTimeZone();
+  const timeFormat = useCommunityTimeFormat();
 
   const [items, setItems] = useState<DeletionRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,6 +92,26 @@ export default function AdminDeletionRequestsPage() {
     approved: items.filter((item) => item.status === 'approved').length,
     rejected: items.filter((item) => item.status === 'rejected').length,
   }), [items]);
+
+  const formatReviewTimestamp = (value?: string) => {
+    if (!value) {
+      return 'Unknown time';
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return 'Unknown time';
+    }
+
+    return formatDateTimeInTimeZone(parsed, timeZone, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: timeFormat !== '24h',
+    });
+  };
 
   const reviewRequest = async (
     id: string,
@@ -217,7 +241,7 @@ export default function AdminDeletionRequestsPage() {
                         {item.status === 'requested' && <Badge className="bg-amber-500">Requested</Badge>}
                         {item.status === 'approved' && <Badge className="bg-emerald-600">Approved</Badge>}
                         {item.status === 'rejected' && <Badge className="bg-rose-600">Rejected</Badge>}
-                        <span className="text-xs text-gray-500">{item.requestedAt ? new Date(item.requestedAt).toLocaleString() : 'Unknown time'}</span>
+                        <span className="text-xs text-gray-500">{formatReviewTimestamp(item.requestedAt)}</span>
                       </div>
                     </div>
                   </CardHeader>
@@ -231,7 +255,7 @@ export default function AdminDeletionRequestsPage() {
                       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
                         <p className="text-xs text-gray-500">
                           Reviewed by {item.reviewedBy || 'Unknown admin'}
-                          {item.reviewedAt ? ` on ${new Date(item.reviewedAt).toLocaleString()}` : ''}
+                          {item.reviewedAt ? ` on ${formatReviewTimestamp(item.reviewedAt)}` : ''}
                         </p>
                         {item.reviewNote && <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">Note: {item.reviewNote}</p>}
                       </div>

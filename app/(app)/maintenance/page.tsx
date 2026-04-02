@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Wrench, Upload, Clock3, CircleCheckBig, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
+import { formatDateTimeInTimeZone } from '@/lib/timezone';
 
 interface MaintenanceRequest {
   id: string;
@@ -39,6 +41,8 @@ interface MaintenanceRequest {
 export default function MaintenancePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const timeZone = useCommunityTimeZone();
+  const timeFormat = useCommunityTimeFormat();
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -49,6 +53,26 @@ export default function MaintenancePage() {
   const [category, setCategory] = useState('auto');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
   const [files, setFiles] = useState<File[]>([]);
+
+  const formatHistoryTimestamp = (value: any) => {
+    if (!value) {
+      return '';
+    }
+
+    const parsed = new Date(value?.seconds ? value.seconds * 1000 : value);
+    if (Number.isNaN(parsed.getTime())) {
+      return '';
+    }
+
+    return formatDateTimeInTimeZone(parsed, timeZone, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: timeFormat !== '24h',
+    });
+  };
 
   const validateSelectedFiles = (incomingFiles: File[]): File[] => {
     const selected = incomingFiles.slice(0, 3);
@@ -352,7 +376,7 @@ export default function MaintenancePage() {
                             <p>
                               {event.updatedByName || 'Admin'}
                               {event.assignedTo ? ` • Assigned: ${event.assignedTo}` : ''}
-                              {event.timestamp ? ` • ${new Date(event.timestamp?.seconds ? event.timestamp.seconds * 1000 : event.timestamp).toLocaleString()}` : ''}
+                              {event.timestamp ? ` • ${formatHistoryTimestamp(event.timestamp)}` : ''}
                             </p>
                           </div>
                         ))}

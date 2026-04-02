@@ -77,6 +77,18 @@ interface ParsedBookingIntent {
   timePhrase: string | null;
 }
 
+type ChatbotResponseSource = 'intent' | 'ai' | 'fallback' | 'handoff';
+
+interface ChatbotResponsePayload {
+  response: string;
+  actionUrl?: string;
+  confidence: number;
+  handoffSuggested: boolean;
+  handoffReason?: string;
+  source: ChatbotResponseSource;
+  schemaVersion: '2026-04-chatbot-v1';
+}
+
 interface AmenityDoc {
   id: string;
   name?: string;
@@ -100,6 +112,31 @@ interface AmenityDoc {
   weekendHours?: {
     start: string;
     end: string;
+  };
+}
+
+function shouldOfferHumanHandoff(message: string): boolean {
+  return /(human|agent|support team|customer support|complaint|refund|billing issue|payment issue|urgent|escalate|not resolved|didn'?t work|broken)/i.test(
+    message
+  );
+}
+
+function buildChatbotResponse(payload: {
+  response: string;
+  actionUrl?: string;
+  confidence: number;
+  handoffSuggested?: boolean;
+  handoffReason?: string;
+  source: ChatbotResponseSource;
+}): ChatbotResponsePayload {
+  return {
+    response: payload.response,
+    actionUrl: payload.actionUrl,
+    confidence: payload.confidence,
+    handoffSuggested: payload.handoffSuggested === true,
+    handoffReason: payload.handoffReason,
+    source: payload.source,
+    schemaVersion: '2026-04-chatbot-v1',
   };
 }
 
@@ -574,7 +611,17 @@ export async function POST(request: NextRequest) {
     }
 
     const rawBody = await request.json().catch(() => null);
-    const parsedBody = ChatbotRequestSchema.safeParse(rawBody);
+    const normalizedBody =
+      rawBody && typeof rawBody === 'object'
+        ? {
+            ...rawBody,
+            conversationHistory:
+              (rawBody as { conversationHistory?: unknown; history?: unknown }).conversationHistory ||
+              (rawBody as { history?: unknown }).history,
+          }
+        : rawBody;
+
+    const parsedBody = ChatbotRequestSchema.safeParse(normalizedBody);
     if (!parsedBody.success) {
       return NextResponse.json(
         { error: 'Invalid chatbot request payload', details: parsedBody.error.issues },
@@ -588,11 +635,33 @@ export async function POST(request: NextRequest) {
     const isAdmin = sessionRole === 'admin' || sessionRole === 'super_admin';
 
     const parsedIntent = parseBookingIntent(normalizedMessage);
+
+    if (!parsedIntent.isBookingIntent && shouldOfferHumanHandoff(normalizedMessage)) {
+      return NextResponse.json(
+        buildChatbotResponse({
+          response:
+            'This sounds like something a human support specialist should handle. I can route you to the support desk now.',
+          actionUrl: '/contact',
+          confidence: 0.95,
+          handoffSuggested: true,
+          handoffReason: 'explicit_handoff_or_critical_issue',
+          source: 'handoff',
+        })
+      );
+    }
+
     if (parsedIntent.isBookingIntent) {
       try {
         const bookingResult = await tryCreateBookingFromIntent(request, parsedIntent, session);
         if (bookingResult) {
-          return NextResponse.json(bookingResult);
+          return NextResponse.json(
+            buildChatbotResponse({
+              response: bookingResult.response,
+              actionUrl: bookingResult.actionUrl,
+              confidence: 0.98,
+              source: 'intent',
+            })
+          );
         }
       } catch (bookingError: any) {
         console.error('Booking intent execution failed:', bookingError?.message || bookingError);
@@ -639,9 +708,16 @@ Assistant:`;
         
         if (!text || text.trim() === '') {
           // Empty response - use fallback
-          return NextResponse.json({ 
-            response: getFallbackResponse(normalizedMessage, isAdmin)
-          });
+          return NextResponse.json(
+            buildChatbotResponse({
+              response: getFallbackResponse(normalizedMessage, isAdmin),
+              actionUrl: '/contact',
+              confidence: 0.42,
+              handoffSuggested: true,
+              handoffReason: 'empty_model_response',
+              source: 'fallback',
+            })
+          );
         }
         
         // Quick security check
@@ -653,28 +729,58 @@ Assistant:`;
         const sanitizedResponse = sensitivePatterns.some(pattern => pattern.test(text))
           ? "I notice your question involves technical details. For security, I can only help with using CircleIn features. Try rephrasing or contact support via email."
           : text;
+        const requiresHandoff = sanitizedResponse !== text;
 
-        return NextResponse.json({ response: sanitizedResponse, actionUrl: undefined });
+        return NextResponse.json(
+          buildChatbotResponse({
+            response: sanitizedResponse,
+            actionUrl: requiresHandoff ? '/contact' : undefined,
+            confidence: requiresHandoff ? 0.52 : 0.84,
+            handoffSuggested: requiresHandoff,
+            handoffReason: requiresHandoff ? 'security_filtered_answer' : undefined,
+            source: 'ai',
+          })
+        );
       } catch (genError: any) {
         // Timeout or generation error - use intelligent fallback
-        return NextResponse.json({ 
-          response: getFallbackResponse(normalizedMessage, isAdmin),
-          actionUrl: undefined,
-        });
+        const shouldHandoff = shouldOfferHumanHandoff(normalizedMessage);
+        return NextResponse.json(
+          buildChatbotResponse({
+            response: getFallbackResponse(normalizedMessage, isAdmin),
+            actionUrl: shouldHandoff ? '/contact' : undefined,
+            confidence: shouldHandoff ? 0.4 : 0.6,
+            handoffSuggested: shouldHandoff,
+            handoffReason: shouldHandoff ? 'timeout_with_support_intent' : undefined,
+            source: 'fallback',
+          })
+        );
       }
 
     } catch (modelError: any) {
       // Model initialization failed - use fallback
-      return NextResponse.json({ 
-        response: getFallbackResponse(normalizedMessage, isAdmin),
-        actionUrl: undefined,
-      });
+      const shouldHandoff = shouldOfferHumanHandoff(normalizedMessage);
+      return NextResponse.json(
+        buildChatbotResponse({
+          response: getFallbackResponse(normalizedMessage, isAdmin),
+          actionUrl: shouldHandoff ? '/contact' : undefined,
+          confidence: shouldHandoff ? 0.38 : 0.58,
+          handoffSuggested: shouldHandoff,
+          handoffReason: shouldHandoff ? 'model_init_failed_with_support_intent' : undefined,
+          source: 'fallback',
+        })
+      );
     }
 
   } catch {
-    return NextResponse.json({
-      response: getFallbackResponse('help', false),
-      actionUrl: undefined,
-    });
+    return NextResponse.json(
+      buildChatbotResponse({
+        response: getFallbackResponse('help', false),
+        actionUrl: '/contact',
+        confidence: 0.35,
+        handoffSuggested: true,
+        handoffReason: 'unexpected_server_error',
+        source: 'fallback',
+      })
+    );
   }
 }

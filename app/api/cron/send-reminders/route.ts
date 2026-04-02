@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDoc, getDocs, Timestamp, updateDoc, doc as docRef } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 import { emailTemplates, sendEmail } from '@/lib/email-service';
-import { formatDateInTimeZone, formatDateTimeInTimeZone, formatTimeInTimeZone, resolveTimeZone } from '@/lib/timezone';
+import { formatDateInTimeZone, formatTimeInTimeZone, resolveTimeZone } from '@/lib/timezone';
+import { toDateValue } from '@/lib/support-ticket';
 
 /**
  * 🔔 1-HOUR BOOKING REMINDER ENDPOINT
@@ -46,26 +46,30 @@ async function handleReminderCheck(request: NextRequest) {
     const minTime = new Date(now.getTime() + 45 * 60 * 1000); // 45 minutes
     const maxTime = new Date(now.getTime() + 75 * 60 * 1000); // 75 minutes
 
-    console.log(`      ${minTime.toISOString()} - ${maxTime.toISOString()}`);
-
     // 2. QUERY CONFIRMED BOOKINGS IN TIME WINDOW
-    const bookingsRef = collection(db, 'bookings');
-    const bookingsQuery = query(
-      bookingsRef,
-      where('status', '==', 'confirmed'),
-      where('startTime', '>=', Timestamp.fromDate(minTime)),
-      where('startTime', '<=', Timestamp.fromDate(maxTime)),
-      where('reminderSent', '==', false) // Only send once
-    );
+    const snapshot = await adminDb
+      .collection('bookings')
+      .where('startTime', '>=', minTime)
+      .where('startTime', '<=', maxTime)
+      .get();
 
-    const snapshot = await getDocs(bookingsQuery);
+    const candidates = snapshot.docs.filter((docSnapshot) => {
+      const booking = docSnapshot.data() as Record<string, unknown>;
+      const status = String(booking.status || '').toLowerCase();
+      const sentTypes = Array.isArray(booking.reminderSentTypes)
+        ? booking.reminderSentTypes.map((value) => String(value))
+        : [];
+      const alreadySent = Boolean(booking.reminderSent) || sentTypes.includes('1h');
+      return status === 'confirmed' && !alreadySent;
+    });
 
 
-    if (snapshot.empty) {
+    if (candidates.length === 0) {
       return NextResponse.json({
         success: true,
         message: 'No reminders to send',
-        checked: 0,
+        checked: snapshot.size,
+        eligible: 0,
         sent: 0,
       });
     }
@@ -76,72 +80,87 @@ async function handleReminderCheck(request: NextRequest) {
     const errors: string[] = [];
     const timeZoneCache = new Map<string, string>();
 
-    for (const doc of snapshot.docs) {
-      const booking = doc.data();
+    for (const docSnapshot of candidates) {
+      const booking = docSnapshot.data() as Record<string, unknown>;
       
       try {
-        console.log(`      User: ${booking.userEmail}`);
-        console.log(`      Amenity: ${booking.amenityName}`);
+        const bookingStart = toDateValue(booking.startTime);
+        if (!bookingStart) {
+          throw new Error('Missing or invalid booking startTime');
+        }
 
-        const communityId = booking.communityId || 'default';
+        const communityId = String(booking.communityId || 'default');
         let communityTimeZone = timeZoneCache.get(communityId);
         if (!communityTimeZone) {
           if (booking.communityId) {
-            const settingsSnapshot = await getDoc(docRef(db, 'settings', booking.communityId));
-            const settingsData = settingsSnapshot.data() as any;
-            communityTimeZone = resolveTimeZone(settingsData?.community?.timezone || settingsData?.timezone);
+            const settingsSnapshot = await adminDb.collection('settings').doc(String(booking.communityId)).get();
+            const settingsData = settingsSnapshot.data() as Record<string, unknown> | undefined;
+            const nestedCommunity = settingsData?.community;
+            const communityRecord = nestedCommunity && typeof nestedCommunity === 'object'
+              ? (nestedCommunity as Record<string, unknown>)
+              : undefined;
+            const timezoneValue = communityRecord?.timezone ?? settingsData?.timezone;
+            communityTimeZone = resolveTimeZone(typeof timezoneValue === 'string' ? timezoneValue : undefined);
           } else {
             communityTimeZone = 'UTC';
           }
           timeZoneCache.set(communityId, communityTimeZone);
         }
 
-        console.log(`      Time: ${formatDateTimeInTimeZone(booking.startTime.toDate(), communityTimeZone)}`);
-
         // Get amenity details if needed
-        const amenityName = booking.amenityName || 'Amenity';
-        const startTime = booking.startTime.toDate();
-        const timeSlot = booking.timeSlot || 
-          `${formatTimeInTimeZone(startTime, communityTimeZone)}`;
+        const amenityName = String(booking.amenityName || 'Amenity');
+        const timeSlot = String(booking.timeSlot || `${formatTimeInTimeZone(bookingStart, communityTimeZone)}`);
+        const recipientEmail = String(booking.userEmail || '').trim();
+        if (!recipientEmail || !recipientEmail.includes('@')) {
+          throw new Error('Missing recipient email');
+        }
 
         // Generate email template
         const template = emailTemplates.bookingReminder({
-          userName: booking.userName || booking.userEmail.split('@')[0],
+          userName: String(booking.userName || recipientEmail.split('@')[0]),
           amenityName: amenityName,
-          date: formatDateInTimeZone(startTime, communityTimeZone, {
+          date: formatDateInTimeZone(bookingStart, communityTimeZone, {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
             day: 'numeric',
           }),
           timeSlot: timeSlot,
-          bookingId: doc.id,
-          flatNumber: booking.flatNumber,
+          bookingId: docSnapshot.id,
+          flatNumber: String(booking.flatNumber || ''),
         });
 
         // Send email
         const result = await sendEmail({
-          to: booking.userEmail,
+          to: recipientEmail,
           subject: template.subject,
           html: template.html,
         });
 
         if (result.success) {
           // Mark reminder as sent in Firestore
-          const bookingRef = docRef(db, 'bookings', booking.id);
-          await updateDoc(bookingRef, {
+          const reminderTypes = Array.isArray(booking.reminderSentTypes)
+            ? booking.reminderSentTypes.map((value) => String(value))
+            : [];
+          if (!reminderTypes.includes('1h')) {
+            reminderTypes.push('1h');
+          }
+
+          await docSnapshot.ref.update({
             reminderSent: true,
-            reminderSentAt: Timestamp.now(),
+            reminderSentAt: now,
+            reminderSentTypes: reminderTypes,
+            updatedAt: now,
           });
 
           sent++;
         } else {
-          errors.push(`${booking.userEmail}: ${result.error}`);
+          errors.push(`${recipientEmail}: ${result.error}`);
           failed++;
         }
 
       } catch (error: any) {
-        errors.push(`${doc.id}: ${error.message}`);
+        errors.push(`${docSnapshot.id}: ${error.message}`);
         failed++;
       }
 
@@ -156,6 +175,7 @@ async function handleReminderCheck(request: NextRequest) {
       success: true,
       message: 'Reminder check completed',
       checked: snapshot.size,
+      eligible: candidates.length,
       sent: sent,
       failed: failed,
       errors: errors.length > 0 ? errors : undefined,
