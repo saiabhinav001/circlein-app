@@ -39,6 +39,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useCommunityTimeFormat, useCommunityTimeZone } from '@/components/providers/community-branding-provider';
 import { formatDateTimeInTimeZone } from '@/lib/timezone';
+import { useSimpleMode } from '@/hooks/use-simple-mode';
 
 interface BookingRecord {
   id: string;
@@ -172,18 +173,18 @@ const formatSignedPercent = (value: number) => `${value > 0 ? '+' : ''}${Math.ro
 
 const getRadarRiskLabel = (riskLevel: RadarRiskLevel) => {
   if (riskLevel === 'critical') {
-    return 'Critical';
+    return 'Needs action';
   }
 
   if (riskLevel === 'elevated') {
-    return 'Elevated';
+    return 'Watch closely';
   }
 
   if (riskLevel === 'guarded') {
-    return 'Guarded';
+    return 'Monitor';
   }
 
-  return 'Stable';
+  return 'Healthy';
 };
 
 const getRadarAlertClassName = (severity: RadarAlertSeverity) => {
@@ -237,6 +238,7 @@ export default function AdminAnalyticsPage() {
   const router = useRouter();
   const timeZone = useCommunityTimeZone();
   const timeFormat = useCommunityTimeFormat();
+  const { simpleMode, setSimpleMode } = useSimpleMode(true);
 
   const [loading, setLoading] = useState(true);
   const [rangeDays, setRangeDays] = useState(30);
@@ -324,15 +326,15 @@ export default function AdminAnalyticsPage() {
 
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error(payload?.error || 'Failed to run SLA watch test');
+        throw new Error(payload?.error || 'Failed to run support auto-check');
       }
 
       toast.success(
-        `SLA watch test complete: scanned ${payload?.scanned || 0}, escalations ${payload?.escalated || 0}`
+        `Support auto-check complete: scanned ${payload?.scanned || 0}, escalations ${payload?.escalated || 0}`
       );
       await loadOperationsRadar();
     } catch (error: any) {
-      toast.error(error?.message || 'Failed to run SLA watch test');
+      toast.error(error?.message || 'Failed to run support auto-check');
     } finally {
       setRunningSlaWatch(false);
     }
@@ -650,6 +652,7 @@ export default function AdminAnalyticsPage() {
   const latestPoint = trendData[trendData.length - 1];
   const previousPoint = trendData[trendData.length - 2];
   const todayBookingsDelta = latestPoint && previousPoint ? latestPoint.bookings - previousPoint.bookings : 0;
+  const supportAttentionCount = (operationsRadar?.support.overdue || 0) + (operationsRadar?.support.atRisk || 0);
 
   const exportCsv = () => {
     const lines = [
@@ -687,10 +690,10 @@ export default function AdminAnalyticsPage() {
                   <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">Operations Intelligence</p>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">Analytics Command Center</h1>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">Admin Insights</p>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">Community Insights</h1>
                   <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 max-w-2xl">
-                    Real-time booking intelligence with executive-level visual storytelling across demand, performance, and amenity utilization.
+                    A clear day-to-day view of bookings, support, and maintenance so any trained operator can take quick action confidently.
                   </p>
                 </div>
               </div>
@@ -769,10 +772,22 @@ export default function AdminAnalyticsPage() {
               <CardHeader className="pb-3">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div>
-                    <CardTitle className="text-base">Operations radar</CardTitle>
-                    <CardDescription>Unified risk index across support SLA, maintenance backlog, and demand pressure.</CardDescription>
+                    <CardTitle className="text-base">Operations health</CardTitle>
+                    <CardDescription>
+                      {simpleMode
+                        ? 'Simple daily summary for support, maintenance, and booking demand.'
+                        : 'Advanced operations detail across support, maintenance, and booking demand.'}
+                    </CardDescription>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="border border-slate-300 dark:border-slate-600"
+                      onClick={() => setSimpleMode(!simpleMode)}
+                    >
+                      {simpleMode ? 'Show advanced details' : 'Switch to simple view'}
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -780,11 +795,11 @@ export default function AdminAnalyticsPage() {
                       disabled={runningSlaWatch}
                       onClick={runManualSlaWatch}
                     >
-                      {runningSlaWatch ? 'Testing SLA watch...' : 'Test SLA watch'}
+                      {runningSlaWatch ? 'Running support check...' : 'Run support auto-check'}
                     </Button>
-                    {operationsRadar && (
+                    {!simpleMode && operationsRadar && (
                       <span className={cn('inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold', radarRiskAccent.panel, radarRiskAccent.text)}>
-                        {getRadarRiskLabel(operationsRadar.riskLevel)} risk
+                        {getRadarRiskLabel(operationsRadar.riskLevel)} status
                       </span>
                     )}
                   </div>
@@ -792,65 +807,45 @@ export default function AdminAnalyticsPage() {
               </CardHeader>
               <CardContent>
                 {radarLoading && !operationsRadar ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Calibrating operations radar...</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Loading operations health...</p>
                 ) : operationsRadar ? (
-                  <div className="grid lg:grid-cols-[220px_minmax(0,1fr)] gap-4">
-                    <div className={cn('rounded-2xl border p-4 flex flex-col items-center justify-center gap-2 text-center', radarRiskAccent.panel)}>
-                      <div className={cn('h-24 w-24 rounded-full ring-8 flex items-center justify-center bg-white/90 dark:bg-slate-900/80', radarRiskAccent.ring)}>
-                        <span className={cn('text-2xl font-bold', radarRiskAccent.text)}>{operationsRadar.riskScore}</span>
-                      </div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Risk score</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Updated {formatRadarGeneratedAt(operationsRadar.generatedAt)}
-                      </p>
-                    </div>
-
+                  simpleMode ? (
                     <div className="space-y-3">
                       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
                         <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Support pressure</p>
-                          <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{toNumber(operationsRadar.support.active)} active</p>
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Support follow-up needed</p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{toNumber(supportAttentionCount)}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {toNumber(operationsRadar.support.overdue)} overdue, {toNumber(operationsRadar.support.atRisk)} at risk
+                            {toNumber(operationsRadar.support.overdue)} overdue and {toNumber(operationsRadar.support.atRisk)} due soon
                           </p>
                         </div>
 
                         <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Maintenance backlog</p>
-                          <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{toNumber(operationsRadar.maintenance.open)} open</p>
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Open maintenance tasks</p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{toNumber(operationsRadar.maintenance.open)}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {toNumber(operationsRadar.maintenance.stale)} stale, {toNumber(operationsRadar.maintenance.urgentOrHigh)} high priority
+                            {toNumber(operationsRadar.maintenance.stale)} pending for over 72 hours
                           </p>
                         </div>
 
                         <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Demand next 7 days</p>
-                          <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{toNumber(operationsRadar.demand.upcomingSevenDays)} bookings</p>
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Bookings in next 7 days</p>
+                          <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{toNumber(operationsRadar.demand.upcomingSevenDays)}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {formatSignedPercent(operationsRadar.demand.demandDeltaPercent)} vs previous window
+                            {formatSignedPercent(operationsRadar.demand.demandDeltaPercent)} compared to last week
                           </p>
-                          {operationsRadar.demand.peakHour !== null && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              Peak slot: {formatHourLabel(operationsRadar.demand.peakHour, timeFormat)} ({toNumber(operationsRadar.demand.peakHourBookings)})
-                            </p>
-                          )}
                         </div>
 
                         <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3">
-                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Last SLA watch run</p>
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Last support auto-check</p>
                           <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                             {operationsRadar.slaWatch?.runAt ? formatRadarGeneratedAt(operationsRadar.slaWatch.runAt) : 'No run recorded'}
                           </p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
                             {operationsRadar.slaWatch
-                              ? `${toNumber(operationsRadar.slaWatch.scannedTickets)} scanned • ${toNumber(operationsRadar.slaWatch.escalatedTickets)} escalated`
-                              : 'Run SLA watch to populate this card.'}
+                              ? `${toNumber(operationsRadar.slaWatch.scannedTickets)} scanned, ${toNumber(operationsRadar.slaWatch.escalatedTickets)} escalated`
+                              : 'Run support auto-check to populate this card.'}
                           </p>
-                          {operationsRadar.slaWatch && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              Overdue: {toNumber(operationsRadar.slaWatch.byReason.overdue)} • At risk: {toNumber(operationsRadar.slaWatch.byReason.atRisk)}
-                            </p>
-                          )}
                         </div>
                       </div>
 
@@ -876,9 +871,93 @@ export default function AdminAnalyticsPage() {
                         ))}
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="grid lg:grid-cols-[220px_minmax(0,1fr)] gap-4">
+                      <div className={cn('rounded-2xl border p-4 flex flex-col items-center justify-center gap-2 text-center', radarRiskAccent.panel)}>
+                        <div className={cn('h-24 w-24 rounded-full ring-8 flex items-center justify-center bg-white/90 dark:bg-slate-900/80', radarRiskAccent.ring)}>
+                          <span className={cn('text-2xl font-bold', radarRiskAccent.text)}>{operationsRadar.riskScore}</span>
+                        </div>
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Health score</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Updated {formatRadarGeneratedAt(operationsRadar.generatedAt)}
+                        </p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3">
+                            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Support pressure</p>
+                            <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{toNumber(operationsRadar.support.active)} active</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              {toNumber(operationsRadar.support.overdue)} overdue, {toNumber(operationsRadar.support.atRisk)} at risk
+                            </p>
+                          </div>
+
+                          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3">
+                            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Maintenance backlog</p>
+                            <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{toNumber(operationsRadar.maintenance.open)} open</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              {toNumber(operationsRadar.maintenance.stale)} stale, {toNumber(operationsRadar.maintenance.urgentOrHigh)} high priority
+                            </p>
+                          </div>
+
+                          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3">
+                            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Demand next 7 days</p>
+                            <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{toNumber(operationsRadar.demand.upcomingSevenDays)} bookings</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              {formatSignedPercent(operationsRadar.demand.demandDeltaPercent)} vs previous window
+                            </p>
+                            {operationsRadar.demand.peakHour !== null && (
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                Peak slot: {formatHourLabel(operationsRadar.demand.peakHour, timeFormat)} ({toNumber(operationsRadar.demand.peakHourBookings)})
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-3">
+                            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Last support auto-check</p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                              {operationsRadar.slaWatch?.runAt ? formatRadarGeneratedAt(operationsRadar.slaWatch.runAt) : 'No run recorded'}
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              {operationsRadar.slaWatch
+                                ? `${toNumber(operationsRadar.slaWatch.scannedTickets)} scanned • ${toNumber(operationsRadar.slaWatch.escalatedTickets)} escalated`
+                                : 'Run support auto-check to populate this card.'}
+                            </p>
+                            {operationsRadar.slaWatch && (
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                Overdue: {toNumber(operationsRadar.slaWatch.byReason.overdue)} • At risk: {toNumber(operationsRadar.slaWatch.byReason.atRisk)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          {operationsRadar.alerts.slice(0, 3).map((alert) => (
+                            <div key={alert.id} className={cn('rounded-xl border p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3', getRadarAlertClassName(alert.severity))}>
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold flex items-center gap-2">
+                                  {alert.severity === 'good' ? <ShieldCheck className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+                                  {alert.title}
+                                </p>
+                                <p className="text-xs mt-1 opacity-90">{alert.detail}</p>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full sm:w-auto border-current/40"
+                                onClick={() => router.push(alert.actionUrl)}
+                              >
+                                {alert.actionLabel}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )
                 ) : (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Radar is temporarily unavailable. Refresh to retry.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Operations health is temporarily unavailable. Refresh to retry.</p>
                 )}
               </CardContent>
             </Card>

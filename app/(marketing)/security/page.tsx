@@ -266,8 +266,8 @@ export default function SecurityPage() {
                 { label: 'Compliance', value: 'SOC 2' },
                 { label: 'Monitoring', value: 'Continuous' },
               ].map((stat, i) => (
-                <div key={i} className="bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200/80 dark:border-slate-800/80 p-5 text-center">
-                  <div className="text-2xl md:text-3xl font-bold text-emerald-600 dark:text-emerald-400 mb-1">
+                <div key={i} className="min-w-0 bg-white dark:bg-slate-900/50 rounded-xl border border-slate-200/80 dark:border-slate-800/80 p-5 text-center overflow-hidden">
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold text-emerald-600 dark:text-emerald-400 mb-1 break-words leading-tight">
                     {stat.value}
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400">

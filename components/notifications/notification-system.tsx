@@ -339,7 +339,7 @@ export function NotificationBell() {
       }}
       data-notification-bell="true"
       className={cn(
-        "relative h-10 w-10 rounded-full p-0",
+        "relative h-11 w-11 sm:h-10 sm:w-10 rounded-full p-0",
         "hover:bg-slate-100 dark:hover:bg-slate-800",
         "focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-500 focus-visible:ring-offset-2",
         "transition-colors duration-150",

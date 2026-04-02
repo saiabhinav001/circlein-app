@@ -10,6 +10,7 @@ import { useCommunityTimeZone } from '@/components/providers/community-branding-
 import { useNotifications } from '@/components/notifications/notification-system';
 import { KeyboardShortcutsHelp } from '@/components/layout/keyboard-shortcuts-help';
 import { formatDateTimeInTimeZone } from '@/lib/timezone';
+import { useSimpleMode } from '@/hooks/use-simple-mode';
 import {
   CommandDialog,
   CommandEmpty,
@@ -67,6 +68,7 @@ export function GlobalCommandPalette() {
   const router = useRouter();
   const timeZone = useCommunityTimeZone();
   const { setIsOpen: setNotificationsOpen } = useNotifications();
+  const { simpleMode } = useSimpleMode(true);
 
   const [open, setOpen] = useState(false);
   const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
@@ -225,9 +227,11 @@ export function GlobalCommandPalette() {
   const staticActions = useMemo<PaletteAction[]>(
     () => [
       { id: 'nav-dashboard', label: 'Dashboard', href: '/dashboard', group: 'navigation', icon: Home, keywords: 'home overview' },
-      { id: 'nav-bookings', label: 'Bookings', href: '/bookings', group: 'navigation', icon: Calendar, keywords: 'reservations' },
+      { id: 'nav-bookings', label: 'My Bookings', href: '/bookings', group: 'navigation', icon: Calendar, keywords: 'reservations' },
       { id: 'nav-calendar', label: 'Calendar', href: '/calendar', group: 'navigation', icon: Calendar, keywords: 'week day month schedule' },
-      { id: 'nav-community', label: 'Community Feed', href: '/community', group: 'navigation', icon: Bell, keywords: 'announcements polls' },
+      { id: 'nav-community', label: 'Community', href: '/community', group: 'navigation', icon: Bell, keywords: 'announcements polls' },
+      { id: 'nav-maintenance', label: 'Maintenance', href: '/maintenance', group: 'navigation', icon: Building2, keywords: 'requests service' },
+      { id: 'nav-support', label: 'Help & Support', href: '/contact', group: 'navigation', icon: Search, keywords: 'support contact help' },
       { id: 'nav-notifications', label: 'Notifications', href: '/notifications', group: 'navigation', icon: Bell, keywords: 'alerts inbox' },
       { id: 'nav-profile', label: 'Profile', href: '/profile', group: 'navigation', icon: User, keywords: 'account' },
       {
@@ -238,17 +242,28 @@ export function GlobalCommandPalette() {
         icon: Settings,
         keywords: 'preferences notifications',
       },
-      { id: 'admin-panel', label: 'Admin Panel', href: '/admin', group: 'admin', icon: Shield, keywords: 'users moderation', hint: 'Admin only' },
-      { id: 'admin-waitlist', label: 'Waitlist Manager', href: '/admin/waitlist', group: 'admin', icon: Hourglass, keywords: 'promote queue', hint: 'Admin only' },
-      { id: 'admin-maintenance', label: 'Maintenance Board', href: '/admin/maintenance', group: 'admin', icon: Building2, keywords: 'tickets requests', hint: 'Admin only' },
+      { id: 'admin-panel', label: 'Admin Home', href: '/admin', group: 'admin', icon: Shield, keywords: 'users moderation', hint: 'Admin only' },
+      { id: 'admin-support', label: 'Support Inbox', href: '/admin/contact-tickets', group: 'admin', icon: Bell, keywords: 'support tickets queue', hint: 'Admin only' },
+      { id: 'admin-maintenance', label: 'Maintenance Desk', href: '/admin/maintenance', group: 'admin', icon: Building2, keywords: 'tickets requests', hint: 'Admin only' },
+      { id: 'admin-users', label: 'Residents & Access', href: '/admin/users', group: 'admin', icon: User, keywords: 'users access residents', hint: 'Admin only' },
+      { id: 'admin-waitlist', label: 'Waitlist Queue', href: '/admin/waitlist', group: 'admin', icon: Hourglass, keywords: 'promote queue', hint: 'Admin only' },
+      { id: 'admin-analytics', label: 'Insights (Advanced)', href: '/admin/analytics', group: 'admin', icon: Clock, keywords: 'analytics radar trends', hint: 'Admin only' },
     ],
     [isAdmin]
   );
 
+  const filteredActions = useMemo(() => {
+    if (!simpleMode) {
+      return staticActions;
+    }
+
+    return staticActions.filter((action) => action.id !== 'admin-analytics');
+  }, [simpleMode, staticActions]);
+
   const recentActionMap = useMemo(() => {
     const map = new Map<string, { label: string; href: string; icon: PaletteAction['icon']; subtitle?: string }>();
 
-    staticActions.forEach((action) => {
+    filteredActions.forEach((action) => {
       if (action.group === 'admin' && !isAdmin) return;
       map.set(action.id, { label: action.label, href: action.href, icon: action.icon, subtitle: action.hint });
     });
@@ -277,7 +292,7 @@ export function GlobalCommandPalette() {
     });
 
     return map;
-  }, [amenities, bookingCommands, isAdmin, staticActions, timeZone]);
+  }, [amenities, bookingCommands, filteredActions, isAdmin, timeZone]);
 
   const persistRecent = (id: string) => {
     if (!session?.user?.email) return;
@@ -292,8 +307,8 @@ export function GlobalCommandPalette() {
     router.push(href);
   };
 
-  const visibleNavigation = staticActions.filter((action) => action.group === 'navigation');
-  const visibleAdmin = staticActions.filter((action) => action.group === 'admin' && isAdmin);
+  const visibleNavigation = filteredActions.filter((action) => action.group === 'navigation');
+  const visibleAdmin = filteredActions.filter((action) => action.group === 'admin' && isAdmin);
 
   return (
     <>

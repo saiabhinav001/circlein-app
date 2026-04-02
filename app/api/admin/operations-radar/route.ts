@@ -218,9 +218,9 @@ export async function GET(): Promise<NextResponse> {
       alerts.push({
         id: 'support-overdue',
         severity: 'critical',
-        title: 'Overdue support SLA breach',
-        detail: `${support.overdue} active ticket(s) are past SLA and need immediate triage.`,
-        actionLabel: 'Open support queue',
+        title: 'Support cases need urgent follow-up',
+        detail: `${support.overdue} support case(s) are overdue and need immediate action.`,
+        actionLabel: 'Open support inbox',
         actionUrl: '/admin/contact-tickets',
       });
     }
@@ -229,9 +229,9 @@ export async function GET(): Promise<NextResponse> {
       alerts.push({
         id: 'maintenance-stale',
         severity: 'watch',
-        title: 'Maintenance backlog aging',
+        title: 'Maintenance requests are aging',
         detail: `${maintenance.stale} maintenance request(s) have remained open for over 72 hours.`,
-        actionLabel: 'Review maintenance',
+        actionLabel: 'Open maintenance desk',
         actionUrl: '/admin/maintenance',
       });
     }
@@ -240,9 +240,9 @@ export async function GET(): Promise<NextResponse> {
       alerts.push({
         id: 'demand-spike',
         severity: 'watch',
-        title: 'Demand spike next 7 days',
-        detail: `Upcoming demand is up ${demandDeltaPercent}% versus the previous 7-day window.`,
-        actionLabel: 'Inspect analytics',
+        title: 'Bookings are rising quickly',
+        detail: `Upcoming demand is up ${demandDeltaPercent}% compared to the previous 7-day window.`,
+        actionLabel: 'Open insights',
         actionUrl: '/admin/analytics',
       });
     }
@@ -251,9 +251,9 @@ export async function GET(): Promise<NextResponse> {
       alerts.push({
         id: 'cancel-rate',
         severity: 'watch',
-        title: 'Cancellation trend rising',
-        detail: `Recent cancellation rate is ${cancellationRateRecent}%. Consider reminder and waitlist tuning.`,
-        actionLabel: 'Inspect analytics',
+        title: 'Cancellations are rising',
+        detail: `Recent cancellation rate is ${cancellationRateRecent}%. Consider reminders and waitlist tuning.`,
+        actionLabel: 'Open insights',
         actionUrl: '/admin/analytics',
       });
     }
@@ -262,9 +262,9 @@ export async function GET(): Promise<NextResponse> {
       alerts.push({
         id: 'steady-state',
         severity: 'good',
-        title: 'System is stable',
-        detail: 'No critical risk triggers were detected across support, maintenance, or demand.',
-        actionLabel: 'View analytics',
+        title: 'Operations are healthy',
+        detail: 'No urgent issues were detected across support, maintenance, or booking demand.',
+        actionLabel: 'View insights',
         actionUrl: '/admin/analytics',
       });
     }

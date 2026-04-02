@@ -131,13 +131,13 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
               variant="ghost" 
               aria-label="Open user menu"
               className={cn(
-                "relative h-9 w-9 rounded-full p-0",
+                "relative h-11 w-11 sm:h-10 sm:w-10 rounded-full p-0",
                 "hover:bg-slate-100 dark:hover:bg-slate-800",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-600 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950",
                 "transition-colors duration-100 active:scale-95"
               )}
             >
-              <Avatar className="h-9 w-9">
+              <Avatar className="h-11 w-11 sm:h-10 sm:w-10">
                 <AvatarImage src={session?.user?.image || ''} alt={session?.user?.name ? `${session.user.name} profile` : 'User profile'} className="object-cover" />
                 <AvatarFallback className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium">
                   {session?.user?.name?.[0]?.toUpperCase() || <User className="w-4 h-4" />}

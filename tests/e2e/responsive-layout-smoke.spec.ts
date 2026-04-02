@@ -13,6 +13,11 @@ const VIEWPORTS = [
 const PUBLIC_ROUTES = [
   { path: '/landing', heading: null },
   { path: '/auth/signin', heading: /Sign In|Welcome back/i },
+  { path: '/auth/signup', heading: /Create( your)? account|Sign up/i },
+  { path: '/contact', heading: null },
+  { path: '/privacy', heading: null },
+  { path: '/terms', heading: null },
+  { path: '/security', heading: null },
 ]
 
 const AUTH_CRITICAL_ROUTES = [

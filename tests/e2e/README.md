@@ -15,6 +15,11 @@ This folder contains Playwright smoke tests for critical user-facing regressions
   - Public pages:
   - `/landing`
   - `/auth/signin`
+  - `/auth/signup`
+  - `/contact`
+  - `/privacy`
+  - `/terms`
+  - `/security`
   - Authenticated admin/resident critical pages:
   - `/contact`
   - `/admin/contact-tickets`

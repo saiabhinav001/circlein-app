@@ -5,13 +5,15 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, ChevronRight, Hourglass, Bell, LogOut, MessageCircle, Wrench, BarChart3, Megaphone, ClipboardList, UserX } from 'lucide-react';
+import { Calendar, Home, Settings, BookOpen, Users, Shield, Menu, X, Sun, Moon, ChevronRight, Hourglass, Bell, LogOut, MessageCircle, Wrench, BarChart3, Megaphone, ClipboardList, UserX, Accessibility } from 'lucide-react';
 import { useTheme } from '../providers/theme-provider';
 import { Button } from '@/components/ui/button';
 import { signOut } from 'next-auth/react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { CircleInLogo } from '@/components/ui';
+import { useSimpleMode } from '@/hooks/use-simple-mode';
 
 const sidebarVariants = {
   open: { 
@@ -70,6 +72,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { simpleMode, setSimpleMode } = useSimpleMode(true);
 
   // Notify parent when collapse state changes
   const handleCollapseToggle = () => {
@@ -85,46 +88,51 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
 
   const baseNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Community', href: '/community', icon: Megaphone },
     { name: 'My Bookings', href: '/bookings', icon: BookOpen },
     { name: 'Calendar', href: '/calendar', icon: Calendar },
+    { name: 'Community', href: '/community', icon: Megaphone },
     { name: 'Maintenance', href: '/maintenance', icon: Wrench },
+    { name: 'Help & Support', href: '/contact', icon: MessageCircle },
     { name: 'Notifications', href: '/notifications', icon: Bell },
-    { name: 'Contact Us', href: '/contact', icon: MessageCircle },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
   // Filter out Settings for admin users since they have it in admin section
-  const navigation = session?.user?.role === 'admin' 
-    ? baseNavigation.filter(item => item.name !== 'Settings')
+  const navigation = session?.user?.role === 'admin'
+    ? baseNavigation.filter((item) => item.href !== '/settings')
     : baseNavigation;
 
-  const adminNavigation = [
-    { name: 'Admin Panel', href: '/admin', icon: Shield },
-    { name: 'Manage Users', href: '/admin/users', icon: Users },
-    { name: 'Waitlist Manager', href: '/admin/waitlist', icon: Hourglass },
-    { name: 'Deletion Requests', href: '/admin/deletion-requests', icon: UserX },
+  const adminCoreNavigation = [
+    { name: 'Admin Home', href: '/admin', icon: Shield },
+    { name: 'Support Inbox', href: '/admin/contact-tickets', icon: MessageCircle },
     { name: 'Maintenance Desk', href: '/admin/maintenance', icon: ClipboardList },
-    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-    { name: 'Settings', href: '/admin/settings', icon: Settings },
-      { name: 'Support Tickets', href: '/admin/contact-tickets', icon: MessageCircle },
+    { name: 'Residents & Access', href: '/admin/users', icon: Users },
+    { name: 'Waitlist Queue', href: '/admin/waitlist', icon: Hourglass },
+    { name: 'Account Requests', href: '/admin/deletion-requests', icon: UserX },
+    { name: 'Admin Settings', href: '/admin/settings', icon: Settings },
   ];
 
-  const getTourTarget = (itemName: string, isAdminSection = false) => {
-    if (!isAdminSection) {
-      if (itemName === 'Dashboard') return 'sidebar-dashboard';
-      if (itemName === 'My Bookings') return 'sidebar-bookings';
-      if (itemName === 'Calendar') return 'sidebar-calendar';
-      if (itemName === 'Settings') return 'sidebar-settings';
-      return undefined;
-    }
+  const adminAdvancedNavigation = [
+    { name: 'Insights (Advanced)', href: '/admin/analytics', icon: BarChart3 },
+  ];
 
-    if (itemName === 'Admin Panel') return 'sidebar-admin-panel';
-    if (itemName === 'Manage Users') return 'sidebar-admin-users';
-    if (itemName === 'Waitlist Manager') return 'sidebar-admin-waitlist';
-    if (itemName === 'Deletion Requests') return 'sidebar-admin-deletion-requests';
-    if (itemName === 'Analytics') return 'sidebar-admin-analytics';
-    if (itemName === 'Settings') return 'sidebar-admin-settings';
+  const adminNavigation = simpleMode
+    ? adminCoreNavigation
+    : [...adminCoreNavigation, ...adminAdvancedNavigation];
+
+  const getTourTarget = (itemHref: string) => {
+    if (itemHref === '/dashboard') return 'sidebar-dashboard';
+    if (itemHref === '/bookings') return 'sidebar-bookings';
+    if (itemHref === '/calendar') return 'sidebar-calendar';
+    if (itemHref === '/settings') return 'sidebar-settings';
+    if (itemHref === '/admin') return 'sidebar-admin-panel';
+    if (itemHref === '/admin/users') return 'sidebar-admin-users';
+    if (itemHref === '/admin/waitlist') return 'sidebar-admin-waitlist';
+    if (itemHref === '/admin/contact-tickets') return 'sidebar-admin-support';
+    if (itemHref === '/admin/maintenance') return 'sidebar-admin-maintenance';
+    if (itemHref === '/admin/deletion-requests') return 'sidebar-admin-deletion-requests';
+    if (itemHref === '/admin/analytics') return 'sidebar-admin-analytics';
+    if (itemHref === '/admin/settings') return 'sidebar-admin-settings';
     return undefined;
   };
 
@@ -300,7 +308,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   <TooltipTrigger asChild>
                     <Link
                       href={item.href}
-                      data-tour={getTourTarget(item.name)}
+                      data-tour={getTourTarget(item.href)}
                       aria-label={item.name}
                       aria-current={pathname === item.href ? 'page' : undefined}
                       onClick={() => onClose?.()}
@@ -326,7 +334,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
               ) : (
                 <Link
                   href={item.href}
-                  data-tour={getTourTarget(item.name)}
+                  data-tour={getTourTarget(item.href)}
                   aria-current={pathname === item.href ? 'page' : undefined}
                   onClick={() => onClose?.()}
                   className={cn(
@@ -406,12 +414,58 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                       className="relative flex justify-center text-[11px] font-semibold"
                     >
                       <span className="bg-white dark:bg-slate-950 px-2.5 py-0.5 text-slate-500 dark:text-slate-500 uppercase tracking-wider">
-                        Admin
+                        Admin Tools
                       </span>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
+
+              <AnimatePresence>
+                {!isCollapsed && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="mx-2 mb-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-2.5"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Simple Mode</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {simpleMode
+                            ? 'Plain words and fewer advanced screens'
+                            : 'Show all advanced analytics and controls'}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={simpleMode}
+                        onCheckedChange={setSimpleMode}
+                        aria-label="Toggle simple mode"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {isCollapsed && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSimpleMode(!simpleMode)}
+                      aria-label={simpleMode ? 'Disable simple mode' : 'Enable simple mode'}
+                      className="mb-2 flex items-center justify-center w-11 h-11 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/70"
+                    >
+                      <Accessibility className={cn('w-5 h-5', simpleMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400')} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {simpleMode ? 'Simple Mode: On' : 'Simple Mode: Off'}
+                  </TooltipContent>
+                </Tooltip>
+              )}
               
               {adminNavigation.map((item, index) => (
                 <motion.div 
@@ -428,7 +482,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                       <TooltipTrigger asChild>
                         <Link
                           href={item.href}
-                          data-tour={getTourTarget(item.name, true)}
+                          data-tour={getTourTarget(item.href)}
                           aria-label={item.name}
                           aria-current={pathname === item.href ? 'page' : undefined}
                           onClick={() => onClose?.()}
@@ -454,7 +508,7 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
                   ) : (
                     <Link
                       href={item.href}
-                      data-tour={getTourTarget(item.name, true)}
+                      data-tour={getTourTarget(item.href)}
                       aria-current={pathname === item.href ? 'page' : undefined}
                       onClick={() => onClose?.()}
                       className={cn(
