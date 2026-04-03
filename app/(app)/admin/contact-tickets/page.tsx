@@ -291,35 +291,35 @@ export default function AdminContactTicketsPage() {
         {!loading && metrics && (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-4 min-h-[110px] flex flex-col justify-between">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Active Queue</p>
                 <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{metrics.activeTickets}</p>
                 <p className="mt-1 text-xs text-slate-500">of {metrics.totalTickets} total tickets</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-4 min-h-[110px] flex flex-col justify-between">
                 <p className="text-xs uppercase tracking-wide text-slate-500">SLA Risk</p>
                 <p className="mt-1 text-2xl font-semibold text-rose-600 dark:text-rose-400">{metrics.overdueTickets}</p>
                 <p className="mt-1 text-xs text-slate-500">{metrics.atRiskTickets} at risk</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-4 min-h-[110px] flex flex-col justify-between">
                 <p className="text-xs uppercase tracking-wide text-slate-500">First Response</p>
                 <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">
                   {metrics.averageFirstResponseMinutes == null ? 'N/A' : `${metrics.averageFirstResponseMinutes}m`}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">average response latency</p>
+                <p className="mt-1 text-xs text-slate-500 leading-relaxed">average response latency</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-4 min-h-[110px] flex flex-col justify-between">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Resolution</p>
                 <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">
                   {metrics.averageResolutionHours == null ? 'N/A' : `${metrics.averageResolutionHours}h`}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">{metrics.escalatedTickets} escalated tickets</p>
+                <p className="mt-1 text-xs text-slate-500 leading-relaxed">{metrics.escalatedTickets} escalated tickets</p>
               </CardContent>
             </Card>
           </div>

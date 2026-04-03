@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
+import { useSimpleMode } from '@/hooks/use-simple-mode';
 
 type UserRole = 'resident' | 'admin';
 
@@ -315,6 +316,7 @@ function getTooltipPosition(rect: DOMRect | null, isMobile: boolean, isCompact: 
 
 export function ProductTour() {
   const { data: session } = useSession();
+  const { simpleMode } = useSimpleMode(true);
   const [isOpen, setIsOpen] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
@@ -324,7 +326,17 @@ export function ProductTour() {
   const prefersReducedMotion = useReducedMotion();
 
   const role = getRole(session?.user?.role);
-  const steps = useMemo(() => (role === 'admin' ? ADMIN_STEPS : RESIDENT_STEPS), [role]);
+  const steps = useMemo(() => {
+    if (role !== 'admin') {
+      return RESIDENT_STEPS;
+    }
+
+    if (!simpleMode) {
+      return ADMIN_STEPS;
+    }
+
+    return ADMIN_STEPS.filter((step) => step.id !== 'support-inbox');
+  }, [role, simpleMode]);
 
   const updateTargetRect = useMemo(
     () => () => {

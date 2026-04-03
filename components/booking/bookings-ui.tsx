@@ -769,6 +769,10 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
             <Search className="absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             <Input
               ref={searchRef}
+              type="search"
+              autoComplete="off"
+              spellCheck={false}
+              autoCapitalize="none"
               placeholder="Search bookings..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -777,9 +781,9 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
                 "text-sm text-slate-900 dark:text-white",
                 "placeholder:text-slate-400 dark:placeholder:text-slate-500",
                 "bg-slate-50 dark:bg-slate-900",
-                "border-0 ring-1 ring-slate-200 dark:ring-slate-700/80",
-                "hover:ring-slate-300 dark:hover:ring-slate-600",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-white/70",
+                "border-0 ring-1 ring-slate-300/80 dark:ring-white/25",
+                "hover:ring-slate-500/70 dark:hover:ring-white/45",
+                "focus:outline-none focus-visible:ring-[1.5px] focus-visible:ring-slate-900 dark:focus-visible:ring-white",
                 "focus-visible:ring-offset-0 rounded-xl transition-shadow duration-150"
               )}
             />
@@ -1095,11 +1099,11 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
             <DialogPrimitive.Overlay 
               className={cn(
                 "fixed inset-0 z-[9999]",
-                "bg-slate-900/60 dark:bg-slate-950/80",
-                "backdrop-blur-sm",
-                "data-[state=open]:animate-in data-[state=closed]:animate-out",
-                "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-                "duration-200"
+                "bg-slate-950/45 dark:bg-black/70",
+                "data-[state=open]:backdrop-blur-[3px] data-[state=closed]:backdrop-blur-0",
+                "data-[state=open]:opacity-100 data-[state=closed]:opacity-0",
+                "transition-[opacity,backdrop-filter] data-[state=open]:duration-[240ms] data-[state=closed]:duration-[160ms] data-[state=open]:ease-[cubic-bezier(0,0,0.38,0.9)] data-[state=closed]:ease-[cubic-bezier(0.2,0,1,0.9)]",
+                "motion-reduce:transition-none"
               )} 
             />
             <DialogPrimitive.Content
@@ -1109,18 +1113,25 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
               className={cn(
                 "fixed left-[50%] top-[50%] z-[10000]",
                 "w-[calc(100%-2rem)] max-w-sm translate-x-[-50%] translate-y-[-50%]",
-                "bg-white dark:bg-slate-900",
-                "rounded-2xl shadow-2xl",
-                "ring-1 ring-slate-200 dark:ring-slate-800",
+                "bg-gradient-to-b from-white to-slate-50/90 dark:from-slate-900 dark:to-slate-900/95",
+                "rounded-2xl shadow-2xl origin-center",
+                "ring-1 ring-slate-300/80 dark:ring-white/20",
                 "overflow-hidden",
-                "data-[state=open]:animate-in data-[state=closed]:animate-out",
-                "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-                "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-                "duration-200"
+                "data-[state=open]:opacity-100 data-[state=closed]:opacity-0",
+                "data-[state=open]:scale-100 data-[state=closed]:scale-[0.97]",
+                "data-[state=open]:translate-y-[-50%] data-[state=closed]:translate-y-[-48.4%]",
+                "transform-gpu will-change-transform",
+                "transition-[opacity,transform,box-shadow] data-[state=open]:duration-[280ms] data-[state=closed]:duration-[180ms] data-[state=open]:ease-[cubic-bezier(0,0,0.38,0.9)] data-[state=closed]:ease-[cubic-bezier(0.2,0,1,0.9)]",
+                "data-[state=open]:shadow-[0_34px_110px_-42px_rgba(15,23,42,0.8)] dark:data-[state=open]:shadow-[0_42px_130px_-48px_rgba(2,6,23,0.96)]",
+                "motion-reduce:transition-none"
               )}
             >
+              <DialogPrimitive.Title className="sr-only">Facility Access QR</DialogPrimitive.Title>
+              <DialogPrimitive.Description className="sr-only">
+                Display your booking QR code and access token for amenity entry.
+              </DialogPrimitive.Description>
               {/* Modal Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200/90 dark:border-white/15">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                     <Shield className="w-4 h-4 text-slate-600 dark:text-slate-400" />
@@ -1243,7 +1254,7 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
                         toast.success('Copied to clipboard');
                       }}
                       variant="outline"
-                      className="h-10 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-sm font-medium"
+                      className="h-10 border-slate-300/80 dark:border-white/25 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-sm font-medium"
                     >
                       <Copy className="w-4 h-4 mr-1.5" />
                       Copy
@@ -1261,10 +1272,11 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
             <DialogPrimitive.Overlay
               className={cn(
                 'fixed inset-0 z-[9999]',
-                'bg-slate-900/55 dark:bg-slate-950/80 backdrop-blur-sm',
-                'data-[state=open]:animate-in data-[state=closed]:animate-out',
-                'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-                'duration-200'
+                'bg-slate-950/45 dark:bg-black/70',
+                'data-[state=open]:backdrop-blur-[3px] data-[state=closed]:backdrop-blur-0',
+                'data-[state=open]:opacity-100 data-[state=closed]:opacity-0',
+                'transition-[opacity,backdrop-filter] data-[state=open]:duration-[240ms] data-[state=closed]:duration-[160ms] data-[state=open]:ease-[cubic-bezier(0,0,0.38,0.9)] data-[state=closed]:ease-[cubic-bezier(0.2,0,1,0.9)]',
+                'motion-reduce:transition-none'
               )}
             />
             <DialogPrimitive.Content
@@ -1273,13 +1285,21 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
               aria-labelledby="booking-receipt-modal-title"
               className={cn(
                 'fixed left-[50%] top-[50%] z-[10000] w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-2xl translate-x-[-50%] translate-y-[-50%]',
-                'rounded-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 shadow-2xl',
+                'rounded-2xl bg-gradient-to-b from-white to-slate-50/90 dark:from-slate-900 dark:to-slate-900/95 ring-1 ring-slate-300/80 dark:ring-white/20 shadow-2xl origin-center',
                 'max-h-[88dvh] overflow-x-hidden overflow-y-auto overscroll-contain',
-                'data-[state=open]:animate-in data-[state=closed]:animate-out',
-                'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-                'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 duration-200'
+                'data-[state=open]:opacity-100 data-[state=closed]:opacity-0',
+                'data-[state=open]:scale-100 data-[state=closed]:scale-[0.97]',
+                'data-[state=open]:translate-y-[-50%] data-[state=closed]:translate-y-[-48.4%]',
+                'transform-gpu will-change-transform',
+                'transition-[opacity,transform,box-shadow] data-[state=open]:duration-[280ms] data-[state=closed]:duration-[180ms] data-[state=open]:ease-[cubic-bezier(0,0,0.38,0.9)] data-[state=closed]:ease-[cubic-bezier(0.2,0,1,0.9)]',
+                'data-[state=open]:shadow-[0_34px_110px_-42px_rgba(15,23,42,0.8)] dark:data-[state=open]:shadow-[0_42px_130px_-48px_rgba(2,6,23,0.96)]',
+                'motion-reduce:transition-none'
               )}
             >
+              <DialogPrimitive.Title className="sr-only">Booking Receipt</DialogPrimitive.Title>
+              <DialogPrimitive.Description className="sr-only">
+                Review booking details, access code, and save or print your receipt.
+              </DialogPrimitive.Description>
               {selectedBooking && (
                 <div className="p-4 sm:p-6 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
                   <div className="flex items-start justify-between gap-3 mb-5">
@@ -1300,43 +1320,43 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                    <div className="rounded-xl border border-slate-300/80 dark:border-white/20 p-3">
                       <p className="text-xs uppercase tracking-wide text-slate-500">Amenity</p>
                       <p className="text-sm font-medium text-slate-900 dark:text-white mt-1">
                         {selectedBooking.amenityName || 'Community Facility'}
                       </p>
                     </div>
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                    <div className="rounded-xl border border-slate-300/80 dark:border-white/20 p-3">
                       <p className="text-xs uppercase tracking-wide text-slate-500">Booking Ref</p>
                       <p className="text-sm font-medium text-slate-900 dark:text-white mt-1">
                         #{getBookingReference(selectedBooking)}
                       </p>
                     </div>
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                    <div className="rounded-xl border border-slate-300/80 dark:border-white/20 p-3">
                       <p className="text-xs uppercase tracking-wide text-slate-500">Internal ID</p>
                       <p className="text-sm font-medium text-slate-900 dark:text-white mt-1 break-all">
                         {selectedBooking.id}
                       </p>
                     </div>
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                    <div className="rounded-xl border border-slate-300/80 dark:border-white/20 p-3">
                       <p className="text-xs uppercase tracking-wide text-slate-500">Date</p>
                       <p className="text-sm font-medium text-slate-900 dark:text-white mt-1">
                         {formatLongDate(selectedBooking.startTime)}
                       </p>
                     </div>
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                    <div className="rounded-xl border border-slate-300/80 dark:border-white/20 p-3">
                       <p className="text-xs uppercase tracking-wide text-slate-500">Time</p>
                       <p className="text-sm font-medium text-slate-900 dark:text-white mt-1">
                         {getBookingTimeLabel(selectedBooking)}
                       </p>
                     </div>
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                    <div className="rounded-xl border border-slate-300/80 dark:border-white/20 p-3">
                       <p className="text-xs uppercase tracking-wide text-slate-500">Status</p>
                       <p className="text-sm font-medium text-slate-900 dark:text-white mt-1">
                         {getStatusDisplay(getBookingStatus(selectedBooking)).label}
                       </p>
                     </div>
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
+                    <div className="rounded-xl border border-slate-300/80 dark:border-white/20 p-3">
                       <p className="text-xs uppercase tracking-wide text-slate-500">QR Access Code</p>
                       <p className="text-sm font-medium tracking-widest text-slate-900 dark:text-white mt-1">
                         {getBookingAccessCode(selectedBooking)}
@@ -1344,8 +1364,8 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
                     </div>
                   </div>
 
-                  <div className="mb-6 rounded-xl border border-slate-200 dark:border-slate-700 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-white dark:bg-slate-950 shrink-0">
+                  <div className="mb-6 rounded-xl border border-slate-300/80 dark:border-white/20 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl border border-slate-300/80 dark:border-white/20 flex items-center justify-center bg-white dark:bg-slate-950 shrink-0">
                       {receiptQrDataUrl && !generatingReceiptQR ? (
                         <img src={receiptQrDataUrl} alt="Receipt QR" className="w-20 h-20 sm:w-24 sm:h-24" />
                       ) : (

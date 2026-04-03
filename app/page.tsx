@@ -73,27 +73,6 @@ const features = [
   },
 ];
 
-const team = [
-  {
-    name: 'Sai Abhinav Patel Sadineni',
-    role: 'Lead Developer & Architect',
-    description: 'Full-stack architect specializing in Next.js, React, and cloud infrastructure.',
-    social: { github: '#', linkedin: '#', twitter: '#' }
-  },
-  {
-    name: 'Shaik Azmath',
-    role: 'Full Stack Developer',
-    description: 'Expert in modern web technologies, API development, and database optimization.',
-    social: { github: '#', linkedin: '#', twitter: '#' }
-  },
-  {
-    name: 'Manohara Sai Chennakeshavula',
-    role: 'Backend Developer',
-    description: 'Specialized in Firebase, authentication systems, and scalable backend solutions.',
-    social: { github: '#', linkedin: '#', twitter: '#' }
-  },
-];
-
 // Premium Animated Background Component with section-aware living system
 function PremiumBackground() {
   const { scrollYProgress } = useScroll();
@@ -444,75 +423,6 @@ function FeatureCard({ feature, index }: { feature: typeof features[0], index: n
           {feature.description}
         </p>
       </div>
-    </motion.div>
-  );
-}
-
-// Team Member Card with clean, professional interactions
-function TeamMemberCard({ member, index }: { member: typeof team[0], index: number }) {
-  const [isHovered, setIsHovered] = useState(false);
-  
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ 
-        duration: 0.5, 
-        delay: index * 0.1,
-        ease: [0.25, 0.1, 0.25, 1]
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <motion.div 
-        className="group relative h-full"
-        animate={{ y: isHovered ? -4 : 0 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      >
-        <div className="relative h-full p-6 sm:p-8 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xl hover:shadow-black/10 dark:hover:shadow-black/35 text-center">
-          
-          {/* Avatar */}
-          <div className="w-20 h-20 mx-auto mb-5 relative">
-            <div className="w-full h-full rounded-full bg-slate-900 dark:bg-slate-100 flex items-center justify-center shadow-lg">
-              <span className="text-xl font-bold text-white dark:text-slate-900">
-                {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-              </span>
-            </div>
-          </div>
-          
-          {/* Content */}
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1 tracking-tight">
-            {member.name}
-          </h3>
-          <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 mb-3">
-            {member.role}
-          </p>
-          <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-5">
-            {member.description}
-          </p>
-          
-          {/* Social Links */}
-          <div className="flex justify-center gap-2">
-            {[
-              { icon: Github, href: member.social.github, label: 'GitHub' },
-              { icon: Linkedin, href: member.social.linkedin, label: 'LinkedIn' },
-              { icon: Twitter, href: member.social.twitter, label: 'Twitter' },
-            ].map((social, i) => (
-              <motion.a
-                key={i}
-                href={social.href}
-                aria-label={social.label}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200"
-              >
-                <social.icon className="w-4 h-4" />
-              </motion.a>
-            ))}
-          </div>
-        </div>
-      </motion.div>
     </motion.div>
   );
 }
@@ -878,42 +788,6 @@ export default function LandingPage() {
                 </div>
               </div>
             </motion.div>
-          </div>
-        </section>
-
-        {/* Section Divider */}
-        <div className="relative h-px max-w-4xl mx-auto">
-          <div className="section-divider w-full" />
-        </div>
-
-        {/* Team Section */}
-        <section className="relative py-16 md:py-24 lg:py-32 px-4 sm:px-6">
-          <div className="max-w-6xl mx-auto">
-            {/* Section Header */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.5 }}
-              className="text-center mb-12 md:mb-16"
-            >
-              <span className="inline-block text-sm font-semibold not-italic text-emerald-600 dark:text-emerald-400 mb-3 tracking-wide uppercase">
-                Our Team
-              </span>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold not-italic tracking-tight text-slate-900 dark:text-white mb-4">
-                Meet the team
-              </h2>
-              <p className="text-lg not-italic text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
-                Passionate developers building exceptional community solutions.
-              </p>
-            </motion.div>
-
-            {/* Team Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
-              {team.map((member, index) => (
-                <TeamMemberCard key={member.name} member={member} index={index} />
-              ))}
-            </div>
           </div>
         </section>
 

@@ -210,7 +210,16 @@ export default function AdminDeletionRequestsPage() {
                 </div>
                 <div className="relative w-full sm:w-72">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search email, name, reason" className="pl-9" />
+                  <Input
+                    type="search"
+                    autoComplete="off"
+                    spellCheck={false}
+                    autoCapitalize="none"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search email, name, reason"
+                    className="pl-9"
+                  />
                 </div>
               </div>
             </CardContent>

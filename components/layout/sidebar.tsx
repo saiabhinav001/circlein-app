@@ -116,8 +116,10 @@ export function Sidebar({ onClose, onCollapseChange }: SidebarProps = {}) {
     { name: 'Insights (Advanced)', href: '/admin/analytics', icon: BarChart3 },
   ];
 
+  const adminSimpleNavigation = adminCoreNavigation.filter((item) => item.href !== '/admin/contact-tickets');
+
   const adminNavigation = simpleMode
-    ? adminCoreNavigation
+    ? adminSimpleNavigation
     : [...adminCoreNavigation, ...adminAdvancedNavigation];
 
   const getTourTarget = (itemHref: string) => {

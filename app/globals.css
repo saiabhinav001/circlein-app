@@ -98,6 +98,27 @@
     scroll-behavior: smooth;
   }
 
+  /* Hide native search clear controls so custom clear actions do not duplicate an "X" icon. */
+  input[type='search'] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  input[type='search']::-webkit-search-decoration,
+  input[type='search']::-webkit-search-cancel-button,
+  input[type='search']::-webkit-search-results-button,
+  input[type='search']::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  input[type='search']::-ms-clear,
+  input[type='search']::-ms-reveal {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
   body {
     @apply bg-background text-foreground font-sans;
     min-height: 100vh;

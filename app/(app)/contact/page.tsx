@@ -544,14 +544,18 @@ function AIChatPanel({
             value={inputValue}
             onChange={(e) => onInputChange(e.target.value)}
             onKeyDown={onKeyDown}
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
             placeholder="Type your message..."
             rows={1}
             className="flex-1 min-w-0 h-12 px-4 py-3
                      bg-gray-50 dark:bg-gray-800 
-                     border border-gray-200 dark:border-gray-700 
+                     border border-gray-300/80 dark:border-white/25 
                      rounded-xl resize-none
                      text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500
-                     focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600
+                     focus:outline-none focus:ring-[1.5px] focus:ring-gray-900 dark:focus:ring-white
+                     focus:border-gray-900 dark:focus:border-white
                      transition-shadow leading-[1.5]"
           />
           <button
@@ -764,15 +768,17 @@ function EmailPanel({
           <input
             id="subject"
             type="text"
+            autoComplete="off"
             value={form.subject}
             onChange={(e) => onFormChange({ ...form, subject: e.target.value })}
             placeholder="Brief description of your issue"
             required
             className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 
-                     border border-gray-200 dark:border-gray-700 
+                     border border-gray-300/80 dark:border-white/25 
                      rounded-lg sm:rounded-xl text-sm text-gray-900 dark:text-white
                      placeholder-gray-400 dark:placeholder-gray-500
-                     focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600
+                     focus:outline-none focus:ring-[1.5px] focus:ring-gray-900 dark:focus:ring-white
+                     focus:border-gray-900 dark:focus:border-white
                      transition-shadow"
           />
         </div>
@@ -790,10 +796,11 @@ function EmailPanel({
             required
             rows={5}
             className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-gray-800 
-                     border border-gray-200 dark:border-gray-700 
+                     border border-gray-300/80 dark:border-white/25 
                      rounded-lg sm:rounded-xl text-sm text-gray-900 dark:text-white resize-none
                      placeholder-gray-400 dark:placeholder-gray-500
-                     focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600
+                     focus:outline-none focus:ring-[1.5px] focus:ring-gray-900 dark:focus:ring-white
+                     focus:border-gray-900 dark:focus:border-white
                      transition-shadow"
           />
           <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">

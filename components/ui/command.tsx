@@ -34,7 +34,7 @@ const CommandDialog = ({ children, contentClassName, commandClassName, ...props 
       <DialogContent
         showCloseButton={false}
         className={cn(
-          'w-[min(96vw,52rem)] max-w-3xl overflow-hidden border border-slate-200/80 bg-white/95 p-0 shadow-2xl shadow-black/15 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-950/95 origin-top data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 duration-200',
+          'w-[min(96vw,52rem)] max-w-3xl overflow-hidden border border-slate-200/80 bg-white/95 p-0 shadow-2xl shadow-black/15 backdrop-blur-xl dark:border-white/25 dark:bg-slate-950/95 ring-1 ring-black/5 dark:ring-white/10 origin-center transform-gpu will-change-transform data-[state=open]:opacity-100 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=closed]:scale-[0.972] data-[state=open]:translate-y-0 data-[state=closed]:translate-y-2.5 transition-[opacity,transform,box-shadow] data-[state=open]:duration-[280ms] data-[state=closed]:duration-[180ms] data-[state=open]:ease-[cubic-bezier(0,0,0.38,0.9)] data-[state=closed]:ease-[cubic-bezier(0.2,0,1,0.9)] data-[state=open]:shadow-[0_38px_120px_-46px_rgba(15,23,42,0.78)] dark:data-[state=open]:shadow-[0_46px_140px_-52px_rgba(2,6,23,0.96)] motion-reduce:transition-none motion-reduce:transform-none',
           contentClassName
         )}
       >
@@ -59,7 +59,7 @@ const CommandInput = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
-  <div className="flex items-center border-b border-slate-200/80 px-3 dark:border-slate-800/70" cmdk-input-wrapper="">
+  <div className="flex items-center border-b border-slate-200/80 px-3 dark:border-white/15" cmdk-input-wrapper="">
     <Search className="mr-2 h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
     <CommandPrimitive.Input
       ref={ref}

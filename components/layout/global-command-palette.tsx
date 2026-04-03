@@ -257,7 +257,7 @@ export function GlobalCommandPalette() {
       return staticActions;
     }
 
-    return staticActions.filter((action) => action.id !== 'admin-analytics');
+    return staticActions.filter((action) => action.id !== 'admin-analytics' && action.id !== 'admin-support');
   }, [simpleMode, staticActions]);
 
   const recentActionMap = useMemo(() => {

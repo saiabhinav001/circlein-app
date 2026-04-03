@@ -21,7 +21,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+      'fixed inset-0 z-[9999] bg-slate-950/45 dark:bg-black/70 data-[state=open]:opacity-100 data-[state=closed]:opacity-0 data-[state=open]:backdrop-blur-[3px] data-[state=closed]:backdrop-blur-0 transition-[opacity,backdrop-filter] data-[state=open]:duration-[240ms] data-[state=closed]:duration-[160ms] data-[state=open]:ease-[cubic-bezier(0,0,0.38,0.9)] data-[state=closed]:ease-[cubic-bezier(0.2,0,1,0.9)] motion-reduce:transition-none',
       className
     )}
     {...props}
@@ -40,7 +40,7 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl border border-border bg-popover p-6 text-popover-foreground shadow-xl shadow-black/10 origin-center duration-200 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+        'fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl border border-border dark:border-white/25 bg-popover p-6 text-popover-foreground origin-center transform-gpu will-change-transform data-[state=open]:opacity-100 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=closed]:scale-[0.975] transition-[opacity,transform,box-shadow] data-[state=open]:duration-[280ms] data-[state=closed]:duration-[180ms] data-[state=open]:ease-[cubic-bezier(0,0,0.38,0.9)] data-[state=closed]:ease-[cubic-bezier(0.2,0,1,0.9)] data-[state=open]:shadow-[0_32px_96px_-44px_rgba(15,23,42,0.78)] dark:data-[state=open]:shadow-[0_36px_110px_-48px_rgba(2,6,23,0.92)] motion-reduce:transition-none',
         className
       )}
       {...props}

@@ -150,11 +150,14 @@ export default function NotificationsPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
-              type="text"
+              type="search"
+              autoComplete="off"
+              spellCheck={false}
+              autoCapitalize="none"
               placeholder="Search notifications..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-10 sm:h-11 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-sm"
+              className="pl-10 h-10 sm:h-11 bg-slate-50 dark:bg-slate-900 border-slate-300/80 dark:border-white/25 text-sm"
             />
           </div>
 
@@ -211,7 +214,7 @@ export default function NotificationsPage() {
             <div className="flex items-center gap-2 w-full sm:w-auto">
               {/* Category */}
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="flex-1 sm:flex-none xs:w-[150px] sm:w-[140px] h-9 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs sm:text-sm">
+                <SelectTrigger className="flex-1 sm:flex-none xs:w-[150px] sm:w-[140px] h-9 bg-slate-50 dark:bg-slate-900 border-slate-300/80 dark:border-white/25 text-xs sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -225,7 +228,7 @@ export default function NotificationsPage() {
 
               {/* Sort */}
               <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'newest' | 'oldest')}>
-                <SelectTrigger className="flex-1 sm:flex-none xs:w-[130px] sm:w-[120px] h-9 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs sm:text-sm">
+                <SelectTrigger className="flex-1 sm:flex-none xs:w-[130px] sm:w-[120px] h-9 bg-slate-50 dark:bg-slate-900 border-slate-300/80 dark:border-white/25 text-xs sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

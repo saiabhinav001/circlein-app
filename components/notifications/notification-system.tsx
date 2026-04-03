@@ -100,15 +100,15 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, timeZ
       )}
       onClick={onClick}
     >
-      {/* Priority accent line */}
       <div className={cn("absolute left-0 top-0 bottom-0 w-0.5", priorityColors[notification.priority])} />
 
       <div className="flex items-start gap-3">
-        {/* Icon */}
-        <div className={cn(
+        <div
+          className={cn(
           "flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center",
           "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-        )}>
+          )}
+        >
           <Icon className="h-4 w-4" />
         </div>
 
@@ -478,7 +478,7 @@ export function NotificationPanel() {
         aria-label="Notifications"
         className={cn(
           "fixed z-[100] bg-white dark:bg-slate-900 rounded-xl overflow-hidden",
-          "border border-slate-200 dark:border-slate-800",
+          "border border-slate-300/80 dark:border-white/20",
           "shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50",
           "w-[380px] max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)]",
           "top-[4.2rem] right-2 sm:right-6"
@@ -488,7 +488,7 @@ export function NotificationPanel() {
         }}
       >
         {/* Header */}
-        <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+        <div className="px-4 py-3 border-b border-slate-200/80 dark:border-white/15">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
@@ -530,12 +530,15 @@ export function NotificationPanel() {
         </div>
 
         {/* Search */}
-        <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
+        <div className="px-3 py-2 border-b border-slate-200/80 dark:border-white/15">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               ref={searchRef}
-              type="text"
+              type="search"
+              autoComplete="off"
+              spellCheck={false}
+              autoCapitalize="none"
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -543,9 +546,10 @@ export function NotificationPanel() {
                 "w-full h-9 pl-9 pr-8 rounded-lg text-sm",
                 "bg-slate-100 dark:bg-slate-800",
                 "text-slate-900 dark:text-slate-100 placeholder:text-slate-500",
-                "border border-transparent",
-                "focus:bg-white dark:focus:bg-slate-900 focus:border-slate-300 dark:focus:border-slate-600",
-                "focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700",
+                "border border-slate-300/80 dark:border-white/25",
+                "focus:bg-white dark:focus:bg-slate-900",
+                "focus:ring-[1.5px] focus:ring-slate-900 dark:focus:ring-white",
+                "focus:border-slate-900 dark:focus:border-white",
                 "outline-none transition-all duration-150"
               )}
             />
@@ -577,7 +581,7 @@ export function NotificationPanel() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            <div className="divide-y divide-slate-200/70 dark:divide-white/10">
               {filteredNotifications.map((notification) => (
                 <NotificationItem
                   key={notification.id}
@@ -593,7 +597,7 @@ export function NotificationPanel() {
 
         {/* Footer */}
         {notifications.length > 0 && (
-          <div className="px-3 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+          <div className="px-3 py-3 border-t border-slate-200/80 dark:border-white/15 bg-slate-50 dark:bg-slate-900/50">
             <div className="flex gap-2">
               {unreadCount > 0 && (
                 <button

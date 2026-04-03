@@ -305,6 +305,10 @@ export default function AdminWaitlistManagement() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
+                type="search"
+                autoComplete="off"
+                spellCheck={false}
+                autoCapitalize="none"
                 placeholder="Search by resident, email, or amenity"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}

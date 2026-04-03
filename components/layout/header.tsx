@@ -87,12 +87,12 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
               "group relative isolate w-full h-9 rounded-xl px-2.5 sm:px-3",
               "flex items-center gap-1.5 sm:gap-2 text-left",
               "bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-900",
-              "border border-slate-200/95 dark:border-slate-500/70",
-              "hover:-translate-y-px hover:border-emerald-300/70 dark:hover:border-emerald-600/60",
+              "border border-slate-900/45 dark:border-white/35",
+              "hover:-translate-y-px hover:border-slate-900/60 dark:hover:border-white/65",
               "hover:shadow-[0_10px_24px_-18px_rgba(16,185,129,0.72)] dark:hover:shadow-[0_10px_24px_-18px_rgba(16,185,129,0.5)]",
               "focus-visible:-translate-y-px",
-              "focus-visible:border-emerald-400/80 dark:focus-visible:border-emerald-500/70",
-              "focus-visible:ring-2 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-800/80",
+              "focus-visible:border-slate-900 dark:focus-visible:border-white",
+              "focus-visible:ring-[1.5px] focus-visible:ring-slate-900/20 dark:focus-visible:ring-white/35",
               "outline-none transition-all duration-200"
             )}
           >
@@ -136,7 +136,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
               className={cn(
                 "relative h-11 w-11 sm:h-10 sm:w-10 rounded-full p-0",
                 "hover:bg-slate-100 dark:hover:bg-slate-800",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-600 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950",
+                "focus-visible:outline-none focus-visible:ring-[1.5px] focus-visible:ring-slate-300 dark:focus-visible:ring-slate-600 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950",
                 "transition-colors duration-100 active:scale-95"
               )}
             >

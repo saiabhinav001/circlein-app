@@ -1128,14 +1128,19 @@ export default function CalendarPage() {
               <div className="relative w-full sm:max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 <Input
+                  type="search"
+                  autoComplete="off"
+                  spellCheck={false}
+                  autoCapitalize="none"
                   placeholder="Search bookings..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={cn(
                     "w-full h-10 pl-9 pr-9 text-sm",
                     "bg-slate-50 dark:bg-slate-900",
-                    "border-0 ring-1 ring-slate-200 dark:ring-slate-800",
-                    "focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-300",
+                    "border-0 ring-1 ring-slate-300/80 dark:ring-white/25",
+                    "hover:ring-slate-500/70 dark:hover:ring-white/45",
+                    "focus:ring-[1.5px] focus:ring-slate-900 dark:focus:ring-white",
                     "rounded-lg transition-shadow duration-150"
                   )}
                 />
@@ -1155,8 +1160,9 @@ export default function CalendarPage() {
                   <SelectTrigger className={cn(
                     "h-10 w-full sm:w-44 text-sm rounded-lg",
                     "bg-slate-50 dark:bg-slate-900",
-                    "border-0 ring-1 ring-slate-200 dark:ring-slate-800",
-                    "focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-300"
+                    "border-0 ring-1 ring-slate-300/80 dark:ring-white/25",
+                    "hover:ring-slate-500/70 dark:hover:ring-white/45",
+                    "focus:ring-[1.5px] focus:ring-slate-900 dark:focus:ring-white"
                   )}>
                     <SelectValue placeholder="Amenity" />
                   </SelectTrigger>
@@ -1173,8 +1179,9 @@ export default function CalendarPage() {
                   <SelectTrigger className={cn(
                     "h-10 w-full sm:w-36 text-sm rounded-lg",
                     "bg-slate-50 dark:bg-slate-900",
-                    "border-0 ring-1 ring-slate-200 dark:ring-slate-800",
-                    "focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-300"
+                    "border-0 ring-1 ring-slate-300/80 dark:ring-white/25",
+                    "hover:ring-slate-500/70 dark:hover:ring-white/45",
+                    "focus:ring-[1.5px] focus:ring-slate-900 dark:focus:ring-white"
                   )}>
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
