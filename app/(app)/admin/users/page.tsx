@@ -626,7 +626,7 @@ export default function ManageUsers() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 pb-24 sm:pb-10">
         
         {/* ================================================================
             PAGE HEADER (Sticky on scroll)
@@ -721,7 +721,7 @@ export default function ManageUsers() {
           transition={{ delay: 0.08, duration, ease: easeOut }}
           className="mb-8 sm:mb-10"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
             <div>
               <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -731,11 +731,11 @@ export default function ManageUsers() {
                 {deletionRequests.length} request{deletionRequests.length === 1 ? '' : 's'} waiting for review
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full sm:w-auto flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs"
+                className="h-8 text-xs w-full sm:w-auto"
                 onClick={exportAuditLogs}
                 disabled={Boolean(actionLoading)}
               >
@@ -749,7 +749,7 @@ export default function ManageUsers() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs"
+                className="h-8 text-xs w-full sm:w-auto"
                 onClick={openHistoryDrawer}
                 disabled={historyLoading}
               >
@@ -763,7 +763,7 @@ export default function ManageUsers() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs"
+                className="h-8 text-xs w-full sm:w-auto"
                 onClick={fetchData}
                 disabled={Boolean(actionLoading)}
               >
@@ -802,11 +802,11 @@ export default function ManageUsers() {
                           />
                         </div>
 
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2">
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 text-xs"
+                            className="h-8 text-xs w-full sm:w-auto"
                             disabled={rowActionLoading}
                             onClick={() =>
                               reviewDeletionRequest(item.id, 'rejected', {
@@ -822,7 +822,7 @@ export default function ManageUsers() {
 
                           <Button
                             size="sm"
-                            className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                            className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
                             disabled={rowActionLoading}
                             onClick={() =>
                               reviewDeletionRequest(item.id, 'approved', {
@@ -838,7 +838,7 @@ export default function ManageUsers() {
 
                           <Button
                             size="sm"
-                            className="h-8 text-xs bg-red-600 hover:bg-red-700 text-white"
+                            className="h-8 text-xs bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
                             disabled={rowActionLoading}
                             onClick={() => {
                               requestTypedConfirmation({
@@ -999,10 +999,10 @@ export default function ManageUsers() {
             </div>
 
             {/* Filter Dropdown - Mobile */}
-            <div className="sm:hidden">
+            <div className="sm:hidden w-full">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 text-xs">
+                  <Button variant="outline" size="sm" className="h-10 text-sm w-full justify-between">
                     <Filter className="w-3.5 h-3.5 mr-1.5" />
                     {codeFilter === 'all' ? 'All Codes' : codeFilter === 'available' ? 'Available' : 'Used'}
                     <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
@@ -1090,10 +1090,10 @@ export default function ManageUsers() {
             </div>
 
             {/* Filter Dropdown - Mobile */}
-            <div className="sm:hidden">
+            <div className="sm:hidden w-full">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 text-xs">
+                  <Button variant="outline" size="sm" className="h-10 text-sm w-full justify-between">
                     <Filter className="w-3.5 h-3.5 mr-1.5" />
                     {roleFilter === 'all' ? 'All Roles' : roleFilter === 'admin' ? 'Admins' : 'Residents'}
                     <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
@@ -1253,7 +1253,7 @@ function CodeRow({ code, onCopy, onReplace, onRevoke, isLoading }: CodeRowProps)
 
   return (
     <div className={cn(
-      "flex items-center justify-between gap-4 px-4 py-3 transition-colors",
+      "flex items-start sm:items-center justify-between gap-3 sm:gap-4 px-4 py-3 transition-colors",
       code.isUsed 
         ? "bg-gray-50/50 dark:bg-gray-900/50" 
         : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
@@ -1279,14 +1279,14 @@ function CodeRow({ code, onCopy, onReplace, onRevoke, isLoading }: CodeRowProps)
           )}>
             {code.id}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[50vw] sm:max-w-none">
             {code.isUsed ? `Used by ${code.usedBy}` : `Created ${createdDate}`}
           </p>
         </div>
       </div>
 
       {/* Right: Status + Actions */}
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex items-center gap-2 flex-shrink-0 self-start sm:self-auto">
         <Badge 
           variant="secondary"
           className={cn(
@@ -1391,7 +1391,7 @@ function UserRow({ user, onDelete, isLoading }: UserRowProps) {
   const initials = (displayName.charAt(0) || user.email.charAt(0) || 'U').toUpperCase();
 
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+    <div className="flex items-start sm:items-center justify-between gap-3 sm:gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
       {/* Left: Avatar + Info */}
       <div className="flex items-center gap-3 min-w-0">
         <div className={cn(
@@ -1403,14 +1403,14 @@ function UserRow({ user, onDelete, isLoading }: UserRowProps) {
           {initials}
         </div>
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
               {displayName}
             </p>
             <Badge 
               variant="secondary"
               className={cn(
-                "text-[10px] px-1.5 py-0 h-4",
+                "text-[10px] px-1.5 py-0 h-4 shrink-0",
                 isAdmin 
                   ? "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400" 
                   : "bg-gray-100 dark:bg-gray-800 text-gray-500"
@@ -1419,7 +1419,7 @@ function UserRow({ user, onDelete, isLoading }: UserRowProps) {
               {user.role}
             </Badge>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[50vw] sm:max-w-none">{user.email}</p>
         </div>
       </div>
 

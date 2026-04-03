@@ -57,7 +57,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
     <header
       className="h-14 sm:h-16 border-b border-border bg-card/95 dark:bg-card/95 backdrop-blur-sm flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 relative z-40"
     >
-      <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+      <div className="flex items-center gap-2.5 md:gap-4 flex-1 min-w-0">
         {/* Hamburger Menu - Only on mobile/tablet */}
         <div className="lg:hidden shrink-0">
           <HamburgerMenu isOpen={isMenuOpen} onClick={onMenuClick || (() => {})} />
@@ -84,8 +84,8 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
             aria-label="Search and run commands (Ctrl+K)"
             aria-haspopup="dialog"
             className={cn(
-              "group relative isolate w-full h-9 rounded-xl px-3",
-              "flex items-center gap-2 text-left",
+              "group relative isolate w-full h-9 rounded-xl px-2.5 sm:px-3",
+              "flex items-center gap-1.5 sm:gap-2 text-left",
               "bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-900",
               "border border-slate-200/95 dark:border-slate-500/70",
               "hover:-translate-y-px hover:border-emerald-300/70 dark:hover:border-emerald-600/60",
@@ -100,11 +100,14 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-500/0 via-emerald-400/10 to-cyan-400/0 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
             />
-            <Search className="relative z-10 w-4 h-4 text-slate-400 transition-colors duration-200 group-hover:text-emerald-600 dark:text-slate-500 dark:group-hover:text-emerald-400" />
-            <span className="relative z-10 text-sm text-slate-500 dark:text-slate-400">Search pages and commands</span>
+            <Search className="relative z-10 w-4 h-4 shrink-0 text-slate-400 transition-colors duration-200 group-hover:text-emerald-600 dark:text-slate-500 dark:group-hover:text-emerald-400" />
+            <span className="relative z-10 min-w-0 flex-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              <span className="block truncate sm:hidden">Search commands</span>
+              <span className="hidden sm:block truncate">Search pages and commands</span>
+            </span>
             <kbd
               className={cn(
-                "relative z-10 ml-auto px-1.5 py-0.5 text-[10px] font-medium rounded hidden md:block",
+                "relative z-10 ml-auto px-1.5 py-0.5 text-[10px] font-medium rounded hidden lg:block",
                 "text-slate-500 dark:text-slate-400",
                 "bg-slate-200/80 dark:bg-slate-700/80",
                 "border border-slate-300/60 dark:border-slate-600/60",
@@ -117,7 +120,7 @@ export function Header({ onMenuClick, isMenuOpen = false }: HeaderProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 md:gap-2 shrink-0 ml-2 sm:ml-3">
+      <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2 shrink-0 ml-1 sm:ml-3">
         <OfflineIndicator />
 
         {/* Notifications */}

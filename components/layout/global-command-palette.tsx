@@ -315,12 +315,12 @@ export function GlobalCommandPalette() {
     <CommandDialog
       open={open}
       onOpenChange={setOpen}
-      contentClassName="rounded-2xl"
+      contentClassName="top-[4.25rem] sm:top-[5rem] md:top-[5.5rem] translate-y-0 rounded-2xl"
       commandClassName="bg-white/95 dark:bg-slate-950/95"
     >
       <CommandInput
-        className="text-[15px]"
-        placeholder="Jump to pages, amenities, bookings, or admin tools..."
+        className="text-sm sm:text-[15px]"
+        placeholder="Jump to pages, bookings, or tools..."
       />
       <CommandList className="max-h-[min(68vh,34rem)]">
         <CommandEmpty>No matching command found.</CommandEmpty>

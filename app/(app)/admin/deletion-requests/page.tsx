@@ -194,17 +194,17 @@ export default function AdminDeletionRequestsPage() {
           <Card>
             <CardContent className="p-4 sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2">
-                  <Button variant={activeFilter === 'requested' ? 'default' : 'outline'} size="sm" onClick={() => setActiveFilter('requested')}>
+                <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:flex-wrap sm:items-center">
+                  <Button className="h-9 text-xs sm:text-sm w-full sm:w-auto" variant={activeFilter === 'requested' ? 'default' : 'outline'} size="sm" onClick={() => setActiveFilter('requested')}>
                     Requested ({countByStatus.requested})
                   </Button>
-                  <Button variant={activeFilter === 'approved' ? 'default' : 'outline'} size="sm" onClick={() => setActiveFilter('approved')}>
+                  <Button className="h-9 text-xs sm:text-sm w-full sm:w-auto" variant={activeFilter === 'approved' ? 'default' : 'outline'} size="sm" onClick={() => setActiveFilter('approved')}>
                     Approved ({countByStatus.approved})
                   </Button>
-                  <Button variant={activeFilter === 'rejected' ? 'default' : 'outline'} size="sm" onClick={() => setActiveFilter('rejected')}>
+                  <Button className="h-9 text-xs sm:text-sm w-full sm:w-auto" variant={activeFilter === 'rejected' ? 'default' : 'outline'} size="sm" onClick={() => setActiveFilter('rejected')}>
                     Rejected ({countByStatus.rejected})
                   </Button>
-                  <Button variant={activeFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setActiveFilter('all')}>
+                  <Button className="h-9 text-xs sm:text-sm w-full sm:w-auto" variant={activeFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setActiveFilter('all')}>
                     All
                   </Button>
                 </div>
@@ -237,11 +237,11 @@ export default function AdminDeletionRequestsPage() {
                         <CardTitle className="text-base">{item.userName || item.userEmail}</CardTitle>
                         <CardDescription>{item.userEmail}</CardDescription>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {item.status === 'requested' && <Badge className="bg-amber-500">Requested</Badge>}
                         {item.status === 'approved' && <Badge className="bg-emerald-600">Approved</Badge>}
                         {item.status === 'rejected' && <Badge className="bg-rose-600">Rejected</Badge>}
-                        <span className="text-xs text-gray-500">{formatReviewTimestamp(item.requestedAt)}</span>
+                        <span className="text-xs text-gray-500 whitespace-nowrap">{formatReviewTimestamp(item.requestedAt)}</span>
                       </div>
                     </div>
                   </CardHeader>
@@ -272,7 +272,7 @@ export default function AdminDeletionRequestsPage() {
                         <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded-md px-3 py-2">
                           You can either approve for manual follow-up, or approve and execute deletion immediately.
                         </p>
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2">
                           <Button
                             onClick={() => reviewRequest(item.id, 'approved')}
                             disabled={
@@ -280,7 +280,7 @@ export default function AdminDeletionRequestsPage() {
                               actionLoading === item.id + 'approved-execute' ||
                               actionLoading === item.id + 'rejected'
                             }
-                            className="gap-2"
+                            className="gap-2 w-full sm:w-auto"
                           >
                             <CheckCircle2 className="w-4 h-4" />
                             {actionLoading === item.id + 'approved' ? 'Approving...' : 'Approve'}
@@ -293,7 +293,7 @@ export default function AdminDeletionRequestsPage() {
                               actionLoading === item.id + 'approved-execute' ||
                               actionLoading === item.id + 'rejected'
                             }
-                            className="gap-2"
+                            className="gap-2 w-full sm:w-auto"
                           >
                             <ShieldAlert className="w-4 h-4" />
                             {actionLoading === item.id + 'approved-execute' ? 'Approving + Deleting...' : 'Approve + Delete Now'}
@@ -306,7 +306,7 @@ export default function AdminDeletionRequestsPage() {
                               actionLoading === item.id + 'approved-execute' ||
                               actionLoading === item.id + 'rejected'
                             }
-                            className="gap-2"
+                            className="gap-2 w-full sm:w-auto"
                           >
                             <XCircle className="w-4 h-4" />
                             {actionLoading === item.id + 'rejected' ? 'Rejecting...' : 'Reject'}
