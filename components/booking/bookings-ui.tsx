@@ -777,10 +777,10 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
                 "text-sm text-slate-900 dark:text-white",
                 "placeholder:text-slate-400 dark:placeholder:text-slate-500",
                 "bg-slate-50 dark:bg-slate-900",
-                "border-0 ring-1 ring-slate-200 dark:ring-slate-800",
-                "hover:ring-slate-300 dark:hover:ring-slate-700",
-                "focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-300",
-                "rounded-xl transition-shadow duration-150"
+                "border-0 ring-1 ring-slate-200 dark:ring-slate-700/80",
+                "hover:ring-slate-300 dark:hover:ring-slate-600",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-white/70",
+                "focus-visible:ring-offset-0 rounded-xl transition-shadow duration-150"
               )}
             />
             {searchTerm && (
@@ -1116,8 +1116,6 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
                 "data-[state=open]:animate-in data-[state=closed]:animate-out",
                 "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
                 "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-                "data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]",
-                "data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
                 "duration-200"
               )}
             >
@@ -1274,16 +1272,16 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
               aria-modal="true"
               aria-labelledby="booking-receipt-modal-title"
               className={cn(
-                'fixed left-[50%] top-[50%] z-[10000] w-[calc(100%-2rem)] max-w-2xl translate-x-[-50%] translate-y-[-50%]',
+                'fixed left-[50%] top-[50%] z-[10000] w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-2xl translate-x-[-50%] translate-y-[-50%]',
                 'rounded-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 shadow-2xl',
-                'max-h-[90vh] overflow-y-auto',
+                'max-h-[88dvh] overflow-x-hidden overflow-y-auto overscroll-contain',
                 'data-[state=open]:animate-in data-[state=closed]:animate-out',
                 'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
                 'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 duration-200'
               )}
             >
               {selectedBooking && (
-                <div className="p-5 sm:p-6">
+                <div className="p-4 sm:p-6 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
                   <div className="flex items-start justify-between gap-3 mb-5">
                     <div>
                       <h2 id="booking-receipt-modal-title" className="text-xl font-semibold text-slate-900 dark:text-white">Booking Receipt</h2>
@@ -1346,26 +1344,26 @@ export function BookingsUI({ isAdmin = false }: BookingsUIProps) {
                     </div>
                   </div>
 
-                  <div className="mb-6 rounded-xl border border-slate-200 dark:border-slate-700 p-4 flex items-center gap-4">
-                    <div className="w-28 h-28 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-white dark:bg-slate-950">
+                  <div className="mb-6 rounded-xl border border-slate-200 dark:border-slate-700 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-white dark:bg-slate-950 shrink-0">
                       {receiptQrDataUrl && !generatingReceiptQR ? (
-                        <img src={receiptQrDataUrl} alt="Receipt QR" className="w-24 h-24" />
+                        <img src={receiptQrDataUrl} alt="Receipt QR" className="w-20 h-20 sm:w-24 sm:h-24" />
                       ) : (
                         <span className="text-xs text-slate-500">Generating QR...</span>
                       )}
                     </div>
-                    <div className="text-sm text-slate-600 dark:text-slate-300">
+                    <div className="min-w-0 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                       Use this QR for quick verification at the amenity entry point.
                     </div>
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-                    <Button variant="outline" onClick={() => setShowReceiptModal(false)} className="h-10">
+                    <Button variant="outline" onClick={() => setShowReceiptModal(false)} className="h-10 w-full sm:w-auto">
                       Close
                     </Button>
                     <Button
                       onClick={() => printReceipt(selectedBooking)}
-                      className="h-10 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+                      className="h-10 w-full sm:w-auto bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
                     >
                       <Printer className="w-4 h-4 mr-2" />
                       Print / Save PDF

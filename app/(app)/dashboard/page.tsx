@@ -714,8 +714,8 @@ export default function Dashboard() {
         {hasVisibleWidgets ? (
           <section
             className={cn(
-              'mb-6 grid grid-cols-1 gap-4',
-              isAdmin ? 'sm:grid-cols-2 xl:grid-cols-3' : 'sm:grid-cols-2 xl:grid-cols-4'
+              'mb-6 grid grid-cols-1 gap-4 items-stretch [&>section]:h-full',
+              isAdmin ? 'sm:grid-cols-2 xl:grid-cols-3' : 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'
             )}
           >
             {((isAdmin && widgetSettings.admin.weather) ||

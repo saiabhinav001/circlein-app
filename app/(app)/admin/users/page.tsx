@@ -1140,13 +1140,13 @@ export default function ManageUsers() {
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1.5rem)] sm:w-auto max-w-md"
+            className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] left-3 right-24 z-[60] sm:bottom-6 sm:left-1/2 sm:right-auto sm:w-auto sm:max-w-md sm:-translate-x-1/2"
           >
             <Button
               onClick={clearFilters}
               variant="outline"
               size="sm"
-              className="h-9 w-full sm:w-auto px-4 bg-white dark:bg-gray-900 shadow-lg border-gray-200 dark:border-gray-700"
+              className="h-10 sm:h-9 w-full sm:w-auto px-4 bg-white dark:bg-gray-900 shadow-lg border-gray-200 dark:border-gray-700"
             >
               <X className="w-3.5 h-3.5 mr-2" />
               Clear all filters

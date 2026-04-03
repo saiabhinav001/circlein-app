@@ -34,7 +34,7 @@ const CommandDialog = ({ children, contentClassName, commandClassName, ...props 
       <DialogContent
         showCloseButton={false}
         className={cn(
-          'w-[min(96vw,52rem)] max-w-3xl overflow-hidden border border-slate-200/80 bg-white/95 p-0 shadow-2xl shadow-black/15 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-950/95 origin-top data-[state=open]:slide-in-from-top-3 data-[state=closed]:slide-out-to-top-3 data-[state=closed]:zoom-out-100 data-[state=open]:zoom-in-100',
+          'w-[min(96vw,52rem)] max-w-3xl overflow-hidden border border-slate-200/80 bg-white/95 p-0 shadow-2xl shadow-black/15 backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-950/95 origin-top data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 duration-200',
           contentClassName
         )}
       >

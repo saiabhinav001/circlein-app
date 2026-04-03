@@ -21,11 +21,17 @@ This folder contains Playwright smoke tests for critical user-facing regressions
   - `/terms`
   - `/security`
   - Authenticated admin/resident critical pages:
+  - `/dashboard`
+  - `/bookings`
   - `/contact`
+  - `/admin/users`
+  - `/admin/deletion-requests`
   - `/admin/contact-tickets`
   - `/admin/analytics`
   - `/admin/maintenance`
   - Horizontal overflow guard (`scrollWidth <= clientWidth`)
+  - Command palette anchored-position check (opens near header area)
+  - Admin clear-filters control viewport visibility check
 - Runtime guard against known console errors:
   - NotificationProvider/ToastNotification update timing error
   - Duplicate React key error in location suggestions

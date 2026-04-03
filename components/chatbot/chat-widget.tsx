@@ -406,7 +406,7 @@ export function ChatWidget() {
 
   return (
     <>
-      <div ref={triggerRef} data-tour="chat-widget-trigger" className="fixed bottom-5 right-5 z-[100050]">
+      <div ref={triggerRef} data-tour="chat-widget-trigger" className="fixed bottom-5 right-5 z-[85]">
         {!isOpen && (
           <motion.div
             className="absolute inset-0 rounded-full bg-cyan-400/40"
@@ -436,7 +436,7 @@ export function ChatWidget() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.16 }}
-              className="fixed inset-0 z-[100048] bg-slate-900/10 backdrop-blur-[1px]"
+              className="fixed inset-0 z-[83] bg-slate-900/10 backdrop-blur-[1px]"
             />
 
             <motion.section
@@ -448,7 +448,7 @@ export function ChatWidget() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.96 }}
               transition={{ duration: 0.22, ease: 'easeOut' }}
-              className="fixed bottom-24 right-5 z-[100049] w-[calc(100vw-2.5rem)] max-w-[390px] overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-2xl dark:border-slate-800/90 dark:bg-slate-950"
+              className="fixed bottom-24 right-5 z-[84] w-[calc(100vw-2.5rem)] max-w-[390px] overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-2xl dark:border-slate-800/90 dark:bg-slate-950"
             >
               <header className="relative flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-emerald-500 to-cyan-500 px-4 py-3 text-white dark:border-slate-800">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.25),transparent_45%)]" />
